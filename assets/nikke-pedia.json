@@ -9,7 +9,7 @@
   },
   {
     "name": "앵커",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c351_00_s.png"
   },
   {
     "name": "그레이브",
@@ -17,11 +17,11 @@
   },
   {
     "name": "에피넬",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c241_00_s.png"
   },
   {
     "name": "라푼젤",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c221_00_s.png"
   },
   {
     "name": "스노우 화이트 : 헤비암즈",
@@ -41,15 +41,15 @@
   },
   {
     "name": "센티",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c080_00_s.png"
   },
   {
     "name": "리타",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c082_00_s.png"
   },
   {
     "name": "노이즈",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c430_00_s.png"
   },
   {
     "name": "브래디",
@@ -57,7 +57,7 @@
   },
   {
     "name": "루드밀라",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c190_00_s.png"
   },
   {
     "name": "쿠루미",
@@ -69,11 +69,11 @@
   },
   {
     "name": "노벨",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c212_00_s.png"
   },
   {
     "name": "홍련",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c222_00_s.png"
   },
   {
     "name": "아르카나",
@@ -89,19 +89,19 @@
   },
   {
     "name": "슈가",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c140_00_s.png"
   },
   {
     "name": "헬름",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c352_00_s.png"
   },
   {
     "name": "길로틴",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c180_00_s.png"
   },
   {
     "name": "은화 : 택티컬 업",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c092_00_s.png"
   },
   {
     "name": "나유타",
@@ -121,7 +121,7 @@
   },
   {
     "name": "율하",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c171_00_s.png"
   },
   {
     "name": "레이븐",
@@ -129,7 +129,7 @@
   },
   {
     "name": "엑시아",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c210_00_s.png"
   },
   {
     "name": "드레이크 : 그레이트 빌런",
@@ -137,15 +137,15 @@
   },
   {
     "name": "솔져 E.G.",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c300_00_s.png"
   },
   {
     "name": "누아르",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c271_00_s.png"
   },
   {
     "name": "율리아",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c150_00_s.png"
   },
   {
     "name": "디젤 : 윈터 스위츠",
@@ -153,7 +153,7 @@
   },
   {
     "name": "베스티",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c091_00_s.png"
   },
   {
     "name": "델타 : 닌자 시프",
@@ -161,7 +161,7 @@
   },
   {
     "name": "시그널",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c060_00_s.png"
   },
   {
     "name": "루드밀라 : 윈터 오너",
@@ -173,7 +173,7 @@
   },
   {
     "name": "네로",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c380_00_s.png"
   },
   {
     "name": "네온 : 비전 아이",
@@ -185,7 +185,7 @@
   },
   {
     "name": "길티",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c400_00_s.png"
   },
   {
     "name": "앵커 : 이노센트 메이드",
@@ -197,7 +197,7 @@
   },
   {
     "name": "에테르",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c291_00_s.png"
   },
   {
     "name": "릴리",
@@ -205,15 +205,15 @@
   },
   {
     "name": "솔린",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c071_00_s.png"
   },
   {
     "name": "프로덕트 23",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c307_00_s.png"
   },
   {
     "name": "사쿠라",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c282_00_s.png"
   },
   {
     "name": "퀀시 : 이스케이프 퀸",
@@ -225,11 +225,11 @@
   },
   {
     "name": "블랑",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c270_00_s.png"
   },
   {
     "name": "D",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c040_00_s.png"
   },
   {
     "name": "크라운",
@@ -253,7 +253,7 @@
   },
   {
     "name": "루마니",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c240_00_s.png"
   },
   {
     "name": "차임",
@@ -265,7 +265,7 @@
   },
   {
     "name": "목단",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c281_00_s.png"
   },
   {
     "name": "E.H.",
@@ -273,23 +273,23 @@
   },
   {
     "name": "브리드",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c070_00_s.png"
   },
   {
     "name": "자칼",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c111_00_s.png"
   },
   {
     "name": "소다",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c312_00_s.png"
   },
   {
     "name": "폴크방",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c242_00_s.png"
   },
   {
     "name": "스노우 화이트",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c220_00_s.png"
   },
   {
     "name": "홍련 : 흑영",
@@ -301,7 +301,7 @@
   },
   {
     "name": "바이퍼",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c112_00_s.png"
   },
   {
     "name": "루주",
@@ -313,7 +313,7 @@
   },
   {
     "name": "얀",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c201_00_s.png"
   },
   {
     "name": "유키코",
@@ -325,11 +325,11 @@
   },
   {
     "name": "미란다",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c032_00_s.png"
   },
   {
     "name": "네베",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c193_00_s.png"
   },
   {
     "name": "솔린 : 프로스트 티켓",
@@ -337,7 +337,7 @@
   },
   {
     "name": "벨로타",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c060_00_s.png"
   },
   {
     "name": "프리바티 : 언카인드 메이드",
@@ -345,7 +345,7 @@
   },
   {
     "name": "에이드 : 에이전트 바니",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c310_00_s.png"
   },
   {
     "name": "사쿠라 : 블룸 인 서머",
@@ -361,15 +361,15 @@
   },
   {
     "name": "미사토",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c802_00_s.png"
   },
   {
     "name": "코코아",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c311_00_s.png"
   },
   {
     "name": "유니",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c160_00_s.png"
   },
   {
     "name": "마르차나 : 마린 스터디",
@@ -385,15 +385,15 @@
   },
   {
     "name": "도라",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c202_00_s.png"
   },
   {
     "name": "델타",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c020_00_s.png"
   },
   {
     "name": "프림",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c142_00_s.png"
   },
   {
     "name": "토브",
@@ -413,7 +413,7 @@
   },
   {
     "name": "라플라스",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c100_00_s.png"
   },
   {
     "name": "아니스 : 스파클링 서머",
@@ -421,7 +421,7 @@
   },
   {
     "name": "크로우",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c110_00_s.png"
   },
   {
     "name": "라푼젤 : 퓨어 그레이스",
@@ -429,7 +429,7 @@
   },
   {
     "name": "드레이크",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c101_00_s.png"
   },
   {
     "name": "프리카",
@@ -437,7 +437,7 @@
   },
   {
     "name": "비스킷",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c381_00_s.png"
   },
   {
     "name": "아크레인저 블랙",
@@ -445,23 +445,23 @@
   },
   {
     "name": "로산나",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c280_00_s.png"
   },
   {
     "name": "모더니아",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c260_00_s.png"
   },
   {
     "name": "아니스",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c012_00_s.png"
   },
   {
     "name": "프로덕트 12",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c303_00_s.png"
   },
   {
     "name": "도로시",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c233_00_s.png"
   },
   {
     "name": "퀸(마코토)",
@@ -473,15 +473,15 @@
   },
   {
     "name": "디젤",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c072_00_s.png"
   },
   {
     "name": "iDoll 플라워",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c304_00_s.png"
   },
   {
     "name": "츠바이",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c390_00_s.png"
   },
   {
     "name": "도로시 : 세렌디피티",
@@ -501,15 +501,15 @@
   },
   {
     "name": "마나",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c290_00_s.png"
   },
   {
     "name": "에이드",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c310_00_s.png"
   },
   {
     "name": "리버렐리오",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c262_00_s.png"
   },
   {
     "name": "리틀 머메이드",
@@ -517,7 +517,7 @@
   },
   {
     "name": "iDoll 오션",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c305_00_s.png"
   },
   {
     "name": "레이 (가칭)",
@@ -525,19 +525,19 @@
   },
   {
     "name": "프로덕트 08",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c302_00_s.png"
   },
   {
     "name": "맥스웰",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c102_00_s.png"
   },
   {
     "name": "아리아",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c432_00_s.png"
   },
   {
     "name": "밀크 : 블루밍 바니",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c141_00_s.png"
   },
   {
     "name": "티아",
@@ -549,7 +549,7 @@
   },
   {
     "name": "K",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c041_00_s.png"
   },
   {
     "name": "맥스웰 : 오디너리 미케닉",
@@ -557,27 +557,27 @@
   },
   {
     "name": "애드미",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c172_00_s.png"
   },
   {
     "name": "하란",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c230_00_s.png"
   },
   {
     "name": "노아",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c232_00_s.png"
   },
   {
     "name": "메어리",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c130_00_s.png"
   },
   {
     "name": "네온",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c011_00_s.png"
   },
   {
     "name": "메이든",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c181_00_s.png"
   },
   {
     "name": "소다 : 트윙클링 바니",
@@ -589,7 +589,7 @@
   },
   {
     "name": "폴리",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c030_00_s.png"
   },
   {
     "name": "마리",
@@ -601,11 +601,11 @@
   },
   {
     "name": "미카",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c061_00_s.png"
   },
   {
     "name": "솔져 O.W.",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c306_00_s.png"
   },
   {
     "name": "마르차나",
@@ -613,7 +613,7 @@
   },
   {
     "name": "프리바티",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c170_00_s.png"
   },
   {
     "name": "나가",
@@ -621,11 +621,11 @@
   },
   {
     "name": "신",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c401_00_s.png"
   },
   {
     "name": "퀀시",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c402_00_s.png"
   },
   {
     "name": "엠마 : 택티컬 업",
@@ -637,7 +637,7 @@
   },
   {
     "name": "미하라",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c161_00_s.png"
   },
   {
     "name": "베이",
@@ -661,7 +661,7 @@
   },
   {
     "name": "라이",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c392_00_s.png"
   },
   {
     "name": "에이다",
@@ -669,7 +669,7 @@
   },
   {
     "name": "앤 : 미라클 페어리",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c121_00_s.png"
   },
   {
     "name": "앨리스 : 원더랜드 바니",
@@ -677,23 +677,23 @@
   },
   {
     "name": "엠마",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c090_00_s.png"
   },
   {
     "name": "아인",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c391_00_s.png"
   },
   {
     "name": "N102",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c120_00_s.png"
   },
   {
     "name": "이사벨",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c231_00_s.png"
   },
   {
     "name": "루피",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c200_00_s.png"
   },
   {
     "name": "레이",
@@ -701,11 +701,11 @@
   },
   {
     "name": "D : 킬러 와이프",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c043_00_s.png"
   },
   {
     "name": "솔져 F.A.",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c301_00_s.png"
   },
   {
     "name": "신데렐라 : 크리스탈 웨이브",
@@ -713,15 +713,15 @@
   },
   {
     "name": "은화",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c092_00_s.png"
   },
   {
     "name": "앨리스",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c191_00_s.png"
   },
   {
     "name": "밀크",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c141_00_s.png"
   },
   {
     "name": "스노우 화이트 : 이노센트 데이즈",
@@ -729,7 +729,7 @@
   },
   {
     "name": "볼륨",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c431_00_s.png"
   },
   {
     "name": "질",
@@ -737,18 +737,18 @@
   },
   {
     "name": "페퍼",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c131_00_s.png"
   },
   {
     "name": "iDoll 썬",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c308_00_s.png"
   },
   {
     "name": "라피",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c010_00_s.png"
   },
   {
     "name": "니힐리스타",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/GroutK/Nikke-db/main/images/sprite/si_c261_00_s.png"
   }
 ]
