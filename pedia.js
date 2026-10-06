@@ -72,7 +72,7 @@ let pediaItems=[];
 async function loadPediaData(){
   if(pediaItems.length)return pediaItems;
   try{
-    const res=await fetch(DATA_URL,{cache:'no-store'});
+    const res=await fetch(DATA_URL,{cache:'force-cache'});
     if(!res.ok)throw new Error('http '+res.status);
     const items=await res.json();
     if(!Array.isArray(items))throw new Error('invalid data');
