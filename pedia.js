@@ -182,7 +182,11 @@ async function openPediaSkill(name){
   body.innerHTML='<div class="pedia-skill-loading">사이트에 저장된 '+escText(name)+'의 스킬 정보를 불러오는 중…</div>';
   try{
     const all=await loadPediaSkillData();
-    const data=all?.[name];
+    const aliases={
+      '사쿠라 스즈하라':'사쿠라'
+    };
+    const lookupName=all?.[name]?name:(aliases[name]||name);
+    const data=all?.[lookupName];
     if(!data)throw new Error(name+'의 스킬 정보가 없습니다.');
     renderPediaSkills(name,data);
   }catch(err){
