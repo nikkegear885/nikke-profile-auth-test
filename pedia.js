@@ -2,9 +2,6 @@
 'use strict';
 const SOURCE_URL='https://www.blablalink.com/shiftyspad/nikke-list';
 const DATA_URL='assets/nikke-pedia.json';
-const IMAGE_OVERRIDE_STORAGE='nikke_pedia_image_overrides_v1';
-function loadImageOverrides(){try{const v=JSON.parse(localStorage.getItem(IMAGE_OVERRIDE_STORAGE)||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}catch(_){return {};}}
-function saveImageOverrides(v){try{localStorage.setItem(IMAGE_OVERRIDE_STORAGE,JSON.stringify(v));return true;}catch(_){return false;}}
 const esc=(v)=>String(v??'').replace(/[&<>'"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 function injectStyle(){
@@ -24,11 +21,8 @@ function injectStyle(){
     '.pedia-head p{margin:5px 0 0;color:#6b8291;font-size:11px;line-height:1.5}',
     'html.dark-theme .pedia-head p{color:#93a2b9}',
     '.pedia-source-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid #8fc3d9;background:#fff;color:#347fa7;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:900}',
-    '.pedia-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
-    '.pedia-import-btn,.pedia-source-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid #8fc3d9;background:#fff;color:#347fa7;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:900;cursor:pointer}',
-    '.pedia-import-btn:hover,.pedia-source-btn:hover{background:#eaf6fb}',
+    '.pedia-source-btn:hover{background:#eaf6fb}',
     'html.dark-theme .pedia-source-btn{background:#18253a;border-color:#55708f;color:#a9d4ff}',
-    'html.dark-theme .pedia-import-btn{background:#18253a;border-color:#55708f;color:#a9d4ff}',
     '.pedia-toolbar{padding:12px 20px;border-bottom:1px solid #d9e6ed;background:#f8fcfe;display:flex;align-items:center;gap:10px}',
     'html.dark-theme .pedia-toolbar{background:#101827;border-color:#2d3d58}',
     '.pedia-search{flex:1 1 300px;min-width:180px;height:38px;border:1px solid #bfd5df;border-radius:8px;background:#fff;color:#405b6c;padding:0 11px;font-size:12px;outline:none}',
@@ -69,7 +63,7 @@ function ensurePanel(){
   const main=document.querySelector('main.main');if(!main)return;
   const panel=document.createElement('section');
   panel.id='pediaPanel';panel.hidden=true;
-  panel.innerHTML='<div class="pedia-head"><div class="pedia-head-row"><div><h3>니케 도감</h3><p>캐릭터 이미지는 실제 원본 파일만 등록합니다. 임의 생성 이미지는 사용하지 않습니다.</p></div><div class="pedia-head-actions"><button type="button" class="pedia-import-btn" id="pediaImportBtn">원본 이미지 등록</button><a class="pedia-source-btn" href="'+SOURCE_URL+'" target="_blank" rel="noopener noreferrer">BlablaLink 원본 보기 ↗</a></div></div></div><div class="pedia-toolbar"><input id="pediaSearch" class="pedia-search" type="search" placeholder="니케 이름 검색…"><span id="pediaCount" class="pedia-count"></span></div><div id="pediaGrid" class="pedia-grid"></div>';
+  panel.innerHTML='<div class="pedia-head"><div class="pedia-head-row"><div><h3>니케 도감</h3><p>캐릭터 이미지는 실제 원본 파일만 등록합니다. 임의 생성 이미지는 사용하지 않습니다.</p></div><a class="pedia-source-btn" href="'+SOURCE_URL+'" target="_blank" rel="noopener noreferrer">BlablaLink 원본 보기 ↗</a></div></div><div class="pedia-toolbar"><input id="pediaSearch" class="pedia-search" type="search" placeholder="니케 이름 검색…"><span id="pediaCount" class="pedia-count"></span></div><div id="pediaGrid" class="pedia-grid"></div>';
   const first=main.querySelector('#soleScorePanel,#outpostPanel,#characterPanel');
   if(first)main.insertBefore(panel,first);else main.appendChild(panel);
 }
@@ -82,8 +76,7 @@ async function loadPediaData(){
     if(!res.ok)throw new Error('http '+res.status);
     const items=await res.json();
     if(!Array.isArray(items))throw new Error('invalid data');
-    const overrides=loadImageOverrides();
-    pediaItems=items.filter(x=>x&&typeof x.name==='string'&&x.name.trim()).map(x=>({...x,image:String(overrides[x.name]||x.image||'').trim()}));
+    pediaItems=items.filter(x=>x&&typeof x.name==='string'&&x.name.trim());
   }catch(_){
     const grid=document.getElementById('pediaGrid');
     if(grid)grid.innerHTML='<div class="pedia-empty">도감 데이터를 불러오지 못했습니다.</div>';
@@ -104,49 +97,6 @@ function renderPedia(text){
     const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';
     return '<article class="pedia-card"><div class="pedia-image-box">'+media+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div></article>';
   }).join('');
-}
-
-
-function closePediaImportModal(){
-  const modal=document.getElementById('pediaImportModal');
-  if(modal)modal.remove();
-}
-
-function copyPediaExtractCode(){
-  const code='(async()=>{const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));const seen=new Map();const collect=()=>document.querySelectorAll("img").forEach(img=>{const name=String(img.alt||"").trim();const src=String(img.currentSrc||img.src||"").trim();if(name&&/^https?:\\/\\//i.test(src)&&!seen.has(name))seen.set(name,src);});for(let i=0;i<30;i++){collect();const h=document.documentElement.scrollHeight;window.scrollTo(0,h);await sleep(250);collect();if(i>2&&h===document.documentElement.scrollHeight)break;}window.scrollTo(0,0);const payload={source:"BlablaLink ShiftyPad NIKKE List",sourceUrl:location.href,capturedAt:new Date().toISOString(),images:[...seen.entries()].map(([name,src])=>({name,src}))};await navigator.clipboard.writeText(JSON.stringify(payload,null,2));alert("도감용 실제 이미지 주소 "+payload.images.length+"개를 복사했습니다.");})()';
-  try{await navigator.clipboard.writeText(code);return true;}catch(_){const ta=document.createElement('textarea');ta.value=code;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');ta.remove();return true;}
-}
-
-function openPediaImportModal(){
-  closePediaImportModal();
-  const modal=document.createElement('div');
-  modal.id='pediaImportModal';
-  modal.className='exclude-modal-backdrop';
-  modal.innerHTML='<div class="exclude-modal pedia-import-modal" role="dialog" aria-modal="true"><div class="exclude-modal-head"><div><h3>원본 이미지 등록</h3><small>1) 아래 버튼으로 추출 코드를 복사 → BlablaLink 도감 페이지에서 실행 → 2) 돌아와서 붙여넣기 후 적용합니다. 임의 생성 이미지는 사용하지 않습니다.</small><div style="margin-top:8px"><button type="button" class="pedia-import-btn" id="pediaCopyCodeBtn">BlablaLink 추출 코드 복사</button></div></div><button class="btn" type="button" id="pediaImportClose">닫기</button></div><div style="padding:14px"><textarea id="pediaImportText" style="width:100%;min-height:260px;resize:vertical" placeholder="{ &quot;images&quot;: [ { &quot;name&quot;: &quot;앨리스&quot;, &quot;src&quot;: &quot;https://...&quot; } ] }"></textarea><div id="pediaImportStatus" style="margin-top:8px;font-size:11px"></div></div><div class="exclude-modal-foot"><div></div><div class="exclude-foot-actions"><button class="btn" type="button" id="pediaImportPaste">클립보드 붙여넣기</button><button class="btn primary" type="button" id="pediaImportApply">적용</button></div></div></div>';
-  document.body.appendChild(modal);
-  modal.querySelector('#pediaImportClose')?.addEventListener('click',closePediaImportModal);
-  modal.querySelector('#pediaCopyCodeBtn')?.addEventListener('click',async()=>{const ok=await copyPediaExtractCode();const st=modal.querySelector('#pediaImportStatus');if(st)st.textContent=ok?'BlablaLink용 추출 코드가 클립보드에 복사되었습니다.':'복사하지 못했습니다.';});
-  modal.addEventListener('click',e=>{if(e.target===modal)closePediaImportModal();});
-  modal.querySelector('#pediaImportPaste')?.addEventListener('click',async()=>{
-    const ta=modal.querySelector('#pediaImportText'),st=modal.querySelector('#pediaImportStatus');
-    try{ta.value=await navigator.clipboard.readText();st.textContent='클립보드 내용을 가져왔습니다.';}catch(_){st.textContent='브라우저가 클립보드 읽기를 막았습니다. Ctrl+V로 붙여넣어주세요.';}
-  });
-  modal.querySelector('#pediaImportApply')?.addEventListener('click',()=>{
-    const ta=modal.querySelector('#pediaImportText'),st=modal.querySelector('#pediaImportStatus');
-    try{
-      const parsed=JSON.parse(ta.value.trim());
-      const list=Array.isArray(parsed)?parsed:(Array.isArray(parsed?.images)?parsed.images:[]);
-      const valid=list.filter(x=>x&&typeof x.name==='string'&&x.name.trim()&&typeof x.src==='string'&&/^https?:\/\//i.test(x.src.trim()));
-      if(!valid.length)throw new Error('no valid images');
-      const map=loadImageOverrides();let matched=0;
-      const known=new Set(pediaItems.map(x=>x.name));
-      for(const x of valid){if(known.has(x.name.trim())){map[x.name.trim()]=x.src.trim();matched++;}}
-      if(!saveImageOverrides(map))throw new Error('storage');
-      pediaItems=pediaItems.map(x=>({...x,image:String(map[x.name]||x.image||'').trim()}));
-      renderPedia(document.getElementById('pediaSearch')?.value||'');
-      st.textContent='실제 이미지 '+matched+'개를 등록했습니다. 현재 브라우저에 저장했습니다.';
-    }catch(_){st.textContent='올바른 JSON 형식이 아니거나 등록 가능한 원본 이미지가 없습니다.';}
-  });
 }
 
 function showPedia(){
@@ -176,7 +126,6 @@ function patchMainViewSwitch(){
 function init(){
   injectStyle();ensureNav();ensurePanel();
   document.getElementById('pediaSearch')?.addEventListener('input',e=>renderPedia(e.target.value));
-  document.getElementById('pediaImportBtn')?.addEventListener('click',openPediaImportModal);
   patchMainViewSwitch();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
