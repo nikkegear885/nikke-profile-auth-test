@@ -40,9 +40,148 @@ function injectStyle(){
     '.pedia-name{padding:9px 10px 10px;color:#294b5e;font-size:11px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     'html.dark-theme .pedia-name{color:#edf3ff}',
     '.pedia-empty{grid-column:1/-1;padding:48px 20px;text-align:center;color:#7a92a2;font-size:12px}',
-    '@media(max-width:650px){#pediaPanel{margin:0 10px 16px}.pedia-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px;gap:9px}.pedia-toolbar{padding:10px}.pedia-head{padding:14px}.pedia-source-btn{width:100%}}'
-  ].join('\n');
+    '.pedia-card{cursor:pointer;transition:.16s ease}',
+    '.pedia-card:hover{transform:translateY(-2px);border-color:#8fc3d9;box-shadow:0 8px 20px rgba(61,105,130,.12)}',
+    '.pedia-skill-badge{display:inline-flex;margin:0 10px 10px;padding:4px 7px;border:1px solid #bfd5df;border-radius:6px;background:#eef7fb;color:#347fa7;font-size:9px;font-weight:900}',
+    'html.dark-theme .pedia-skill-badge{background:#142438;border-color:#344660;color:#a9d4ff}',
+    '.pedia-skill-modal{position:fixed;inset:0;z-index:1700;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(38,62,78,.28);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}',
+    '.pedia-skill-modal.open{display:flex}',
+    '.pedia-skill-dialog{width:min(760px,96vw);max-height:90vh;overflow:auto;background:#f8fcfe;border:1px solid #bfd5df;border-radius:14px;box-shadow:0 24px 70px rgba(38,72,95,.24);color:#294b5e}',
+    'html.dark-theme .pedia-skill-dialog{background:#101827;border-color:#344660;color:#edf3ff}',
+    '.pedia-skill-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid #d0e2eb;background:#edf7fb}',
+    'html.dark-theme .pedia-skill-head{background:#151f31;border-color:#2d3d58}',
+    '.pedia-skill-head h3{margin:0;font-size:16px;font-weight:900}',
+    '.pedia-skill-close{width:32px;height:32px;border:1px solid #bfd5df;border-radius:8px;background:#fff;color:#60798a;font-size:20px;cursor:pointer}',
+    'html.dark-theme .pedia-skill-close{background:#0d1525;border-color:#344660;color:#cbd7e8}',
+    '.pedia-skill-body{padding:15px}',
+    '.pedia-skill-status{padding:9px 10px;border:1px solid #d2e1e8;border-radius:8px;background:#f3f8fb;color:#6f8290;font-size:10px;line-height:1.5}',
+    'html.dark-theme .pedia-skill-status{background:#0d1627;border-color:#2d3d58;color:#9aaac0}',
+    '.pedia-skill-status.error{border-color:#edc9c9;background:#fff5f5;color:#bd5e62}',
+    '.pedia-skill-card{margin-top:10px;border:1px solid #c9dce6;border-radius:10px;background:#fff;overflow:hidden}',
+    'html.dark-theme .pedia-skill-card{background:#151f31;border-color:#354761}',
+    '.pedia-skill-card-head{padding:10px 12px;background:#edf7fb;border-bottom:1px solid #d7e5ec;display:flex;align-items:center;justify-content:space-between;gap:8px}',
+    'html.dark-theme .pedia-skill-card-head{background:#141f31;border-color:#2d3d58}',
+    '.pedia-skill-card-title{font-size:12px;font-weight:900}',
+    '.pedia-skill-card-meta{font-size:9px;color:#718797}',
+    'html.dark-theme .pedia-skill-card-meta{color:#93a2b9}',
+    '.pedia-skill-levels{display:flex;gap:5px;flex-wrap:wrap;padding:9px 12px 0}',
+    '.pedia-skill-level-btn{border:1px solid #bfd5df;border-radius:6px;background:#fff;color:#60798a;padding:4px 7px;font-size:9px;font-weight:900;cursor:pointer}',
+    '.pedia-skill-level-btn.active{border-color:#72b0cf;background:#e7f5fb;color:#2d6d8e}',
+    'html.dark-theme .pedia-skill-level-btn{background:#0d1525;border-color:#344660;color:#aebbd0}',
+    'html.dark-theme .pedia-skill-level-btn.active{background:#20334c;border-color:#5b88b0;color:#d6ebff}',
+    '.pedia-skill-desc{padding:11px 12px 13px;white-space:pre-line;font-size:11px;line-height:1.6;color:#405b6c}',
+    'html.dark-theme .pedia-skill-desc{color:#dce6f3}',
+    '.pedia-skill-loading{padding:30px;text-align:center;color:#72879a;font-size:11px}',
+    '@media(max-width:650px){#pediaPanel{margin:0 10px 16px}.pedia-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px;gap:9px}.pedia-toolbar{padding:10px}.pedia-head{padding:14px}.pedia-source-btn{width:100%}.pedia-skill-dialog{max-height:94vh}.pedia-skill-body{padding:10px}}'  ].join('\n');
   document.head.appendChild(style);
+}
+
+const PEDIA_SKILL_TEST_CACHE_KEY='nikke_pedia_skill_test_rapi_v1';
+const PEDIA_SKILL_TEST_URL='https://sg-tools-cdn.blablalink.com/wz-58/78be524ae3b87701bbd14a8115fb9e36.json';
+let pediaSkillCache=null;
+
+function escText(v){return esc(v);}
+function buildSkillLevels(detail){
+  if(!detail)return [];
+  const desc=String(detail.description_localkey||'').replace(/<\\/?(?:color|word_group)(?:=[^>]*)?>/g,'').replace(/\\xC2\\xA0/g,' ');
+  const list=Array.isArray(detail.description_value_list)?detail.description_value_list:[];
+  const maxLevel=Math.max(1,...list.map(x=>Array.isArray(x?.description_value)?x.description_value.length:0));
+  const levels=[];
+  for(let lv=1;lv<=Math.min(maxLevel,10);lv++){
+    let text=desc;
+    list.forEach((entry,index)=>{
+      const vals=Array.isArray(entry?.description_value)?entry.description_value:[];
+      const value=vals[Math.min(lv-1,vals.length-1)];
+      if(value!=null){
+        text=text.split('{description_value_'+String(index+1).padStart(2,'0')+'}').join(String(value));
+      }
+    });
+    levels.push({level:lv,text:text.trim()});
+  }
+  return levels;
+}
+function skillLabel(key,detail){
+  if(!detail)return key;
+  return String(detail.name_localkey||key).trim()||key;
+}
+async function loadRapiSkillData(){
+  if(pediaSkillCache)return pediaSkillCache;
+  try{
+    const saved=localStorage.getItem(PEDIA_SKILL_TEST_CACHE_KEY);
+    if(saved){
+      const parsed=JSON.parse(saved);
+      if(parsed&&parsed.skill1&&parsed.skill2&&parsed.ulti_skill){
+        pediaSkillCache=parsed;
+        return parsed;
+      }
+    }
+  }catch(_){}
+  const res=await fetch(PEDIA_SKILL_TEST_URL,{cache:'no-store'});
+  if(!res.ok)throw new Error('BlablaLink CDN 요청 실패: HTTP '+res.status);
+  const role=await res.json();
+  const data={
+    name:String(role?.name_localkey||'라피'),
+    skill1:role?.skill1_detail||null,
+    skill2:role?.skill2_detail||null,
+    ulti_skill:role?.ulti_skill_detail||null
+  };
+  if(!data.skill1&&!data.skill2&&!data.ulti_skill)throw new Error('라피의 스킬 데이터를 찾지 못했습니다.');
+  try{localStorage.setItem(PEDIA_SKILL_TEST_CACHE_KEY,JSON.stringify(data));}catch(_){}
+  pediaSkillCache=data;
+  return data;
+}
+function ensureSkillModal(){
+  let modal=document.getElementById('pediaSkillModal');
+  if(modal)return modal;
+  modal=document.createElement('div');
+  modal.id='pediaSkillModal';
+  modal.className='pedia-skill-modal';
+  modal.innerHTML='<div class="pedia-skill-dialog" role="dialog" aria-modal="true"><div class="pedia-skill-head"><h3 id="pediaSkillTitle">니케 스킬</h3><button type="button" class="pedia-skill-close" aria-label="닫기">×</button></div><div class="pedia-skill-body" id="pediaSkillBody"><div class="pedia-skill-loading">스킬 데이터를 불러오는 중…</div></div></div>';
+  document.body.appendChild(modal);
+  modal.querySelector('.pedia-skill-close').addEventListener('click',()=>modal.classList.remove('open'));
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open')});
+  return modal;
+}
+function renderRapiSkills(data){
+  const modal=ensureSkillModal();
+  const body=modal.querySelector('#pediaSkillBody');
+  modal.querySelector('#pediaSkillTitle').textContent=(data.name||'라피')+' · 스킬 정보';
+  const groups=[
+    ['스킬 1',data.skill1],
+    ['스킬 2',data.skill2],
+    ['버스트',data.ulti_skill]
+  ];
+  body.innerHTML=groups.filter(g=>g[1]).map(([title,detail])=>{
+    const levels=buildSkillLevels(detail);
+    const cooldown=Array.isArray(detail.skill_cooltime_list)&&detail.skill_cooltime_list.length?Number(detail.skill_cooltime_list[0])/100:null;
+    return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(title)+' · '+escText(skillLabel(title,detail))+'</span><span class="pedia-skill-card-meta">'+(cooldown!=null?'쿨타임 '+cooldown.toFixed(1)+'s':'')+'</span></div><div class="pedia-skill-levels">'+levels.map((x,i)=>'<button type="button" class="pedia-skill-level-btn'+(i===0?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';
+  }).join('');
+  body.querySelectorAll('.pedia-skill-card').forEach(card=>{
+    const levels=buildSkillLevels(groups.find(g=>card.querySelector('.pedia-skill-card-title')?.textContent.includes(g[0]))?.[1]);
+    const desc=card.querySelector('[data-skill-levels]');
+    card.querySelectorAll('.pedia-skill-level-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        card.querySelectorAll('.pedia-skill-level-btn').forEach(x=>x.classList.remove('active'));
+        btn.classList.add('active');
+        const item=levels.find(x=>x.level===Number(btn.dataset.level));
+        if(desc)desc.textContent=item?.text||'설명 없음';
+      });
+    });
+  });
+  modal.classList.add('open');
+}
+async function openRapiSkillTest(){
+  const modal=ensureSkillModal();
+  modal.classList.add('open');
+  const body=modal.querySelector('#pediaSkillBody');
+  body.innerHTML='<div class="pedia-skill-loading">BlablaLink에서 라피의 스킬 데이터를 1회 조회하는 중…</div>';
+  try{
+    const data=await loadRapiSkillData();
+    renderRapiSkills(data);
+  }catch(err){
+    body.innerHTML='<div class="pedia-skill-status error">'+escText(err?.message||'스킬 데이터를 불러오지 못했습니다.')+'</div>';
+  }
 }
 
 function ensureNav(){
@@ -92,13 +231,18 @@ function renderPedia(text){
   const list=pediaItems.filter(x=>!q||x.name.toLowerCase().includes(q));
   count.textContent=list.length+' / '+pediaItems.length+'명';
   if(!list.length){grid.innerHTML='<div class="pedia-empty">검색 결과가 없습니다.</div>';return;}
-  grid.innerHTML=list.map(item=>{
+  grid.innerHTML=list.map((item,index)=>{
     const image=String(item.image||'').trim();
     const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';
-    return '<article class="pedia-card"><div class="pedia-image-box">'+media+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div></article>';
+    const isRapi=item.name==='라피';
+    return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'"'+(isRapi?' title="클릭하면 BlablaLink 스킬 정보를 1회 조회합니다."':'')+'><div class="pedia-image-box">'+media+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div>'+(isRapi?'<span class="pedia-skill-badge">스킬 테스트</span>':'')+'</article>';
   }).join('');
+  grid.querySelectorAll('.pedia-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+      if(card.dataset.pediaName==='라피')openRapiSkillTest();
+    });
+  });
 }
-
 function showPedia(){
   const panel=document.getElementById('pediaPanel');if(!panel)return;
   panel.hidden=false;
