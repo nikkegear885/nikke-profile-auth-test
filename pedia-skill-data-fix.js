@@ -1,15 +1,14 @@
 (() => {
   'use strict';
-  const originalFetch = window.fetch;
+  const originalFetch = window.fetch.bind(window);
   const isSkillDataUrl = (input) => {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     return /assets\/nikke-skills\.json(?:\?|$)/.test(url);
   };
 
   window.fetch = async function(input, init) {
-    const response = await originalFetch.call(this, input, init);
+    const response = await originalFetch(input, init);
     if (!isSkillDataUrl(input) || !response.ok) return response;
-
     try {
       const data = await response.clone().json();
       Object.values(data || {}).forEach(nikke => {
@@ -21,12 +20,10 @@
           if (skill.cooltime == null && skill.c != null) skill.cooltime = skill.c;
         });
       });
-
-      const body = JSON.stringify(data);
-      return new Response(body, {
+      return new Response(JSON.stringify(data), {
         status: response.status,
         statusText: response.statusText,
-        headers: response.headers
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
       });
     } catch (e) {
       console.warn('[pedia] skill data normalization failed', e);
