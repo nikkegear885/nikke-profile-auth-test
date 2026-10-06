@@ -493,7 +493,7 @@
   },
   {
     "name": "아니스 : 스타",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c017_00_s.png"
   },
   {
     "name": "백학",
@@ -733,7 +733,7 @@
   },
   {
     "name": "질",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c841_00_s.png"
   },
   {
     "name": "페퍼",
