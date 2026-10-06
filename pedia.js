@@ -83,7 +83,7 @@ let pediaSkillCache=null;
 function escText(v){return esc(v);}
 function buildSkillLevels(detail){
   if(!detail)return [];
-  const desc=String(detail.description_localkey||'').replace(/<\\/?(?:color|word_group)(?:=[^>]*)?>/g,'').replace(/\\xC2\\xA0/g,' ');
+  const desc=String(detail.description_localkey||'').replace(/<\/?(?:color|word_group)(?:=[^>]*)?>/g,'').replace(/\\xC2\\xA0/g,' ');
   const list=Array.isArray(detail.description_value_list)?detail.description_value_list:[];
   const maxLevel=Math.max(1,...list.map(x=>Array.isArray(x?.description_value)?x.description_value.length:0));
   const levels=[];
