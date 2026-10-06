@@ -51,8 +51,7 @@ function ensureNav(){
   const btn=document.createElement('button');
   btn.type='button';btn.className='main-view-nav';btn.dataset.view='pedia';btn.textContent='도감';
   btn.addEventListener('click',()=>window.switchMainView?.('pedia'));
-  const anchor=nav.querySelector('[data-view="outpost"]');
-  if(anchor)nav.insertBefore(btn,anchor);else nav.appendChild(btn);
+  nav.appendChild(btn);
 }
 
 function ensurePanel(){
