@@ -50,7 +50,7 @@ function injectStyle(){
     'html.dark-theme .pedia-skill-dialog{background:#101827;border-color:#344660;color:#edf3ff}',
     '.pedia-skill-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid #d0e2eb;background:#edf7fb}',
     'html.dark-theme .pedia-skill-head{background:#151f31;border-color:#2d3d58}',
-    '.pedia-skill-head h3{margin:0;font-size:16px;font-weight:900}',
+    '.pedia-skill-head h3{margin:0;font-size:16px;font-weight:900}.pedia-skill-meta{margin-top:3px;font-size:9px;color:#718797}.pedia-skill-meta:empty{display:none}html.dark-theme .pedia-skill-meta{color:#93a2b9}',
     '.pedia-skill-close{width:32px;height:32px;border:1px solid #bfd5df;border-radius:8px;background:#fff;color:#60798a;font-size:20px;cursor:pointer}',
     'html.dark-theme .pedia-skill-close{background:#0d1525;border-color:#344660;color:#cbd7e8}',
     '.pedia-skill-body{padding:15px}',
@@ -80,67 +80,71 @@ const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
-function buildSkillLevels(detail){
-  if(!detail)return [];
-  const desc=String(detail.description_localkey||'').replace(/<\/?(?:color|word_group)(?:=[^>]*)?>/g,'').replace(/\\xC2\\xA0/g,' ');
-  const list=Array.isArray(detail.description_value_list)?detail.description_value_list:[];
-  const maxLevel=Math.max(1,...list.map(x=>Array.isArray(x?.description_value)?x.description_value.length:0));
-  const levels=[];
-  for(let lv=1;lv<=Math.min(maxLevel,10);lv++){
-    let text=desc;
-    list.forEach((entry,index)=>{
-      const vals=Array.isArray(entry?.description_value)?entry.description_value:[];
-      const value=vals[Math.min(lv-1,vals.length-1)];
-      if(value!=null){
-        text=text.split('{description_value_'+String(index+1).padStart(2,'0')+'}').join(String(value));
-      }
-    });
-    levels.push({level:lv,text:text.trim()});
-  }
-  return levels;
+
+function renderSkillTemplate(template, values){
+  let text=String(template==null?'':template);
+  const vals=Array.isArray(values)?values:[];
+  vals.forEach((value,index)=>{
+    text=text.split('{'+index+'}').join(String(value==null?'':value));
+  });
+  return text;
 }
-function skillLabel(key,detail){
-  if(!detail)return key;
-  return String(detail.name_localkey||key).trim()||key;
-}
-async function loadRapiSkillData(){
+
+async function loadPediaSkillData(){
   if(pediaSkillCache)return pediaSkillCache;
   const res=await fetch(PEDIA_SKILL_DATA_URL,{cache:'force-cache'});
   if(!res.ok)throw new Error('내부 스킬 데이터 요청 실패: HTTP '+res.status);
-  const all=await res.json();
-  const data=all?.['라피'];
-  if(!data||!data.skill1||!data.skill2||!data.burst)throw new Error('라피의 내부 스킬 데이터가 없습니다.');
+  const data=await res.json();
+  if(!data||typeof data!=='object')throw new Error('내부 스킬 데이터 형식이 올바르지 않습니다.');
   pediaSkillCache=data;
   return data;
 }
+
 function ensureSkillModal(){
   let modal=document.getElementById('pediaSkillModal');
   if(modal)return modal;
   modal=document.createElement('div');
   modal.id='pediaSkillModal';
   modal.className='pedia-skill-modal';
-  modal.innerHTML='<div class="pedia-skill-dialog" role="dialog" aria-modal="true"><div class="pedia-skill-head"><h3 id="pediaSkillTitle">니케 스킬</h3><button type="button" class="pedia-skill-close" aria-label="닫기">×</button></div><div class="pedia-skill-body" id="pediaSkillBody"><div class="pedia-skill-loading">스킬 데이터를 불러오는 중…</div></div></div>';
+  modal.innerHTML='<div class="pedia-skill-dialog" role="dialog" aria-modal="true"><div class="pedia-skill-head"><div><h3 id="pediaSkillTitle">니케 스킬</h3><div id="pediaSkillMeta" class="pedia-skill-meta"></div></div><button type="button" class="pedia-skill-close" aria-label="닫기">×</button></div><div class="pedia-skill-body" id="pediaSkillBody"><div class="pedia-skill-loading">스킬 데이터를 불러오는 중…</div></div></div>';
   document.body.appendChild(modal);
   modal.querySelector('.pedia-skill-close').addEventListener('click',()=>modal.classList.remove('open'));
   modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open')});
   return modal;
 }
-function renderRapiSkills(data){
+
+function renderPediaSkills(name,data){
   const modal=ensureSkillModal();
   const body=modal.querySelector('#pediaSkillBody');
-  modal.querySelector('#pediaSkillTitle').textContent='라피 · 스킬 정보';
-  const groups=[
-    ['스킬 1',data.skill1],
-    ['스킬 2',data.skill2],
-    ['버스트',data.burst]
-  ];
-  body.innerHTML=groups.map(([title,detail])=>{
-    const levels=Array.isArray(detail.levels)?detail.levels.map((text,i)=>({level:i+1,text:String(text||'')})):[];
-    return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(title)+' · '+escText(detail.name||'')+'</span><span class="pedia-skill-card-meta">'+(detail.cooltime!=null?'쿨타임 '+Number(detail.cooltime).toFixed(1)+'s':'')+'</span></div><div class="pedia-skill-levels">'+levels.map((x,i)=>'<button type="button" class="pedia-skill-level-btn'+(i===0?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';
+  const title=modal.querySelector('#pediaSkillTitle');
+  const meta=modal.querySelector('#pediaSkillMeta');
+  const skills=data?.k||{};
+  title.textContent=name+' · 스킬 정보';
+  const metaParts=[];
+  if(data?.co)metaParts.push(String(data.co));
+  if(data?.c)metaParts.push(String(data.c));
+  if(data?.e)metaParts.push(String(data.e));
+  if(data?.b)metaParts.push('버스트 '+String(data.b));
+  meta.textContent=metaParts.join(' · ');
+
+  const entries=Object.entries(skills).slice(0,3);
+  if(!entries.length){
+    body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';
+    modal.classList.add('open');
+    return;
+  }
+
+  body.innerHTML=entries.map(([skillName,detail],index)=>{
+    const levels=Array.isArray(detail?.v)?detail.v.map((values,lv)=>({level:lv+1,text:renderSkillTemplate(detail.t,values)})):[];
+    const cooltime=detail?.c!=null?'쿨타임 '+Number(detail.c).toFixed(1)+'s':'';
+    const badge=index===2?'버스트':('스킬 '+(index+1));
+    return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(skillName)+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map((x,i)=>'<button type="button" class="pedia-skill-level-btn'+(i===0?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';
   }).join('');
+
   body.querySelectorAll('.pedia-skill-card').forEach((card,index)=>{
-    const levels=Array.isArray(groups[index][1].levels)?groups[index][1].levels.map((text,i)=>({level:i+1,text:String(text||'')})):[];
+    const detail=entries[index]?.[1];
+    const levels=Array.isArray(detail?.v)?detail.v.map((values,lv)=>({level:lv+1,text:renderSkillTemplate(detail.t,values)})):[];
     const desc=card.querySelector('[data-skill-levels]');
     card.querySelectorAll('.pedia-skill-level-btn').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -153,18 +157,22 @@ function renderRapiSkills(data){
   });
   modal.classList.add('open');
 }
-async function openRapiSkillTest(){
+
+async function openPediaSkill(name){
   const modal=ensureSkillModal();
   modal.classList.add('open');
   const body=modal.querySelector('#pediaSkillBody');
-  body.innerHTML='<div class="pedia-skill-loading">사이트에 저장된 라피의 스킬 정보를 불러오는 중…</div>';
+  body.innerHTML='<div class="pedia-skill-loading">사이트에 저장된 '+escText(name)+'의 스킬 정보를 불러오는 중…</div>';
   try{
-    const data=await loadRapiSkillData();
-    renderRapiSkills(data);
+    const all=await loadPediaSkillData();
+    const data=all?.[name];
+    if(!data)throw new Error(name+'의 스킬 정보가 없습니다.');
+    renderPediaSkills(name,data);
   }catch(err){
     body.innerHTML='<div class="pedia-skill-status error">'+escText(err?.message||'스킬 데이터를 불러오지 못했습니다.')+'</div>';
   }
 }
+
 
 function ensureNav(){
   const nav=document.querySelector('.nav');
@@ -211,20 +219,18 @@ function renderPedia(text){
   if(!grid||!count)return;
   const q=String(text??'').trim().toLowerCase();
   const list=pediaItems.filter(x=>!q||x.name.toLowerCase().includes(q));
-  count.textContent=list.length+' / '+pediaItems.length+'명';
+  count.textContent=list.length+' / '+pediaItems.length+'명 · 스킬 정보 저장됨';
   if(!list.length){grid.innerHTML='<div class="pedia-empty">검색 결과가 없습니다.</div>';return;}
-  grid.innerHTML=list.map((item,index)=>{
+  grid.innerHTML=list.map(item=>{
     const image=String(item.image||'').trim();
     const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';
-    const isRapi=item.name==='라피';
-    return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'"'+(isRapi?' title="클릭하면 BlablaLink 스킬 정보를 1회 조회합니다."':'')+'><div class="pedia-image-box">'+media+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div>'+(isRapi?'<span class="pedia-skill-badge">스킬 테스트</span>':'')+'</article>';
+    return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';
   }).join('');
   grid.querySelectorAll('.pedia-card').forEach(card=>{
-    card.addEventListener('click',()=>{
-      if(card.dataset.pediaName==='라피')openRapiSkillTest();
-    });
+    card.addEventListener('click',()=>openPediaSkill(card.dataset.pediaName||''));
   });
 }
+
 function showPedia(){
   const panel=document.getElementById('pediaPanel');if(!panel)return;
   panel.hidden=false;
