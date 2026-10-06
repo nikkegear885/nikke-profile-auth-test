@@ -4380,7 +4380,7 @@ html.dark-theme .name-cell-image{
   text-overflow:ellipsis!important;
 }
 </style></style></style></style></head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.012</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.013</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" style="background:#fff1dc!important;border:1px solid #e5a14f!important;color:#a85f16!important;box-shadow:0 2px 8px rgba(214,142,50,.16)!important;font-weight:900!important" onclick="openBlablalinkSyncGuide()">계정 동기화</button><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -5271,7 +5271,8 @@ function renderTable(){
     g.parts.forEach((x,idx)=>{const part=gearParts[idx];gearCells[part]=`<button type="button" class="gear-part ${x.type}" title="${part} · ${x.label} · 클릭하여 변경" onclick="event.stopPropagation();openQuickGearEditor(${i},'${part}')"><span class="part-name">${part}</span><span class="part-state">${x.label}</span></button>`});
     const cells={
       선택:`<button type="button" class="valid-toggle ${selectedCharacters.has(i)?'active':''}" onclick="event.stopPropagation();toggleCharacterSelection(${i},${selectedCharacters.has(i)?'false':'true'})" aria-label="${esc(r['이름'])} 유효 여부">유효</button>`,
-      이름:`<div class="name-cell-wrap">${NIKKE_PEDIA_IMAGES[String(r['이름']??'').trim()]?`<img class="name-cell-image" loading="lazy" src="${esc(NIKKE_PEDIA_IMAGES[String(r['이름']??'').trim()])}" alt="" onerror="this.style.display='none'">`:''}<button type="button" class="name-btn" onclick="openDrawer(${i})">${esc(r['이름'])}</button></div>`,
+      사진:(()=>{const src=NIKKE_PEDIA_IMAGES[String(r['이름']??'').trim()]||'';return src?`<div class="character-image-cell"><img class="character-image-column-img" loading="lazy" src="${esc(src)}" alt="" onerror="this.style.display='none'"></div>`:'<div class="character-image-cell character-image-empty">-</div>';})(),
+      이름:`<button type="button" class="name-btn" onclick="openDrawer(${i})">${esc(r['이름'])}</button>`,
       미사용:(()=>{const st=characterStatusState(i,r);const label=st==='unowned'?'미보유':'미사용';return `<button type="button" class="unused-status-toggle ${st==='unused'?'active':''} ${st==='unowned'?'unowned':''}" onclick="event.stopPropagation();toggleCharacterStatus(${i})" aria-label="${esc(r['이름'])} 상태 변경">${label}</button>`})(),
 
       머리:gearCells['머리'], 몸통:gearCells['몸통'], 장갑:gearCells['장갑'], 다리:gearCells['다리'],
@@ -5286,18 +5287,18 @@ function renderTable(){
       옵션:`${opts}개`,
       큐브:r['큐브']?esc(r['큐브'])+' '+esc(r['큐브_레벨']??''): '<span class="muted">없음</span>'
     };
-    return `<tr>${visibleColumnOrder().map(k=>`<td class="${gearParts.includes(k)?'gear-single-cell ':''}${k==='이름'?'name-column-cell':''}">${cells[k]??''}</td>`).join('')}</tr>`;
+    return `<tr>${visibleColumnOrder().map(k=>`<td class="${gearParts.includes(k)?'gear-single-cell ':''}${k==='이름'?'name-column-cell ':''}${k==='사진'?'character-image-column-cell':''}">${cells[k]??''}</td>`).join('')}</tr>`;
   }).join('');
   updateFilterUI();
   const selectAll=document.querySelector('.row-select-all');
   if(selectAll){const vis=arr.length>0 && arr.every(({i})=>selectedCharacters.has(i)); selectAll.checked=vis; selectAll.indeterminate=!vis && arr.some(({i})=>selectedCharacters.has(i));}
 }
 const COLUMN_DEFS={
-  선택:{label:'유효',filter:true}, 이름:{label:'니케',filter:true}, 미사용:{label:'미사용'}, 머리:{label:'머리',filter:true}, 몸통:{label:'몸통',filter:true}, 장갑:{label:'장갑',filter:true}, 다리:{label:'다리',filter:true},
+  선택:{label:'유효',filter:true}, 사진:{label:'사진'}, 이름:{label:'니케',filter:true}, 미사용:{label:'미사용'}, 머리:{label:'머리',filter:true}, 몸통:{label:'몸통',filter:true}, 장갑:{label:'장갑',filter:true}, 다리:{label:'다리',filter:true},
   전투력:{label:'전투력',filter:true}, 기업:{label:'기업',filter:true}, 속성:{label:'속성',filter:true}, 버스트:{label:'버스트',filter:true}, 클래스:{label:'클래스',filter:true},
   돌파:{label:'돌파'}, 코강:{label:'코강'}, 스킬:{label:'스킬'}
 };
-const DEFAULT_COLUMN_ORDER=['선택','이름','기업','클래스','머리','몸통','장갑','다리','전투력','속성','버스트','돌파','코강','스킬','미사용'];
+const DEFAULT_COLUMN_ORDER=['선택','사진','이름','기업','클래스','머리','몸통','장갑','다리','전투력','속성','버스트','돌파','코강','스킬','미사용'];
 const COLUMN_ORDER_STORAGE='nikke_column_order_v2';
 const COLUMN_VISIBILITY_STORAGE='nikke_column_visibility_v1';
 const DETAIL_COLUMNS=['전투력','버스트','속성','돌파','코강','스킬'];
@@ -5613,6 +5614,15 @@ try{
     fixed.splice(nameIdx>=0?nameIdx+1:0,0,'기업','클래스');
     columnOrder=['선택',...fixed.filter(k=>k!=='선택'&&k!=='미사용'),'미사용'].filter((k,i,a)=>a.indexOf(k)===i&&COLUMN_DEFS[k]);
     localStorage.setItem(COLUMN_LAYOUT_MIGRATION,'company-class-after-name');
+    localStorage.setItem(COLUMN_ORDER_STORAGE,JSON.stringify(columnOrder));
+  }
+}catch(e){}
+const COLUMN_IMAGE_LAYOUT_MIGRATION='character-image-column-v1';
+try{
+  const next=columnOrder.filter(k=>k!=='사진'&&k!=='선택');
+  columnOrder=['선택','사진',...next.filter(k=>k!=='미사용'),'미사용'].filter((k,i,a)=>a.indexOf(k)===i&&COLUMN_DEFS[k]);
+  if(localStorage.getItem(COLUMN_IMAGE_LAYOUT_MIGRATION)!=='insert-photo-after-valid'){
+    localStorage.setItem(COLUMN_IMAGE_LAYOUT_MIGRATION,'insert-photo-after-valid');
     localStorage.setItem(COLUMN_ORDER_STORAGE,JSON.stringify(columnOrder));
   }
 }catch(e){}
@@ -6602,7 +6612,58 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.009"></script><script src="pedia.js?v=006"></script></body></html>
+</style><script src="profile-import-button.js?v=1.009"></script><script src="pedia.js?v=006"></script><style id="character-image-column-v004">
+/* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
+#characterPanel th[data-column-key="사진"],
+#characterPanel td.character-image-column-cell{
+  width:52px!important;
+  min-width:52px!important;
+  max-width:52px!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+  text-align:center!important;
+  box-sizing:border-box!important;
+}
+#characterPanel .character-image-cell{
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  max-width:38px!important;
+  max-height:38px!important;
+  margin:0 auto!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  border-radius:7px!important;
+  background:#edf4f8!important;
+  border:1px solid #cbdde6!important;
+  box-sizing:border-box!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  color:#7890a0!important;
+}
+#characterPanel .character-image-column-img{
+  display:block!important;
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  max-width:38px!important;
+  max-height:38px!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  margin:0!important;
+}
+html.dark-theme #characterPanel .character-image-cell{
+  background:#0c1422!important;
+  border-color:#354761!important;
+  color:#8195ac!important;
+}
+#characterPanel td.name-column-cell .name-btn{
+  margin:0!important;
+}
+</style></body></html>
 <style id="common-unused-power-sort-0356">
 /* v0.356: 미사용 일괄적용 창 바깥 클릭으로 닫기 지원 */
 </style>
