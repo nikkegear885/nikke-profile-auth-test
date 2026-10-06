@@ -2765,14 +2765,7 @@ html.dark-theme .kpi{
   background:#101827!important;
 }
 </style>
-<script>(function(){try{
-  if(localStorage.getItem('nikke_theme_v1')==='dark')document.documentElement.classList.add('dark-theme');
-  var bg=localStorage.getItem('nikke_custom_background_v1');
-  if(bg){
-    document.documentElement.classList.add('custom-photo-bg');
-    document.documentElement.style.setProperty('--nikke-custom-bg-image','url("'+bg+'")');
-  }
-}catch(e){}})();</script><style id="v0369-dark-theme-complete">
+<script>(function(){try{if(localStorage.getItem('nikke_theme_v1')==='dark')document.documentElement.classList.add('dark-theme')}catch(e){}})();</script><style id="v0369-dark-theme-complete">
 /* v0.369: 다크 모드 내부 요소 전체 보강 */
 html.dark-theme .nav button{
   background:#111b2b!important;
@@ -4386,131 +4379,11 @@ html.dark-theme .name-cell-image{
   overflow:hidden!important;
   text-overflow:ellipsis!important;
 }
-</style></style></style></style><style id="custom-background-photo-v0440">
-/* 사용자 지정 배경 사진 */
-html.custom-photo-bg body{
-  background-image:
-    linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)),
-    var(--nikke-custom-bg-image),
-    linear-gradient(180deg,#f1f8fc 0%,#e4f1f8 52%,#d8eaf4 100%) !important;
-  background-position:center,center,center !important;
-  background-size:cover,cover,cover !important;
-  background-repeat:no-repeat,no-repeat,no-repeat !important;
-  background-attachment:fixed,fixed,fixed !important;
-}
-html.dark-theme.custom-photo-bg body{
-  background-image:
-    linear-gradient(rgba(5,9,16,.48),rgba(5,9,16,.48)),
-    var(--nikke-custom-bg-image),
-    linear-gradient(180deg,#0a101b 0%,#080d16 55%,#070b13 100%) !important;
-}
-html.custom-photo-bg body::before,
-html.custom-photo-bg body::after,
-html.dark-theme.custom-photo-bg body::before,
-html.dark-theme.custom-photo-bg body::after{opacity:.10 !important}
-.custom-bg-section{display:flex;flex-direction:column;gap:9px}
-.custom-bg-preview{width:100%;height:92px;border:1px solid #bfd5df;border-radius:10px;overflow:hidden;background:#e7f3f9}
-.custom-bg-preview img{display:block;width:100%;height:100%;object-fit:cover}
-.custom-bg-preview-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#72879a;font-size:11px;font-weight:800}
-.custom-bg-actions{display:flex;gap:7px}
-.custom-bg-actions .settings-action{flex:1;margin:0!important}
-.custom-bg-note{margin:0;color:#7a8e9e;font-size:9px;line-height:1.45}
-.custom-bg-top-btn{
-  width:auto!important;min-width:36px!important;height:36px!important;padding:0 10px!important;
-  border:1px solid #8fc3d9!important;border-radius:8px!important;
-  background:#e7f5fb!important;color:#347a9e!important;font-size:15px!important;font-weight:900!important;
-  line-height:36px!important;margin:0!important;
-}
-.custom-bg-top-btn:hover{background:#d7eef8!important;border-color:#63a9ca!important;color:#2d6d8e!important}
-html.dark-theme .custom-bg-preview{border-color:#344660;background:#142438}
-html.dark-theme .custom-bg-preview-empty,
-html.dark-theme .custom-bg-note{color:#8b9ab4}
-html.dark-theme .custom-bg-section .settings-action{
-  background:#0f1827!important;color:#dce6f3!important;border-color:#344660!important;
-}
-html.dark-theme .custom-bg-section .settings-action:hover{background:#18253a!important}
-html.dark-theme .custom-bg-top-btn{
-  background:#142438!important;border-color:#48698d!important;color:#b9dbff!important;
-}
-html.dark-theme .custom-bg-top-btn:hover{background:#1a3049!important;border-color:#6b96c2!important;color:#d7ecff!important}
-</style><style id="custom-background-fullscreen-v0441">
-/* v1.015: 사용자 지정 배경을 화면 전체 고정 레이어로 표시 */
-html.custom-photo-bg{
-  min-height:100%;
-  background-image:
-    linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.10)),
-    var(--nikke-custom-bg-image) !important;
-  background-position:center center !important;
-  background-size:cover !important;
-  background-repeat:no-repeat !important;
-  background-attachment:fixed !important;
-  background-color:#d8eaf4 !important;
-}
-html.dark-theme.custom-photo-bg{
-  background-image:
-    linear-gradient(rgba(5,9,16,.42),rgba(5,9,16,.42)),
-    var(--nikke-custom-bg-image) !important;
-  background-color:#070b13 !important;
-}
-html.custom-photo-bg body,
-html.dark-theme.custom-photo-bg body{
-  background:transparent !important;
-  background-image:none !important;
-}
-html.custom-photo-bg .app,
-html.custom-photo-bg .main{
-  background:transparent !important;
-}
-html.custom-photo-bg .topbar{
-  background:rgba(248,252,255,.82) !important;
-  backdrop-filter:blur(10px) saturate(1.03) !important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.03) !important;
-}
-html.custom-photo-bg .panel,
-html.custom-photo-bg #characterPanel,
-html.custom-photo-bg .drop-rate-accordion,
-html.custom-photo-bg .sole-score-card,
-html.custom-photo-bg #outpostPanel{
-  background:rgba(248,252,255,.78) !important;
-  backdrop-filter:blur(8px) saturate(1.02) !important;
-  -webkit-backdrop-filter:blur(8px) saturate(1.02) !important;
-}
-html.custom-photo-bg .kpi{
-  background:rgba(244,249,252,.76) !important;
-  backdrop-filter:blur(8px) saturate(1.02) !important;
-  -webkit-backdrop-filter:blur(8px) saturate(1.02) !important;
-}
-html.custom-photo-bg .sidebar{
-  background:rgba(247,251,254,.86) !important;
-  backdrop-filter:blur(12px) saturate(1.04) !important;
-  -webkit-backdrop-filter:blur(12px) saturate(1.04) !important;
-}
-html.dark-theme.custom-photo-bg .topbar,
-html.dark-theme.custom-photo-bg .panel,
-html.dark-theme.custom-photo-bg #characterPanel,
-html.dark-theme.custom-photo-bg .drop-rate-accordion,
-html.dark-theme.custom-photo-bg .sole-score-card,
-html.dark-theme.custom-photo-bg #outpostPanel,
-html.dark-theme.custom-photo-bg .kpi{
-  background:rgba(14,22,37,.78) !important;
-}
-html.dark-theme.custom-photo-bg .sidebar{
-  background:rgba(10,16,27,.82) !important;
-}
-@media(max-width:650px){
-  html.custom-photo-bg .topbar,
-  html.custom-photo-bg .panel,
-  html.custom-photo-bg #characterPanel,
-  html.custom-photo-bg #kpis{
-    backdrop-filter:blur(6px) !important;
-    -webkit-backdrop-filter:blur(6px) !important;
-  }
-}
-</style></head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.015</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
+</style></style></style></style></head><body>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.016</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
-<main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" style="background:#fff1dc!important;border:1px solid #e5a14f!important;color:#a85f16!important;box-shadow:0 2px 8px rgba(214,142,50,.16)!important;font-weight:900!important" onclick="openBlablalinkSyncGuide()">계정 동기화</button><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="custom-bg-top-btn" id="customBgTopBtn" aria-label="배경 사진 변경" title="배경 사진 변경" onclick="chooseCustomBackgroundImage()">🖼️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
+<main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" style="background:#fff1dc!important;border:1px solid #e5a14f!important;color:#a85f16!important;box-shadow:0 2px 8px rgba(214,142,50,.16)!important;font-weight:900!important" onclick="openBlablalinkSyncGuide()">계정 동기화</button><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
   <h4>설정 · 데이터</h4>
   <div class="settings-section-title">계정 이름</div>
   <div class="account-name-editor">
@@ -6804,95 +6677,7 @@ html.dark-theme #characterPanel .character-image-cell{
 #characterPanel td.name-column-cell .name-btn{
   margin:0!important;
 }
-</style><script id="custom-background-photo-js-v0440">
-const CUSTOM_BACKGROUND_STORAGE='nikke_custom_background_v1';
-function updateCustomBackgroundUI(dataUrl){
-  const img=document.getElementById('customBgPreviewImage');
-  const empty=document.getElementById('customBgPreviewEmpty');
-  if(img){
-    if(dataUrl){img.src=dataUrl;img.hidden=false}
-    else{img.removeAttribute('src');img.hidden=true}
-  }
-  if(empty)empty.hidden=!!dataUrl;
-}
-function applyCustomBackgroundImage(dataUrl,showToast=true){
-  const root=document.documentElement;
-  if(dataUrl){
-    root.classList.add('custom-photo-bg');
-    root.style.setProperty('--nikke-custom-bg-image','url("'+dataUrl+'")');
-    try{localStorage.setItem(CUSTOM_BACKGROUND_STORAGE,dataUrl)}
-    catch(e){
-      root.classList.remove('custom-photo-bg');
-      root.style.removeProperty('--nikke-custom-bg-image');
-      if(showToast)toast('사진 저장 공간이 부족합니다. 더 작은 사진으로 다시 시도해주세요.');
-      return false;
-    }
-  }else{
-    root.classList.remove('custom-photo-bg');
-    root.style.removeProperty('--nikke-custom-bg-image');
-    try{localStorage.removeItem(CUSTOM_BACKGROUND_STORAGE)}catch(e){}
-  }
-  updateCustomBackgroundUI(dataUrl||'');
-  if(showToast)toast(dataUrl?'배경 사진이 적용되었습니다.':'기본 배경으로 복원되었습니다.');
-  return true;
-}
-function chooseCustomBackgroundImage(){
-  const input=document.getElementById('customBgFileInput');
-  if(input){input.value='';input.click()}
-}
-function clearCustomBackgroundImage(){applyCustomBackgroundImage('')}
-function prepareCustomBackgroundImage(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onerror=()=>reject(new Error('사진을 읽지 못했습니다.'));
-    reader.onload=()=>{
-      const img=new Image();
-      img.onerror=()=>reject(new Error('지원하지 않는 사진 형식입니다.'));
-      img.onload=()=>{
-        try{
-          const maxSide=1920;
-          const sourceW=img.naturalWidth||img.width;
-          const sourceH=img.naturalHeight||img.height;
-          const scale=Math.min(1,maxSide/Math.max(sourceW,sourceH));
-          const w=Math.max(1,Math.round(sourceW*scale));
-          const h=Math.max(1,Math.round(sourceH*scale));
-          const canvas=document.createElement('canvas');
-          canvas.width=w;canvas.height=h;
-          const ctx=canvas.getContext('2d',{alpha:false});
-          if(!ctx)throw new Error('사진 처리 기능을 사용할 수 없습니다.');
-          ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
-          ctx.drawImage(img,0,0,w,h);
-          let quality=.82;
-          let data=canvas.toDataURL('image/jpeg',quality);
-          while(data.length>3800000 && quality>.55){
-            quality-=.07;
-            data=canvas.toDataURL('image/jpeg',quality);
-          }
-          if(data.length>4200000)throw new Error('사진 용량이 너무 큽니다.');
-          resolve(data);
-        }catch(err){reject(err)}
-      };
-      img.src=reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-document.getElementById('customBgFileInput')?.addEventListener('change',async e=>{
-  const file=e.target.files?.[0];
-  if(!file)return;
-  try{
-    if(!file.type.startsWith('image/'))throw new Error('이미지 파일만 선택할 수 있습니다.');
-    toast('배경 사진을 준비하는 중…');
-    const dataUrl=await prepareCustomBackgroundImage(file);
-    applyCustomBackgroundImage(dataUrl);
-  }catch(err){
-    toast(String(err?.message||'배경 사진을 적용하지 못했습니다.'));
-  }
-});
-window.addEventListener('DOMContentLoaded',()=>{
-  try{updateCustomBackgroundUI(localStorage.getItem(CUSTOM_BACKGROUND_STORAGE)||'')}catch(e){}
-});
-</script></body></html>
+</style></body></html>
 <style id="common-unused-power-sort-0356">
 /* v0.356: 미사용 일괄적용 창 바깥 클릭으로 닫기 지원 */
 </style>
