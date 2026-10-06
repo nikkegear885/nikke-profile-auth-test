@@ -57,7 +57,7 @@ function ensureNav(){
   btn.addEventListener('click',()=>window.switchMainView?.('pedia'));
   btnWrap.appendChild(btn);
   const section=sidebar.querySelector('.section');
-  if(section) section.insertAdjacentElement('afterend',btnWrap);
+  if(section) section.insertAdjacentElement('beforebegin',btnWrap);
   else sidebar.appendChild(btnWrap);
 }
 
