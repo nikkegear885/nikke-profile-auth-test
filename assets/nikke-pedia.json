@@ -29,7 +29,7 @@
   },
   {
     "name": "아이기스",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c872_00_s.png"
   },
   {
     "name": "레오나",
@@ -317,7 +317,7 @@
   },
   {
     "name": "유키코",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c871_00_s.png"
   },
   {
     "name": "라플라스 : 얼티밋 히어로",
@@ -433,7 +433,7 @@
   },
   {
     "name": "프리카",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c601_00_s.png"
   },
   {
     "name": "비스킷",
@@ -465,7 +465,7 @@
   },
   {
     "name": "퀸(마코토)",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c870_00_s.png"
   },
   {
     "name": "민트",
@@ -497,7 +497,7 @@
   },
   {
     "name": "백학",
-    "image": ""
+    "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c620_00_s.png"
   },
   {
     "name": "마나",
