@@ -4296,6 +4296,64 @@ html.dark-theme .name-cell-image{
   white-space:nowrap!important;
   line-height:1.2!important;
 }
+</style><style id="character-name-image-layout-fix-v003">
+/* 테스트 v3: 이름 칸 폭을 줄이고 이미지/이름을 강제로 한 줄 중앙정렬 */
+#characterPanel td.name-column-cell{
+  width:190px!important;
+  min-width:190px!important;
+  max-width:190px!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+}
+#characterPanel .name-cell-wrap{
+  display:grid!important;
+  grid-template-columns:32px max-content!important;
+  align-items:center!important;
+  justify-content:center!important;
+  column-gap:7px!important;
+  width:100%!important;
+  min-height:32px!important;
+  height:32px!important;
+  margin:0!important;
+  padding:0!important;
+  white-space:nowrap!important;
+  vertical-align:middle!important;
+}
+#characterPanel .name-cell-wrap .name-cell-image{
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  min-height:32px!important;
+  max-width:32px!important;
+  max-height:32px!important;
+  display:block!important;
+  margin:0!important;
+  align-self:center!important;
+}
+#characterPanel .name-cell-wrap .name-btn{
+  width:auto!important;
+  min-width:0!important;
+  max-width:145px!important;
+  height:32px!important;
+  min-height:32px!important;
+  padding:0!important;
+  margin:0!important;
+  display:block!important;
+  align-self:center!important;
+  line-height:32px!important;
+  white-space:nowrap!important;
+  text-align:left!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+@media(min-width:651px){
+  #characterPanel .panel-head,
+  #characterPanel .quick-filter-bar,
+  #characterPanel .table-wrap{
+    margin-left:-6px;
+    margin-right:-6px;
+  }
+}
 </style></style></style></head><body>
 <div class="site-version-corner" id="siteVersionCorner">VERSION 1.009</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
@@ -5188,7 +5246,7 @@ function renderTable(){
     g.parts.forEach((x,idx)=>{const part=gearParts[idx];gearCells[part]=`<button type="button" class="gear-part ${x.type}" title="${part} · ${x.label} · 클릭하여 변경" onclick="event.stopPropagation();openQuickGearEditor(${i},'${part}')"><span class="part-name">${part}</span><span class="part-state">${x.label}</span></button>`});
     const cells={
       선택:`<button type="button" class="valid-toggle ${selectedCharacters.has(i)?'active':''}" onclick="event.stopPropagation();toggleCharacterSelection(${i},${selectedCharacters.has(i)?'false':'true'})" aria-label="${esc(r['이름'])} 유효 여부">유효</button>`,
-      이름:`<span class="name-cell-wrap">${NIKKE_PEDIA_IMAGES[String(r['이름']??'').trim()]?`<img class="name-cell-image" loading="lazy" src="${esc(NIKKE_PEDIA_IMAGES[String(r['이름']??'').trim()])}" alt="" onerror="this.style.display='none'">`:''}<button class="name-btn" onclick="openDrawer(${i})">${esc(r['이름'])}</button></span>`,
+      이름:`<div class="name-cell-wrap">${NIKKE_PEDIA_IMAGES[String(r['이름']??'').trim()]?`<img class="name-cell-image" loading="lazy" src="${esc(NIKKE_PEDIA_IMAGES[String(r['이름']??'').trim()])}" alt="" onerror="this.style.display='none'">`:''}<button type="button" class="name-btn" onclick="openDrawer(${i})">${esc(r['이름'])}</button></div>`,
       미사용:(()=>{const st=characterStatusState(i,r);const label=st==='unowned'?'미보유':'미사용';return `<button type="button" class="unused-status-toggle ${st==='unused'?'active':''} ${st==='unowned'?'unowned':''}" onclick="event.stopPropagation();toggleCharacterStatus(${i})" aria-label="${esc(r['이름'])} 상태 변경">${label}</button>`})(),
 
       머리:gearCells['머리'], 몸통:gearCells['몸통'], 장갑:gearCells['장갑'], 다리:gearCells['다리'],
@@ -5203,7 +5261,7 @@ function renderTable(){
       옵션:`${opts}개`,
       큐브:r['큐브']?esc(r['큐브'])+' '+esc(r['큐브_레벨']??''): '<span class="muted">없음</span>'
     };
-    return `<tr>${visibleColumnOrder().map(k=>`<td class="${gearParts.includes(k)?'gear-single-cell':''}">${cells[k]??''}</td>`).join('')}</tr>`;
+    return `<tr>${visibleColumnOrder().map(k=>`<td class="${gearParts.includes(k)?'gear-single-cell ':''}${k==='이름'?'name-column-cell':''}">${cells[k]??''}</td>`).join('')}</tr>`;
   }).join('');
   updateFilterUI();
   const selectAll=document.querySelector('.row-select-all');
