@@ -1,0 +1,92 @@
+from pathlib import Path
+
+p = Path('pedia.js')
+s = p.read_text(encoding='utf-8')
+s = s.replace("assets/nikke-skills.json?v=1030", "assets/nikke-skills.json?v=1031")
+patch = r'''
+
+// v1.031: 도감 목록 등급 색상 + 버스트 단계 배지
+(function(){
+  const STYLE_ID='pedia-rarity-burst-v1031';
+  function addStyle(){
+    if(document.getElementById(STYLE_ID)) return;
+    const st=document.createElement('style'); st.id=STYLE_ID;
+    st.textContent=`
+      .pedia-card.pedia-rarity-SSR{border:2px solid #d6a928!important;background:linear-gradient(180deg,#fff9df 0%,#fffdf4 58%,#fff 100%)!important;box-shadow:0 4px 14px rgba(214,169,40,.16)!important}
+      .pedia-card.pedia-rarity-SR{border:2px solid #9a68c7!important;background:linear-gradient(180deg,#f7edff 0%,#fcf8ff 58%,#fff 100%)!important;box-shadow:0 4px 14px rgba(154,104,199,.15)!important}
+      .pedia-card.pedia-rarity-R{border:2px solid #5f9fca!important;background:linear-gradient(180deg,#eaf7ff 0%,#f7fcff 58%,#fff 100%)!important;box-shadow:0 4px 14px rgba(95,159,202,.14)!important}
+      html.dark-theme .pedia-card.pedia-rarity-SSR{background:linear-gradient(180deg,#3a3218 0%,#211d12 58%,#151f31 100%)!important;border-color:#d6a928!important}
+      html.dark-theme .pedia-card.pedia-rarity-SR{background:linear-gradient(180deg,#30213b 0%,#20182a 58%,#151f31 100%)!important;border-color:#9a68c7!important}
+      html.dark-theme .pedia-card.pedia-rarity-R{background:linear-gradient(180deg,#1b3345 0%,#142632 58%,#151f31 100%)!important;border-color:#5f9fca!important}
+      .pedia-card-actions{display:flex;align-items:center;gap:6px;padding:0 10px 10px;flex-wrap:wrap}
+      .pedia-card-actions .pedia-skill-badge{margin:0!important}
+      .pedia-burst-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border:1px solid #bfd5df;border-radius:6px;background:#eef7fb;color:#347fa7;font-size:9px;font-weight:900;white-space:nowrap}
+      html.dark-theme .pedia-burst-badge{background:#142438;border-color:#344660;color:#a9d4ff}
+    `;
+    document.head.appendChild(st);
+  }
+  function norm(v){return String(v??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"`\-–—()\[\]{}]/g,'');}
+  let cache=null;
+  async function data(){
+    if(cache) return cache;
+    try{const r=await fetch('assets/nikke-skills.json?v=1031',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+  }
+  function find(all,name,id){
+    if(!all||typeof all!=='object') return null;
+    const n=Number(id);
+    if(Number.isFinite(n)){const x=Object.values(all).find(v=>v&&Number(v.i)===n);if(x)return x;}
+    if(all[name]) return all[name];
+    const w=norm(name); const hit=Object.entries(all).find(([k,v])=>norm(k)===w||norm(v?.name)===w); return hit?hit[1]:null;
+  }
+  async function decorate(){
+    addStyle();
+    const grid=document.getElementById('pediaGrid'); if(!grid) return;
+    const all=await data(); if(!all) return;
+    grid.querySelectorAll('.pedia-card').forEach(card=>{
+      const d=find(all,card.dataset.pediaName||'',card.dataset.pediaId||'');
+      if(!d) return;
+      const rarity=String(d.r||'').toUpperCase();
+      if(['SSR','SR','R'].includes(rarity)){
+        card.classList.remove('pedia-rarity-SSR','pedia-rarity-SR','pedia-rarity-R');
+        card.classList.add('pedia-rarity-'+rarity);
+      }
+      const burst=String(d.b??'').trim();
+      let actions=card.querySelector('.pedia-card-actions');
+      const oldBadge=card.querySelector('.pedia-skill-badge');
+      if(!actions && oldBadge){
+        actions=document.createElement('div'); actions.className='pedia-card-actions';
+        oldBadge.parentNode.insertBefore(actions,oldBadge); actions.appendChild(oldBadge);
+      }
+      if(actions && burst && !actions.querySelector('.pedia-burst-badge')){
+        const b=document.createElement('span'); b.className='pedia-burst-badge'; b.textContent='버스트 '+burst;
+        actions.appendChild(b);
+      }
+      card.dataset.rarityDecorated='1';
+    });
+  }
+  function init(){
+    addStyle();
+    const grid=document.getElementById('pediaGrid');
+    if(grid){
+      const ob=new MutationObserver(()=>decorate());
+      ob.observe(grid,{childList:true,subtree:true});
+      decorate();
+    } else setTimeout(init,300);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+})();
+'''
+marker = "\n})();"
+if "v1.031: 도감 목록 등급 색상 + 버스트 단계 배지" not in s:
+    idx = s.rfind(marker)
+    if idx < 0:
+        raise SystemExit('pedia.js closing marker not found')
+    s = s[:idx] + patch + s[idx:]
+p.write_text(s,encoding='utf-8')
+
+idx = Path('index.html')
+h = idx.read_text(encoding='utf-8')
+h = h.replace('GitHub Pages deployment refresh 1.030','GitHub Pages deployment refresh 1.031')
+h = h.replace('pedia.js?v=1030','pedia.js?v=1031')
+idx.write_text(h,encoding='utf-8')
+Path('VERSION').write_text('1.031\n',encoding='utf-8')
