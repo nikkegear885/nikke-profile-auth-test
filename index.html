@@ -4087,24 +4087,7 @@ html.dark-theme #kpis,html.dark-theme .drop-rate-accordion-wrap,html.dark-theme 
 <script id="accordion-cleanup-js-v0400">
 (function(){function clean(){if(document.documentElement.classList.contains('dark-theme'))return;var ns=['보유 중인 기업장비 개수','이동가능한 기업장비'];document.querySelectorAll('body *').forEach(function(el){if(el.children.length||!el.textContent)return;var t=el.textContent.replace(/\s+/g,' ').trim();if(!ns.some(function(n){return t.indexOf(n)>=0}))return;var p=el.parentElement;for(var i=0;i<6&&p;i++,p=p.parentElement){var b=getComputedStyle(p).backgroundColor;if(b==='rgb(255, 255, 255)'||b==='rgb(249, 252, 254)'||b==='rgb(248, 252, 255)'){p.style.setProperty('background','transparent','important');p.style.setProperty('border-color','transparent','important');p.style.setProperty('box-shadow','none','important')}}})}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean);else clean();setTimeout(clean,200);setTimeout(clean,800)})();
 </script><meta name="pages-refresh-0435" content="force-pages-refresh">
-<script id="pages-version-sync-0402">
-(function(){
-  async function syncVersion(){
-    try{
-      const r=await fetch('VERSION?cb='+Date.now(),{cache:'no-store'});
-      const v=(await r.text()).trim();
-      if(!/^\d+\.\d{3}$/.test(v)) return;
-      const el=document.getElementById('siteVersionCorner');
-      if(el) el.textContent='VERSION '+v;
-    }catch(e){}
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',syncVersion,{once:true});
-  }else{
-    syncVersion();
-  }
-})();
-</script><style id="light-mode-unused-transfer-cleanup-v0404">
+<style id="light-mode-unused-transfer-cleanup-v0404">
 /* v0.404: 이동가능한 기업장비의 바깥 흰색 래퍼 제거 */
 html:not(.dark-theme) #unusedGearTransferPanel{
   background:transparent!important;
@@ -4578,7 +4561,7 @@ async function loadNikkePediaImages(){
   if(NIKKE_PEDIA_IMAGES_LOADED)return;
   NIKKE_PEDIA_IMAGES_LOADED=true;
   try{
-    const res=await fetch('assets/nikke-pedia.json?cb='+Date.now(),{cache:'no-store'});
+    const res=await fetch('assets/nikke-pedia-master.json',{cache:'force-cache'});
     if(!res.ok)throw new Error('pedia http '+res.status);
     const list=await res.json();
     if(!Array.isArray(list))throw new Error('invalid pedia data');
