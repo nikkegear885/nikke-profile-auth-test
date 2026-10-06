@@ -76,7 +76,7 @@ function injectStyle(){
   document.head.appendChild(style);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1028';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1029';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -94,6 +94,17 @@ async function loadPediaSkillData(){
   if(!res.ok)throw new Error('내부 스킬 데이터 요청 실패: HTTP '+res.status);
   const data=await res.json();
   if(!data||typeof data!=='object')throw new Error('내부 스킬 데이터 형식이 올바르지 않습니다.');
+  Object.values(data).forEach(nikke=>{
+    if(!nikke||typeof nikke!=='object'||!nikke.k||typeof nikke.k!=='object')return;
+    Object.values(nikke.k).forEach(skill=>{
+      if(!skill||typeof skill!=='object')return;
+      if(skill.template==null&&skill.t!=null)skill.template=skill.t;
+      if(skill.values==null&&Array.isArray(skill.v))skill.values=skill.v;
+      if(skill.cooltime==null&&skill.c!=null)skill.cooltime=skill.c;
+      if(skill.info_description==null)skill.info_description=skill.infoDescription??skill.info_desc??skill.info??'';
+      if(skill.icon==null)skill.icon=skill.skill_icon??skill.skillIcon??skill.icon_url??'';
+    });
+  });
   pediaSkillCache=data;
   return data;
 }
