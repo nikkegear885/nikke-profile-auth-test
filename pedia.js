@@ -127,7 +127,7 @@ function ensureSkillModal(){
   return modal;
 }
 
-function cleanSkillTemplate(template){return String(template==null?'':'').replace(/<\/?(?:color|word_group)(?:=[^>]*)?>/gi,'').replace(/\xC2\xA0/g,' ');}
+function cleanSkillTemplate(template){return String(template==null?'':template).replace(/<\/?(?:color|word_group)(?:=[^>]*)?>/gi,'').replace(/\xC2\xA0/g,' ');}
 function getSkillLevels(detail){
   if(!detail)return [];
   const values=Array.isArray(detail.values)?detail.values:[];
