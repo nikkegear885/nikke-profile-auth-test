@@ -76,7 +76,7 @@ function injectStyle(){
   document.head.appendChild(style);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1024';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1025';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -134,6 +134,28 @@ function getSkillLevels(detail){
     text:renderSkillTemplate(detail.template,valuesAtLevel)
   }));
 }
+function normalizeSkillEntries(data){
+  if(!data || typeof data!=='object') return [];
+  if(data.skill1 || data.skill2 || data.burst){
+    return [
+      ['스킬 1',data.skill1],
+      ['스킬 2',data.skill2],
+      ['버스트',data.burst]
+    ].filter(([,detail])=>detail);
+  }
+  // 실제 저장 JSON 구조: k 객체에 스킬 이름이 키로 저장되고
+  // b(버스트 단계)와 순서로 1/2/버스트를 판별합니다.
+  const skills=Object.entries(data.k||{});
+  if(!skills.length) return [];
+  const burstName=skills.length ? skills[skills.length-1][0] : '';
+  const normal=skills.slice(0,2);
+  const entries=normal.map(([skillName,detail],i)=>['스킬 '+(i+1),{...detail,name:skillName}]);
+  if(skills.length>=3){
+    const [skillName,detail]=skills[skills.length-1];
+    entries.push(['버스트',{...detail,name:skillName}]);
+  }
+  return entries;
+}
 function renderPediaSkills(name,data){
   const modal=ensureSkillModal();
   const body=modal.querySelector('#pediaSkillBody');
@@ -142,11 +164,7 @@ function renderPediaSkills(name,data){
   title.textContent=name+' · 스킬 정보';
   if(meta)meta.textContent='사이트 내부 저장 데이터 · 외부 요청 없음';
 
-  const entries=[
-    ['스킬 1',data?.skill1],
-    ['스킬 2',data?.skill2],
-    ['버스트',data?.burst]
-  ].filter(([,detail])=>detail);
+  const entries=normalizeSkillEntries(data);
 
   if(!entries.length){
     body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';
@@ -240,7 +258,7 @@ function renderPedia(text){
   if(!grid||!count)return;
   const q=String(text??'').trim().toLowerCase();
   const list=pediaItems.filter(x=>!q||x.name.toLowerCase().includes(q));
-  count.textContent=list.length+' / '+pediaItems.length+'명 · 스킬 정보 저장됨';
+  count.textContent=list.length+' / '+pediaItems.length+'명';
   if(!list.length){grid.innerHTML='<div class="pedia-empty">검색 결과가 없습니다.</div>';return;}
   grid.innerHTML=list.map(item=>{
     const image=String(item.image||'').trim();
