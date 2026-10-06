@@ -15,6 +15,7 @@ function injectStyle(){
     'html.dark-theme #pediaPanel{background:#101827;border-color:#2d3d58}',
     '.pedia-head{padding:18px 20px;border-bottom:1px solid #d0e2eb;background:#edf7fb}',
     'html.dark-theme .pedia-head{background:#151f31;border-color:#2d3d58}',
+    '.pedia-bottom-nav{margin-top:10px}',
     '.pedia-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}',
     '.pedia-head h3{margin:0;color:#294b5e;font-size:17px;font-weight:900}',
     'html.dark-theme .pedia-head h3{color:#edf3ff}',
@@ -46,12 +47,18 @@ function injectStyle(){
 }
 
 function ensureNav(){
+  const sidebar=document.querySelector('.sidebar');
   const nav=document.querySelector('.nav');
-  if(!nav||nav.querySelector('[data-view="pedia"]'))return;
+  if(!sidebar||!nav||sidebar.querySelector('[data-view="pedia"]'))return;
+  const btnWrap=document.createElement('div');
+  btnWrap.className='nav pedia-bottom-nav';
   const btn=document.createElement('button');
   btn.type='button';btn.className='main-view-nav';btn.dataset.view='pedia';btn.textContent='도감';
   btn.addEventListener('click',()=>window.switchMainView?.('pedia'));
-  nav.appendChild(btn);
+  btnWrap.appendChild(btn);
+  const section=sidebar.querySelector('.section');
+  if(section) section.insertAdjacentElement('afterend',btnWrap);
+  else sidebar.appendChild(btnWrap);
 }
 
 function ensurePanel(){
