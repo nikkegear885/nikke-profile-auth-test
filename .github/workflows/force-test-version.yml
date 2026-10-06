@@ -15,18 +15,16 @@ jobs:
         run: |
           set -e
           if [ -f index.html ]; then
-            sed -i 's/VERSION 1\.022/VERSION 1.026/g; s/VERSION 1\.023/VERSION 1.026/g; s/VERSION 1\.024/VERSION 1.026/g; s/VERSION 1\.025/VERSION 1.026/g; s/GitHub Pages deployment refresh 0\.355/GitHub Pages deployment refresh 1.026/g; s/GitHub Pages deployment refresh 1\.024/GitHub Pages deployment refresh 1.026/g; s/GitHub Pages deployment refresh 1\.025/GitHub Pages deployment refresh 1.026/g; s/pedia\.js?v=012/pedia.js?v=016/g; s/pedia\.js?v=013/pedia.js?v=016/g; s/pedia\.js?v=014/pedia.js?v=016/g; s/pedia\.js?v=015/pedia.js?v=016/g; s/pedia-skill-data-fix\.js?v=014/pedia-skill-data-fix.js?v=016/g; s/pedia-skill-data-fix\.js?v=015/pedia-skill-data-fix.js?v=016/g' index.html
+            sed -i 's/VERSION 1\.022/VERSION 1.027/g; s/VERSION 1\.023/VERSION 1.027/g; s/VERSION 1\.024/VERSION 1.027/g; s/VERSION 1\.025/VERSION 1.027/g; s/VERSION 1\.026/VERSION 1.027/g; s/GitHub Pages deployment refresh 0\.355/GitHub Pages deployment refresh 1.027/g; s/GitHub Pages deployment refresh 1\.024/GitHub Pages deployment refresh 1.027/g; s/GitHub Pages deployment refresh 1\.025/GitHub Pages deployment refresh 1.027/g; s/GitHub Pages deployment refresh 1\.026/GitHub Pages deployment refresh 1.027/g; s/pedia\.js?v=012/pedia.js?v=016/g; s/pedia\.js?v=013/pedia.js?v=016/g; s/pedia\.js?v=014/pedia.js?v=016/g; s/pedia\.js?v=015/pedia.js?v=016/g; s/pedia\.js?v=1025/pedia.js?v=016/g; s/pedia-skill-data-fix\.js?v=014/pedia-skill-data-fix.js?v=016/g; s/pedia-skill-data-fix\.js?v=015/pedia-skill-data-fix.js?v=016/g' index.html
+            sed -i '/pedia-data-enhance-v1026\.js/d' index.html
             if ! grep -q 'pedia-skill-data-fix.js' index.html; then
               sed -i 's#</body>#<script src="pedia-skill-data-fix.js?v=016"></script></body>#' index.html
             fi
-            if ! grep -q 'pedia-data-enhance-v1026.js' index.html; then
-              sed -i 's#</body>#<script src="pedia-data-enhance-v1026.js?v=1026"></script></body>#' index.html
-            fi
           fi
-          printf '1.026\n' > VERSION
+          printf '1.027\n' > VERSION
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html VERSION
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'chore: bump test site to v1.026'
+          git commit -m 'chore: bump test site to v1.027 and fix pedia crash'
           git push origin main
