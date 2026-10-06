@@ -10,16 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch test-only version and cache bust
+      - name: Patch test-only version and pedia skill loader
         shell: bash
         run: |
           set -e
           if [ -f index.html ]; then
-            sed -i 's/VERSION 1\.022/VERSION 1.024/g; s/GitHub Pages deployment refresh 0\.355/GitHub Pages deployment refresh 1.024/g; s/pedia\.js?v=012/pedia.js?v=013/g' index.html
+            sed -i 's/VERSION 1\.022/VERSION 1.024/g; s/VERSION 1\.023/VERSION 1.024/g; s/GitHub Pages deployment refresh 0\.355/GitHub Pages deployment refresh 1.024/g; s/pedia\.js?v=012/pedia.js?v=014/g; s/pedia\.js?v=013/pedia.js?v=014/g' index.html
+            if ! grep -q 'pedia-skill-data-fix.js' index.html; then
+              sed -i 's#</body>#<script src="pedia-skill-data-fix.js?v=014"></script></body>#' index.html
+            fi
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'chore: update test site to v1.024'
+          git commit -m 'fix: display stored pedia skill descriptions'
           git push origin main
