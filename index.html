@@ -4354,7 +4354,49 @@ html.dark-theme .name-cell-image{
     margin-right:-6px;
   }
 }
-</style></style></style></head><body>
+<style id="character-name-image-fixed-slot-v004">
+/* 테스트 v4: 이름 길이에 따라 사진 위치가 움직이지 않도록 사진 영역을 고정 */
+#characterPanel .name-cell-wrap{
+  display:grid!important;
+  grid-template-columns:42px minmax(0,1fr)!important;
+  align-items:center!important;
+  width:100%!important;
+  height:32px!important;
+  min-height:32px!important;
+  margin:0!important;
+  padding:0!important;
+  column-gap:5px!important;
+  white-space:nowrap!important;
+}
+#characterPanel .name-cell-wrap .name-cell-image{
+  grid-column:1!important;
+  justify-self:center!important;
+  align-self:center!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  min-height:32px!important;
+  max-width:32px!important;
+  max-height:32px!important;
+  margin:0!important;
+}
+#characterPanel .name-cell-wrap .name-btn{
+  grid-column:2!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:32px!important;
+  min-height:32px!important;
+  margin:0!important;
+  padding:0!important;
+  display:block!important;
+  line-height:32px!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+</style></style></style></style></head><body>
 <div class="site-version-corner" id="siteVersionCorner">VERSION 1.009</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
