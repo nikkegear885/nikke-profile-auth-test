@@ -10,31 +10,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch test-only version and pedia skill loader
+      - name: Fix pedia skill data and bump test version
         shell: bash
         run: |
           set -e
-          if [ -f index.html ]; then
-            sed -i 's/VERSION 1\.022/VERSION 1.028/g; s/VERSION 1\.023/VERSION 1.028/g; s/VERSION 1\.024/VERSION 1.028/g; s/VERSION 1\.025/VERSION 1.028/g; s/VERSION 1\.026/VERSION 1.028/g; s/VERSION 1\.027/VERSION 1.028/g; s/GitHub Pages deployment refresh 0\.355/GitHub Pages deployment refresh 1.028/g; s/GitHub Pages deployment refresh 1\.024/GitHub Pages deployment refresh 1.028/g; s/GitHub Pages deployment refresh 1\.025/GitHub Pages deployment refresh 1.028/g; s/GitHub Pages deployment refresh 1\.026/GitHub Pages deployment refresh 1.028/g; s/GitHub Pages deployment refresh 1\.027/GitHub Pages deployment refresh 1.028/g; s/pedia\.js?v=012/pedia.js?v=1028/g; s/pedia\.js?v=013/pedia.js?v=1028/g; s/pedia\.js?v=014/pedia.js?v=1028/g; s/pedia\.js?v=015/pedia.js?v=1028/g; s/pedia\.js?v=016/pedia.js?v=1028/g; s/pedia\.js?v=1025/pedia.js?v=1028/g; s/pedia-skill-data-fix\.js?v=014/pedia-skill-data-fix.js?v=1028/g; s/pedia-skill-data-fix\.js?v=015/pedia-skill-data-fix.js?v=1028/g; s/pedia-skill-data-fix\.js?v=016/pedia-skill-data-fix.js?v=1028/g' index.html
-            sed -i '/pedia-data-enhance-v1026\.js/d' index.html
-            sed -i 's#pedia-skill-data-fix.js?v=[0-9]*#pedia-skill-data-fix.js?v=1028#g' index.html
-            if ! grep -q 'pedia-skill-data-fix.js' index.html; then
-              sed -i 's#</body>#<script src="pedia-skill-data-fix.js?v=1028"></script></body>#' index.html
-            fi
-          fi
           python3 - <<'PY'
           from pathlib import Path
           p=Path('pedia.js')
           s=p.read_text(encoding='utf-8')
+          marker="  const data=await res.json();\n  if(!data||typeof data!=='object')throw new Error('내부 스킬 데이터 형식이 올바르지 않습니다.');"
+          inject="""  const data=await res.json();\n  if(!data||typeof data!=='object')throw new Error('내부 스킬 데이터 형식이 올바르지 않습니다.');\n  Object.values(data).forEach(nikke=>{\n    if(!nikke||typeof nikke!=='object'||!nikke.k||typeof nikke.k!=='object')return;\n    Object.values(nikke.k).forEach(skill=>{\n      if(!skill||typeof skill!=='object')return;\n      if(skill.template==null&&skill.t!=null)skill.template=skill.t;\n      if(skill.values==null&&Array.isArray(skill.v))skill.values=skill.v;\n      if(skill.cooltime==null&&skill.c!=null)skill.cooltime=skill.c;\n      if(skill.info_description==null)skill.info_description=skill.infoDescription??skill.info_desc??skill.info??'';\n      if(skill.icon==null)skill.icon=skill.skill_icon??skill.skillIcon??skill.icon_url??'';\n    });\n  });"""
+          if marker in s and 'Object.values(data).forEach(nikke=>' not in s:
+              s=s.replace(marker,inject,1)
           s=s.replace("function cleanSkillTemplate(template){return String(template==null?'':'').replace(/<\\/?(?:color|word_group)(?:=[^>]*)?>/gi,'').replace(/\\xC2\\xA0/g,' ');}", "function cleanSkillTemplate(template){return String(template==null?'':template).replace(/<\\/?(?:color|word_group)(?:=[^>]*)?>/gi,'').replace(/\\xC2\\xA0/g,' ');}")
           s=s.replace("if(data.skill1||data.skill2||data.burst)return [['스킬 1',data.skill1],['스킬 2',data.skill2],['버스트',data.burst].filter(([,detail])=>detail);", "if(data.skill1||data.skill2||data.burst)return [['스킬 1',data.skill1],['스킬 2',data.skill2],['버스트',data.burst]].filter(([,detail])=>detail);")
-          s=s.replace("const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1028';", "const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1028';")
+          s=s.replace("const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1028';", "const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1029';")
           p.write_text(s,encoding='utf-8')
           PY
-          printf '1.028\n' > VERSION
+          if [ -f index.html ]; then
+            sed -i 's/VERSION 1\.022/VERSION 1.029/g; s/VERSION 1\.023/VERSION 1.029/g; s/VERSION 1\.024/VERSION 1.029/g; s/VERSION 1\.025/VERSION 1.029/g; s/VERSION 1\.026/VERSION 1.029/g; s/VERSION 1\.027/VERSION 1.029/g; s/VERSION 1\.028/VERSION 1.029/g; s/GitHub Pages deployment refresh 0\.355/GitHub Pages deployment refresh 1.029/g; s/GitHub Pages deployment refresh 1\.024/GitHub Pages deployment refresh 1.029/g; s/GitHub Pages deployment refresh 1\.025/GitHub Pages deployment refresh 1.029/g; s/GitHub Pages deployment refresh 1\.026/GitHub Pages deployment refresh 1.029/g; s/GitHub Pages deployment refresh 1\.027/GitHub Pages deployment refresh 1.029/g; s/GitHub Pages deployment refresh 1\.028/GitHub Pages deployment refresh 1.029/g; s/pedia\.js?v=012/pedia.js?v=1029/g; s/pedia\.js?v=013/pedia.js?v=1029/g; s/pedia\.js?v=1025/pedia.js?v=1029/g; s/pedia\.js?v=1028/pedia.js?v=1029/g' index.html
+            sed -i '/pedia-data-enhance-v1026\.js/d' index.html
+            sed -i 's#pedia-skill-data-fix.js?v=[0-9]*#pedia-skill-data-fix.js?v=1029#g' index.html
+            if ! grep -q 'pedia-skill-data-fix.js' index.html; then
+              sed -i 's#</body>#<script src="pedia-skill-data-fix.js?v=1029"></script></body>#' index.html
+            fi
+          fi
+          printf '1.029\n' > VERSION
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html VERSION pedia.js
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'chore: bump test site to v1.028 and fix pedia rendering'
+          git commit -m 'chore: fix pedia skill rendering and bump test site to v1.029'
           git push origin main
