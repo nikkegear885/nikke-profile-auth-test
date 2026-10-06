@@ -114,37 +114,55 @@ function ensureSkillModal(){
   return modal;
 }
 
+function cleanSkillTemplate(template){
+  return String(template==null?'':template)
+    .replace(/<\/?(?:color|word_group)(?:=[^>]*)?>/gi,'')
+    .replace(/\xC2\xA0/g,' ');
+}
+function renderSkillTemplate(template, values){
+  let text=cleanSkillTemplate(template);
+  (Array.isArray(values)?values:[]).forEach((value,index)=>{
+    text=text.split('{'+index+'}').join(String(value==null?'':value));
+  });
+  return text.trim();
+}
+function getSkillLevels(detail){
+  if(!detail)return [];
+  const values=Array.isArray(detail.values)?detail.values:[];
+  return values.slice(0,10).map((valuesAtLevel,lv)=>({
+    level:lv+1,
+    text:renderSkillTemplate(detail.template,valuesAtLevel)
+  }));
+}
 function renderPediaSkills(name,data){
   const modal=ensureSkillModal();
   const body=modal.querySelector('#pediaSkillBody');
   const title=modal.querySelector('#pediaSkillTitle');
   const meta=modal.querySelector('#pediaSkillMeta');
-  const skills=data?.k||{};
   title.textContent=name+' · 스킬 정보';
-  const metaParts=[];
-  if(data?.co)metaParts.push(String(data.co));
-  if(data?.c)metaParts.push(String(data.c));
-  if(data?.e)metaParts.push(String(data.e));
-  if(data?.b)metaParts.push('버스트 '+String(data.b));
-  meta.textContent=metaParts.join(' · ');
+  if(meta)meta.textContent='사이트 내부 저장 데이터 · 외부 요청 없음';
 
-  const entries=Object.entries(skills).slice(0,3);
+  const entries=[
+    ['스킬 1',data?.skill1],
+    ['스킬 2',data?.skill2],
+    ['버스트',data?.burst]
+  ].filter(([,detail])=>detail);
+
   if(!entries.length){
     body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';
     modal.classList.add('open');
     return;
   }
 
-  body.innerHTML=entries.map(([skillName,detail],index)=>{
-    const levels=Array.isArray(detail?.v)?detail.v.map((values,lv)=>({level:lv+1,text:renderSkillTemplate(detail.t,values)})):[];
-    const cooltime=detail?.c!=null?'쿨타임 '+Number(detail.c).toFixed(1)+'s':'';
-    const badge=index===2?'버스트':('스킬 '+(index+1));
-    return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(skillName)+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map((x,i)=>'<button type="button" class="pedia-skill-level-btn'+(i===0?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';
+  body.innerHTML=entries.map(([badge,detail])=>{
+    const levels=getSkillLevels(detail);
+    const cooltime=detail.cooltime!=null?'쿨타임 '+Number(detail.cooltime).toFixed(1)+'s':'';
+    return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(detail.name||'')+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map(x=>'<button type="button" class="pedia-skill-level-btn'+(x.level===1?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';
   }).join('');
 
   body.querySelectorAll('.pedia-skill-card').forEach((card,index)=>{
     const detail=entries[index]?.[1];
-    const levels=Array.isArray(detail?.v)?detail.v.map((values,lv)=>({level:lv+1,text:renderSkillTemplate(detail.t,values)})):[];
+    const levels=getSkillLevels(detail);
     const desc=card.querySelector('[data-skill-levels]');
     card.querySelectorAll('.pedia-skill-level-btn').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -157,7 +175,6 @@ function renderPediaSkills(name,data){
   });
   modal.classList.add('open');
 }
-
 async function openPediaSkill(name){
   const modal=ensureSkillModal();
   modal.classList.add('open');
