@@ -76,7 +76,7 @@ function injectStyle(){
   document.head.appendChild(style);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1025';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1028';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -84,15 +84,13 @@ function escText(v){return esc(v);}
 function renderSkillTemplate(template, values){
   let text=String(template==null?'':template);
   const vals=Array.isArray(values)?values:[];
-  vals.forEach((value,index)=>{
-    text=text.split('{'+index+'}').join(String(value==null?'':value));
-  });
+  vals.forEach((value,index)=>{text=text.split('{'+index+'}').join(String(value==null?'':value));});
   return text;
 }
 
 async function loadPediaSkillData(){
   if(pediaSkillCache)return pediaSkillCache;
-  const res=await fetch(PEDIA_SKILL_DATA_URL,{cache:'force-cache'});
+  const res=await fetch(PEDIA_SKILL_DATA_URL,{cache:'no-store'});
   if(!res.ok)throw new Error('내부 스킬 데이터 요청 실패: HTTP '+res.status);
   const data=await res.json();
   if(!data||typeof data!=='object')throw new Error('내부 스킬 데이터 형식이 올바르지 않습니다.');
@@ -100,12 +98,27 @@ async function loadPediaSkillData(){
   return data;
 }
 
+function normalizePediaName(v){
+  return String(v??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"`\-–—()\[\]{}]/g,'');
+}
+function findPediaSkillData(all,name,id){
+  if(!all||typeof all!=='object')return null;
+  if(all[name])return all[name];
+  const wantedId=Number(id);
+  if(Number.isFinite(wantedId)){
+    const byId=Object.values(all).find(x=>x&&Number(x.i)===wantedId);
+    if(byId)return byId;
+  }
+  const wanted=normalizePediaName(name);
+  const hit=Object.entries(all).find(([key,value])=>normalizePediaName(key)===wanted || normalizePediaName(value?.name)===wanted);
+  return hit?hit[1]:null;
+}
+
 function ensureSkillModal(){
   let modal=document.getElementById('pediaSkillModal');
   if(modal)return modal;
   modal=document.createElement('div');
-  modal.id='pediaSkillModal';
-  modal.className='pedia-skill-modal';
+  modal.id='pediaSkillModal';modal.className='pedia-skill-modal';
   modal.innerHTML='<div class="pedia-skill-dialog" role="dialog" aria-modal="true"><div class="pedia-skill-head"><div><h3 id="pediaSkillTitle">니케 스킬</h3><div id="pediaSkillMeta" class="pedia-skill-meta"></div></div><button type="button" class="pedia-skill-close" aria-label="닫기">×</button></div><div class="pedia-skill-body" id="pediaSkillBody"><div class="pedia-skill-loading">스킬 데이터를 불러오는 중…</div></div></div>';
   document.body.appendChild(modal);
   modal.querySelector('.pedia-skill-close').addEventListener('click',()=>modal.classList.remove('open'));
@@ -114,190 +127,44 @@ function ensureSkillModal(){
   return modal;
 }
 
-function cleanSkillTemplate(template){
-  return String(template==null?'':template)
-    .replace(/<\/?(?:color|word_group)(?:=[^>]*)?>/gi,'')
-    .replace(/\xC2\xA0/g,' ');
-}
-function renderSkillTemplate(template, values){
-  let text=cleanSkillTemplate(template);
-  (Array.isArray(values)?values:[]).forEach((value,index)=>{
-    text=text.split('{'+index+'}').join(String(value==null?'':value));
-  });
-  return text.trim();
-}
+function cleanSkillTemplate(template){return String(template==null?'':'').replace(/<\/?(?:color|word_group)(?:=[^>]*)?>/gi,'').replace(/\xC2\xA0/g,' ');}
 function getSkillLevels(detail){
   if(!detail)return [];
   const values=Array.isArray(detail.values)?detail.values:[];
-  return values.slice(0,10).map((valuesAtLevel,lv)=>({
-    level:lv+1,
-    text:renderSkillTemplate(detail.template,valuesAtLevel)
-  }));
+  return values.slice(0,10).map((valuesAtLevel,lv)=>({level:lv+1,text:renderSkillTemplate(cleanSkillTemplate(detail.template),valuesAtLevel).trim()}));
 }
 function normalizeSkillEntries(data){
-  if(!data || typeof data!=='object') return [];
-  if(data.skill1 || data.skill2 || data.burst){
-    return [
-      ['스킬 1',data.skill1],
-      ['스킬 2',data.skill2],
-      ['버스트',data.burst]
-    ].filter(([,detail])=>detail);
-  }
-  // 실제 저장 JSON 구조: k 객체에 스킬 이름이 키로 저장되고
-  // b(버스트 단계)와 순서로 1/2/버스트를 판별합니다.
+  if(!data||typeof data!=='object')return [];
+  if(data.skill1||data.skill2||data.burst)return [['스킬 1',data.skill1],['스킬 2',data.skill2],['버스트',data.burst].filter(([,detail])=>detail)];
   const skills=Object.entries(data.k||{});
-  if(!skills.length) return [];
-  const burstName=skills.length ? skills[skills.length-1][0] : '';
-  const normal=skills.slice(0,2);
-  const entries=normal.map(([skillName,detail],i)=>['스킬 '+(i+1),{...detail,name:skillName}]);
-  if(skills.length>=3){
-    const [skillName,detail]=skills[skills.length-1];
-    entries.push(['버스트',{...detail,name:skillName}]);
-  }
+  if(!skills.length)return [];
+  const entries=skills.slice(0,2).map(([skillName,detail],i)=>['스킬 '+(i+1),{...detail,name:skillName}]);
+  if(skills.length>=3){const [skillName,detail]=skills[skills.length-1];entries.push(['버스트',{...detail,name:skillName}]);}
   return entries;
 }
 function renderPediaSkills(name,data){
-  const modal=ensureSkillModal();
-  const body=modal.querySelector('#pediaSkillBody');
-  const title=modal.querySelector('#pediaSkillTitle');
-  const meta=modal.querySelector('#pediaSkillMeta');
-  title.textContent=name+' · 스킬 정보';
-  if(meta)meta.textContent='사이트 내부 저장 데이터 · 외부 요청 없음';
-
+  const modal=ensureSkillModal(),body=modal.querySelector('#pediaSkillBody'),title=modal.querySelector('#pediaSkillTitle'),meta=modal.querySelector('#pediaSkillMeta');
+  title.textContent=name+' · 스킬 정보';if(meta)meta.textContent='사이트 내부 저장 데이터 · 외부 요청 없음';
   const entries=normalizeSkillEntries(data);
-
-  if(!entries.length){
-    body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';
-    modal.classList.add('open');
-    return;
-  }
-
-  body.innerHTML=entries.map(([badge,detail])=>{
-    const levels=getSkillLevels(detail);
-    const cooltime=detail.cooltime!=null?'쿨타임 '+Number(detail.cooltime).toFixed(1)+'s':'';
-    return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(detail.name||'')+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map(x=>'<button type="button" class="pedia-skill-level-btn'+(x.level===1?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';
-  }).join('');
-
-  body.querySelectorAll('.pedia-skill-card').forEach((card,index)=>{
-    const detail=entries[index]?.[1];
-    const levels=getSkillLevels(detail);
-    const desc=card.querySelector('[data-skill-levels]');
-    card.querySelectorAll('.pedia-skill-level-btn').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        card.querySelectorAll('.pedia-skill-level-btn').forEach(x=>x.classList.remove('active'));
-        btn.classList.add('active');
-        const item=levels.find(x=>x.level===Number(btn.dataset.level));
-        if(desc)desc.textContent=item?.text||'설명 없음';
-      });
-    });
-  });
+  if(!entries.length){body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';modal.classList.add('open');return;}
+  body.innerHTML=entries.map(([badge,detail])=>{const levels=getSkillLevels(detail),cooltime=detail.cooltime!=null?'쿨타임 '+Number(detail.cooltime).toFixed(1)+'s':'';return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(detail.name||'')+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map(x=>'<button type="button" class="pedia-skill-level-btn'+(x.level===1?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';}).join('');
+  body.querySelectorAll('.pedia-skill-card').forEach((card,index)=>{const detail=entries[index]?.[1],levels=getSkillLevels(detail),desc=card.querySelector('[data-skill-levels]');card.querySelectorAll('.pedia-skill-level-btn').forEach(btn=>btn.addEventListener('click',()=>{card.querySelectorAll('.pedia-skill-level-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');const item=levels.find(x=>x.level===Number(btn.dataset.level));if(desc)desc.textContent=item?.text||'설명 없음';}));});
   modal.classList.add('open');
 }
-async function openPediaSkill(name){
-  const modal=ensureSkillModal();
-  modal.classList.add('open');
-  const body=modal.querySelector('#pediaSkillBody');
+async function openPediaSkill(name,id){
+  const modal=ensureSkillModal();modal.classList.add('open');const body=modal.querySelector('#pediaSkillBody');
   body.innerHTML='<div class="pedia-skill-loading">사이트에 저장된 '+escText(name)+'의 스킬 정보를 불러오는 중…</div>';
-  try{
-    const all=await loadPediaSkillData();
-    const aliases={
-      '사쿠라 스즈하라':'사쿠라'
-    };
-    const lookupName=all?.[name]?name:(aliases[name]||name);
-    const data=all?.[lookupName];
-    if(!data)throw new Error(name+'의 스킬 정보가 없습니다.');
-    renderPediaSkills(name,data);
-  }catch(err){
-    body.innerHTML='<div class="pedia-skill-status error">'+escText(err?.message||'스킬 데이터를 불러오지 못했습니다.')+'</div>';
-  }
+  try{const all=await loadPediaSkillData();const aliases={'사쿠라 스즈하라':'사쿠라'};const data=findPediaSkillData(all,aliases[name]||name,id);if(!data)throw new Error(name+'의 스킬 정보가 없습니다.');renderPediaSkills(name,data);}catch(err){console.error('[pedia] skill load failed',err);body.innerHTML='<div class="pedia-skill-status error">'+escText(err?.message||'스킬 데이터를 불러오지 못했습니다.')+'</div>';}
 }
 
-
-function ensureNav(){
-  const nav=document.querySelector('.nav');
-  if(!nav||nav.querySelector('[data-view="pedia"]'))return;
-  const btn=document.createElement('button');
-  btn.type='button';
-  btn.className='main-view-nav';
-  btn.dataset.view='pedia';
-  btn.textContent='도감';
-  btn.addEventListener('click',()=>window.switchMainView?.('pedia'));
-  // 기존 메뉴(니케 장비 현황 / 전초기지 생산량 / 솔레점수기록) 바로 뒤에 붙입니다.
-  nav.appendChild(btn);
-}
-
-function ensurePanel(){
-  if(document.getElementById('pediaPanel'))return;
-  const main=document.querySelector('main.main');if(!main)return;
-  const panel=document.createElement('section');
-  panel.id='pediaPanel';panel.hidden=true;
-  panel.innerHTML='<div class="pedia-head"><div class="pedia-head-row"><div><h3>니케 도감</h3><p>캐릭터 이미지는 실제 원본 파일만 등록합니다. 임의 생성 이미지는 사용하지 않습니다.</p></div><a class="pedia-source-btn" href="'+SOURCE_URL+'" target="_blank" rel="noopener noreferrer">BlablaLink 원본 보기 ↗</a></div></div><div class="pedia-toolbar"><input id="pediaSearch" class="pedia-search" type="search" placeholder="니케 이름 검색…"><span id="pediaCount" class="pedia-count"></span></div><div id="pediaGrid" class="pedia-grid"></div>';
-  const first=main.querySelector('#soleScorePanel,#outpostPanel,#characterPanel');
-  if(first)main.insertBefore(panel,first);else main.appendChild(panel);
-}
-
+function ensureNav(){const nav=document.querySelector('.nav');if(!nav||nav.querySelector('[data-view="pedia"]'))return;const btn=document.createElement('button');btn.type='button';btn.className='main-view-nav';btn.dataset.view='pedia';btn.textContent='도감';btn.addEventListener('click',()=>window.switchMainView?.('pedia'));nav.appendChild(btn);}
+function ensurePanel(){if(document.getElementById('pediaPanel'))return;const main=document.querySelector('main.main');if(!main)return;const panel=document.createElement('section');panel.id='pediaPanel';panel.hidden=true;panel.innerHTML='<div class="pedia-head"><div class="pedia-head-row"><div><h3>니케 도감</h3><p>캐릭터 이미지는 실제 원본 파일만 등록합니다. 임의 생성 이미지는 사용하지 않습니다.</p></div><a class="pedia-source-btn" href="'+SOURCE_URL+'" target="_blank" rel="noopener noreferrer">BlablaLink 원본 보기 ↗</a></div></div><div class="pedia-toolbar"><input id="pediaSearch" class="pedia-search" type="search" placeholder="니케 이름 검색…"><span id="pediaCount" class="pedia-count"></span></div><div id="pediaGrid" class="pedia-grid"></div>';const first=main.querySelector('#soleScorePanel,#outpostPanel,#characterPanel');if(first)main.insertBefore(panel,first);else main.appendChild(panel);}
 let pediaItems=[];
-async function loadPediaData(){
-  if(pediaItems.length)return pediaItems;
-  try{
-    const res=await fetch(DATA_URL,{cache:'force-cache'});
-    if(!res.ok)throw new Error('http '+res.status);
-    const items=await res.json();
-    if(!Array.isArray(items))throw new Error('invalid data');
-    pediaItems=items.filter(x=>x&&typeof x.name==='string'&&x.name.trim());
-  }catch(_){
-    const grid=document.getElementById('pediaGrid');
-    if(grid)grid.innerHTML='<div class="pedia-empty">도감 데이터를 불러오지 못했습니다.</div>';
-    pediaItems=[];
-  }
-  return pediaItems;
-}
-
-function renderPedia(text){
-  const grid=document.getElementById('pediaGrid'),count=document.getElementById('pediaCount');
-  if(!grid||!count)return;
-  const q=String(text??'').trim().toLowerCase();
-  const list=pediaItems.filter(x=>!q||x.name.toLowerCase().includes(q));
-  count.textContent=list.length+' / '+pediaItems.length+'명';
-  if(!list.length){grid.innerHTML='<div class="pedia-empty">검색 결과가 없습니다.</div>';return;}
-  grid.innerHTML=list.map(item=>{
-    const image=String(item.image||'').trim();
-    const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';
-    return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';
-  }).join('');
-  grid.querySelectorAll('.pedia-card').forEach(card=>{
-    card.addEventListener('click',()=>openPediaSkill(card.dataset.pediaName||''));
-  });
-}
-
-function showPedia(){
-  const panel=document.getElementById('pediaPanel');if(!panel)return;
-  panel.hidden=false;
-  document.body.classList.remove('outpost-view','sole-view','drop-rate-view');document.body.classList.add('pedia-view');
-  document.getElementById('kpis')?.setAttribute('hidden','');
-  document.getElementById('outpostPanel')?.setAttribute('hidden','');
-  document.getElementById('soleScorePanel')?.classList.remove('active');
-  document.getElementById('characterPanel')?.setAttribute('hidden','');
-  document.querySelectorAll('.main-view-nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.view==='pedia'));
-  const title=document.getElementById('pageTitle');if(title)title.textContent='니케 도감';
-  try{window.closeSidebar?.()}catch(_){}
-  loadPediaData().then(()=>renderPedia(document.getElementById('pediaSearch')?.value||''));
-}
-function hidePedia(){
-  const panel=document.getElementById('pediaPanel');if(panel)panel.hidden=true;
-  document.body.classList.remove('pedia-view');
-  document.getElementById('characterPanel')?.removeAttribute('hidden');
-}
-function patchMainViewSwitch(){
-  if(typeof window.switchMainView!=='function'||window.switchMainView.__pediaPatched)return;
-  const original=window.switchMainView;
-  const wrapped=function(view){if(view==='pedia'){showPedia();return;}hidePedia();return original.apply(this,arguments);};
-  wrapped.__pediaPatched=true;wrapped.__pediaOriginal=original;window.switchMainView=wrapped;
-}
-function init(){
-  injectStyle();ensureNav();ensurePanel();
-  document.getElementById('pediaSearch')?.addEventListener('input',e=>renderPedia(e.target.value));
-  patchMainViewSwitch();
-}
+async function loadPediaData(){if(pediaItems.length)return pediaItems;try{const res=await fetch(DATA_URL,{cache:'force-cache'});if(!res.ok)throw new Error('http '+res.status);const items=await res.json();if(!Array.isArray(items))throw new Error('invalid data');pediaItems=items.filter(x=>x&&typeof x.name==='string'&&x.name.trim());}catch(_){const grid=document.getElementById('pediaGrid');if(grid)grid.innerHTML='<div class="pedia-empty">도감 데이터를 불러오지 못했습니다.</div>';pediaItems=[];}return pediaItems;}
+function renderPedia(text){const grid=document.getElementById('pediaGrid'),count=document.getElementById('pediaCount');if(!grid||!count)return;const q=String(text??'').trim().toLowerCase(),list=pediaItems.filter(x=>!q||x.name.toLowerCase().includes(q));count.textContent=list.length+' / '+pediaItems.length+'명';if(!list.length){grid.innerHTML='<div class="pedia-empty">검색 결과가 없습니다.</div>';return;}grid.innerHTML=list.map(item=>{const image=String(item.image||'').trim(),id=item.id??item.i??'';const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" data-pedia-id="'+esc(id)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';}).join('');grid.querySelectorAll('.pedia-card').forEach(card=>card.addEventListener('click',()=>openPediaSkill(card.dataset.pediaName||'',card.dataset.pediaId||'')));}
+function showPedia(){const panel=document.getElementById('pediaPanel');if(!panel)return;panel.hidden=false;document.body.classList.remove('outpost-view','sole-view','drop-rate-view');document.body.classList.add('pedia-view');document.getElementById('kpis')?.setAttribute('hidden','');document.getElementById('outpostPanel')?.setAttribute('hidden','');document.getElementById('soleScorePanel')?.classList.remove('active');document.getElementById('characterPanel')?.setAttribute('hidden','');document.querySelectorAll('.main-view-nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.view==='pedia'));const title=document.getElementById('pageTitle');if(title)title.textContent='니케 도감';try{window.closeSidebar?.()}catch(_){}loadPediaData().then(()=>renderPedia(document.getElementById('pediaSearch')?.value||''));}
+function hidePedia(){const panel=document.getElementById('pediaPanel');if(panel)panel.hidden=true;document.body.classList.remove('pedia-view');document.getElementById('characterPanel')?.removeAttribute('hidden');}
+function patchMainViewSwitch(){if(typeof window.switchMainView!=='function'||window.switchMainView.__pediaPatched)return;const original=window.switchMainView;const wrapped=function(view){if(view==='pedia'){showPedia();return;}hidePedia();return original.apply(this,arguments);};wrapped.__pediaPatched=true;wrapped.__pediaOriginal=original;window.switchMainView=wrapped;}
+function init(){injectStyle();ensureNav();ensurePanel();document.getElementById('pediaSearch')?.addEventListener('input',e=>renderPedia(e.target.value));patchMainViewSwitch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
