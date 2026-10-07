@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 const SOURCE_URL='https://www.blablalink.com/shiftyspad/nikke-list';
-const DATA_URL='assets/nikke-pedia-master.json';
+const DATA_URL='assets/nikke-pedia-master.json?v=1046';
 const esc=(v)=>String(v??'').replace(/[&<>'"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 function injectStyle(){
@@ -84,7 +84,7 @@ function injectStyle(){
   document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1045';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1046';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -216,7 +216,7 @@ async function loadPediaFilterMeta(){
   });
   return pediaFilterMeta;
 }
-async function loadPediaData(){if(pediaItems.length)return pediaItems;try{const res=await fetch(DATA_URL,{cache:'force-cache'});if(!res.ok)throw new Error('http '+res.status);const items=await res.json();if(!Array.isArray(items))throw new Error('invalid data');pediaItems=items.filter(x=>x&&typeof x.name==='string'&&x.name.trim());}catch(_){const grid=document.getElementById('pediaGrid');if(grid)grid.innerHTML='<div class="pedia-empty">도감 데이터를 불러오지 못했습니다.</div>';pediaItems=[];}return pediaItems;}
+async function loadPediaData(){if(pediaItems.length)return pediaItems;try{const res=await fetch(DATA_URL,{cache:'no-store'});if(!res.ok)throw new Error('http '+res.status);const items=await res.json();if(!Array.isArray(items))throw new Error('invalid data');pediaItems=items.filter(x=>x&&typeof x.name==='string'&&x.name.trim());}catch(_){const grid=document.getElementById('pediaGrid');if(grid)grid.innerHTML='<div class="pedia-empty">도감 데이터를 불러오지 못했습니다.</div>';pediaItems=[];}return pediaItems;}
 function renderPedia(text){
   const grid=document.getElementById('pediaGrid'),count=document.getElementById('pediaCount');if(!grid||!count)return;
   const q=String(text??'').trim().toLowerCase();
