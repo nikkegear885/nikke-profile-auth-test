@@ -79,7 +79,7 @@ function injectStyle(){
   document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1041';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1042';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -220,7 +220,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let cache=null;
   async function data(){
     if(cache) return cache;
-    try{const r=await fetch('assets/nikke-skills.json?v=1041',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+    try{const r=await fetch('assets/nikke-skills.json?v=1042',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
   }
   function find(all,name,id){
     if(!all||typeof all!=='object') return null;
@@ -267,4 +267,96 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
 })();
 
+})();
+
+/* v1.042: 도감 필터 */
+(function(){
+  const FILTER_ID='pediaFiltersV1042';
+  let metaCache=null;
+  function addStyle(){
+    if(document.getElementById(FILTER_ID+'Style'))return;
+    const st=document.createElement('style');
+    st.id=FILTER_ID+'Style';
+    st.textContent='.pedia-filter-row-v1042{width:100%;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-top:2px}.pedia-filter-v1042{height:34px;border:1px solid #bfd5df;border-radius:8px;background:#fff;color:#405b6c;padding:0 9px;font-size:11px;font-weight:800;outline:none;min-width:0}html.dark-theme .pedia-filter-v1042{background:#0b1421;border-color:#354761;color:#edf3ff}@media(max-width:900px){.pedia-filter-row-v1042{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){.pedia-filter-row-v1042{grid-template-columns:repeat(2,minmax(0,1fr))}}';
+    document.head.appendChild(st);
+  }
+  function getRawMap(){
+    const list=Array.isArray(window.__NIKKE_RAW)?window.__NIKKE_RAW:[];
+    const byId=new Map(),byName=new Map();
+    list.forEach(x=>{
+      if(!x||typeof x!=='object')return;
+      const id=Number(x?.['i']??x?.id);
+      const name=String(x?.['이름']??x?.name??'').trim();
+      if(Number.isFinite(id))byId.set(id,x);
+      if(name)byName.set(normalizePediaName(name),x);
+    });
+    return {byId,byName};
+  }
+  async function buildMeta(){
+    if(metaCache)return metaCache;
+    const all=await loadPediaSkillData();
+    const raw=getRawMap();
+    metaCache=new Map();
+    pediaItems.forEach(item=>{
+      const id=Number(item?.id??item?.i);
+      const name=String(item?.name??'').trim();
+      const skill=findPediaSkillData(all,name,id)||{};
+      const r=(Number.isFinite(id)&&raw.byId.get(id))||raw.byName.get(normalizePediaName(name))||{};
+      const burst=String(r?.['버스트']??'').replace(/[^0-9]/g,'')||String(skill?.b??'').replace(/[^0-9]/g,'');
+      metaCache.set(name,{company:String(r?.['기업']??skill?.co??'').trim(),className:String(r?.['클래스']??skill?.c??'').trim(),weapon:String(r?.['무기']??'').trim(),element:String(r?.['속성']??skill?.e??'').trim(),rarity:String(skill?.r??'').trim().toUpperCase(),burst});
+    });
+    return metaCache;
+  }
+  function ensureFilters(){
+    addStyle();
+    const panel=document.getElementById('pediaPanel'),toolbar=panel?.querySelector('.pedia-toolbar');
+    if(!toolbar||toolbar.querySelector('#pediaFiltersV1042'))return;
+    const row=document.createElement('div');
+    row.id='pediaFiltersV1042';
+    row.className='pedia-filter-row-v1042';
+    row.innerHTML='<select data-pedia-filter="company" class="pedia-filter-v1042"><option value="">기업 전체</option><option>엘리시온</option><option>미실리스</option><option>테트라</option><option>필그림</option><option>어브노멀</option></select><select data-pedia-filter="className" class="pedia-filter-v1042"><option value="">클래스 전체</option><option>화력형</option><option>방어형</option><option>지원형</option></select><select data-pedia-filter="weapon" class="pedia-filter-v1042"><option value="">무기군 전체</option><option>AR</option><option>SMG</option><option>SG</option><option>SR</option><option>RL</option><option>MG</option></select><select data-pedia-filter="element" class="pedia-filter-v1042"><option value="">속성 전체</option><option>철갑</option><option>풍압</option><option>전격</option><option>작열</option><option>수냉</option></select><select data-pedia-filter="rarity" class="pedia-filter-v1042"><option value="">등급 전체</option><option>SSR</option><option>SR</option><option>R</option></select><select data-pedia-filter="burst" class="pedia-filter-v1042"><option value="">버스트 전체</option><option value="1">버스트 1</option><option value="2">버스트 2</option><option value="3">버스트 3</option></select>';
+    toolbar.appendChild(row);
+    row.querySelectorAll('select').forEach(x=>x.addEventListener('change',applyFilters));
+  }
+  async function applyFilters(){
+    ensureFilters();
+    if(!pediaFilterMetaCache) await buildMeta();
+    const row=document.getElementById('pediaFiltersV1042');
+    const selected={};
+    row?.querySelectorAll('select').forEach(x=>selected[x.dataset.pediaFilter]=x.value);
+    const q=String(document.getElementById('pediaSearch')?.value??'').trim().toLowerCase();
+    const cards=[...document.querySelectorAll('#pediaGrid .pedia-card')];
+    let visible=0;
+    cards.forEach(card=>{
+      const name=String(card.dataset.pediaName||'');
+      const m=metaCache.get(name)||{};
+      const ok=(!q||name.toLowerCase().includes(q))
+        &&(!selected.company||m.company===selected.company)
+        &&(!selected.className||m.className===selected.className)
+        &&(!selected.weapon||m.weapon===selected.weapon)
+        &&(!selected.element||m.element===selected.element)
+        &&(!selected.rarity||m.rarity===selected.rarity)
+        &&(!selected.burst||m.burst===selected.burst);
+      card.style.display=ok?'':'none';
+      if(ok)visible++;
+    });
+    const count=document.getElementById('pediaCount');
+    if(count)count.textContent=visible+' / '+pediaItems.length+'명';
+  }
+  function boot(){
+    ensureFilters();
+    const grid=document.getElementById('pediaGrid');
+    if(grid&&!grid.__pediaFilterObservedV1042){
+      grid.__pediaFilterObservedV1042=true;
+      const ob=new MutationObserver(()=>applyFilters());
+      ob.observe(grid,{childList:true,subtree:true});
+    }
+    const search=document.getElementById('pediaSearch');
+    if(search&&!search.__pediaFilterBoundV1042){
+      search.__pediaFilterBoundV1042=true;
+      search.addEventListener('input',()=>applyFilters());
+    }
+    loadPediaData().then(()=>buildMeta()).then(()=>applyFilters()).catch(()=>{});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else setTimeout(boot,0);
 })();
