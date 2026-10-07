@@ -84,7 +84,7 @@ function injectStyle(){
   document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1043';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1045';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
