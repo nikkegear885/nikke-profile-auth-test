@@ -79,7 +79,7 @@ function injectStyle(){
   document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1039';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1040';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -168,7 +168,7 @@ function renderPediaSkills(name,data){
     const wantedId=Number(data?.i);
     const wantedName=String(name||'').trim();
     const aliases={'사쿠라 스즈하라':'사쿠라'};
-    const rawList=Array.isArray(window.RAW)?window.RAW:[];
+    const rawList=Array.isArray(window.__NIKKE_RAW)?window.__NIKKE_RAW:[];
     const raw=rawList.find(x=>Number(x?.['i']??x?.id)===wantedId)
       || rawList.find(x=>String(x?.['이름']??'').trim()===(aliases[wantedName]||wantedName));
     weapon=weaponMap[String(raw?.['무기']??'').trim()]||String(raw?.['무기']??'').trim();
@@ -221,7 +221,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let cache=null;
   async function data(){
     if(cache) return cache;
-    try{const r=await fetch('assets/nikke-skills.json?v=1039',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+    try{const r=await fetch('assets/nikke-skills.json?v=1040',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
   }
   function find(all,name,id){
     if(!all||typeof all!=='object') return null;
