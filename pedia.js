@@ -79,7 +79,7 @@ function injectStyle(){
   document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1042';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1043';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -220,7 +220,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let cache=null;
   async function data(){
     if(cache) return cache;
-    try{const r=await fetch('assets/nikke-skills.json?v=1042',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+    try{const r=await fetch('assets/nikke-skills.json?v=1043',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
   }
   function find(all,name,id){
     if(!all||typeof all!=='object') return null;
@@ -320,7 +320,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
   async function applyFilters(){
     ensureFilters();
-    if(!pediaFilterMetaCache) await buildMeta();
+    if(!metaCache) await buildMeta();
     const row=document.getElementById('pediaFiltersV1042');
     const selected={};
     row?.querySelectorAll('select').forEach(x=>selected[x.dataset.pediaFilter]=x.value);
