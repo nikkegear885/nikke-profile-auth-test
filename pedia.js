@@ -76,7 +76,7 @@ function injectStyle(){
   document.head.appendChild(style);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1031';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1036';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -157,6 +157,9 @@ function renderPediaSkills(name,data){
   const modal=ensureSkillModal(),body=modal.querySelector('#pediaSkillBody'),title=modal.querySelector('#pediaSkillTitle'),meta=modal.querySelector('#pediaSkillMeta');
   title.textContent=name+' · 스킬 정보';if(meta){const burst=data?.b??'';meta.textContent=(burst?'버스트 '+burst+'단계 · ':'')+'사이트 내부 저장 데이터 · 외부 요청 없음';}
   const entries=normalizeSkillEntries(data);
+  const company=String(data.co??'').trim();
+  const cls=String(data.c??'').trim();
+  meta.textContent=[company&&('기업: '+company),cls&&('클래스: '+cls)].filter(Boolean).join('  ·  ');
   if(!entries.length){body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';modal.classList.add('open');return;}
   body.innerHTML=entries.map(([badge,detail])=>{const levels=getSkillLevels(detail),cooltime=detail.cooltime!=null?'쿨타임 '+Number(detail.cooltime).toFixed(1)+'s':'';return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(detail.name||'')+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map(x=>'<button type="button" class="pedia-skill-level-btn'+(x.level===1?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';}).join('');
   body.querySelectorAll('.pedia-skill-card').forEach((card,index)=>{const detail=entries[index]?.[1],levels=getSkillLevels(detail),desc=card.querySelector('[data-skill-levels]');card.querySelectorAll('.pedia-skill-level-btn').forEach(btn=>btn.addEventListener('click',()=>{card.querySelectorAll('.pedia-skill-level-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');const item=levels.find(x=>x.level===Number(btn.dataset.level));if(desc)desc.textContent=item?.text||'설명 없음';}));});
@@ -203,7 +206,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let cache=null;
   async function data(){
     if(cache) return cache;
-    try{const r=await fetch('assets/nikke-skills.json?v=1031',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+    try{const r=await fetch('assets/nikke-skills.json?v=1036',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
   }
   function find(all,name,id){
     if(!all||typeof all!=='object') return null;
