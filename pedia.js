@@ -74,9 +74,12 @@ function injectStyle(){
     '.pedia-skill-loading{padding:30px;text-align:center;color:#72879a;font-size:11px}',
     '@media(max-width:650px){#pediaPanel{margin:0 10px 16px}.pedia-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px;gap:9px}.pedia-toolbar{padding:10px}.pedia-head{padding:14px}.pedia-source-btn{width:100%}.pedia-skill-dialog{max-height:94vh}.pedia-skill-body{padding:10px}}'  ].join('\n');
   document.head.appendChild(style);
+  const infoStyle=document.createElement('style');
+  infoStyle.textContent='.pedia-skill-info-strip{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}.pedia-skill-info-item{display:inline-flex;align-items:center;padding:6px 9px;border:1px solid #bfd5df;border-radius:7px;background:#eef7fb;color:#315f78;font-size:10px;font-weight:900}.pedia-skill-info-item b{margin-right:4px;color:#6f8290}html.dark-theme .pedia-skill-info-item{background:#142438;border-color:#344660;color:#d6ebff}html.dark-theme .pedia-skill-info-item b{color:#9aaac0}';
+  document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1037';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1038';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -161,7 +164,8 @@ function renderPediaSkills(name,data){
   const cls=String(data.c??'').trim();
   meta.textContent=[company&&('기업: '+company),cls&&('클래스: '+cls)].filter(Boolean).join('  ·  ');
   if(!entries.length){body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';modal.classList.add('open');return;}
-  body.innerHTML=entries.map(([badge,detail])=>{const levels=getSkillLevels(detail),cooltime=detail.cooltime!=null?'쿨타임 '+Number(detail.cooltime).toFixed(1)+'s':'';return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(detail.name||'')+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map(x=>'<button type="button" class="pedia-skill-level-btn'+(x.level===1?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';}).join('');
+  const infoHtml='<div class="pedia-skill-info-strip"><span class="pedia-skill-info-item"><b>기업</b>'+escText(company||'정보 없음')+'</span><span class="pedia-skill-info-item"><b>클래스</b>'+escText(cls||'정보 없음')+'</span></div>';
+  body.innerHTML=infoHtml+entries.map(([badge,detail])=>{const levels=getSkillLevels(detail),cooltime=detail.cooltime!=null?'쿨타임 '+Number(detail.cooltime).toFixed(1)+'s':'';return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(badge)+' · '+escText(detail.name||'')+'</span><span class="pedia-skill-card-meta">'+escText(cooltime)+'</span></div><div class="pedia-skill-levels">'+levels.map(x=>'<button type="button" class="pedia-skill-level-btn'+(x.level===1?' active':'')+'" data-level="'+x.level+'">Lv.'+x.level+'</button>').join('')+'</div><div class="pedia-skill-desc" data-skill-levels>'+escText(levels[0]?.text||'설명 없음')+'</div></section>';}).join('');
   body.querySelectorAll('.pedia-skill-card').forEach((card,index)=>{const detail=entries[index]?.[1],levels=getSkillLevels(detail),desc=card.querySelector('[data-skill-levels]');card.querySelectorAll('.pedia-skill-level-btn').forEach(btn=>btn.addEventListener('click',()=>{card.querySelectorAll('.pedia-skill-level-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');const item=levels.find(x=>x.level===Number(btn.dataset.level));if(desc)desc.textContent=item?.text||'설명 없음';}));});
   modal.classList.add('open');
 }
@@ -206,7 +210,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let cache=null;
   async function data(){
     if(cache) return cache;
-    try{const r=await fetch('assets/nikke-skills.json?v=1037',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+    try{const r=await fetch('assets/nikke-skills.json?v=1038',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
   }
   function find(all,name,id){
     if(!all||typeof all!=='object') return null;
