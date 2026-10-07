@@ -79,7 +79,7 @@ function injectStyle(){
   document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1040';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1041';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -162,7 +162,6 @@ function renderPediaSkills(name,data){
   const entries=normalizeSkillEntries(data);
   const company=String(data.co??'').trim();
   const cls=String(data.c??'').trim();
-  const weaponMap={AR:'돌격소총',SMG:'기관단총',SR:'저격소총',SG:'샷건',RL:'로켓런처',MG:'머신건'};
   let weapon='';
   try{
     const wantedId=Number(data?.i);
@@ -171,7 +170,7 @@ function renderPediaSkills(name,data){
     const rawList=Array.isArray(window.__NIKKE_RAW)?window.__NIKKE_RAW:[];
     const raw=rawList.find(x=>Number(x?.['i']??x?.id)===wantedId)
       || rawList.find(x=>String(x?.['이름']??'').trim()===(aliases[wantedName]||wantedName));
-    weapon=weaponMap[String(raw?.['무기']??'').trim()]||String(raw?.['무기']??'').trim();
+    weapon=String(raw?.['무기']??'').trim();
   }catch(_){}
   meta.textContent=[company&&('기업: '+company),cls&&('클래스: '+cls),weapon&&('무기군: '+weapon)].filter(Boolean).join('  ·  ');
   if(!entries.length){body.innerHTML='<div class="pedia-skill-status error">이 니케의 스킬 정보가 없습니다.</div>';modal.classList.add('open');return;}
@@ -221,7 +220,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let cache=null;
   async function data(){
     if(cache) return cache;
-    try{const r=await fetch('assets/nikke-skills.json?v=1040',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+    try{const r=await fetch('assets/nikke-skills.json?v=1041',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
   }
   function find(all,name,id){
     if(!all||typeof all!=='object') return null;
