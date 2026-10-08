@@ -52,6 +52,11 @@
       'html.dark-theme .bl-direct-modal{background:#101827;color:#e7edf9;border-color:#30415e}',
       '.bl-direct-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;border-bottom:1px solid #d4e4ec;background:#edf7fb}',
       '.bl-direct-help-link{margin-left:auto;white-space:nowrap;color:#1976d2!important;text-decoration:underline!important;text-underline-offset:2px;font-size:10px;font-weight:900}',
+      '.bl-direct-footer{display:flex;justify-content:flex-end;padding:0 16px 14px}',
+      '.bl-direct-site-help{display:inline-flex;align-items:center;justify-content:center;max-width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #c7d9e5;border-radius:7px;background:#edf7fb;color:#1976d2!important;text-decoration:underline!important;text-underline-offset:2px;font-size:11px;font-weight:900;line-height:1.3;text-align:right;white-space:normal}',
+      '.bl-direct-site-help:hover,.bl-direct-site-help:focus-visible{background:#e3f2fb;border-color:#8dbcd8;color:#115b93!important}',
+      'html.dark-theme .bl-direct-site-help{background:#142238;border-color:#33445f;color:#bde4ff!important}',
+      'html.dark-theme .bl-direct-site-help:hover,html.dark-theme .bl-direct-site-help:focus-visible{background:#1a304b;border-color:#7ab6df;color:#e0f3ff!important}',
       'html.dark-theme .bl-direct-head{background:#141f32;border-bottom-color:#293952}',
       '.bl-direct-head h3{margin:0;font-size:16px}',
       '.bl-direct-head small{display:block;margin-top:3px;color:#718797;font-size:10px}',
@@ -109,7 +114,7 @@
           '<div><h3 id="blDirectTitle">BlaBlaLink 계정 동기화</h3><small>공개 프로필 URL만 입력하면 장비 현황을 불러옵니다.</small></div>' +
           '<div style="display:flex;align-items:center;gap:8px;margin-left:auto">' +
             '<a class="bl-direct-help-link" href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5423342" target="_blank" rel="noopener noreferrer">블라링크 계정주소 확인법</a>' +
-            '<a class="bl-direct-help-link" href="#" style="margin-left:0" onclick="event.preventDefault();return false;" aria-label="사이트 사용법 (링크 준비 중)" title="사이트 사용법 링크는 추후 연결됩니다.">사이트 사용법</a>' +
+
             '<button type="button" class="bl-direct-close" aria-label="닫기">×</button>' +
           '</div>' +
         '</div>' +
@@ -130,6 +135,9 @@
             '<img id="blDirectAvatar" alt="">' +
             '<div><div class="bl-direct-profile-name" id="blDirectName"></div><div class="bl-direct-profile-sub" id="blDirectSub"></div></div>' +
           '</div>' +
+        '</div>' +
+        '<div class="bl-direct-footer">' +
+          '<a class="bl-direct-site-help" href="#" onclick="event.preventDefault();return false;" aria-label="니케 장비관리 사이트 이용법 (링크 준비 중)" title="사이트 이용법 링크는 추후 연결됩니다.">니케 장비관리 사이트 이용법</a>' +
         '</div>' +
       '</div>';
 
