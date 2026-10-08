@@ -6792,7 +6792,7 @@ html.dark-theme #characterPanel .valid-toggle.active::before{
     var page=document.getElementById('pageTitle');
     if(page){
       var t=(page.textContent||'').trim();
-      if(t && !/^TEST\\s/.test(t)) page.textContent='TEST '+t;
+      if(t && !/\\sTEST$/.test(t)) page.textContent=t+' TEST';
     }
   }
   function init(){
