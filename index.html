@@ -4638,9 +4638,9 @@ function nikkeNameWithImage(r){
   const name=String(r?.['이름']??'').trim();
   const normalizedPediaName='#'+String(name).normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"`\-–—()\[\]{}]/g,'');
   const src=NIKKE_PEDIA_IMAGES[name]||NIKKE_PEDIA_IMAGES[normalizedPediaName]||'';
-  if(!src)return '<button class="name-btn" onclick="openDrawer('+data.indexOf(r)+')">'+esc(name)+'</button>';
+  if(!src)return '<span class="name-btn">'+esc(name)+'</span>';
   const idx=data.indexOf(r);
-  return '<span class="name-cell-wrap"><img class="name-cell-image" loading="lazy" src="'+esc(src)+'" alt="" onerror="this.style.display=\'none\'"><button class="name-btn" onclick="openDrawer('+idx+')">'+esc(name)+'</button></span>';
+  return '<span class="name-cell-wrap"><img class="name-cell-image" loading="lazy" src="'+esc(src)+'" alt="" onerror="this.style.display=\'none\'"><span class="name-btn">'+esc(name)+'</span></span>';
 }
 function gearCompanyType(r,p){const v=r[p+'_기업장비'];if(v===true||v===1||String(v).toLowerCase()==='true'||v==='기업장비'||v==='맞음')return 'company';if(typeof v==='string'&&['ELYSION','MISSILIS','TETRA','PILGRIM','ABNORMAL'].includes(v.toUpperCase()))return 'company';if(v===false||v===0||String(v).toLowerCase()==='false'||v==='타기업장비'||v==='기업 불일치'||v==='아님')return 'other';return 'unknown';}
 function canonicalCharacterField(r,key){
