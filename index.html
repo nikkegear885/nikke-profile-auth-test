@@ -6777,3 +6777,29 @@ html.dark-theme #characterPanel .valid-toggle.active::before{
   font-weight:1000;
 }
 </style>
+
+<script id="test-only-branding-guard">
+/* TEST SITE ONLY — never active on production. */
+(function(){
+  'use strict';
+  var isTestHost = location.hostname === 'nikkegear885.github.io' &&
+    (location.pathname === '/nikke-profile-auth-test/' || location.pathname === '/nikke-profile-auth-test');
+  if(!isTestHost) return;
+  function apply(){
+    document.title='TEST | 니케 장비관리';
+    var brand=document.querySelector('.brand h1');
+    if(brand) brand.textContent='TEST 니케 장비관리';
+    var page=document.getElementById('pageTitle');
+    if(page){
+      var t=(page.textContent||'').trim();
+      if(t && !/^TEST\\s/.test(t)) page.textContent='TEST '+t;
+    }
+  }
+  function init(){
+    apply();
+    var page=document.getElementById('pageTitle');
+    if(page) new MutationObserver(apply).observe(page,{childList:true,characterData:true,subtree:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
