@@ -4382,7 +4382,7 @@ html.dark-theme .name-cell-image{
 </style></style></style></style><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <script id="site-version-bootstrap">
 (function(){
-  var EMBEDDED_VERSION='1.123';
+  var EMBEDDED_VERSION='1.124';
   var REDIRECT_KEY='nikke_site_version_redirected_';
   function applyVersion(v){
     var el=document.getElementById('siteVersionCorner');
@@ -4440,8 +4440,23 @@ html.dark-theme #characterPanel .quick-filter-btn.valid-selected.active::after{
 .sidebar:not(.open){transform:translateX(-110%)!important;}
 .sidebar-hitarea{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:32px!important;z-index:140!important;pointer-events:auto!important;}
 .sidebar-hitarea.open{width:228px!important;}
+</style><style id="need-count-highlight-v1124">
+/* v1.124: 기업장비 필요 현황에서 1 이상인 숫자를 강하게 강조 */
+.gear-summary td.need.nonzero{
+  background:#ffb020!important;
+  color:#241700!important;
+  font-weight:1000!important;
+  border:1px solid #ffcf66!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),0 0 8px rgba(255,176,32,.35)!important;
+  text-shadow:none!important;
+}
+.gear-summary .total-row td.need.nonzero{
+  background:#ff9f00!important;
+  color:#201300!important;
+  border-color:#ffd05a!important;
+}
 </style></head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.123</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.124</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" style="background:#fff1dc!important;border:1px solid #e5a14f!important;color:#a85f16!important;box-shadow:0 2px 8px rgba(214,142,50,.16)!important;font-weight:900!important" onclick="openBlablalinkSyncGuide()">계정 동기화</button><button type="button" class="btn known-bugs-top-btn" id="knownBugsBtn" onclick="openKnownBugsPanel()">인지한 버그</button><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -5249,7 +5264,7 @@ function renderKpis(){
           <thead><tr><th>기업</th><th>클래스</th><th>머리</th><th>몸통</th><th>장갑</th><th>다리</th></tr></thead>
           <tbody>
             ${rows.map(x=>{const sum=x.counts.머리+x.counts.몸통+x.counts.장갑+x.counts.다리;return `<tr><td class="company-cell">${esc(x.company)}</td><td class="class-cell">${esc(x.cls)}</td>${gearParts.map(p=>`<td class="need ${x.counts[p]?'nonzero':''}">${fmt(x.counts[p])}</td>`).join('')}<td class="need ${sum?'nonzero':''}">${fmt(sum)}</td></tr>`}).join('')}
-            <tr class="total-row"><td colspan="2">전체 필요 기업장비</td>${gearParts.map(p=>`<td class="need">${fmt(totals[p])}</td>`).join('')}<td class="need">${fmt(gearParts.reduce((n,p)=>n+totals[p],0))}</td></tr>
+            <tr class="total-row"><td colspan="2">전체 필요 기업장비</td>${gearParts.map(p=>`<td class="need ${totals[p]?'nonzero':''}">${fmt(totals[p])}</td>`).join('')}<td class="need ${gearParts.reduce((n,p)=>n+totals[p],0)?'nonzero':''}">${fmt(gearParts.reduce((n,p)=>n+totals[p],0))}</td></tr>
           </tbody>
         </table>
       </div>
