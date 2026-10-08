@@ -4382,7 +4382,7 @@ html.dark-theme .name-cell-image{
 </style></style></style></style><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <script id="site-version-bootstrap">
 (function(){
-  var EMBEDDED_VERSION='1.130';
+  var EMBEDDED_VERSION='1.131';
   var REDIRECT_KEY='nikke_site_version_redirected_';
   function applyVersion(v){
     var el=document.getElementById('siteVersionCorner');
@@ -4465,11 +4465,11 @@ html:not(.dark-theme) .gear-summary td.need.need-level-5{background:#ffbd45!impo
 .gear-summary .total-row td.need.need-level-3{background:rgba(255,176,32,.30)!important;}
 .gear-summary .total-row td.need.need-level-4{background:rgba(255,176,32,.38)!important;}
 .gear-summary .total-row td.need.need-level-5{background:rgba(255,167,20,.50)!important;}
-</style><meta name="pages-deploy-refresh" content="1.130"></head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.130</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
+</style><meta name="pages-deploy-refresh" content="1.131"></head><body>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.131</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
-<main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" style="background:#fff1dc!important;border:1px solid #e5a14f!important;color:#a85f16!important;box-shadow:0 2px 8px rgba(214,142,50,.16)!important;font-weight:900!important" onclick="openBlablalinkSyncGuide()">계정 동기화</button><button type="button" class="btn known-bugs-top-btn" id="knownBugsBtn" onclick="openKnownBugsPanel()">인지한 버그</button><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
+<main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" onclick="openBlablalinkSyncGuide()"><svg class="sync-button-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"></path></svg><span>계정 동기화</span><svg class="sync-button-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button type="button" class="btn known-bugs-top-btn" id="knownBugsBtn" onclick="openKnownBugsPanel()">인지한 버그</button><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
   <h4>설정 · 데이터</h4>
   <div class="settings-section-title">계정 이름</div>
   <div class="account-name-editor">
@@ -6779,19 +6779,25 @@ html.dark-theme #characterPanel .valid-toggle.active::before{
 </style>
 
 <style id="test-sync-emphasis-site-help-v001">
-/* TEST only: emphasize sync action without darkening its base color. */
+/* TEST only: capsule-style sync action, keeping the orange palette light. */
 .topbar .account-switcher .blsync-top-btn{
-  outline:2px solid rgba(229,161,79,.44)!important;
-  outline-offset:2px!important;
-  border-radius:9px!important;
-  transition:transform .16s ease,filter .16s ease!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  gap:8px!important;width:auto!important;min-width:0!important;flex:0 0 auto!important;
+  padding:9px 15px!important;margin-bottom:8px!important;
+  border:1px solid #E7B46C!important;border-radius:999px!important;
+  background:#FFF3E2!important;color:#A85F16!important;
+  box-shadow:0 3px 10px rgba(214,142,50,.10)!important;
+  outline:none!important;font-weight:900!important;white-space:nowrap!important;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease!important;
 }
 .topbar .account-switcher .blsync-top-btn:hover,
 .topbar .account-switcher .blsync-top-btn:focus-visible{
   transform:translateY(-1px)!important;
-  filter:saturate(1.08)!important;
-  outline-color:rgba(229,161,79,.72)!important;
+  background:#FFEED8!important;border-color:#DEAB60!important;
+  color:#995713!important;box-shadow:0 5px 13px rgba(214,142,50,.15)!important;
 }
+.topbar .account-switcher .blsync-top-btn .sync-button-icon{flex:none;display:block}
+.topbar .account-switcher .blsync-top-btn .sync-button-chevron{flex:none;opacity:.62;margin-left:1px}
 .site-help-link{
   position:fixed;right:22px;bottom:76px;z-index:10040;
   display:inline-flex;align-items:center;gap:8px;
@@ -6819,12 +6825,13 @@ html.dark-theme .site-help-link:focus-visible{
 }
 @media(max-width:650px){
   .site-help-link{right:12px;bottom:76px;padding:10px 12px;gap:6px;font-size:11px}
+  .topbar .account-switcher .blsync-top-btn{padding:8px 12px!important;gap:6px!important}
 }
 @media(prefers-reduced-motion:reduce){
   .topbar .account-switcher .blsync-top-btn,.site-help-link{transition:none!important}
 }
 </style>
-<a class="site-help-link" href="#" onclick="event.preventDefault();return false;" aria-label="사이트 사용법 (링크 준비 중)" title="사이트 사용법 링크는 추후 연결됩니다."><span class="site-help-icon" aria-hidden="true">ⓘ</span><span>사이트 사용법</span><span class="site-help-arrow" aria-hidden="true">↗</span></a>
+<a class="site-help-link"<a class="site-help-link" href="#" onclick="event.preventDefault();return false;" aria-label="사이트 사용법 (링크 준비 중)" title="사이트 사용법 링크는 추후 연결됩니다."><span class="site-help-icon" aria-hidden="true">ⓘ</span><span>사이트 사용법</span><span class="site-help-arrow" aria-hidden="true">↗</span></a>
 <script id="test-only-branding-guard">
 /* TEST SITE ONLY — never active on production. */
 (function(){
