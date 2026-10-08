@@ -109,6 +109,7 @@
           '<div><h3 id="blDirectTitle">BlaBlaLink 계정 동기화</h3><small>공개 프로필 URL만 입력하면 장비 현황을 불러옵니다.</small></div>' +
           '<div style="display:flex;align-items:center;gap:8px;margin-left:auto">' +
             '<a class="bl-direct-help-link" href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5423342" target="_blank" rel="noopener noreferrer">블라링크 계정주소 확인법</a>' +
+            '<a class="bl-direct-help-link" href="#" style="margin-left:0" onclick="event.preventDefault();return false;" aria-label="사이트 사용법 (링크 준비 중)" title="사이트 사용법 링크는 추후 연결됩니다.">사이트 사용법</a>' +
             '<button type="button" class="bl-direct-close" aria-label="닫기">×</button>' +
           '</div>' +
         '</div>' +
