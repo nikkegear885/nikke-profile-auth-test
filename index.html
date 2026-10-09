@@ -4382,7 +4382,7 @@ html.dark-theme .name-cell-image{
 </style></style></style></style><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <script id="site-version-bootstrap">
 (function(){
-  var EMBEDDED_VERSION='1.141';
+  var EMBEDDED_VERSION='1.142';
   var REDIRECT_KEY='nikke_site_version_redirected_';
   function applyVersion(v){
     var el=document.getElementById('siteVersionCorner');
@@ -4465,8 +4465,8 @@ html:not(.dark-theme) .gear-summary td.need.need-level-5{background:#ffbd45!impo
 .gear-summary .total-row td.need.need-level-3{background:rgba(255,176,32,.30)!important;}
 .gear-summary .total-row td.need.need-level-4{background:rgba(255,176,32,.38)!important;}
 .gear-summary .total-row td.need.need-level-5{background:rgba(255,167,20,.50)!important;}
-</style><meta name="pages-deploy-refresh" content="1.141"></head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.141</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
+</style><meta name="pages-deploy-refresh" content="1.142"></head><body>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.142</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" onclick="openBlablalinkSyncGuide()"><svg class="sync-button-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"></path></svg><span>계정 동기화</span><svg class="sync-button-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><a href="#" id="siteHelpTopButton" class="bl-direct-site-help" onclick="event.preventDefault();return false;" aria-label="사이트 이용법 (링크 준비 중)" title="사이트 이용법 링크는 추후 연결됩니다.">사이트 이용법</a><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -6882,37 +6882,37 @@ html.dark-theme .blsync-modal .blsync-help-link:focus-visible{
 })();
 </script>
 
-<style id="site-help-topbar-style-v001">
-/* The site usage link keeps its orange design when moved into the former known-bugs spot. */
+<style id="site-help-topbar-style-v002">
+/* Blue site-guide button; keep the same position, wording, icon, and click behavior. */
 .topbar .account-switcher #siteHelpTopButton{
   display:inline-flex!important;align-items:center!important;justify-content:center!important;
   gap:7px!important;max-width:100%;box-sizing:border-box!important;
-  padding:9px 13px!important;border:2px solid #df9328!important;border-radius:9px!important;
-  background:#ffedcf!important;color:#874500!important;text-decoration:none!important;
+  padding:9px 13px!important;border:2px solid #629CE8!important;border-radius:9px!important;
+  background:#EAF3FF!important;color:#205CA7!important;text-decoration:none!important;
   font-size:12px!important;font-weight:1000!important;line-height:1.35!important;
   text-align:center!important;white-space:normal!important;
-  box-shadow:0 3px 0 rgba(166,93,14,.16),0 4px 12px rgba(214,142,50,.22)!important;
+  box-shadow:0 3px 0 rgba(42,96,160,.14),0 4px 12px rgba(74,140,220,.20)!important;
   transition:transform .15s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease!important;
 }
 .topbar .account-switcher #siteHelpTopButton:before{
   content:"ⓘ";display:inline-flex;align-items:center;justify-content:center;
   flex:0 0 18px;width:18px;height:18px;border-radius:50%;
-  background:#d98513;color:#fff;font-size:13px;font-weight:1000;line-height:1;
+  background:#397DCE;color:#fff;font-size:13px;font-weight:1000;line-height:1;
 }
 .topbar .account-switcher #siteHelpTopButton:hover,
 .topbar .account-switcher #siteHelpTopButton:focus-visible{
-  transform:translateY(-1px)!important;background:#ffdfa6!important;border-color:#c9780d!important;
-  color:#713800!important;box-shadow:0 4px 0 rgba(166,93,14,.16),0 6px 15px rgba(214,142,50,.30)!important;
-  outline:2px solid rgba(223,147,40,.22)!important;outline-offset:2px!important;
+  transform:translateY(-1px)!important;background:#DDEBFF!important;border-color:#3B82D6!important;
+  color:#174A8B!important;box-shadow:0 4px 0 rgba(42,96,160,.16),0 6px 15px rgba(74,140,220,.28)!important;
+  outline:2px solid rgba(98,156,232,.24)!important;outline-offset:2px!important;
 }
 html.dark-theme .topbar .account-switcher #siteHelpTopButton{
-  background:#382713!important;border-color:#e6a13b!important;color:#ffe0a5!important;
+  background:#182A44!important;border-color:#5B9BE5!important;color:#CFE4FF!important;
   box-shadow:0 3px 0 rgba(0,0,0,.25),0 4px 13px rgba(0,0,0,.24)!important;
 }
-html.dark-theme .topbar .account-switcher #siteHelpTopButton:before{background:#e6a13b;color:#2b1b08}
+html.dark-theme .topbar .account-switcher #siteHelpTopButton:before{background:#5B9BE5;color:#10233A}
 html.dark-theme .topbar .account-switcher #siteHelpTopButton:hover,
 html.dark-theme .topbar .account-switcher #siteHelpTopButton:focus-visible{
-  background:#4b3319!important;border-color:#ffc56a!important;color:#fff0ce!important;
+  background:#203958!important;border-color:#8AB8F2!important;color:#E7F2FF!important;
 }
 @media(max-width:650px){
   .topbar .account-switcher #siteHelpTopButton{font-size:10px!important;padding:7px 8px!important;gap:5px!important}
