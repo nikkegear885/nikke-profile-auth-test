@@ -135,6 +135,7 @@
             '<button type="button" class="bl-direct-primary">동기화 시작</button>' +
             '<button type="button" class="bl-direct-secondary">닫기</button>' +
           '</div>' +
+          '<div style="margin-top:6px;font-size:10px;color:#71828f;text-align:center">계정명은 우측 톱니 아이콘을 눌러 변경가능합니다</div>' +
           '<div class="bl-direct-status" id="blDirectStatus"></div>' +
           '<div class="bl-direct-note">비밀번호·Cookie·game_token은 이 사이트에 입력하지 않습니다. 사이트의 동기화 서버가 별도 서비스 세션으로 공개 프로필을 조회합니다.</div>' +
           '<div class="bl-direct-profile" id="blDirectProfile" hidden>' +
