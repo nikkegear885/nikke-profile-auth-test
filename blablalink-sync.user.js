@@ -1,11 +1,11 @@
 // ==UserScript==
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
-// @namespace    https://nikkegear885.github.io/nikke-/
-// @version      1.0.24
-// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-/main/blablalink-sync.user.js
-// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-/main/blablalink-sync.user.js
-// @description  로그인된 BlablaLink 세션에서 NIKKE 캐릭터별 기업장비 현황을 NIKKE Gear Manager로 전송합니다.
+// @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
+// @version      1.0.25
+// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
+// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
+// @description  테스트 사이트 계정동기화에서 캐릭터 장비와 노말·하드 스테이지 진행도를 가져옵니다.
 // @author       NIKKE Gear Manager
 // @match        https://*.blablalink.com/*
 // @match        http://*.blablalink.com/*
@@ -20,8 +20,11 @@
   const API = {
     player: 'https://api.blablalink.com/api/ugc/direct/standalonesite/User/GetUserGamePlayerInfo',
     chars: 'https://api.blablalink.com/api/game/proxy/Game/GetUserCharacters',
-    details: 'https://api.blablalink.com/api/game/proxy/Game/GetUserCharacterDetails'
+    details: 'https://api.blablalink.com/api/game/proxy/Game/GetUserCharacterDetails',
+    basicInfo: 'https://api.blablalink.com/api/game/proxy/Game/GetUserProfileBasicInfo'
   };
+
+  const CAMPAIGN_CATALOG_URL = 'https://sg-tools-cdn.blablalink.com/xx-97/b32816a11f83865b09bcf95e67ca83ae.json';
 
   const state = {
     intlOpenId: '',
@@ -288,6 +291,64 @@
     return !!(state.intlOpenId && state.areaId);
   }
 
+
+  function buildCampaignStageMap(root){
+    const map = new Map();
+    const visit = node => {
+      if(!node) return;
+      if(Array.isArray(node)){node.forEach(visit);return;}
+      if(typeof node !== 'object') return;
+      const ids=[node.id,node.stage_id,node.progress_id,node.campaign_id]
+        .filter(v=>typeof v==='number'||(typeof v==='string'&&v.trim()!==''));
+      let name;
+      if(typeof node.name_short==='string') name=node.name_short;
+      else if(typeof node.name==='string') name=node.name;
+      else if(typeof node.title==='string') name=node.title;
+      else if(node.name_localkey&&typeof node.name_localkey==='object'){
+        const vals=Object.values(node.name_localkey).filter(v=>typeof v==='string');
+        if(vals.length)name=vals[0];
+      }
+      if(name&&ids.length){for(const id of ids){const key=String(id);if(!map.has(key))map.set(key,name);}}
+      Object.values(node).forEach(visit);
+    };
+    visit(root);
+    return map;
+  }
+  function campaignStageShortName(map,id){
+    if(id===undefined||id===null||id==='')return '';
+    const name=map.get(String(id));
+    if(typeof name!=='string')return '';
+    return name.trim().split(/\\s+/)[0].replace(/\\s*[-–]\\s*/g,'-');
+  }
+  async function fetchCampaignProgress(){
+    try{
+      const response=await postJson(API.basicInfo,{
+        nikke_area_id:Number(state.areaId),
+        intl_open_id:state.intlOpenId
+      });
+      if(String(response?.code??'')!=='0')throw new Error(response?.message||response?.msg||'캠페인 진행도 조회 실패');
+      const info=response?.data?.basic_info||{};
+      const normalId=info.progress_normal_campaign??info.progress_campaign_normal??info.progress_normal;
+      const hardId=info.progress_hard_campaign??info.progress_campaign_hard??info.progress_hard;
+      const catalogResponse=await fetch(CAMPAIGN_CATALOG_URL,{credentials:'omit'});
+      if(!catalogResponse.ok)throw new Error('스테이지 목록 조회 실패: HTTP '+catalogResponse.status);
+      const catalog=await catalogResponse.json();
+      const stageMap=buildCampaignStageMap(catalog);
+      const normal=campaignStageShortName(stageMap,normalId);
+      const hard=campaignStageShortName(stageMap,hardId);
+      return {
+        ok:true,
+        normal,
+        hard,
+        normalKnown:normalId!==undefined&&normalId!==null&&normalId!==''&&Number(normalId)!==0&&!!normal,
+        hardKnown:hardId!==undefined&&hardId!==null&&hardId!==''&&(Number(hardId)===0||!!hard)
+      };
+    }catch(error){
+      console.warn('[NIKKE GM] 캠페인 진행도 조회 실패:',error);
+      return {ok:false,normal:'',hard:'',normalKnown:false,hardKnown:false};
+    }
+  }
+
   async function fetchCharacters(){
     const j = await postJson(API.chars, {
       intl_open_id: state.intlOpenId,
@@ -404,10 +465,12 @@
       showStatus('NIKKE Gear Manager: 장비 기업 정보를 조회 중… ('+codes.length+'명)');
       const details = await fetchDetails(codes);
       const {updates, unresolved} = makeUpdates(details);
+      // 스테이지 조회는 버튼으로 동기화할 때만 실행하고, 실패해도 장비 동기화는 유지합니다.
+      const campaignProgress = await fetchCampaignProgress();
 
       if(sourceWindow && sourceWindow.postMessage){
         sourceWindow.postMessage({
-          type:'NIKKE_GM_BL_SYNC_RESULT',
+          type:'NIKKE_GM_BL_TEST_SYNC_RESULT',
           token,
           payload:{
             ok:true,
@@ -415,6 +478,7 @@
             areaId:state.areaId,
             characterCount:codes.length,
             detailCount:details.length,
+            campaignProgress,
             updates,
             unresolved
           }
@@ -425,7 +489,7 @@
       const msg = String(e?.message || e || '알 수 없는 오류');
       if(sourceWindow && sourceWindow.postMessage){
         sourceWindow.postMessage({
-          type:'NIKKE_GM_BL_SYNC_RESULT',
+          type:'NIKKE_GM_BL_TEST_SYNC_RESULT',
           token,
           payload:{ok:false,error:msg}
         }, TARGET_ORIGIN);
@@ -438,7 +502,7 @@
 
   window.addEventListener('message', e => {
     const d = e?.data;
-    if(!d || d.type !== 'NIKKE_GM_BL_HELLO') return;
+    if(!d || d.type !== 'NIKKE_GM_BL_TEST_HELLO') return;
     if(e.origin !== TARGET_ORIGIN) return;
     state.pendingToken = String(d.token || '');
     if(!state.pendingToken || !e.source) return;
