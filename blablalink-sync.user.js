@@ -318,7 +318,7 @@
     if(id===undefined||id===null||id==='')return '';
     const name=map.get(String(id));
     if(typeof name!=='string')return '';
-    return name.trim().split(/\\s+/)[0].replace(/\\s*[-–]\\s*/g,'-');
+    return name.trim().split(/\s+/)[0].replace(/\s*[-–]\s*/g,'-');
   }
   async function fetchCampaignProgress(){
     try{
