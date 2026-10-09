@@ -6072,12 +6072,12 @@ function toggleOutpostCoreHalf(){
 function normalizeOutpostStageLabel(value){
   return String(value??'').trim().toUpperCase()
     .replace(/[‐‑‒–—]/g,'-')
-    .replace(/\\s+(?:STAGE|BOSS)$/i,'')
-    .replace(/\\s+/g,'');
+    .replace(/\s+(?:STAGE|BOSS)$/i,'')
+    .replace(/\s+/g,'');
 }
 function parseOutpostStageProgress(value){
   const text=String(value??'').trim().toUpperCase().replace(/[‐‑‒–—]/g,'-');
-  const match=text.match(/(\\d+)\\s*-\\s*(\\d+[A-Z]?(?:-\\d+)*)/);
+  const match=text.match(/(\d+)\s*-\s*(\d+[A-Z]?(?:-\d+)*)/);
   if(!match)return null;
   const chapter=Number(match[1]);
   if(!Number.isInteger(chapter)||chapter<0)return null;
