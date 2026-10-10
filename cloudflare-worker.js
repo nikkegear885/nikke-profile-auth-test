@@ -459,9 +459,20 @@ function extractIntlOpenId(decodedOpenId){
   return intlOpenId;
 }
 
-async function syncPublicNikkeProfile(profileUrl, env){
+async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
   const decoded = decodeOpenIdFromProfileUrl(profileUrl);
   const intlOpenId = extractIntlOpenId(decoded);
+
+  const requestedAreaId = requestedAreaInput == null || String(requestedAreaInput).trim() === ''
+    ? null
+    : Number(requestedAreaInput);
+  if(requestedAreaId !== null && (!Number.isInteger(requestedAreaId) || !NIKKE_AREAS.includes(requestedAreaId))){
+    const err = new Error('선택한 NIKKE 지역 ID가 올바르지 않습니다.');
+    err.sync_type = 'invalid_area_id';
+    err.status = 400;
+    throw err;
+  }
+  const areasToCheck = requestedAreaId === null ? NIKKE_AREAS : [requestedAreaId];
 
   // 공개 프로필 자체가 정상인지 먼저 확인합니다.
   const profile = await getProfile(profileUrl, decoded);
@@ -471,7 +482,7 @@ async function syncPublicNikkeProfile(profileUrl, env){
   const areasChecked = [];
   const candidates = [];
 
-  for(const areaId of NIKKE_AREAS){
+  for(const areaId of areasToCheck){
     const result = await callNikkeGameApi(
       NIKKE_CHARACTERS_API,
       {
@@ -518,10 +529,15 @@ async function syncPublicNikkeProfile(profileUrl, env){
   }
 
   if(candidates.length === 0){
-    const err = new Error('공개 NIKKE 로스터를 조회할 수 있는 지역을 찾지 못했습니다.');
-    err.sync_type = 'no_public_roster';
+    const selectedCode = ({81:'JP',82:'NA',83:'KR',84:'Global',85:'SEA'})[requestedAreaId] || String(requestedAreaId || '');
+    const message = requestedAreaId === null
+      ? '공개 NIKKE 로스터를 조회할 수 있는 지역을 찾지 못했습니다.'
+      : '선택한 NIKKE 지역 ' + selectedCode + ' (' + requestedAreaId + ')에서 공개 로스터를 조회하지 못했습니다.';
+    const err = new Error(message);
+    err.sync_type = requestedAreaId === null ? 'no_public_roster' : 'selected_area_roster_missing';
     err.status = 404;
     err.areas_checked = areasChecked;
+    if(requestedAreaId !== null) err.area_id = requestedAreaId;
     throw err;
   }
 
@@ -824,7 +840,7 @@ export default {
         }
 
         try{
-          const result = await syncPublicNikkeProfile(profileUrl, env);
+          const result = await syncPublicNikkeProfile(profileUrl, env, body?.area_id);
           return json(result, 200);
         }catch(e){
           const payload = {
