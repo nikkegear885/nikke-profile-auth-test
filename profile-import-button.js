@@ -41,6 +41,24 @@
     return u.toString();
   }
 
+  async function requestProfileSync(url, areaId){
+    var body = {profile_url:url};
+    if(areaId != null) body.area_id = Number(areaId);
+    var response = await fetch(API + '/sync', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+      cache:'no-store',
+      credentials:'omit'
+    });
+    var payload = await response.json().catch(function(){ return {}; });
+    return {responseOk:response.ok,payload:payload};
+  }
+
+  function regionLabel(areaId){
+    return ({'81':'JP','82':'NA','83':'KR','84':'Global','85':'SEA'})[String(areaId)] || ('지역 ' + String(areaId));
+  }
+
   function injectStyle(){
     if(document.getElementById('bl-direct-sync-style')) return;
     var style = document.createElement('style');
@@ -202,17 +220,40 @@
       status.textContent = '프로필과 NIKKE 장비 정보를 조회하는 중…';
 
       try{
-        var response = await fetch(API + '/sync', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({profile_url:url}),
-          cache: 'no-store',
-          credentials: 'omit'
-        });
+        var syncResult = await requestProfileSync(url, null);
+        var payload = syncResult.payload;
 
-        var payload = await response.json().catch(function(){ return {}; });
-        if(!response.ok || payload.ok !== true){
-          throw new Error(payload.message || 'BlaBlaLink 동기화에 실패했습니다.');
+        if(payload && payload.ok !== true &&
+           payload.sync_type === 'multiple_rosters' &&
+           Array.isArray(payload.candidates) && payload.candidates.length > 1){
+          var candidateText = payload.candidates.map(function(candidate){
+            return regionLabel(candidate.area_id) + ' (ID ' + candidate.area_id + ') · 캐릭터 ' +
+              String(candidate.character_count || 0) + '명';
+          }).join('\n');
+          var answer = window.prompt(
+            '여러 NIKKE 지역에서 로스터가 확인되었습니다. 불러올 지역을 직접 선택해 주세요.\n\n' +
+            candidateText + '\n\n지역 코드(JP / NA / KR / Global / SEA) 또는 ID를 입력하세요.',
+            ''
+          );
+          if(answer === null){
+            throw new Error('지역 선택이 취소되었습니다. 주소 입력 불러오기를 다시 실행해 주세요.');
+          }
+          var value = String(answer).trim().toLowerCase();
+          var selected = payload.candidates.find(function(candidate){
+            return String(candidate.area_id) === value || regionLabel(candidate.area_id).toLowerCase() === value;
+          });
+          if(!selected){
+            throw new Error('선택한 지역을 확인하지 못했습니다. 목록에 표시된 지역 코드 또는 ID를 입력해 주세요.');
+          }
+
+          status.className = 'bl-direct-status';
+          status.textContent = regionLabel(selected.area_id) + ' 지역의 장비 정보를 조회하는 중…';
+          syncResult = await requestProfileSync(url, selected.area_id);
+          payload = syncResult.payload;
+        }
+
+        if(!syncResult.responseOk || !payload || payload.ok !== true){
+          throw new Error((payload && payload.message) || 'BlaBlaLink 동기화에 실패했습니다.');
         }
 
         var apply = window.__NIKKE_GM_APPLY_SYNC__;
