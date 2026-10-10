@@ -2,9 +2,9 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.26
-// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync-v1.0.23.user.js
-// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
+// @version      1.0.27
+// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync-v1.0.27.user.js
+// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync-v1.0.27.user.js
 // @description  테스트 사이트 계정동기화에서 캐릭터별 기업장비 정보를 가져옵니다.
 // @author       NIKKE Gear Manager
 // @match        https://*.blablalink.com/*
@@ -291,18 +291,110 @@
 
 
 
-  async function fetchCharacters(){
-    const j = await postJson(API.chars, {
-      intl_open_id: state.intlOpenId,
-      nikke_area_id: Number(state.areaId)
-    });
-    if (String(j?.code ?? '') !== '0') {
-      throw new Error(j?.message || j?.msg || '캐릭터 목록 조회 실패');
-    }
-    return Array.isArray(j?.data?.characters) ? j.data.characters : [];
+    const NIKKE_AREAS = Object.freeze([
+    {id:81, code:'JP', label:'일본 (JP)'},
+    {id:82, code:'NA', label:'북미 (NA)'},
+    {id:83, code:'KR', label:'한국 (KR)'},
+    {id:84, code:'Global', label:'글로벌 (Global)'},
+    {id:85, code:'SEA', label:'동남아 (SEA)'}
+  ]);
+
+  function isRegionAmbiguityError(message){
+    const s = String(message || '').toLowerCase();
+    const ambiguous = /(여러|multiple|several|more than one|ambiguous)/i.test(s);
+    const regionRelated = /(nikke|니케|region|지역|server|서버|area|로스터|roster|character|캐릭터)/i.test(s);
+    return ambiguous && regionRelated;
   }
 
-  async function fetchDetails(codes){
+  async function requestCharactersForArea(areaId){
+    return await postJson(API.chars, {
+      intl_open_id: state.intlOpenId,
+      nikke_area_id: Number(areaId)
+    });
+  }
+
+  async function probeAreaByDetails(areaId){
+    try{
+      const j = await postJson(API.details, {
+        intl_open_id: state.intlOpenId,
+        nikke_area_id: Number(areaId),
+        name_codes: [5167]
+      });
+      return String(j?.code ?? '') === '0';
+    }catch(_){
+      return false;
+    }
+  }
+
+  function chooseNikkeArea(candidates){
+    if(candidates.length === 1) return candidates[0];
+    const options = candidates.map(a => a.id + ' = ' + a.label).join('\\n');
+    const answer = window.prompt(
+      '여러 NIKKE 지역에서 로스터가 확인되었습니다. 잘못된 지역의 장비를 가져오지 않도록 동기화할 지역을 직접 선택해 주세요.\\n\\n' +
+      options + '\\n\\n지역 ID 또는 코드(JP / NA / KR / Global / SEA)를 입력하세요.',
+      ''
+    );
+    if(answer === null) throw new Error('지역 선택이 취소되었습니다. 동기화를 다시 실행하고 올바른 지역을 선택해 주세요.');
+    const value = String(answer).trim().toLowerCase();
+    const selected = candidates.find(a => String(a.id) === value || a.code.toLowerCase() === value);
+    if(!selected) throw new Error('선택한 지역을 확인하지 못했습니다. 목록에 표시된 지역 ID 또는 코드를 입력해 주세요.');
+    return selected;
+  }
+
+async function fetchCharacters(){
+    const j = await requestCharactersForArea(state.areaId);
+    if (String(j?.code ?? '') === '0') {
+      return Array.isArray(j?.data?.characters) ? j.data.characters : [];
+    }
+
+    const originalMessage = String(j?.message || j?.msg || '캐릭터 목록 조회 실패');
+    if(!isRegionAmbiguityError(originalMessage)) throw new Error(originalMessage);
+
+    showStatus('NIKKE Gear Manager: 여러 지역 로스터를 확인 중…');
+
+    const rosterMatches = [];
+    for(const area of NIKKE_AREAS){
+      try{
+        const candidate = await requestCharactersForArea(area.id);
+        if(String(candidate?.code ?? '') === '0'){
+          const characters = Array.isArray(candidate?.data?.characters) ? candidate.data.characters : [];
+          if(characters.length) rosterMatches.push({...area, characters});
+        }
+      }catch(_){}
+      await delay(120);
+    }
+
+    if(rosterMatches.length === 1){
+      state.areaId = rosterMatches[0].id;
+      showStatus('지역 확인: ' + rosterMatches[0].label, true);
+      return rosterMatches[0].characters;
+    }
+
+    if(rosterMatches.length > 1){
+      const selected = chooseNikkeArea(rosterMatches);
+      state.areaId = selected.id;
+      return selected.characters;
+    }
+
+    const availableAreas = [];
+    for(const area of NIKKE_AREAS){
+      if(await probeAreaByDetails(area.id)) availableAreas.push(area);
+      await delay(120);
+    }
+    if(!availableAreas.length){
+      throw new Error(originalMessage + ' 지역별 조회도 실패했습니다. BlablaLink 로그인 상태를 확인한 뒤 다시 시도해 주세요.');
+    }
+
+    const selected = chooseNikkeArea(availableAreas);
+    state.areaId = selected.id;
+    const selectedResponse = await requestCharactersForArea(selected.id);
+    if(String(selectedResponse?.code ?? '') !== '0'){
+      throw new Error(String(selectedResponse?.message || selectedResponse?.msg || '선택한 지역의 캐릭터 목록을 조회하지 못했습니다.'));
+    }
+    const characters = Array.isArray(selectedResponse?.data?.characters) ? selectedResponse.data.characters : [];
+    if(!characters.length) throw new Error(selected.label + ' 지역의 캐릭터 목록이 비어 있습니다. BlablaLink 계정의 지역을 확인해 주세요.');
+    return characters;
+  }async function fetchDetails(codes){
     const clean = Array.from(new Set(codes.map(v => String(v)).filter(Boolean)));
     const chunks = [];
     // API가 한 번에 거부하는 경우를 대비해 40개씩 나눕니다.
