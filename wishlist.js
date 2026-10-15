@@ -533,7 +533,11 @@
       '#wishlistPanel .wl-picker-search{box-sizing:border-box;width:100%;height:38px;padding:0 12px;border:1px solid #cbd4e0;border-radius:8px;background:#fff;color:#222936;font-size:13px;outline:none}',
       '#wishlistPanel .wl-picker-search:focus{border-color:#169fd6;box-shadow:0 0 0 3px rgba(22,159,214,.14)}',
       '#wishlistPanel .wl-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));align-content:start;gap:8px;min-height:100px;padding:8px 14px 14px;overflow:auto}',
-      '#wishlistPanel .wl-picker-item{display:flex;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:8px 5px;border:1px solid #dce2ea;border-radius:9px;background:#fff;color:#333b49;cursor:pointer;transition:border-color .12s,background .12s,transform .12s}',
+      '#wishlistPanel .wl-picker-item{position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:8px 5px;border:1px solid #dce2ea;border-radius:9px;background:#fff;color:#333b49;cursor:pointer;transition:border-color .12s,background .12s,transform .12s}',
+      '#wishlistPanel .wl-picker-info{position:absolute;top:3px;right:3px;z-index:5;display:flex;align-items:center;justify-content:center;width:11px;height:11px;box-sizing:border-box;border:1px solid #8b9aac;border-radius:50%;background:rgba(246,249,253,.96);color:#65748a;font:italic 900 7px/1 Georgia,serif;text-align:center;cursor:help;box-shadow:0 1px 2px rgba(0,0,0,.08)}',
+      '#wishlistPanel .wl-picker-info:hover{border-color:#168fc5;background:#e9f8ff;color:#087ba8}',
+      'html.dark-theme #wishlistPanel .wl-picker-info{border-color:#65758d;background:#192538;color:#cbd8ea}',
+      'html.dark-theme #wishlistPanel .wl-picker-info:hover{border-color:#5ab9df;background:#203b50;color:#bdeaff}',
       '#wishlistPanel .wl-picker-item:hover:not(:disabled){transform:translateY(-1px);border-color:#37a8d7;background:#f0faff}',
       '#wishlistPanel .wl-picker-item.is-current{border:2px solid #149fd6;padding:7px 4px;background:#e9f8ff}',
       '#wishlistPanel .wl-picker-item:disabled{opacity:.36;cursor:not-allowed;filter:grayscale(.7)}',
@@ -853,7 +857,10 @@
       const photo = image
         ? '<img src="' + esc(image) + '" alt="" loading="lazy" draggable="false">'
         : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>' ;
-      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (excluded ? ' is-excluded' : '') + '">' +
+      const isMiranda = norm(name) === norm('미란다');
+      const explanation = '시공증 미보유 버프 캐릭터로, 돌파로 인한 데미지 증가량이 미미함.';
+      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (excluded ? ' is-excluded' : '') + '"' + (isMiranda ? ' title="' + esc(explanation) + '"' : '') + '>' +
+        (isMiranda ? '<span class="wl-picker-info" title="' + esc(explanation) + '" aria-label="미란다 설명">i</span>' : '') +
         '<button type="button" class="wl-picker-choice" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + '>' +
           '<span class="wl-picker-photo">' + photo + '</span>' +
           '<span class="wl-picker-name">' + esc(name) + '</span>' +
