@@ -136,7 +136,7 @@
   // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
   // Only characters explicitly designated by the user as PVP candidates.
   // Missilis: 트리나, 자칼, 센티. Elysion: none supplied.
-  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티'].map(norm));
+  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업'].map(norm));
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
   const WISHLIST_PERFORMANCE_TIERS = [
