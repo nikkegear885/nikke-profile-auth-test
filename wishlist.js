@@ -603,7 +603,7 @@
       '#wishlistPanel .wl-company-symbol{height:25px;display:flex;align-items:center;justify-content:center;font-size:32px;line-height:1;font-weight:1000;color:#777;letter-spacing:-.08em}',
       '#wishlistPanel .wl-company-name{display:none;font-size:8px;font-weight:900;letter-spacing:.1em;color:#858585}',
       '#wishlistPanel .wl-info{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:23px;height:23px;border:0;border-radius:50%;background:#888;color:#fff;font:italic 900 16px/1 Georgia,serif;cursor:help}',
-      '#wishlistPanel .wl-slots{display:grid;grid-template-columns:repeat(5,minmax(0,min(64px,calc((100vw - 64px)/5))));justify-content:center;gap:5px;align-items:stretch;padding:15px 8px 17px}',
+      '#wishlistPanel .wl-slots{display:grid;grid-template-columns:repeat(5,minmax(0,min(64px,calc((100vw - 64px)/5))));justify-content:center;gap:5px;align-items:start;padding:15px 8px 17px}',
       '#wishlistPanel .wl-slot{position:relative;min-width:0;aspect-ratio:1 / 1;border:0;border-radius:8px;background:transparent;box-shadow:none;overflow:visible}',
       '#wishlistHoverCard{position:fixed;z-index:2147483647;display:flex;align-items:center;gap:11px;box-sizing:border-box;width:max-content;max-width:min(280px,calc(100vw - 20px));padding:11px 13px;border:1px solid rgba(107,195,238,.45);border-radius:14px;background:linear-gradient(145deg,rgba(25,39,60,.98),rgba(9,16,29,.98));color:#f2f7ff;box-shadow:0 16px 42px rgba(2,8,20,.4),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(14px);pointer-events:none;opacity:0;visibility:hidden;transform:translateY(4px) scale(.985);transform-origin:center;transition:opacity .06s ease,transform .06s ease,visibility 0s linear .06s;font-family:inherit}',
       '#wishlistHoverCard.is-visible{opacity:1;visibility:visible;transform:translateY(0) scale(1);transition-delay:0s}',
@@ -642,6 +642,11 @@
       '#wishlistPanel .wl-promotion-stars .wl-star-empty{color:#e8edf3;opacity:.9}',
       '#wishlistPanel .wl-core-enhancement{position:absolute;right:2px;top:2px;z-index:6;display:inline-flex;align-items:center;justify-content:center;min-width:15px;padding:2px 3px;border:1px solid rgba(255,255,255,.7);border-radius:4px;background:rgba(24,28,38,.86);color:#ffe18a;font-size:clamp(8px,.95vw,10px);font-weight:1000;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.45);pointer-events:none}',
       '#wishlistPanel .wl-photo-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e4ebf3,#c8d2df);color:#596b80;font-size:28px;font-weight:1000}',
+      '#wishlistPanel .wl-slot.is-unowned{display:flex;flex-direction:column;align-items:stretch;aspect-ratio:auto;min-height:0}', 
+      '#wishlistPanel .wl-slot.is-unowned .wl-tile{position:relative;inset:auto;display:block;width:100%;aspect-ratio:1/1;flex:none;overflow:hidden;filter:none;background:#d0d0d0}',
+      '#wishlistPanel .wl-slot.is-unowned .wl-picked-image{filter:grayscale(1)}',
+      '#wishlistPanel .wl-slot.is-unowned .wl-promotion-stars,#wishlistPanel .wl-slot.is-unowned .wl-core-enhancement{display:none!important}',
+      '#wishlistPanel .wl-slot.is-unowned .wl-photo-status{position:relative;left:auto;right:auto;bottom:auto;z-index:4;display:block;width:100%;box-sizing:border-box;margin-top:2px;padding:1px 0;background:transparent;color:#a5adbb;text-align:center;font-size:clamp(8px,1vw,10px);font-weight:900;line-height:1.15;text-shadow:none}',
       '#wishlistPanel .wl-photo-status{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:3px 1px;background:rgba(35,39,46,.70);color:#fff;text-align:center;font-size:clamp(8px,1vw,10px);font-weight:1000;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.4)}',
       '#wishlistPanel .wl-picker-backdrop[hidden]{display:none!important}',
       '#wishlistPanel .wl-picker-backdrop{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(9,14,24,.72);backdrop-filter:blur(3px)}',
@@ -961,10 +966,10 @@
       ).join('');
       const core = getCoreEnhancement(name);
       tile = '<div class="wl-tile wl-photo-only">' + photo +
-        '<span class="wl-promotion-stars" aria-label="' + stage + '돌파">' + stars + '</span>' +
-        (core > 0 ? '<span class="wl-core-enhancement" aria-label="코어 강화 +' + core + '">+' + core + '</span>' : '') +
-        (unowned ? '<span class="wl-photo-status">미보유</span>' : '') +
-        '</div>';
+        (unowned ? '' : '<span class="wl-promotion-stars" aria-label="' + stage + '돌파">' + stars + '</span>') +
+        (!unowned && core > 0 ? '<span class="wl-core-enhancement" aria-label="코어 강화 +' + core + '">+' + core + '</span>' : '') +
+        '</div>' +
+        (unowned ? '<span class="wl-photo-status">미보유</span>' : '');
     }else{
       tile = '<div class="wl-tile wl-empty-tile">' +
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
@@ -972,7 +977,7 @@
     const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '클릭해서 니케 선택';
     // Use the in-page hover card instead of browser-native title tooltips.
     const selector = '<button type="button" class="wl-select-trigger" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1) + ' 선택' + (name ? ': ' + accessibleName : '')) + '"></button>';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + '" data-wl-slot="true" aria-label="' + esc(accessibleName) + '">' +
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" aria-label="' + esc(accessibleName) + '">' +
       tile + selector +
       '</article>';
   }
