@@ -150,8 +150,8 @@
     style.textContent = [
       'body.wishlist-view #characterPanel,body.wishlist-view #kpis,body.wishlist-view #outpostPanel,body.wishlist-view #soleScorePanel,body.wishlist-view #pediaPanel{display:none!important}',
       '#wishlistPanel[hidden]{display:none!important}',
-      '#wishlistPanel{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:12px;margin:0;overflow:hidden;background:rgba(0,0,0,.62);color:#25282d}',
-      '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:min(920px,100%);height:min(1500px,calc(100vh - 24px));height:min(1500px,calc(100dvh - 24px));min-height:0;overflow:hidden;border:1px solid rgba(255,255,255,.92);border-radius:12px;background:#f8f8f8;box-shadow:0 20px 80px rgba(0,0,0,.36)}',
+      '#wishlistPanel{position:relative;z-index:auto;display:block;box-sizing:border-box;width:100%;max-width:1120px;padding:0;margin:0 auto 24px;overflow:visible;background:transparent;color:#25282d}',
+      '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:100%;height:auto;min-height:0;overflow:visible;border:1px solid #dedfe1;border-radius:12px;background:#f8f8f8;box-shadow:0 2px 12px rgba(0,0,0,.10)}',
       '#wishlistPanel .wl-modal-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-height:74px;padding:12px 20px;overflow:hidden;background:linear-gradient(135deg,#f5f5f5 0%,#eeeeef 42%,#fafafa 100%);border-bottom:1px solid #dedfe1}',
       '#wishlistPanel .wl-modal-head:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,transparent 0 8%,rgba(210,214,218,.35) 8% 20%,transparent 20% 37%,rgba(255,255,255,.62) 37% 48%,transparent 48% 62%,rgba(218,221,224,.35) 62% 77%,transparent 77%)}',
       '#wishlistPanel .wl-modal-title{position:relative;display:flex;align-items:center;gap:10px;color:#16a5df;font-size:22px;font-weight:1000;letter-spacing:-.04em}',
@@ -163,7 +163,7 @@
       '#wishlistPanel .wl-intro p{margin:0}',
       '#wishlistPanel .wl-intro .wl-blue{color:#16a5df}',
       '#wishlistPanel .wl-intro .wl-subline{margin-top:8px;color:#16a5df;font-size:clamp(15px,2.2vw,21px)}',
-      '#wishlistPanel .wl-company-list{display:grid;grid-template-rows:repeat(4,minmax(0,1fr));gap:10px;flex:1 1 auto;min-height:0;padding:4px 20px 16px;overflow-y:auto}',
+      '#wishlistPanel .wl-company-list{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:none;gap:10px;flex:0 0 auto;min-height:0;padding:4px 20px 16px;overflow:visible}',
       '#wishlistPanel .wl-company{display:flex;flex-direction:column;min-height:150px;border:1px solid #e3e3e3;border-radius:6px;background:rgba(255,255,255,.94);box-shadow:0 1px 2px rgba(0,0,0,.045)}',
       '#wishlistPanel .wl-company-head{position:relative;display:flex;align-items:center;justify-content:center;flex:none;min-height:61px;padding:7px 48px;border-bottom:1px solid #f0f0f0}',
       '#wishlistPanel .wl-company-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#777}',
@@ -190,7 +190,7 @@
       '#wishlistPanel .wl-cancel{border:2px solid #aaa;background:#fff;color:#343434}',
       '#wishlistPanel .wl-confirm{border:2px solid #0da5e2;background:#0ba8eb;color:white}',
       '#wishlistPanel .wl-action:hover{filter:brightness(.97);transform:translateY(-1px)}',
-      '@media(max-width:650px){#wishlistPanel{padding:0}#wishlistPanel .wl-dialog{width:100%;height:100%;height:100dvh;border-radius:0}#wishlistPanel .wl-modal-head{min-height:62px;padding:9px 14px}#wishlistPanel .wl-modal-title{font-size:19px}#wishlistPanel .wl-refresh-icon{width:28px;height:28px;border-width:3px}#wishlistPanel .wl-close{font-size:36px;width:36px}#wishlistPanel .wl-intro{padding:23px 14px 17px;font-size:clamp(14px,4vw,19px)}#wishlistPanel .wl-intro .wl-subline{font-size:clamp(13px,3.5vw,17px)}#wishlistPanel .wl-company-list{gap:9px;padding:3px 10px 12px}#wishlistPanel .wl-company{min-height:114px}#wishlistPanel .wl-company-head{min-height:40px;padding:3px 40px}#wishlistPanel .wl-company-symbol{height:23px;font-size:24px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-info{width:25px;height:25px;right:8px;font-size:17px}#wishlistPanel .wl-slots{gap:6px;padding:7px 7px 10px}#wishlistPanel .wl-slot{border-width:1px;border-radius:5px}#wishlistPanel .wl-corner-mark{width:20px;height:23px;font-size:11px}#wishlistPanel .wl-selected-name{padding:25px 3px 15px;font-size:9px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:2px 3px;font-size:7px;min-width:16px}#wishlistPanel .wl-plus{font-size:24px}#wishlistPanel .wl-empty-mark{padding:3px;font-size:8px}#wishlistPanel .wl-footer{gap:12px;padding:11px 12px 14px}#wishlistPanel .wl-action{width:42%;min-height:48px;font-size:16px}}',
+      '@media(max-width:650px){#wishlistPanel{width:100%;margin:0 auto 18px}#wishlistPanel .wl-dialog{width:100%;height:auto;border-radius:10px}#wishlistPanel .wl-modal-head{min-height:62px;padding:9px 14px}#wishlistPanel .wl-modal-title{font-size:19px}#wishlistPanel .wl-refresh-icon{width:28px;height:28px;border-width:3px}#wishlistPanel .wl-intro{padding:23px 14px 17px;font-size:clamp(14px,4vw,19px)}#wishlistPanel .wl-intro .wl-subline{font-size:clamp(13px,3.5vw,17px)}#wishlistPanel .wl-company-list{gap:9px;padding:3px 10px 12px}#wishlistPanel .wl-company{min-height:114px}#wishlistPanel .wl-company-head{min-height:40px;padding:3px 40px}#wishlistPanel .wl-company-symbol{height:23px;font-size:24px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-info{width:25px;height:25px;right:8px;font-size:17px}#wishlistPanel .wl-slots{gap:6px;padding:7px 7px 10px}#wishlistPanel .wl-slot{border-width:1px;border-radius:5px}#wishlistPanel .wl-corner-mark{width:20px;height:23px;font-size:11px}#wishlistPanel .wl-selected-name{padding:25px 3px 15px;font-size:9px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:2px 3px;font-size:7px;min-width:16px}#wishlistPanel .wl-plus{font-size:24px}#wishlistPanel .wl-empty-mark{padding:3px;font-size:8px}#wishlistPanel .wl-footer{gap:12px;padding:11px 12px 14px}#wishlistPanel .wl-action{width:42%;min-height:48px;font-size:16px}}',
       '@media(max-width:380px){#wishlistPanel .wl-company-list{padding-left:6px;padding-right:6px}#wishlistPanel .wl-slots{gap:4px;padding-left:5px;padding-right:5px}#wishlistPanel .wl-selected-name{font-size:8px}}'
     ].join('\n');
     document.head.appendChild(style);
@@ -215,13 +215,13 @@
     if(panel) return panel;
     panel = document.createElement('section');
     panel.id = 'wishlistPanel';
-    panel.className = 'wishlist-overlay';
+    panel.className = 'panel wishlist-panel';
     panel.hidden = true;
+    panel.setAttribute('aria-labelledby','wishlistModalTitle');
     panel.innerHTML =
-      '<div class="wl-dialog" role="dialog" aria-modal="true" aria-labelledby="wishlistModalTitle">' +
+      '<div class="wl-dialog">' +
         '<div class="wl-modal-head">' +
           '<div class="wl-modal-title" id="wishlistModalTitle"><span class="wl-refresh-icon" aria-hidden="true"></span><span>위시리스트 모집</span></div>' +
-          '<button type="button" class="wl-close" data-wl-cancel aria-label="닫기" title="닫기">×</button>' +
         '</div>' +
         '<div class="wl-intro">' +
           '<p>대원 모집에서 <span class="wl-blue">SSR 니케를 획득</span>하면<br>더 높은 확률로 위시리스트에 등록한 니케를 획득할 수 있습니다.</p>' +
@@ -234,7 +234,14 @@
           '<button type="button" class="wl-action wl-confirm" data-wl-confirm><span aria-hidden="true">✓</span> 결정</button>' +
         '</div>' +
       '</div>';
-    document.body.appendChild(panel);
+    const main = document.querySelector('main.main') || document.querySelector('main');
+    if(main){
+      const before = main.querySelector('#pediaPanel, #soleScorePanel, #outpostPanel, #characterPanel');
+      if(before) main.insertBefore(panel,before);
+      else main.appendChild(panel);
+    }else{
+      document.body.appendChild(panel);
+    }
     panel.addEventListener('change', onPanelChange);
     panel.addEventListener('click', onPanelClick);
     return panel;
@@ -323,10 +330,6 @@
   }
 
   function onPanelClick(event){
-    if(event.target === panel){
-      cancelWishlist();
-      return;
-    }
     const cancel = event.target.closest && event.target.closest('[data-wl-cancel]');
     if(cancel){
       cancelWishlist();
@@ -338,7 +341,7 @@
         alert('위시리스트를 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
         return;
       }
-      hideWishlist();
+      renderWishlist();
       return;
     }
     const button = event.target.closest && event.target.closest('[data-wl-clear-company]');
@@ -352,7 +355,6 @@
   function cancelWishlist(){
     picks = clonePicks(savedPicks);
     renderWishlist();
-    hideWishlist();
   }
 
   function hideWishlist(){
@@ -418,10 +420,6 @@
     ensurePanel();
     patchMainViewSwitch();
     patchAccountSwitch();
-    document.addEventListener('keydown', function(event){
-      if(event.key === 'Escape' && document.getElementById('wishlistPanel') &&
-         !document.getElementById('wishlistPanel').hidden) cancelWishlist();
-    });
     window.renderWishlist = renderWishlist;
   }
 
