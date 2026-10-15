@@ -163,7 +163,6 @@ const LIMITED_PEDIA_NAMES = new Set([
   "타키나",
   "파워",
   "헬름 : 아쿠아마린",
-  "히메노",
   "A2"
 ].map(normalizePediaName));
 
@@ -185,7 +184,10 @@ const DISTRIBUTION_PEDIA_NAMES = new Set([
   "모리",
   "미사토",
   "사쿠라 스즈하라",
-  "아비스타"
+  "아비스타",
+  "니힐리스타",
+  "스노우 화이트 : 이노센트 데이즈",
+  "히메노"
 ].map(normalizePediaName));
 
 function findPediaSkillData(all,name,id){
