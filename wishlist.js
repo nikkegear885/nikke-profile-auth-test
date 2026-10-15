@@ -265,6 +265,9 @@
 
   function getAutomaticExclusionReason(name){
     const key = norm(name);
+    if(getCoreEnhancement(name) >= 7){
+      return '코어 강화 7 자동 제외';
+    }
     if(key === norm('미란다') && getBreakthrough(name) >= 2){
       return '돌파 2 이상 자동 제외';
     }
@@ -1155,8 +1158,9 @@
     const list = pane && pane.querySelector('[data-wl-excluded-list]');
     const count = pane && pane.querySelector('[data-wl-excluded-count]');
     if(!pane || !list) return;
-    const automaticNames = [];
-    if(getAutomaticExclusionReason('미란다')) automaticNames.push('미란다');
+    const automaticNames = getAllCharacters()
+      .map(row => String(row && row['이름'] || '').trim())
+      .filter(name => name && !!getAutomaticExclusionReason(name));
     const combined = [];
     const seen = new Set();
     [...excludedCharacters,...automaticNames].forEach(name => {
