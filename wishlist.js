@@ -133,7 +133,7 @@
   // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
   // No Elysion PvP candidates have been supplied yet.
   const WISHLIST_PERFORMANCE_TIERS = [
-    {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드']},
+    {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름']},
     {rank:2, label:'범용캐', names:['베스티 : 택티컬 업','앵커 : 이노센트 메이드']},
     {rank:3, label:'애장품 성능', names:['프리바티','팬텀','미란다']},
     {rank:4, label:'솔레 명함 추천 = PVP', names:['아르카나','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트']},
@@ -263,7 +263,7 @@
 
   function getAutomaticExclusionReason(name){
     const key = norm(name);
-    if((key === norm('미란다') || key === norm('헬름')) && getBreakthrough(name) >= 2){
+    if(key === norm('미란다') && getBreakthrough(name) >= 2){
       return '돌파 2 이상 자동 제외';
     }
     return '';
@@ -981,7 +981,6 @@
     if(!pane || !list) return;
     const automaticNames = [];
     if(getAutomaticExclusionReason('미란다')) automaticNames.push('미란다');
-    if(getAutomaticExclusionReason('헬름')) automaticNames.push('헬름');
     const combined = [];
     const seen = new Set();
     [...excludedCharacters,...automaticNames].forEach(name => {
