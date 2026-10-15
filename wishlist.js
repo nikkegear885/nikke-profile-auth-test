@@ -207,6 +207,8 @@
   let panel = null;
   let pickerCompany = null;
   let pickerSlot = null;
+  let hoverCard = null;
+  let hoverCardAnchor = null;
 
   function activePicksStorageKey(){
     try{
@@ -501,6 +503,22 @@
       '#wishlistPanel .wl-info{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:23px;height:23px;border:0;border-radius:50%;background:#888;color:#fff;font:italic 900 16px/1 Georgia,serif;cursor:help}',
       '#wishlistPanel .wl-slots{display:grid;grid-template-columns:repeat(5,minmax(0,min(64px,calc((100vw - 64px)/5))));justify-content:center;gap:5px;align-items:stretch;padding:15px 8px 17px}',
       '#wishlistPanel .wl-slot{position:relative;min-width:0;aspect-ratio:1 / 1;border:0;border-radius:8px;background:transparent;box-shadow:none;overflow:visible}',
+      '#wishlistHoverCard{position:fixed;z-index:2147483647;display:flex;align-items:center;gap:11px;box-sizing:border-box;width:max-content;max-width:min(280px,calc(100vw - 20px));padding:11px 13px;border:1px solid rgba(107,195,238,.45);border-radius:14px;background:linear-gradient(145deg,rgba(25,39,60,.98),rgba(9,16,29,.98));color:#f2f7ff;box-shadow:0 16px 42px rgba(2,8,20,.4),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(14px);pointer-events:none;opacity:0;visibility:hidden;transform:translateY(4px) scale(.985);transform-origin:center;transition:opacity .06s ease,transform .06s ease,visibility 0s linear .06s;font-family:inherit}',
+      '#wishlistHoverCard.is-visible{opacity:1;visibility:visible;transform:translateY(0) scale(1);transition-delay:0s}',
+      '#wishlistHoverCard .wl-hover-card-image{flex:none;width:45px;height:45px;overflow:hidden;border:1px solid rgba(148,210,244,.48);border-radius:10px;background:linear-gradient(135deg,#2b405d,#132034);box-shadow:0 4px 12px rgba(0,0,0,.22)}',
+      '#wishlistHoverCard .wl-hover-card-image img{display:block;width:100%;height:100%;object-fit:cover}',
+      '#wishlistHoverCard .wl-hover-card-fallback{display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:#cdefff;font-size:22px;font-weight:900}',
+      '#wishlistHoverCard .wl-hover-card-content{display:flex;min-width:0;flex-direction:column;gap:6px}',
+      '#wishlistHoverCard .wl-hover-card-name{color:#f5f8ff;font-size:13px;font-weight:900;line-height:1.3;overflow-wrap:anywhere}',
+      '#wishlistHoverCard .wl-hover-card-company{color:#8fd6f7;font-size:10px;font-weight:800;letter-spacing:.02em}',
+      '#wishlistHoverCard .wl-hover-card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px}',
+      '#wishlistHoverCard .wl-hover-card-chip{display:inline-flex;align-items:center;padding:3px 6px;border:1px solid rgba(158,180,210,.22);border-radius:999px;background:rgba(255,255,255,.07);color:#dbe6f5;font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap}',
+      '#wishlistHoverCard .wl-hover-card-chip.is-unowned{border-color:rgba(255,174,105,.4);background:rgba(168,85,24,.2);color:#ffd5aa}',
+      '#wishlistHoverCard.is-compact{width:auto;max-width:min(260px,calc(100vw - 20px));padding:9px 12px;border-radius:11px}',
+      '#wishlistHoverCard.is-compact .wl-hover-card-image,#wishlistHoverCard.is-compact .wl-hover-card-company,#wishlistHoverCard.is-compact .wl-hover-card-meta{display:none}',
+      '#wishlistHoverCard.is-compact .wl-hover-card-content{gap:0}',
+      '#wishlistHoverCard.is-compact .wl-hover-card-name{font-size:11px;line-height:1.45;max-width:230px}',
+      '@media(prefers-reduced-motion:reduce){#wishlistHoverCard{transition:none}}',
       '#wishlistPanel .wl-tile{position:absolute;inset:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px solid #8a8a8a;border-radius:9px;background:repeating-linear-gradient(0deg,rgba(90,90,90,.045) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 3px),linear-gradient(135deg,#f5f5f5 0%,#dedede 64%,#d0d0d0 100%);box-shadow:inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(100,100,100,.16),0 3px 5px rgba(0,0,0,.32);}',
       '#wishlistPanel .wl-tile:before{content:"";position:absolute;left:0;top:21%;width:34%;height:35%;background:linear-gradient(180deg,rgba(255,255,255,.85) 0 31%,rgba(200,200,200,.56) 31% 38%,rgba(255,255,255,.62) 38% 68%,rgba(190,190,190,.4) 68% 75%,rgba(240,240,240,.38) 75%);border-right:1px solid rgba(255,255,255,.45);pointer-events:none}', '#wishlistPanel .wl-tile:after{content:"";position:absolute;inset:0;pointer-events:none}',
       '#wishlistPanel .wl-corner-mark{position:absolute;left:0;top:0;z-index:2;width:21px;height:23px;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 0,100% 0,100% 74%,50% 100%,0 74%);background:#a53bea;color:white;font-size:11px;font-weight:1000;box-shadow:0 1px 3px rgba(0,0,0,.2)}',
@@ -646,7 +664,7 @@
     const accounts = Array.isArray(ACCOUNTS) && ACCOUNTS.length ? ACCOUNTS.slice(0,2) : ['계정1','계정2'];
     const current = typeof activeAccount !== 'undefined' ? activeAccount : accounts[0];
     switcher.innerHTML = '<span class="wl-account-label">계정</span>' + accounts.map((account,index) =>
-      '<button type="button" class="wl-account-button' + (current === account ? ' active' : '') + '" data-wl-account="' + esc(account) + '" aria-pressed="' + (current === account ? 'true' : 'false') + '" title="' + esc(account) + '">' + esc(account || ('계정' + (index+1))) + '</button>'
+      '<button type="button" class="wl-account-button' + (current === account ? ' active' : '') + '" data-wl-account="' + esc(account) + '" aria-pressed="' + (current === account ? 'true' : 'false') + '" data-wl-hover-text="' + esc(account) + '">' + esc(account || ('계정' + (index+1))) + '</button>'
     ).join('');
     switcher.hidden = !document.body.classList.contains('wishlist-view');
   } 
@@ -753,6 +771,12 @@
     panel.addEventListener('change', onPanelChange);
     panel.addEventListener('click', onPanelClick);
     panel.addEventListener('input', onPanelInput);
+    panel.addEventListener('pointerover', onPanelPointerOver);
+    panel.addEventListener('pointerout', onPanelPointerOut);
+    panel.addEventListener('focusin', onPanelFocusIn);
+    panel.addEventListener('focusout', onPanelFocusOut);
+    window.addEventListener('scroll', hideWishlistHoverCard, true);
+    window.addEventListener('resize', hideWishlistHoverCard);
     document.addEventListener('keydown', onPickerKeydown);
     return panel;
   }
@@ -793,20 +817,159 @@
       ).join('');
       const core = getCoreEnhancement(name);
       tile = '<div class="wl-tile wl-photo-only">' + photo +
-        '<span class="wl-promotion-stars" aria-label="' + stage + '돌파" title="' + stage + '돌파">' + stars + '</span>' +
-        (core > 0 ? '<span class="wl-core-enhancement" aria-label="코어 강화 +' + core + '" title="코어 강화 +' + core + '">+' + core + '</span>' : '') +
+        '<span class="wl-promotion-stars" aria-label="' + stage + '돌파">' + stars + '</span>' +
+        (core > 0 ? '<span class="wl-core-enhancement" aria-label="코어 강화 +' + core + '">+' + core + '</span>' : '') +
         (unowned ? '<span class="wl-photo-status">미보유</span>' : '') +
         '</div>';
     }else{
       tile = '<div class="wl-tile wl-empty-tile">' +
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
-    const title = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '클릭해서 니케 선택';
-    // All company slots use the same clickable photo tile and company-specific picker.
-    const selector = '<button type="button" class="wl-select-trigger" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1) + ' 선택') + '" title="' + esc(title) + '"></button>';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + '" title="' + esc(title) + '">' +
+    const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '클릭해서 니케 선택';
+    // Use the in-page hover card instead of browser-native title tooltips.
+    const selector = '<button type="button" class="wl-select-trigger" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1) + ' 선택' + (name ? ': ' + accessibleName : '')) + '"></button>';
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + '" data-wl-slot="true" aria-label="' + esc(accessibleName) + '">' +
       tile + selector +
       '</article>';
+  }
+
+  function ensureWishlistHoverCard(){
+    if(hoverCard && document.body.contains(hoverCard)) return hoverCard;
+    hoverCard = document.createElement('div');
+    hoverCard.id = 'wishlistHoverCard';
+    hoverCard.className = 'wl-hover-card';
+    hoverCard.setAttribute('role','tooltip');
+    hoverCard.setAttribute('aria-hidden','true');
+
+    const image = document.createElement('div');
+    image.className = 'wl-hover-card-image';
+    const content = document.createElement('div');
+    content.className = 'wl-hover-card-content';
+    const name = document.createElement('div');
+    name.className = 'wl-hover-card-name';
+    const company = document.createElement('div');
+    company.className = 'wl-hover-card-company';
+    const meta = document.createElement('div');
+    meta.className = 'wl-hover-card-meta';
+    content.append(name,company,meta);
+    hoverCard.append(image,content);
+    document.body.appendChild(hoverCard);
+    return hoverCard;
+  }
+
+  function addWishlistHoverChip(container,label,extraClass){
+    const chip = document.createElement('span');
+    chip.className = 'wl-hover-card-chip' + (extraClass ? ' ' + extraClass : '');
+    chip.textContent = label;
+    container.appendChild(chip);
+  }
+
+  function positionWishlistHoverCard(anchor,card){
+    if(!anchor || !card) return;
+    const rect = anchor.getBoundingClientRect();
+    const size = card.getBoundingClientRect();
+    const margin = 10;
+    let left = rect.right + 10;
+    if(left + size.width > window.innerWidth - margin) left = rect.left - size.width - 10;
+    if(left < margin) left = Math.max(margin,Math.min(window.innerWidth - size.width - margin,rect.left + (rect.width - size.width) / 2));
+    let top = rect.top + (rect.height - size.height) / 2;
+    top = Math.max(margin,Math.min(top,window.innerHeight - size.height - margin));
+    card.style.left = Math.round(left) + 'px';
+    card.style.top = Math.round(top) + 'px';
+  }
+
+  function showWishlistHoverCard(target){
+    if(!target || !document.body.classList.contains('wishlist-view')) return;
+    const slot = target.matches && target.matches('.wl-slot') ? target : (target.closest && target.closest('.wl-slot'));
+    const card = ensureWishlistHoverCard();
+    const imageBox = card.querySelector('.wl-hover-card-image');
+    const nameLabel = card.querySelector('.wl-hover-card-name');
+    const companyLabel = card.querySelector('.wl-hover-card-company');
+    const meta = card.querySelector('.wl-hover-card-meta');
+
+    card.classList.toggle('is-compact',!slot);
+    imageBox.replaceChildren();
+    meta.replaceChildren();
+    imageBox.style.display = slot ? '' : 'none';
+
+    if(slot){
+      const trigger = slot.querySelector('.wl-select-trigger');
+      const company = trigger ? String(trigger.dataset.company || '') : '';
+      const slotIndex = trigger ? Number(trigger.dataset.slot) : -1;
+      const name = company && Number.isInteger(slotIndex) && slotIndex >= 0 && slotIndex < 5
+        ? String((picks[company] && picks[company][slotIndex]) || '')
+        : '';
+      nameLabel.textContent = name || '니케 추가';
+      companyLabel.textContent = name ? company : (company ? company + ' · 빈 슬롯' : '위시리스트');
+      if(name){
+        const imageUrl = findImage(name);
+        if(imageUrl){
+          const image = document.createElement('img');
+          image.src = imageUrl;
+          image.alt = '';
+          image.draggable = false;
+          imageBox.appendChild(image);
+        }else{
+          const fallback = document.createElement('span');
+          fallback.className = 'wl-hover-card-fallback';
+          fallback.textContent = name.slice(0,1);
+          imageBox.appendChild(fallback);
+        }
+        const stage = getBreakthrough(name);
+        const core = getCoreEnhancement(name);
+        const unowned = isMarkedUnowned(name);
+        addWishlistHoverChip(meta,stage + '돌파');
+        if(core > 0) addWishlistHoverChip(meta,'코어 +' + core);
+        addWishlistHoverChip(meta,unowned ? '미보유' : '보유',unowned ? 'is-unowned' : '');
+      }else{
+        addWishlistHoverChip(meta,'클릭해서 니케 선택');
+      }
+    }else{
+      const text = String(target.getAttribute('data-wl-hover-text') || '').trim();
+      if(!text) return;
+      nameLabel.textContent = text;
+      companyLabel.textContent = '';
+    }
+
+    hoverCardAnchor = target;
+    card.setAttribute('aria-hidden','false');
+    card.classList.add('is-visible');
+    positionWishlistHoverCard(target,card);
+  }
+
+  function hideWishlistHoverCard(){
+    if(!hoverCard) return;
+    hoverCard.classList.remove('is-visible','is-compact');
+    hoverCard.setAttribute('aria-hidden','true');
+    hoverCardAnchor = null;
+  }
+
+  function findWishlistHoverTarget(target){
+    return target && target.closest ? target.closest('.wl-slot, [data-wl-hover-text]') : null;
+  }
+
+  function onPanelPointerOver(event){
+    if(event.pointerType === 'touch') return;
+    const target = findWishlistHoverTarget(event.target);
+    if(!target || (event.relatedTarget && target.contains(event.relatedTarget))) return;
+    showWishlistHoverCard(target);
+  }
+
+  function onPanelPointerOut(event){
+    const target = findWishlistHoverTarget(event.target);
+    if(!target || (event.relatedTarget && target.contains(event.relatedTarget))) return;
+    hideWishlistHoverCard();
+  }
+
+  function onPanelFocusIn(event){
+    const target = findWishlistHoverTarget(event.target);
+    if(target) showWishlistHoverCard(target);
+  }
+
+  function onPanelFocusOut(event){
+    const target = findWishlistHoverTarget(event.target);
+    if(!target || (event.relatedTarget && target.contains(event.relatedTarget))) return;
+    hideWishlistHoverCard();
   }
 
   function openCharacterPicker(company, slot){
@@ -870,7 +1033,7 @@
           '<span class="wl-picker-photo">' + photo + '</span>' +
           '<span class="wl-picker-name">' + esc(name) + '</span>' +
         '</button>' +
-        '<button type="button" class="wl-picker-exclude' + (manualExcluded || automaticReason ? ' is-excluded' : '') + '" data-wl-exclude-name="' + esc(name) + '" aria-pressed="' + (excluded ? 'true' : 'false') + '"' + (automaticReason && !manualExcluded ? ' disabled title="' + esc(automaticReason) + '"' : '') + '>' + (manualExcluded ? '제외 해제' : automaticReason || '제외') + '</button>' +
+        '<button type="button" class="wl-picker-exclude' + (manualExcluded || automaticReason ? ' is-excluded' : '') + '" data-wl-exclude-name="' + esc(name) + '" aria-pressed="' + (excluded ? 'true' : 'false') + '"' + (automaticReason && !manualExcluded ? ' disabled data-wl-hover-text="' + esc(automaticReason) + '"' : '') + '>' + (manualExcluded ? '제외 해제' : automaticReason || '제외') + '</button>' +
       '</div>';
     }).join('');
   }
@@ -938,6 +1101,7 @@
   }
 
   function renderWishlist(){
+    hideWishlistHoverCard();
     const activePanel = ensurePanel();
     if(!activePanel) return;
     const list = activePanel.querySelector('#wishlistCompanyList');
@@ -972,7 +1136,7 @@
         '<div class="wl-company-head">' +
           '<div class="wl-company-brand"><span class="wl-company-symbol" aria-hidden="true">' + esc(COMPANY_SYMBOLS[company] || '◇') + '</span>' +
           '<span class="wl-company-name">' + esc(company) + '</span></div>' +
-          '<button type="button" class="wl-info" title="' + esc(company + ' 위시리스트 니케를 5명까지 선택할 수 있습니다.') + '" aria-label="' + esc(company + ' 안내') + '">i</button>' +
+          '<button type="button" class="wl-info" data-wl-hover-text="' + esc(company + ' 위시리스트 니케를 5명까지 선택할 수 있습니다.') + '" aria-label="' + esc(company + ' 안내') + '">i</button>' +
         '</div>' +
         '<div class="wl-slots">' + Array.from({length:5},(_,slot) => buildSlot(company,slot,characters)).join('') + '</div>' +
       '</section>';
@@ -1027,8 +1191,8 @@
         '<span class="wl-excluded-name">' + esc(row.name) + '</span>' +
         (row.automaticOnly ? '<span class="wl-excluded-reason">' + esc(row.automaticReason) + '</span>' : '') + '</div>' +
         (row.automaticOnly
-          ? '<span class="wl-auto-exclusion-pill" title="' + esc(row.automaticReason) + '">자동 제외</span>'
-          : '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" title="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>') +
+          ? '<span class="wl-auto-exclusion-pill" data-wl-hover-text="' + esc(row.automaticReason) + '">자동 제외</span>'
+          : '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" data-wl-hover-text="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>') +
       '</div>';
     }).join('');
   }
@@ -1106,6 +1270,7 @@
     }
     const slotTrigger = event.target.closest && event.target.closest('.wl-select-trigger');
     if(slotTrigger && COMPANIES.includes(slotTrigger.dataset.company)){
+      hideWishlistHoverCard();
       event.preventDefault();
       openCharacterPicker(slotTrigger.dataset.company, Number(slotTrigger.dataset.slot));
       return;
@@ -1140,6 +1305,7 @@
   }
 
   function hideWishlist(){
+    hideWishlistHoverCard();
     const activePanel = document.getElementById('wishlistPanel');
     if(activePanel) activePanel.hidden = true;
     const switcher = document.getElementById('wishlistAccountSwitcher');
