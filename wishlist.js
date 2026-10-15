@@ -168,6 +168,13 @@
     style.textContent = [
       'body.wishlist-view #characterPanel,body.wishlist-view #kpis,body.wishlist-view #outpostPanel,body.wishlist-view #soleScorePanel,body.wishlist-view #pediaPanel{display:none!important}',
       'body.wishlist-view .topbar{display:none!important}',
+      '#wishlistAccountSwitcher[hidden]{display:none!important}',
+      '#wishlistAccountSwitcher{display:flex;align-items:center;justify-content:flex-end;gap:6px;box-sizing:border-box;width:calc(100% - 24px);max-width:462px;margin:8px auto 8px;padding:0 2px;position:relative;z-index:20}',
+      '#wishlistAccountSwitcher .wl-account-label{margin-right:3px;color:#7c8795;font-size:10px;font-weight:900;white-space:nowrap}',
+      '#wishlistAccountSwitcher .wl-account-button{min-width:58px;max-width:128px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 11px;border:1px solid #c9d6e4;border-radius:999px;background:#fff;color:#586577;font-size:11px;font-weight:900;cursor:pointer;box-shadow:0 1px 3px rgba(27,55,85,.07)}',
+      '#wishlistAccountSwitcher .wl-account-button.active{border-color:#159ed3;background:#eaf8ff;color:#087ca9;box-shadow:0 0 0 1px rgba(21,158,211,.10)}',
+      '#wishlistAccountSwitcher .wl-account-button:hover{border-color:#52acd0;background:#f2fbff;color:#086f99}',
+      '@media(max-width:520px){#wishlistAccountSwitcher{width:calc(100% - 24px);gap:4px;margin:7px auto 7px}#wishlistAccountSwitcher .wl-account-label{font-size:9px}#wishlistAccountSwitcher .wl-account-button{min-width:52px;padding:6px 8px;font-size:10px}}',
       '#wishlistPanel[hidden]{display:none!important}',
       '#wishlistPanel{position:relative!important;z-index:auto;display:block!important;box-sizing:border-box!important;width:calc(100% - 24px)!important;max-width:462px!important;min-width:0!important;padding:0!important;margin:0 auto 16px!important;overflow:visible;background:transparent;color:#25282d}',
       '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:100%;height:auto;min-height:0;overflow:visible;border:1px solid #dedfe1;border-radius:12px;background:#f8f8f8;box-shadow:0 2px 12px rgba(0,0,0,.10)}',
@@ -260,6 +267,38 @@
     else nav.appendChild(button);
   }
 
+  function ensureAccountSwitcher(){
+    let switcher = document.getElementById('wishlistAccountSwitcher');
+    if(switcher) return switcher;
+    switcher = document.createElement('div');
+    switcher.id = 'wishlistAccountSwitcher';
+    switcher.hidden = true;
+    switcher.setAttribute('aria-label','위시리스트 계정 선택');
+    switcher.addEventListener('click', function(event){
+      const button = event.target.closest && event.target.closest('[data-wl-account]');
+      if(!button) return;
+      const account = button.dataset.wlAccount;
+      if(!account || !Array.isArray(ACCOUNTS) || !ACCOUNTS.includes(account)) return;
+      if(typeof window.switchAccount === 'function') window.switchAccount(account);
+      renderAccountSwitcher();
+    });
+    const main = document.querySelector('main.main') || document.querySelector('main');
+    if(main) main.appendChild(switcher);
+    else document.body.appendChild(switcher);
+    return switcher;
+  }
+
+  function renderAccountSwitcher(){
+    const switcher = ensureAccountSwitcher();
+    if(!switcher) return;
+    const accounts = Array.isArray(ACCOUNTS) && ACCOUNTS.length ? ACCOUNTS.slice(0,2) : ['계정1','계정2'];
+    const current = typeof activeAccount !== 'undefined' ? activeAccount : accounts[0];
+    switcher.innerHTML = '<span class="wl-account-label">계정</span>' + accounts.map((account,index) =>
+      '<button type="button" class="wl-account-button' + (current === account ? ' active' : '') + '" data-wl-account="' + esc(account) + '" aria-pressed="' + (current === account ? 'true' : 'false') + '" title="' + esc(account) + '">' + esc(account || ('계정' + (index+1))) + '</button>'
+    ).join('');
+    switcher.hidden = !document.body.classList.contains('wishlist-view');
+  }
+
   function ensurePanel(){
     panel = document.getElementById('wishlistPanel');
     if(panel) return panel;
@@ -299,6 +338,8 @@
     '</section>';
     const main = document.querySelector('main.main') || document.querySelector('main');
     if(main){
+      const accountSwitcher = ensureAccountSwitcher();
+      if(accountSwitcher) main.insertBefore(accountSwitcher,panel);
       const before = main.querySelector('#pediaPanel, #soleScorePanel, #outpostPanel, #characterPanel');
       if(before) main.insertBefore(panel,before);
       else main.appendChild(panel);
@@ -553,6 +594,8 @@
   function hideWishlist(){
     const activePanel = document.getElementById('wishlistPanel');
     if(activePanel) activePanel.hidden = true;
+    const switcher = document.getElementById('wishlistAccountSwitcher');
+    if(switcher) switcher.hidden = true;
     document.body.classList.remove('wishlist-view');
   }
 
@@ -564,6 +607,7 @@
     activePanel.hidden = false;
     document.body.classList.remove('outpost-view','sole-view','drop-rate-view','pedia-view');
     document.body.classList.add('wishlist-view');
+    renderAccountSwitcher();
     document.getElementById('kpis')?.setAttribute('hidden','');
     document.getElementById('outpostPanel')?.setAttribute('hidden','');
     document.getElementById('soleScorePanel')?.classList.remove('active');
@@ -605,6 +649,7 @@
       if(document.body.classList.contains('wishlist-view')){
         picks = clonePicks(loadPicks());
         savedPicks = clonePicks(picks);
+        renderAccountSwitcher();
         renderWishlist();
       }
       return result;
@@ -618,6 +663,7 @@
     injectStyle();
     ensureNav();
     ensurePanel();
+    renderAccountSwitcher();
     patchMainViewSwitch();
     patchAccountSwitch();
     window.renderWishlist = renderWishlist;
