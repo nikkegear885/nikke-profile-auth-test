@@ -588,6 +588,10 @@
       '#wishlistPanel .wl-modal-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;min-height:31px;padding:3px 7px;overflow:hidden;background:linear-gradient(135deg,#f5f5f5 0%,#eeeeef 42%,#fafafa 100%);border-bottom:1px solid #dedfe1}',
       '#wishlistPanel .wl-modal-head:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,transparent 0 8%,rgba(210,214,218,.35) 8% 20%,transparent 20% 37%,rgba(255,255,255,.62) 37% 48%,transparent 48% 62%,rgba(218,221,224,.35) 62% 77%,transparent 77%)}',
       '#wishlistPanel .wl-modal-title{position:relative;display:flex;align-items:center;gap:4px;color:#16a5df;font-size:11px;font-weight:1000;letter-spacing:-.04em}',
+      '#wishlistPanel .wl-random-test-account-button{position:relative;z-index:1;flex:none;max-width:54%;padding:4px 7px;border:1px solid #b98a38;border-radius:5px;background:#fff8e8;color:#795315;font-size:9px;font-weight:1000;line-height:1.2;white-space:nowrap;cursor:pointer}',
+      '#wishlistPanel .wl-random-test-account-button:hover{border-color:#d5a750;background:#fff0cf;color:#65430e}',
+      'html.dark-theme #wishlistPanel .wl-random-test-account-button{border-color:#8b6a31;background:#352a19;color:#ffe2a7}',
+      'html.dark-theme #wishlistPanel .wl-random-test-account-button:hover{border-color:#c49a47;background:#49371c;color:#fff0ca}',
       '#wishlistPanel .wl-refresh-icon{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:2px solid #16a5df;border-right-color:transparent;border-radius:50%;font-size:0;position:relative;transform:rotate(-35deg)}',
       '#wishlistPanel .wl-refresh-icon:after{content:"";position:absolute;right:-3px;top:-4px;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid #16a5df;transform:rotate(28deg)}',
       '#wishlistPanel .wl-close{position:relative;flex:none;width:42px;height:42px;border:0;background:transparent;color:#777;font-size:42px;font-weight:300;line-height:1;cursor:pointer}',
@@ -875,6 +879,7 @@
       '<div class="wl-dialog">' +
         '<div class="wl-modal-head">' +
           '<div class="wl-modal-title" id="wishlistModalTitle"><span class="wl-refresh-icon" aria-hidden="true"></span><span>위시리스트 모집</span></div>' +
+          '<button type="button" class="wl-random-test-account-button" data-wl-random-test-account title="무작위 보유·돌파 데이터가 있는 테스트 계정을 생성합니다">무작위 계정 테스트</button>' +
         '</div>' +
         '<div class="wl-intro">' +
           '<p>대원 모집에서 <span class="wl-blue">SSR 니케를 획득</span>하면<br>더 높은 확률로 위시리스트에 등록한 니케를 획득할 수 있습니다.</p>' +
@@ -1405,6 +1410,12 @@
   }
 
   function onPanelClick(event){
+    const randomTestButton = event.target.closest && event.target.closest('[data-wl-random-test-account]');
+    if(randomTestButton){
+      if(typeof window.createRandomTestAccount === 'function') window.createRandomTestAccount();
+      else alert('테스트 계정 기능을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+      return;
+    }
     const autoBuildButton = event.target.closest && event.target.closest('[data-wl-auto-build]');
     if(autoBuildButton){
       autoBuildWishlist();
