@@ -72,6 +72,62 @@
   ].map(norm));
   function isWishlistExcluded(name){ return WISHLIST_EXCLUDED_NAMES.has(norm(name)); }
 
+  const RARITY_DATA_URL = 'assets/nikke-skills.json?v=1051';
+  let nikkeRarityMap = new Map();
+  let rarityLoadPromise = null;
+  let rarityDataReady = false;
+
+  function ensureRarityData(){
+    if(rarityDataReady) return Promise.resolve(true);
+    if(rarityLoadPromise) return rarityLoadPromise;
+    rarityLoadPromise = (async function(){
+      try{
+        const response = await fetch(RARITY_DATA_URL, {cache:'no-store'});
+        if(!response.ok) throw new Error('등급 데이터 요청 실패: HTTP ' + response.status);
+        const records = await response.json();
+        if(!records || typeof records !== 'object' || Array.isArray(records)) throw new Error('등급 데이터 형식이 올바르지 않습니다.');
+        const map = new Map();
+        Object.entries(records).forEach(([name,entry]) => {
+          const rarity = String(entry && (entry.r ?? entry.rarity) || '').trim().toUpperCase();
+          if(name && rarity) map.set(norm(name), rarity);
+          if(entry && entry.name && rarity) map.set(norm(entry.name), rarity);
+        });
+        if(!map.size) throw new Error('등급 데이터가 비어 있습니다.');
+        nikkeRarityMap = map;
+        rarityDataReady = true;
+        return true;
+      }catch(error){
+        console.error('[wishlist] rarity data load failed', error);
+        rarityLoadPromise = null;
+        return false;
+      }
+    })();
+    return rarityLoadPromise;
+  }
+
+  function isSSRCharacter(name){
+    return rarityDataReady && nikkeRarityMap.get(norm(name)) === 'SSR';
+  }
+
+  function isEligibleWishlistName(name){
+    return !!String(name || '').trim() && !isWishlistExcluded(name) && isSSRCharacter(name);
+  }
+
+  function normalizePicksToEligibleSSR(source){
+    const cleaned = clonePicks(source);
+    let changed = false;
+    COMPANIES.forEach(company => {
+      cleaned[company] = cleaned[company].map(name => {
+        if(name && !isEligibleWishlistName(name)){
+          changed = true;
+          return '';
+        }
+        return name;
+      });
+    });
+    return {picks:cleaned, changed};
+  }
+
   const esc = value => String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({
     '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'
   })[ch]);
@@ -154,7 +210,7 @@
 
   function getCharactersForCompany(company){
     return getAllCharacters()
-      .filter(row => String(row['기업'] || '').trim() === company && !isWishlistExcluded(row['이름']))
+      .filter(row => String(row['기업'] || '').trim() === company && isEligibleWishlistName(row['이름']))
       .sort((a,b) => String(a['이름']).localeCompare(String(b['이름']), 'ko'));
   }
 
@@ -395,7 +451,7 @@
         '</div>' +
         '<div class="wl-auto-toolbar">' +
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 계정 상태로 자동 편성</button>' +
-          '<div class="wl-auto-note">임시 기준: 미보유 우선 → 낮은 돌파 → 이름순 · 한정·배포 니케는 선택 및 자동추천에서 제외됩니다.</div>' +
+          '<div class="wl-auto-note">SSR 등급만 선택·자동추천되며, 한정·배포 니케는 제외됩니다.</div>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
         '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
@@ -546,7 +602,18 @@
     if(event.key === 'Escape' && pickerSlot !== null) closeCharacterPicker();
   }
 
-  function autoBuildWishlist(){
+  async function autoBuildWishlist(){
+    const rarityLoaded = await ensureRarityData();
+    if(!rarityLoaded){
+      alert('SSR 등급 정보를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    const current = normalizePicksToEligibleSSR(picks);
+    if(current.changed){
+      picks = current.picks;
+      savedPicks = clonePicks(picks);
+      savePicks();
+    }
     const all = getAllCharacters();
     if(!all.length){
       alert('캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
@@ -582,6 +649,25 @@
       list.innerHTML = '<div class="wl-note">캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.</div>';
       return;
     }
+    if(!rarityDataReady){
+      list.innerHTML = '<div class="wl-note">SSR 등급 정보를 불러오는 중…</div>';
+      ensureRarityData().then(loaded => {
+        if(!document.body.classList.contains('wishlist-view')) return;
+        if(!loaded){
+          const currentList = document.getElementById('wishlistCompanyList');
+          if(currentList) currentList.innerHTML = '<div class="wl-note">SSR 등급 정보를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.</div>';
+          return;
+        }
+        renderWishlist();
+      });
+      return;
+    }
+    const eligibility = normalizePicksToEligibleSSR(picks);
+    if(eligibility.changed){
+      picks = eligibility.picks;
+      savedPicks = clonePicks(picks);
+      savePicks();
+    }
     list.innerHTML = COMPANIES.map(company => {
       const characters = getCharactersForCompany(company);
       return '<section class="wl-company" data-wl-company="' + esc(company) + '">' +
@@ -606,7 +692,7 @@
     const slot = Number(select.dataset.slot);
     if(!COMPANIES.includes(company) || !Number.isInteger(slot) || slot < 0 || slot > 4) return;
     const name = String(select.value || '').trim();
-    if(name && isWishlistExcluded(name)){
+    if(name && !isEligibleWishlistName(name)){
       renderWishlist();
       return;
     }
@@ -641,7 +727,7 @@
     if(picked){
       if(pickerSlot === null || picked.disabled) return;
       const name = String(picked.dataset.wlPickName || '').trim();
-      if(!name || isWishlistExcluded(name) || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
+      if(!isEligibleWishlistName(name) || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
       picks['엘리시온'][pickerSlot] = name;
       closeCharacterPicker();
       renderWishlist();
