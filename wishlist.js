@@ -182,10 +182,10 @@
   // Preserve the ordering of the internal list within each rank for the character picker.
   const WISHLIST_PERFORMANCE_POSITION = (() => {
     const positions = new Map();
-    WISHLIST_PERFORMANCE_TIERS.forEach(tier => tier.names.forEach((name,index) => {
+    WISHLIST_PERFORMANCE_TIERS.forEach((tier,tierOrder) => tier.names.forEach((name,index) => {
       const key = norm(name);
       const current = positions.get(key);
-      if(!current || tier.rank < current.rank) positions.set(key,{rank:tier.rank,index});
+      if(!current || tier.rank < current.rank) positions.set(key,{rank:tier.rank,tierOrder,index});
     }));
     return positions;
   })();
@@ -197,6 +197,7 @@
     if(aRank !== bRank) return aRank - bRank;
     const aPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(aName));
     const bPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(bName));
+    if(aPosition && bPosition && aPosition.tierOrder !== bPosition.tierOrder) return aPosition.tierOrder - bPosition.tierOrder;
     if(aPosition && bPosition && aPosition.index !== bPosition.index) return aPosition.index - bPosition.index;
     if(aPosition && !bPosition) return -1;
     if(!aPosition && bPosition) return 1;
@@ -1589,7 +1590,7 @@
         return aName.localeCompare(bName,'ko');
       });
       if(copyPriority !== 0){
-        // Final stable partition for every stage: an owned base-copy general-purpose unit
+        // In recommendation stages 2 and 3, retain a final partition that sends owned base-copy general-purpose units
         // or a PVP unit with only its base copy must not displace first-copy candidates or
         // other current targets. These units may fill a slot only after higher-priority options.
         const lowerPriorityGeneralCopies = candidates.filter(row => {
