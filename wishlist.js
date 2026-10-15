@@ -388,9 +388,9 @@
 
   const COPY_PRIORITY_LABELS = ['필수캐 우선','명함 추천','도감작'];
   const COPY_PRIORITY_DESCRIPTIONS = [
-    '필수캐는 반드시 우선 포함합니다. 다만 애장품 성능캐가 2돌 미만이면 자리가 부족할 때 해당 캐릭터를 필수캐보다 우선합니다.',
-    '애장품 성능캐는 2돌 미만일 때 우선합니다. 필수캐라도 명함을 보유했다면 후순위이며, 명함 추천 등급까지 명함 획득을 목표로 합니다. 그 아래 등급은 추천하지 않습니다.',
-    '애장품 성능캐는 2돌 미만일 때 우선합니다. 그 외에는 명함을 보유한 캐릭터를 후순위로 두고, 도감용까지 모든 캐릭터의 첫 명함 획득을 목표로 합니다.'
+    '성능캐 돌파를 최우선으로 합니다',
+    '사용가능성이 있는 니케 명함을 우선으로합니다',
+    '명함을 최우선으로 합니다'
   ];
   let copyPriority = loadCopyPriority();
 
@@ -805,7 +805,7 @@
       '</div>' +
       '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="필수캐는 반드시 우선 포함합니다. 다만 애장품 성능캐가 2돌 미만이면 자리가 부족할 때 해당 캐릭터를 필수캐보다 우선합니다." aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
+      '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
       '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="위시리스트 추천 우선도" />' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
       '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
