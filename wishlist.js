@@ -485,7 +485,7 @@
         '<button type="button" class="wl-160-button" data-wl-160-wall="O" aria-pressed="false">O</button>' +
         '<button type="button" class="wl-160-button" data-wl-160-wall="X" aria-pressed="false">X</button>' +
       '</div>' +
-      '<div class="wl-160-note">O 선택 시 돌파 1 이상인 니케 우선</div>';
+      '<div class="wl-160-note">X 선택 시 돌파 1 이상인 니케 우선</div>';
     control.addEventListener('click', event => {
       const button = event.target.closest && event.target.closest('[data-wl-160-wall]');
       if(!button) return;
@@ -711,7 +711,7 @@
         const bName = String(b['이름'] || '').trim();
         const aBreakthrough = getBreakthrough(aName);
         const bBreakthrough = getBreakthrough(bName);
-        if(wallStatus === 'O' && company !== '필그림'){
+        if(wallStatus === 'X' && company !== '필그림'){
           const aCleared = aBreakthrough >= 1;
           const bCleared = bBreakthrough >= 1;
           if(aCleared !== bCleared) return aCleared ? -1 : 1;
