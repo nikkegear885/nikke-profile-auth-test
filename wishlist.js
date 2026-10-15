@@ -263,10 +263,10 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
+    if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
     if(isTreasurePerformanceBelowTwo(name, breakthrough)){
       return WISHLIST_TREASURE_SOLO_NAMES.has(key) ? 5 : 2;
     }
-    if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
     if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
       const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 8 : 10;
