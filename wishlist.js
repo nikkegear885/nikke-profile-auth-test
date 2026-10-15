@@ -140,9 +140,9 @@
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
   const WISHLIST_PERFORMANCE_TIERS = [
-    {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름','플로라','토브']},
+    {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름']},
     {rank:2, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
-    {rank:3, label:'애장품 성능', names:['프리바티','팬텀','미란다']},
+    {rank:3, label:'애장품 성능', names:['프리바티','팬텀','미란다','플로라','토브']},
     {rank:4, label:'솔레 명함 추천 = PVP', names:[
       '아르카나','솔린 : 프로스트 티켓',
       '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
