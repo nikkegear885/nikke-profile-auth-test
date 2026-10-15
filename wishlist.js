@@ -68,7 +68,8 @@
     "아비스타",
     "니힐리스타",
     "스노우 화이트 : 이노센트 데이즈",
-    "히메노"
+    "히메노",
+    "라이"
   ].map(norm));
   function isWishlistExcluded(name){ return WISHLIST_EXCLUDED_NAMES.has(norm(name)); }
 
