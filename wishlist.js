@@ -260,15 +260,23 @@
   function getRequiredFirstSortGroup(name, breakthrough, unowned){
     const base = getBaseWishlistPerformancePriority(name);
     const normalized = norm(name);
-    if(base === 1) return 0; // Required
+    if(base === 1) return 0; // Required units are always selected first.
+
+    // In required-first mode, first copies from tiers 2–6 are acquisition targets.
+    // They are followed by owned treasure-performance units that have not reached 2★.
+    if(unowned && base >= 2 && base <= 6) return 1;
+
+    // This check must precede favorites and every PVP boost. Otherwise a favorited or
+    // PVP-boosted unit can outrank a treasure-performance unit still below 2 breakthroughs.
+    if(!unowned && isTreasurePerformanceBelowTwo(name, breakthrough)) return 2;
+
     const isPvp = PVP_WISHLIST_NAMES.has(normalized) || PVP_LOWEST_WISHLIST_NAMES.has(normalized);
     const isGeneralBaseCopy = base === 2 && breakthrough === 0 && !unowned;
     const isPvpBaseCopy = isPvp && breakthrough === 0 && !unowned;
+    if(isPvpBaseCopy) return 8; // PVP base copies stay near the end even with PVP toggle O.
     if(isGeneralBaseCopy) return 7;
-    if(isPvpBaseCopy) return 8;
-    if(isFavoriteCharacter(name)) return 1;
-    if(unowned && base >= 2 && base <= 6) return 2; // First copies through "명함 추천"
-    if(!unowned && isTreasurePerformanceBelowTwo(name, breakthrough)) return 3; // Treasure target up to 2★
+
+    if(isFavoriteCharacter(name)) return 3;
     if(base >= 2 && base <= 6) return 4;
     if(unowned) return 5;
     return 6;
