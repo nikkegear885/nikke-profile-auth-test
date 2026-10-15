@@ -557,6 +557,11 @@
       '#wishlistPanel .wl-excluded-row.is-miranda{padding-top:16px}',
       '#wishlistPanel .wl-excluded-info{position:absolute;top:3px;right:4px;z-index:2;display:flex;align-items:center;justify-content:center;width:11px;height:11px;box-sizing:border-box;border:1px solid #8b9aac;border-radius:50%;background:rgba(246,249,253,.96);color:#65748a;font:italic 900 7px/1 Georgia,serif;text-align:center;cursor:help;box-shadow:0 1px 2px rgba(0,0,0,.08)}',
       '#wishlistPanel .wl-excluded-info:hover{border-color:#168fc5;background:#e9f8ff;color:#087ba8}',
+      '#wishlistPanel .wl-excluded-info:after{content:attr(data-tooltip);position:absolute;top:calc(100% + 8px);right:-5px;z-index:20;width:230px;max-width:calc(100vw - 48px);box-sizing:border-box;padding:10px 12px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:linear-gradient(145deg,#202b3d,#101827);color:#f3f7ff;font:500 11px/1.55 system-ui,sans-serif;letter-spacing:0;text-align:left;white-space:normal;box-shadow:0 9px 26px rgba(0,0,0,.28);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-2px);transition:opacity .06s ease-out,transform .06s ease-out,visibility 0s linear .06s}',
+      '#wishlistPanel .wl-excluded-info:hover:after,#wishlistPanel .wl-excluded-info:focus-visible:after{opacity:1;visibility:visible;transform:translateY(0);transition-delay:0s}',
+      '#wishlistPanel .wl-excluded-info:before{content:"";position:absolute;top:calc(100% + 3px);right:0;z-index:21;border:5px solid transparent;border-bottom-color:#202b3d;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .06s ease-out,visibility 0s linear .06s}',
+      '#wishlistPanel .wl-excluded-info:hover:before,#wishlistPanel .wl-excluded-info:focus-visible:before{opacity:1;visibility:visible;transition-delay:0s}',
+      '@media(hover:none){#wishlistPanel .wl-excluded-info:active:after,#wishlistPanel .wl-excluded-info:active:before{opacity:1;visibility:visible;transition-delay:0s}}',
       '#wishlistPanel .wl-excluded-identity{display:flex;min-width:0;flex-direction:column;gap:3px}',
       '#wishlistPanel .wl-excluded-company{color:#8a95a5;font-size:9px;font-weight:900}',
       '#wishlistPanel .wl-excluded-name{overflow-wrap:anywhere;color:#354052;font-size:11px;font-weight:900;line-height:1.3}',
@@ -572,6 +577,8 @@
       'html.dark-theme #wishlistPanel .wl-excluded-row{border-color:#354761;background:#101a2b}',
       'html.dark-theme #wishlistPanel .wl-excluded-info{border-color:#65758d;background:#192538;color:#cbd8ea}',
       'html.dark-theme #wishlistPanel .wl-excluded-info:hover{border-color:#5ab9df;background:#203b50;color:#bdeaff}',
+      'html.dark-theme #wishlistPanel .wl-excluded-info:after{border-color:#3b4960;background:linear-gradient(145deg,#243249,#121b2b);color:#f3f7ff}',
+      'html.dark-theme #wishlistPanel .wl-excluded-info:before{border-bottom-color:#243249}',
       'html.dark-theme #wishlistPanel .wl-excluded-name{color:#e3ebf8}',
       'html.dark-theme #wishlistPanel .wl-excluded-reason{color:#ffbc86}',
       'html.dark-theme #wishlistPanel .wl-auto-exclusion-pill{border-color:#80563d;background:#3a291f;color:#ffc08d}',
@@ -1014,8 +1021,8 @@
     list.innerHTML = rows.map(row => {
       const isMiranda = norm(row.name) === norm('미란다');
       const explanation = '시공증 미보유 버프 캐릭터로, 돌파로 인한 데미지 증가량이 미미함.';
-      return '<div class="wl-excluded-row' + (isMiranda ? ' is-miranda' : '') + '"' + (isMiranda ? ' title="' + esc(explanation) + '"' : '') + '>' +
-        (isMiranda ? '<span class="wl-excluded-info" title="' + esc(explanation) + '" aria-label="미란다 설명">i</span>' : '') +
+      return '<div class="wl-excluded-row' + (isMiranda ? ' is-miranda' : '') + '">' +
+        (isMiranda ? '<span class="wl-excluded-info" data-tooltip="' + esc(explanation) + '" tabindex="0" role="note" aria-label="미란다 설명">i</span>' : '') +
         '<div class="wl-excluded-identity"><span class="wl-excluded-company">' + esc(row.company) + '</span>' +
         '<span class="wl-excluded-name">' + esc(row.name) + '</span>' +
         (row.automaticOnly ? '<span class="wl-excluded-reason">' + esc(row.automaticReason) + '</span>' : '') + '</div>' +
