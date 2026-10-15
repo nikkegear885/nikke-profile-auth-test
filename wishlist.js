@@ -1500,6 +1500,20 @@
         }
         return aName.localeCompare(bName,'ko');
       });
+      // Enforce this as a final stable partition, not just a sort-comparator hint:
+      // across all recommendation stages, owned general-purpose characters at 0 breakthroughs
+      // must be behind every other eligible candidate. They can only fill slots if fewer than
+      // five higher-priority candidates remain for that company.
+      const lowerPriorityGeneralCopies = candidates.filter(row => {
+        const name = String(row['이름'] || '').trim();
+        return getBaseWishlistPerformancePriority(name) === 2 &&
+          getBreakthrough(name) === 0 && !isMarkedUnowned(name);
+      });
+      if(lowerPriorityGeneralCopies.length){
+        const lowerPriorityNames = new Set(lowerPriorityGeneralCopies.map(row => norm(row['이름'])));
+        const higherPriorityCandidates = candidates.filter(row => !lowerPriorityNames.has(norm(row['이름'])));
+        candidates.splice(0,candidates.length,...higherPriorityCandidates,...lowerPriorityGeneralCopies);
+      }
       picks[company] = candidates.slice(0,5).map(row => String(row['이름'] || '').trim());
       while(picks[company].length < 5) picks[company].push('');
     });
