@@ -2,7 +2,7 @@
 (function(){
   'use strict';
 
-  const COMPANIES = ['엘리시온','미실리스','테트라','필그림','어브노멀'];
+  const COMPANIES = ['엘리시온','미실리스','테트라','필그림'];
   const STORAGE_KEY = 'nikke_wishlist_recommendations_v1';
   const IMAGE_URL = 'assets/nikke-pedia-master.json?v=1047';
   const norm = value => String(value == null ? '' : value)
@@ -15,8 +15,15 @@
   const blankWishlist = () => Object.fromEntries(COMPANIES.map(company => [
     company, Array(5).fill('')
   ]));
+  const clonePicks = source => Object.fromEntries(COMPANIES.map(company => [
+    company, Array.from({length:5}, (_,i) =>
+      source && Array.isArray(source[company]) && typeof source[company][i] === 'string'
+        ? source[company][i] : ''
+    )
+  ]));
 
   let picks = loadPicks();
+  let savedPicks = clonePicks(picks);
   let imageMap = new Map();
   let imageLoadPromise = null;
   let panel = null;
@@ -40,7 +47,11 @@
   function savePicks(){
     try{
       localStorage.setItem(STORAGE_KEY, JSON.stringify(picks));
-    }catch(_){}
+      savedPicks = clonePicks(picks);
+      return true;
+    }catch(_){
+      return false;
+    }
   }
 
   function getAllCharacters(){
@@ -138,45 +149,49 @@
     style.id = 'wishlist-recommender-style';
     style.textContent = [
       'body.wishlist-view #characterPanel,body.wishlist-view #kpis,body.wishlist-view #outpostPanel,body.wishlist-view #soleScorePanel,body.wishlist-view #pediaPanel{display:none!important}',
-      'body.wishlist-view #wishlistPanel{display:block!important}',
       '#wishlistPanel[hidden]{display:none!important}',
-      '#wishlistPanel{margin:0 18px 20px;min-width:0;overflow:visible}',
-      '#wishlistPanel .wl-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}',
-      '#wishlistPanel .wl-head h3{margin:0;font-size:18px;font-weight:900;color:var(--text)}',
-      '#wishlistPanel .wl-head p{margin:6px 0 0;font-size:11px;line-height:1.65;color:var(--muted);max-width:760px}',
-      '#wishlistPanel .wl-note{padding:10px 14px;margin:14px 16px 0;border:1px solid var(--line);border-radius:9px;font-size:11px;line-height:1.6;color:var(--muted);background:rgba(127,149,177,.06)}',
-      '#wishlistPanel .wl-company-list{display:grid;gap:18px;padding:16px}',
-      '#wishlistPanel .wl-company{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(127,149,177,.035)}',
-      '#wishlistPanel .wl-company-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(127,149,177,.055)}',
-      '#wishlistPanel .wl-company-title{display:flex;align-items:center;gap:10px;min-width:0;font-size:14px;font-weight:900;color:var(--text)}',
-      '#wishlistPanel .wl-count{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:10px;font-weight:900;color:var(--muted)}',
-      '#wishlistPanel .wl-clear{flex:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:7px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}',
-      '#wishlistPanel .wl-clear:hover{border-color:var(--accent);color:var(--text)}',
-      '#wishlistPanel .wl-slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:12px}',
-      '#wishlistPanel .wl-slot{min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px;background:var(--panel);display:flex;flex-direction:column;gap:8px}',
-      '#wishlistPanel .wl-slot-number{font-size:9px;font-weight:900;letter-spacing:.06em;color:var(--muted)}',
-      '#wishlistPanel .wl-photo{position:relative;aspect-ratio:3/4;overflow:hidden;border-radius:7px;background:rgba(127,149,177,.10);display:flex;align-items:center;justify-content:center}',
-      '#wishlistPanel .wl-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}',
-      '#wishlistPanel .wl-photo-fallback{padding:8px;text-align:center;font-size:11px;font-weight:800;color:var(--muted);overflow-wrap:anywhere}',
-      '#wishlistPanel .wl-stage{position:absolute;left:5px;bottom:5px;z-index:2;padding:4px 6px;border-radius:6px;background:rgba(15,23,41,.88);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:10px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,.24)}',
-      '#wishlistPanel .wl-character-name{min-height:30px;font-size:11px;line-height:1.4;font-weight:900;color:var(--text);overflow-wrap:anywhere}',
-      '#wishlistPanel .wl-slot select{display:block;width:100%;min-width:0;height:34px;border:1px solid var(--line);border-radius:7px;padding:0 6px;background:var(--bg);color:var(--text);font-size:10px;outline:none}',
-      '#wishlistPanel .wl-slot select:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}',
-      '#wishlistPanel .wl-slot-empty .wl-photo{border:1px dashed var(--line);background:transparent}',
-      '#wishlistPanel .wl-empty-mark{font-size:12px;font-weight:900;color:var(--muted);text-align:center;padding:8px}',
-      '#wishlistPanel .wl-slot.is-unowned .wl-photo img{filter:grayscale(1);opacity:.38}',
-      '#wishlistPanel .wl-slot.is-unowned .wl-photo:after{content:"";position:absolute;inset:0;background:rgba(80,86,96,.26);pointer-events:none}',
-      '#wishlistPanel .wl-unowned{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;background:rgba(67,73,84,.32);color:#fff;font-size:14px;font-weight:1000;letter-spacing:.02em;text-shadow:0 1px 4px rgba(0,0,0,.8)}',
-      '#wishlistPanel .wl-slot.is-unowned .wl-character-name{color:var(--muted)}',
-      '#wishlistPanel .wl-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 16px 16px;color:var(--muted);font-size:10px}',
-      'html:not(.dark-theme) #wishlistPanel .wl-slot{background:#fff;border-color:#c9dce6}',
-      'html:not(.dark-theme) #wishlistPanel .wl-slot select{background:#fff;color:#294b5e;border-color:#c5dae5}',
-      'html:not(.dark-theme) #wishlistPanel .wl-photo{background:#edf4f8}',
-      'html:not(.dark-theme) #wishlistPanel .wl-stage{background:rgba(41,67,87,.92)}',
-      'html:not(.dark-theme) #wishlistPanel .wl-company{background:rgba(255,255,255,.65)}',
-      '@media(max-width:1000px){#wishlistPanel .wl-slots{grid-template-columns:repeat(3,minmax(0,1fr))}}',
-      '@media(max-width:650px){#wishlistPanel{margin:0 12px 16px}#wishlistPanel .wl-head{padding:14px}#wishlistPanel .wl-company-list{padding:10px;gap:12px}#wishlistPanel .wl-slots{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px}#wishlistPanel .wl-slot{padding:7px}#wishlistPanel .wl-note{margin:10px 10px 0}#wishlistPanel .wl-footer{padding:0 10px 12px;align-items:flex-start;flex-direction:column}}',
-      '@media(max-width:390px){#wishlistPanel .wl-slots{grid-template-columns:1fr 1fr}}'
+      '#wishlistPanel{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:12px;margin:0;overflow:hidden;background:rgba(0,0,0,.62);color:#25282d}',
+      '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:min(920px,100%);height:min(1500px,calc(100vh - 24px));height:min(1500px,calc(100dvh - 24px));min-height:0;overflow:hidden;border:1px solid rgba(255,255,255,.92);border-radius:12px;background:#f8f8f8;box-shadow:0 20px 80px rgba(0,0,0,.36)}',
+      '#wishlistPanel .wl-modal-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-height:74px;padding:12px 20px;overflow:hidden;background:linear-gradient(135deg,#f5f5f5 0%,#eeeeef 42%,#fafafa 100%);border-bottom:1px solid #dedfe1}',
+      '#wishlistPanel .wl-modal-head:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,transparent 0 8%,rgba(210,214,218,.35) 8% 20%,transparent 20% 37%,rgba(255,255,255,.62) 37% 48%,transparent 48% 62%,rgba(218,221,224,.35) 62% 77%,transparent 77%)}',
+      '#wishlistPanel .wl-modal-title{position:relative;display:flex;align-items:center;gap:10px;color:#16a5df;font-size:22px;font-weight:1000;letter-spacing:-.04em}',
+      '#wishlistPanel .wl-refresh-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:4px solid #16a5df;border-right-color:transparent;border-radius:50%;font-size:0;position:relative;transform:rotate(-35deg)}',
+      '#wishlistPanel .wl-refresh-icon:after{content:"";position:absolute;right:-3px;top:-4px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid #16a5df;transform:rotate(28deg)}',
+      '#wishlistPanel .wl-close{position:relative;flex:none;width:42px;height:42px;border:0;background:transparent;color:#777;font-size:42px;font-weight:300;line-height:1;cursor:pointer}',
+      '#wishlistPanel .wl-close:hover{color:#222}',
+      '#wishlistPanel .wl-intro{flex:none;padding:28px 22px 22px;text-align:center;color:#16181b;font-size:clamp(16px,2.5vw,23px);font-weight:900;line-height:1.52;letter-spacing:-.035em}',
+      '#wishlistPanel .wl-intro p{margin:0}',
+      '#wishlistPanel .wl-intro .wl-blue{color:#16a5df}',
+      '#wishlistPanel .wl-intro .wl-subline{margin-top:8px;color:#16a5df;font-size:clamp(15px,2.2vw,21px)}',
+      '#wishlistPanel .wl-company-list{display:grid;grid-template-rows:repeat(4,minmax(0,1fr));gap:10px;flex:1 1 auto;min-height:0;padding:4px 20px 16px;overflow-y:auto}',
+      '#wishlistPanel .wl-company{display:flex;flex-direction:column;min-height:150px;border:1px solid #e3e3e3;border-radius:6px;background:rgba(255,255,255,.94);box-shadow:0 1px 2px rgba(0,0,0,.045)}',
+      '#wishlistPanel .wl-company-head{position:relative;display:flex;align-items:center;justify-content:center;flex:none;min-height:61px;padding:7px 48px;border-bottom:1px solid #f0f0f0}',
+      '#wishlistPanel .wl-company-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#777}',
+      '#wishlistPanel .wl-company-symbol{height:32px;display:flex;align-items:center;justify-content:center;font-size:31px;line-height:1;font-weight:1000;color:#777;letter-spacing:-.08em}',
+      '#wishlistPanel .wl-company-name{font-size:9px;font-weight:900;letter-spacing:.14em;color:#858585}',
+      '#wishlistPanel .wl-info{position:absolute;right:15px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:31px;height:31px;border:0;border-radius:50%;background:#888;color:#fff;font:italic 900 21px/1 Georgia,serif;cursor:help}',
+      '#wishlistPanel .wl-slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:stretch;padding:10px 24px 15px}',
+      '#wishlistPanel .wl-slot{position:relative;min-width:0;aspect-ratio:.88;border:2px solid #c4c5c8;border-radius:8px;background:linear-gradient(180deg,#fff 0%,#f8f8f8 74%,#d4d4d4 100%);box-shadow:0 3px 5px rgba(0,0,0,.14);overflow:hidden}',
+      '#wishlistPanel .wl-tile{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(245,245,245,.65));}',
+      '#wishlistPanel .wl-tile:after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,#d7d7d7,#fff,#d7d7d7);border-top:1px solid rgba(110,110,110,.18)}',
+      '#wishlistPanel .wl-corner-mark{position:absolute;left:0;top:0;z-index:2;width:27px;height:30px;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 0,100% 0,100% 74%,50% 100%,0 74%);background:#a53bea;color:white;font-size:14px;font-weight:1000;box-shadow:0 2px 5px rgba(0,0,0,.25)}',
+      '#wishlistPanel .wl-empty-mark{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:10px;text-align:center;color:#a7a7aa;font-size:10px;font-weight:900;line-height:1.25}',
+      '#wishlistPanel .wl-plus{font-size:32px;font-weight:300;line-height:1;color:#aaa}',
+      '#wishlistPanel .wl-selected-name{max-width:100%;padding:27px 6px 20px;text-align:center;overflow-wrap:anywhere;word-break:keep-all;color:#3a3b3e;font-size:clamp(9px,1.25vw,13px);font-weight:1000;line-height:1.35}',
+      '#wishlistPanel .wl-stage{position:absolute;top:4px;right:4px;z-index:3;min-width:23px;padding:3px 4px;border-radius:5px;background:rgba(35,37,40,.9);border:1px solid rgba(255,255,255,.8);color:#fff;font-size:9px;font-weight:1000;text-align:center}',
+      '#wishlistPanel .wl-unowned{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:rgba(70,74,80,.66);color:#fff;font-size:clamp(11px,1.5vw,15px);font-weight:1000;letter-spacing:.02em;text-shadow:0 1px 4px rgba(0,0,0,.6)}',
+      '#wishlistPanel .wl-slot.is-unowned .wl-tile{filter:grayscale(1);background:#d0d0d0}',
+      '#wishlistPanel .wl-slot.is-unowned .wl-selected-name{color:#777}',
+      '#wishlistPanel .wl-slot:focus-within{outline:3px solid rgba(22,165,223,.45);outline-offset:2px}',
+      '#wishlistPanel .wl-select{position:absolute;inset:0;z-index:8;width:100%;height:100%;opacity:0;cursor:pointer}',
+      '#wishlistPanel .wl-status{flex:none;padding:0 20px 10px;text-align:right;color:#80858b;font-size:10px}',
+      '#wishlistPanel .wl-footer{display:flex;justify-content:center;gap:24px;flex:none;padding:14px 20px 20px;border-top:2px solid #dedede;background:#f8f8f8}',
+      '#wishlistPanel .wl-action{display:flex;align-items:center;justify-content:center;gap:9px;width:clamp(150px,31%,270px);min-height:58px;border-radius:6px;font-size:20px;font-weight:1000;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15)}',
+      '#wishlistPanel .wl-cancel{border:2px solid #aaa;background:#fff;color:#343434}',
+      '#wishlistPanel .wl-confirm{border:2px solid #0da5e2;background:#0ba8eb;color:white}',
+      '#wishlistPanel .wl-action:hover{filter:brightness(.97);transform:translateY(-1px)}',
+      '@media(max-width:650px){#wishlistPanel{padding:0}#wishlistPanel .wl-dialog{width:100%;height:100%;height:100dvh;border-radius:0}#wishlistPanel .wl-modal-head{min-height:62px;padding:9px 14px}#wishlistPanel .wl-modal-title{font-size:19px}#wishlistPanel .wl-refresh-icon{width:28px;height:28px;border-width:3px}#wishlistPanel .wl-close{font-size:36px;width:36px}#wishlistPanel .wl-intro{padding:23px 14px 17px;font-size:clamp(14px,4vw,19px)}#wishlistPanel .wl-intro .wl-subline{font-size:clamp(13px,3.5vw,17px)}#wishlistPanel .wl-company-list{gap:9px;padding:3px 10px 12px}#wishlistPanel .wl-company{min-height:114px}#wishlistPanel .wl-company-head{min-height:40px;padding:3px 40px}#wishlistPanel .wl-company-symbol{height:23px;font-size:24px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-info{width:25px;height:25px;right:8px;font-size:17px}#wishlistPanel .wl-slots{gap:6px;padding:7px 7px 10px}#wishlistPanel .wl-slot{border-width:1px;border-radius:5px}#wishlistPanel .wl-corner-mark{width:20px;height:23px;font-size:11px}#wishlistPanel .wl-selected-name{padding:25px 3px 15px;font-size:9px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:2px 3px;font-size:7px;min-width:16px}#wishlistPanel .wl-plus{font-size:24px}#wishlistPanel .wl-empty-mark{padding:3px;font-size:8px}#wishlistPanel .wl-footer{gap:12px;padding:11px 12px 14px}#wishlistPanel .wl-action{width:42%;min-height:48px;font-size:16px}}',
+      '@media(max-width:380px){#wishlistPanel .wl-company-list{padding-left:6px;padding-right:6px}#wishlistPanel .wl-slots{gap:4px;padding-left:5px;padding-right:5px}#wishlistPanel .wl-selected-name{font-size:8px}}'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -198,21 +213,28 @@
   function ensurePanel(){
     panel = document.getElementById('wishlistPanel');
     if(panel) return panel;
-    const main = document.querySelector('main.main');
-    if(!main) return null;
     panel = document.createElement('section');
     panel.id = 'wishlistPanel';
-    panel.className = 'panel wishlist-panel';
+    panel.className = 'wishlist-overlay';
     panel.hidden = true;
     panel.innerHTML =
-      '<div class="wl-head"><div><h3>위시리스트 추천</h3>' +
-      '<p>기업별로 추천할 니케를 5명씩 지정하세요. 선택 목록은 이 브라우저에 저장됩니다. 보유 여부와 돌파 단계는 현재 선택한 계정의 관리 데이터를 기준으로 표시합니다.</p></div></div>' +
-      '<div class="wl-note">선택한 니케를 참고해 인게임 위시리스트를 설정할 수 있습니다. 사이트에서 게임의 모집 설정을 직접 변경하지는 않습니다. 미보유 표시는 장비 현황에서 해당 니케를 미보유로 체크한 상태를 따릅니다.</div>' +
-      '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
-      '<div class="wl-footer"><span>기업별 최대 5명 · 같은 기업 안에서는 중복 선택할 수 없습니다.</span><span id="wishlistSavedStatus">자동 저장</span></div>';
-    const before = main.querySelector('#pediaPanel, #soleScorePanel, #outpostPanel, #characterPanel');
-    if(before) main.insertBefore(panel,before);
-    else main.appendChild(panel);
+      '<div class="wl-dialog" role="dialog" aria-modal="true" aria-labelledby="wishlistModalTitle">' +
+        '<div class="wl-modal-head">' +
+          '<div class="wl-modal-title" id="wishlistModalTitle"><span class="wl-refresh-icon" aria-hidden="true"></span><span>위시리스트 모집</span></div>' +
+          '<button type="button" class="wl-close" data-wl-cancel aria-label="닫기" title="닫기">×</button>' +
+        '</div>' +
+        '<div class="wl-intro">' +
+          '<p>대원 모집에서 <span class="wl-blue">SSR 니케를 획득</span>하면<br>더 높은 확률로 위시리스트에 등록한 니케를 획득할 수 있습니다.</p>' +
+          '<p class="wl-subline">(SSR 니케 모집 총 확률은 변하지 않습니다)</p>' +
+        '</div>' +
+        '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
+        '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
+        '<div class="wl-footer">' +
+          '<button type="button" class="wl-action wl-cancel" data-wl-cancel><span aria-hidden="true">×</span> 취소</button>' +
+          '<button type="button" class="wl-action wl-confirm" data-wl-confirm><span aria-hidden="true">✓</span> 결정</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(panel);
     panel.addEventListener('change', onPanelChange);
     panel.addEventListener('click', onPanelClick);
     return panel;
@@ -232,26 +254,28 @@
     return html;
   }
 
+  const COMPANY_SYMBOLS = {
+    '엘리시온':'▦',
+    '미실리스':'Ⅱ',
+    '테트라':'T',
+    '필그림':'✦'
+  };
+
   function buildSlot(company, slot, characters){
     const name = picks[company][slot] || '';
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
-    const image = name ? findImage(name) : '';
-    const photo = name
-      ? (image
-          ? '<img loading="lazy" src="' + esc(image) + '" alt="' + esc(name) + '" onerror="this.style.display=\'none\'">'
-          : '<div class="wl-photo-fallback">' + esc(name) + '</div>')
-      : '<div class="wl-empty-mark">+<br>니케 선택</div>';
-    const status = name
-      ? (unowned
-          ? '<span class="wl-unowned">미보유</span>'
-          : '<span class="wl-stage">' + stage + '돌</span>')
-      : '';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (unowned ? ' is-unowned' : '') + '">' +
-      '<div class="wl-slot-number">SLOT ' + (slot + 1) + '</div>' +
-      '<div class="wl-photo">' + photo + status + '</div>' +
-      '<div class="wl-character-name" title="' + esc(name || '선택 안 됨') + '">' + esc(name || '선택 안 됨') + '</div>' +
-      '<select class="wl-select" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1)) + '">' +
+    const tile = name
+      ? '<div class="wl-tile' + (unowned ? ' is-unowned' : '') + '">' +
+          '<span class="wl-corner-mark" aria-hidden="true">◇</span>' +
+          '<div class="wl-selected-name">' + esc(name) + '</div>' +
+          (!unowned ? '<span class="wl-stage">' + stage + '돌</span>' : '<span class="wl-unowned">미보유</span>') +
+        '</div>'
+      : '<div class="wl-tile"><span class="wl-corner-mark" aria-hidden="true">◇</span>' +
+          '<div class="wl-empty-mark"><span class="wl-plus">＋</span><span>니케 선택</span></div></div>';
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (unowned ? ' is-unowned' : '') + '" title="' + esc(name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '클릭해서 니케 선택') + '">' +
+      tile +
+      '<select class="wl-select" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1)) + '" title="' + esc(name || '니케 선택') + '">' +
       buildOptionList(company,slot,characters) + '</select>' +
       '</article>';
   }
@@ -268,16 +292,19 @@
     }
     list.innerHTML = COMPANIES.map(company => {
       const characters = getCharactersForCompany(company);
-      const count = picks[company].filter(Boolean).length;
       return '<section class="wl-company" data-wl-company="' + esc(company) + '">' +
-        '<div class="wl-company-head"><div class="wl-company-title">' + esc(company) +
-        '<span class="wl-count">' + count + ' / 5</span></div>' +
-        '<button type="button" class="wl-clear" data-wl-clear-company="' + esc(company) + '">초기화</button></div>' +
+        '<div class="wl-company-head">' +
+          '<div class="wl-company-brand"><span class="wl-company-symbol" aria-hidden="true">' + esc(COMPANY_SYMBOLS[company] || '◇') + '</span>' +
+          '<span class="wl-company-name">' + esc(company) + '</span></div>' +
+          '<button type="button" class="wl-info" title="' + esc(company + ' 위시리스트 니케를 5명까지 선택할 수 있습니다.') + '" aria-label="' + esc(company + ' 안내') + '">i</button>' +
+        '</div>' +
         '<div class="wl-slots">' + Array.from({length:5},(_,slot) => buildSlot(company,slot,characters)).join('') + '</div>' +
-        '</section>';
+      '</section>';
     }).join('');
     const status = activePanel.querySelector('#wishlistSavedStatus');
-    if(status) status.textContent = '저장됨 · ' + COMPANIES.reduce((sum,company) => sum + picks[company].filter(Boolean).length,0) + ' / 25명';
+    const changed = JSON.stringify(picks) !== JSON.stringify(savedPicks);
+    if(status) status.textContent = (changed ? '변경 사항 있음 · 결정 버튼을 눌러 저장' : '저장된 위시리스트') +
+      ' · ' + COMPANIES.reduce((sum,company) => sum + picks[company].filter(Boolean).length,0) + ' / 20명';
   }
 
   function onPanelChange(event){
@@ -292,18 +319,40 @@
       return;
     }
     picks[company][slot] = name;
-    savePicks();
     renderWishlist();
   }
 
   function onPanelClick(event){
+    if(event.target === panel){
+      cancelWishlist();
+      return;
+    }
+    const cancel = event.target.closest && event.target.closest('[data-wl-cancel]');
+    if(cancel){
+      cancelWishlist();
+      return;
+    }
+    const confirmButton = event.target.closest && event.target.closest('[data-wl-confirm]');
+    if(confirmButton){
+      if(!savePicks()){
+        alert('위시리스트를 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
+        return;
+      }
+      hideWishlist();
+      return;
+    }
     const button = event.target.closest && event.target.closest('[data-wl-clear-company]');
     if(!button) return;
     const company = button.dataset.wlClearCompany;
     if(!COMPANIES.includes(company)) return;
     picks[company] = Array(5).fill('');
-    savePicks();
     renderWishlist();
+  }
+
+  function cancelWishlist(){
+    picks = clonePicks(savedPicks);
+    renderWishlist();
+    hideWishlist();
   }
 
   function hideWishlist(){
@@ -313,6 +362,8 @@
   }
 
   function showWishlist(){
+    picks = clonePicks(loadPicks());
+    savedPicks = clonePicks(picks);
     const activePanel = ensurePanel();
     if(!activePanel) return;
     activePanel.hidden = false;
@@ -326,10 +377,9 @@
       button.classList.toggle('active', button.dataset.view === 'wishlist')
     );
     const title = document.getElementById('pageTitle');
-    if(title) title.textContent = '위시리스트 추천';
+    if(title) title.textContent = '위시리스트 모집';
     try{ window.closeSidebar && window.closeSidebar(); }catch(_){}
     renderWishlist();
-    loadImageMap().then(renderWishlist);
   }
 
   function patchMainViewSwitch(){
@@ -368,6 +418,10 @@
     ensurePanel();
     patchMainViewSwitch();
     patchAccountSwitch();
+    document.addEventListener('keydown', function(event){
+      if(event.key === 'Escape' && document.getElementById('wishlistPanel') &&
+         !document.getElementById('wishlistPanel').hidden) cancelWishlist();
+    });
     window.renderWishlist = renderWishlist;
   }
 
