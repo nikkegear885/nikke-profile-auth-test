@@ -853,13 +853,7 @@
       '#wishlistPanel .wl-picker-search{box-sizing:border-box;flex:1;min-width:0;width:auto;height:32px;padding:0 9px;border:1px solid #cbd4e0;border-radius:8px;background:#fff;color:#222936;font-size:12px;outline:none}',
       '#wishlistPanel .wl-picker-search:focus{border-color:#169fd6;box-shadow:0 0 0 3px rgba(22,159,214,.14)}',
       '#wishlistPanel .wl-picker-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-content:start;align-items:start;gap:3px;flex:none;min-height:0;max-height:none;padding:5px 7px 6px;overflow:visible}',
-      '#wishlistPanel .wl-picker-group-heading{grid-column:1/-1;display:flex;align-items:center;gap:7px;padding:5px 4px 3px;color:#3b4759;font-size:11px;font-weight:1000;line-height:1.2}',
-      '#wishlistPanel .wl-picker-group-heading:before{content:"";width:3px;height:12px;border-radius:3px;background:#8b98aa;flex:none}',
-      '#wishlistPanel .wl-picker-group-heading.is-unowned-group{color:#6b7280}',
-      '#wishlistPanel .wl-picker-group-heading.is-unowned-group:before{background:#9ca3af}',
-      '#wishlistPanel .wl-picker-group-heading.is-owned-group{margin-top:1px;color:#2173a6}',
-      '#wishlistPanel .wl-picker-group-heading.is-owned-group:before{background:#2c9bcf}',
-      '#wishlistPanel .wl-picker-group-divider{grid-column:1/-1;height:1px;margin:4px 1px 2px;background:linear-gradient(90deg,#d4dce6,#edf1f6);}',
+      '#wishlistPanel .wl-picker-group-divider{grid-column:1/-1;height:0;margin:1px -7px;border:0;border-top:1px solid #dfe4eb;background:none;}',
       '#wishlistPanel .wl-picker-item{min-width:0;padding:2px!important;border-radius:5px}',
       '#wishlistPanel .wl-picker-item.is-current{padding:1px!important}',
       '#wishlistPanel .wl-picker-photo{width:100%!important;max-width:100%!important;gap:0!important}',
@@ -1471,9 +1465,9 @@
     const unownedHtml = renderPickerItems(unownedCharacters);
     const ownedHtml = renderPickerItems(ownedCharacters);
     grid.innerHTML =
-      (unownedCharacters.length ? '<div class="wl-picker-group-heading is-unowned-group">미보유 캐릭</div>' + unownedHtml : '') +
+      unownedHtml +
       (unownedCharacters.length && ownedCharacters.length ? '<div class="wl-picker-group-divider" aria-hidden="true"></div>' : '') +
-      (ownedCharacters.length ? '<div class="wl-picker-group-heading is-owned-group">보유 캐릭</div>' + ownedHtml : '');
+      ownedHtml;
   }
 
   function onPanelInput(event){
