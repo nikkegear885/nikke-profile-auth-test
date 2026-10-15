@@ -175,32 +175,29 @@
     return WISHLIST_EXCLUDE_AT_TWO_BREAKTHROUGHS.has(norm(name)) && getBreakthrough(name) >= 2;
   }
 
+  function isTreasurePerformanceBelowTwo(name, breakthrough){
+    return WISHLIST_TREASURE_UPSIDE_NAMES.has(norm(name)) && breakthrough < 2;
+  }
+
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
-    const usable = performancePriority <= 7;
+    const treasureTarget = isTreasurePerformanceBelowTwo(name, breakthrough);
     if(copyPriority === 0){
-      // Strongly favor high-performance candidates; within each performance tier, owned breakthrough first.
-      if(usable && !unowned) return 0;
-      if(usable && unowned) return 1;
+      // Stage 1: treasure-item performance characters below 2 breakthrough can outrank required characters.
+      if(treasureTarget) return 0;
+      if(performancePriority === 1) return 1;
       return 2;
     }
     if(copyPriority === 1){
-      // Performance duplicates first, then first copies with plausible use, then other owned candidates.
-      if(usable && !unowned && breakthrough > 0) return 0;
-      if(usable && unowned) return 1;
-      if(usable && !unowned) return 2;
-      if(!unowned && breakthrough > 0) return 3;
-      if(unowned) return 4;
-      return 5;
+      // Stage 2: upgrade treasure-item performance characters below 2 first,
+      // then acquire first copies through the "명함 추천" performance tier.
+      if(treasureTarget) return 0;
+      if(unowned && performancePriority <= 6) return 1;
+      return 2;
     }
-    if(copyPriority === 2){
-      // First copies of usable candidates first; then owned "treasure-upside" Nikke still below MLB.
-      if(usable && unowned) return 0;
-      if(!unowned && WISHLIST_TREASURE_UPSIDE_NAMES.has(norm(name)) && breakthrough < 3) return 1;
-      if(usable && !unowned) return 2;
-      return 3;
-    }
-    // Codex-building mode: acquire all missing first copies first.
-    return unowned ? 0 : 1;
+    // Stage 3: treasure-item performance characters below 2 first,
+    // then any missing first copy through the full roster, including collection-only units.
+    if(treasureTarget) return 0;
+    return unowned ? 1 : 2;
   }
 
   function normalizePicksToEligibleSSR(source){
@@ -297,12 +294,8 @@
   }
 
   function getAutomaticExclusionReason(name){
-    const key = norm(name);
     if(getCoreEnhancement(name) >= 7){
       return '코어 강화 7 자동 제외';
-    }
-    if(key === norm('미란다') && getBreakthrough(name) >= 2){
-      return '돌파 2 이상 자동 제외';
     }
     return '';
   }
@@ -326,7 +319,8 @@
   }
 
   const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
-  const COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v2';
+  const COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v3';
+  const PREVIOUS_COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v2';
   const LEGACY_COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v1';
 
   function activeWallStatusKey(){
@@ -363,31 +357,40 @@
       const saved = localStorage.getItem(activeCopyPriorityKey());
       if(saved !== null){
         const value = Number(saved);
-        return Number.isInteger(value) && value >= 0 && value <= 3 ? value : 1;
+        return Number.isInteger(value) && value >= 0 && value <= 2 ? value : 0;
       }
 
-      // Migrate prior 3-step settings: old 0=breakthrough, 1=balanced, 2=first-copy.
-      const legacy = localStorage.getItem(activeCopyPriorityKey(LEGACY_COPY_PRIORITY_KEY));
-      if(legacy !== null){
-        const legacyValue = Number(legacy);
-        const migrated = legacyValue === 0 ? 0 : legacyValue === 2 ? 3 : 1;
+      // Migrate the previous four-step slider after removing its second step:
+      // old 0/1 -> new 0, old 2 -> new 1, old 3 -> new 2.
+      const previous = localStorage.getItem(activeCopyPriorityKey(PREVIOUS_COPY_PRIORITY_KEY));
+      if(previous !== null){
+        const previousValue = Number(previous);
+        const migrated = previousValue === 2 ? 1 : previousValue === 3 ? 2 : 0;
         localStorage.setItem(activeCopyPriorityKey(), String(migrated));
         return migrated;
       }
-      return 1;
-    }catch(_){ return 1; }
+
+      // Compatibility with the older three-step setting.
+      const legacy = localStorage.getItem(activeCopyPriorityKey(LEGACY_COPY_PRIORITY_KEY));
+      if(legacy !== null){
+        const legacyValue = Number(legacy);
+        const migrated = legacyValue === 2 ? 2 : legacyValue === 1 ? 1 : 0;
+        localStorage.setItem(activeCopyPriorityKey(), String(migrated));
+        return migrated;
+      }
+      return 0;
+    }catch(_){ return 0; }
   }
 
   function saveCopyPriority(){
     try{ localStorage.setItem(activeCopyPriorityKey(), String(copyPriority)); }catch(_){}
   }
 
-  const COPY_PRIORITY_LABELS = ['돌파 최우선','돌파 우선','명함 + 애장품','도감작'];
+  const COPY_PRIORITY_LABELS = ['필수캐 우선','명함 추천','도감작'];
   const COPY_PRIORITY_DESCRIPTIONS = [
-    '성능캐 돌파를 최우선 순위로 합니다',
-    '성능캐 돌파를 우선으로 하지만 사용 가능성이 있는 니케의 명함을 우선 획득합니다',
-    '사용 가능성 있는 캐릭터의 명함을 우선으로 합니다',
-    '명함 획득을 최우선으로 합니다'
+    '필수캐는 반드시 우선 포함합니다. 다만 애장품 성능캐가 2돌 미만이면 자리가 부족할 때 해당 캐릭터를 필수캐보다 우선합니다.',
+    '애장품 성능캐는 2돌 미만일 때 우선합니다. 필수캐라도 명함을 보유했다면 후순위이며, 명함 추천 등급까지 명함 획득을 목표로 합니다. 그 아래 등급은 추천하지 않습니다.',
+    '애장품 성능캐는 2돌 미만일 때 우선합니다. 그 외에는 명함을 보유한 캐릭터를 후순위로 두고, 도감용까지 모든 캐릭터의 첫 명함 획득을 목표로 합니다.'
   ];
   let copyPriority = loadCopyPriority();
 
@@ -802,15 +805,15 @@
       '</div>' +
       '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 우선으로 하지만 사용 가능성이 있는 니케의 명함을 우선 획득합니다" aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>돌파 우선</span></div>' +
-      '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="3" step="1" value="1" aria-label="위시리스트 추천 우선도" />' +
-      '<div class="wl-copy-priority-ends"><span>돌파</span><span>도감작</span></div>' +
+      '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="필수캐는 반드시 우선 포함합니다. 다만 애장품 성능캐가 2돌 미만이면 자리가 부족할 때 해당 캐릭터를 필수캐보다 우선합니다." aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
+      '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="위시리스트 추천 우선도" />' +
+      '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
       '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
     control.addEventListener('input', event => {
       const slider = event.target.closest && event.target.closest('[data-wl-copy-priority]');
       if(!slider) return;
       const value = Number(slider.value);
-      if(!Number.isInteger(value) || value < 0 || value > 3) return;
+      if(!Number.isInteger(value) || value < 0 || value > 2) return;
       copyPriority = value;
       saveCopyPriority();
       render160WallControl();
@@ -847,7 +850,7 @@
     const slider = control.querySelector('[data-wl-copy-priority]');
     if(slider) slider.value = String(copyPriority);
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
-    if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '돌파 우선';
+    if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '필수캐 우선';
     const help = control.querySelector('[data-wl-copy-priority-help]');
     if(help){
       help.setAttribute('data-tooltip', COPY_PRIORITY_DESCRIPTIONS[copyPriority] || COPY_PRIORITY_DESCRIPTIONS[1]);
@@ -1208,7 +1211,14 @@
       const candidates = getCharactersForCompany(company)
         .filter(row => {
           const name = String(row['이름'] || '').trim();
-          return !isExcludedCharacter(name) && !shouldExcludeFromAutoWishlist(name);
+          if(isExcludedCharacter(name) || shouldExcludeFromAutoWishlist(name)) return false;
+          if(copyPriority === 1){
+            const priority = getWishlistPerformancePriority(name);
+            const breakthrough = getBreakthrough(name);
+            // Stage 2 stops at "명함 추천", except treasure-item performance characters below 2 breakthrough.
+            return priority <= 6 || isTreasurePerformanceBelowTwo(name, breakthrough);
+          }
+          return true;
         });
       candidates.sort((a,b) => {
         const aName = String(a['이름'] || '').trim();
@@ -1230,21 +1240,18 @@
         const aGroup = getCopyPrioritySortGroup(aName,aPerformancePriority,aBreakthrough,aUnowned);
         const bGroup = getCopyPrioritySortGroup(bName,bPerformancePriority,bBreakthrough,bUnowned);
 
-        // The 160-wall targeting above remains the strongest special-case rule.
-        // Modes 0 emphasizes performance tier first; the other modes prioritize their defined groups.
-        if(copyPriority === 0){
-          if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
-          if(aGroup !== bGroup) return aGroup - bGroup;
-        }else{
-          if(aGroup !== bGroup) return aGroup - bGroup;
-          if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
+        // Keep the 160-wall targeting rule above the selected-stage priorities.
+        if(aGroup !== bGroup) return aGroup - bGroup;
+        if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
+        // Within the treasure-performance target group, favor characters closer to 2 breakthroughs.
+        if(aGroup === 0 && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
+        if(aUnowned !== bUnowned){
+          if(aGroup === 0) return aUnowned ? 1 : -1;
+          return aUnowned ? -1 : 1;
         }
         if(!aUnowned && !bUnowned){
           const breakthroughDiff = bBreakthrough - aBreakthrough;
           if(breakthroughDiff) return breakthroughDiff;
-        }else if(aUnowned !== bUnowned){
-          // In non-grouped ties, leave first-copy handling to the selected mode's group.
-          if(copyPriority === 3) return aUnowned ? -1 : 1;
         }
         return aName.localeCompare(bName,'ko');
       });
