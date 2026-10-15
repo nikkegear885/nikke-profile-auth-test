@@ -9,6 +9,13 @@
     .normalize('NFKC')
     .toLowerCase()
     .replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g, '');
+  const OVERSPEC_WISHLIST_NAMES = new Set([
+    "라피 : 레드 후드",
+    "네온 : 비전 아이",
+    "아니스 : 스타",
+    "미하라 : 본딩 체인"
+  ].map(norm));
+  function isOverspecWishlistName(name){ return OVERSPEC_WISHLIST_NAMES.has(norm(name)); }
   // Keep limited/distribution characters out of wishlist choices and auto-recommendations.
   const WISHLIST_EXCLUDED_NAMES = new Set([
     "2B",
@@ -112,6 +119,8 @@
 
   function isEligibleWishlistName(name, company){
     if(!String(name || '').trim()) return false;
+    // Overspec characters are available under Pilgrim only.
+    if(isOverspecWishlistName(name) && company !== '필그림') return false;
     // Every company, including Pilgrim, excludes limited/distribution, SR and R characters.
     // Pilgrim's separate rule applies only to the 160-wall auto-priority logic below.
     return !isWishlistExcluded(name) && isSSRCharacter(name);
@@ -220,8 +229,14 @@
   function getAllCharacters(){
     try{
       const list = Array.isArray(window.__NIKKE_RAW) ? window.__NIKKE_RAW : [];
+      // Treat the four Over-Spec units as Pilgrim for wishlist assignment without mutating the site's raw data.
+      const classified = list.map(row => {
+        if(!row || typeof row !== 'object') return row;
+        const name = String(row['이름'] || '').trim();
+        return isOverspecWishlistName(name) ? {...row, '기업':'필그림'} : row;
+      });
       const seen = new Set();
-      return list.filter(row => {
+      return classified.filter(row => {
         const name = String(row && row['이름'] || '').trim();
         const company = String(row && row['기업'] || '').trim();
         const key = norm(name);
