@@ -711,7 +711,7 @@
         const bName = String(b['이름'] || '').trim();
         const aBreakthrough = getBreakthrough(aName);
         const bBreakthrough = getBreakthrough(bName);
-        if(wallStatus === 'O'){
+        if(wallStatus === 'O' && company !== '필그림'){
           const aCleared = aBreakthrough >= 1;
           const bCleared = bBreakthrough >= 1;
           if(aCleared !== bCleared) return aCleared ? -1 : 1;
