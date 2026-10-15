@@ -1438,10 +1438,11 @@
           const favorite = isFavoriteCharacter(name);
           if(isManuallyExcludedCharacter(name) || getCoreEnhancement(name) >= 7) return false;
           if(!favorite && shouldExcludeFromAutoWishlist(name)) return false;
-          // In "필수캐 우선" mode, do not spend slots on already-broken-through general-purpose units.
-          // Their first copy is useful, but 1★+ general-purpose candidates should yield to unfilled higher-priority targets.
+          // In "필수캐 우선" mode, include general-purpose characters only when the account
+          // does not own their first copy. A 0★ owned character is still owned and must be excluded.
+          // Explicitly favorited characters keep their existing manual-override behavior.
           if(copyPriority === 0 && !favorite &&
-             getBaseWishlistPerformancePriority(name) === 2 && getBreakthrough(name) >= 1) return false;
+             getBaseWishlistPerformancePriority(name) === 2 && !isMarkedUnowned(name)) return false;
           if(copyPriority === 1 && !favorite){
             const priority = getBaseWishlistPerformancePriority(name);
             const breakthrough = getBreakthrough(name);
@@ -1480,15 +1481,6 @@
         if(copyPriority === 0){
           if(aGroup !== bGroup) return aGroup - bGroup;
           if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
-        }
-
-        if(wallStatus === 'X' && company !== '필그림'){
-          // 160벽 X 선택 시 10단계 중 1돌파·2돌파만 우선 추천한다.
-          // 단, "필수캐 우선" 모드에서는 성능 우선 그룹을 먼저 비교한다.
-          // 3돌파와 코어 강화 1~7은 이 우선 그룹에 포함하지 않는다.
-          const aTargetPriority = aBreakthrough >= 1 && aBreakthrough <= 2;
-          const bTargetPriority = bBreakthrough >= 1 && bBreakthrough <= 2;
-          if(aTargetPriority !== bTargetPriority) return aTargetPriority ? -1 : 1;
         }
 
         // For other recommendation modes, retain their existing stage grouping after 160-wall targeting.
