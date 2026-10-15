@@ -670,6 +670,11 @@
       '#wishlistPanel .wl-picker-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}',
       '#wishlistPanel .wl-picker-placeholder{color:#738093;font-size:24px;font-weight:900}',
       '#wishlistPanel .wl-picker-name{width:100%;min-height:2.5em;overflow-wrap:anywhere;text-align:center;font-size:11px;font-weight:900;line-height:1.25}',
+      '#wishlistPanel .wl-picker-status{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:3px;width:100%;min-height:17px;margin-top:-1px;line-height:1.1}',
+      '#wishlistPanel .wl-picker-status-badge{display:inline-flex;align-items:center;justify-content:center;min-height:17px;padding:2px 4px;border:1px solid #cfd7e2;border-radius:4px;background:#f1f5f9;color:#465368;font-size:9px;font-weight:900;white-space:nowrap}',
+      '#wishlistPanel .wl-picker-status-badge.is-core{border-color:#d9c7f6;background:#f4edff;color:#7650a4}',
+      '#wishlistPanel .wl-picker-status-badge.is-unowned{border-color:#c5c5c5;background:transparent;color:#686868}',
+      '#wishlistPanel .wl-picker-item.is-unowned .wl-picker-photo img{filter:grayscale(1)}',
       '#wishlistPanel .wl-picker-choice{display:flex;width:100%;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;border-radius:5px;background:transparent;color:inherit;cursor:pointer}',
       '#wishlistPanel .wl-picker-choice:hover:not(:disabled){filter:brightness(.97)}',
       '#wishlistPanel .wl-picker-choice:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.7)}',
@@ -1176,16 +1181,25 @@
       const image = findImage(name);
       const duplicate = selectedElsewhere.has(norm(name));
       const isCurrent = !!current && norm(current) === norm(name);
+      const unowned = isMarkedUnowned(name);
+      const breakthrough = getBreakthrough(name);
+      const core = getCoreEnhancement(name);
       const manualExcluded = isManuallyExcludedCharacter(name);
       const automaticReason = getAutomaticExclusionReason(name);
       const excluded = manualExcluded || !!automaticReason;
       const photo = image
         ? '<img src="' + esc(image) + '" alt="" loading="lazy" draggable="false">'
         : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>' ;
-      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (excluded ? ' is-excluded' : '') + '">' +
-        '<button type="button" class="wl-picker-choice" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + '>' +
+      const status = unowned
+        ? '<span class="wl-picker-status-badge is-unowned">미보유</span>'
+        : '<span class="wl-picker-status-badge">돌파 ' + breakthrough + '/3</span>' +
+          '<span class="wl-picker-status-badge is-core">코강 +' + core + '</span>';
+      const statusLabel = unowned ? '미보유' : '돌파 ' + breakthrough + ', 코강 ' + core;
+      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (unowned ? ' is-unowned' : '') + (excluded ? ' is-excluded' : '') + '">' +
+        '<button type="button" class="wl-picker-choice" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + ' aria-label="' + esc(name + ', ' + statusLabel) + '">' +
           '<span class="wl-picker-photo">' + photo + '</span>' +
           '<span class="wl-picker-name">' + esc(name) + '</span>' +
+          '<span class="wl-picker-status" aria-label="' + esc(statusLabel) + '">' + status + '</span>' +
         '</button>' +
         '<button type="button" class="wl-picker-exclude' + (manualExcluded || automaticReason ? ' is-excluded' : '') + '" data-wl-exclude-name="' + esc(name) + '" aria-pressed="' + (excluded ? 'true' : 'false') + '"' + (automaticReason && !manualExcluded ? ' disabled data-wl-hover-text="' + esc(automaticReason) + '"' : '') + '>' + (manualExcluded ? '제외 해제' : automaticReason || '제외') + '</button>' +
       '</div>';
