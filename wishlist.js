@@ -1438,11 +1438,6 @@
           const favorite = isFavoriteCharacter(name);
           if(isManuallyExcludedCharacter(name) || getCoreEnhancement(name) >= 7) return false;
           if(!favorite && shouldExcludeFromAutoWishlist(name)) return false;
-          // In "필수캐 우선" mode, include general-purpose characters only when the account
-          // does not own their first copy. A 0★ owned character is still owned and must be excluded.
-          // Explicitly favorited characters keep their existing manual-override behavior.
-          if(copyPriority === 0 && !favorite &&
-             getBaseWishlistPerformancePriority(name) === 2 && !isMarkedUnowned(name)) return false;
           if(copyPriority === 1 && !favorite){
             const priority = getBaseWishlistPerformancePriority(name);
             const breakthrough = getBreakthrough(name);
@@ -1469,6 +1464,14 @@
 
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
+
+        // General-purpose characters already owned at base copy (0 breakthroughs) are
+        // lower priority in all three recommendation stages. Do not exclude them outright:
+        // they may fill a slot only after better-priority candidates have been considered.
+        const aGeneralBaseCopy = getBaseWishlistPerformancePriority(aName) === 2 && aBreakthrough === 0 && !aUnowned;
+        const bGeneralBaseCopy = getBaseWishlistPerformancePriority(bName) === 2 && bBreakthrough === 0 && !bUnowned;
+        if(aGeneralBaseCopy !== bGeneralBaseCopy) return aGeneralBaseCopy ? 1 : -1;
+
         const aPerformancePriority = getWishlistPerformancePriority(aName);
         const bPerformancePriority = getWishlistPerformancePriority(bName);
         const aGroup = getCopyPrioritySortGroup(aName,aPerformancePriority,aBreakthrough,aUnowned);
