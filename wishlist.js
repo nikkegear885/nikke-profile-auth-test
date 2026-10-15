@@ -253,6 +253,27 @@
     return unowned ? 1 : 2;
   }
 
+  // Stage 1 ("필수캐 우선") uses explicit groups rather than relying on partial comparator checks.
+  // Required units are pinned first, missing first copies from ranks 2–6 come next,
+  // owned treasure-performance units are targeted only until 2 breakthroughs, and
+  // owned base-copy general/PVP units are sent near the end.
+  function getRequiredFirstSortGroup(name, breakthrough, unowned){
+    const base = getBaseWishlistPerformancePriority(name);
+    const normalized = norm(name);
+    if(base === 1) return 0; // Required
+    const isPvp = PVP_WISHLIST_NAMES.has(normalized) || PVP_LOWEST_WISHLIST_NAMES.has(normalized);
+    const isGeneralBaseCopy = base === 2 && breakthrough === 0 && !unowned;
+    const isPvpBaseCopy = isPvp && breakthrough === 0 && !unowned;
+    if(isGeneralBaseCopy) return 7;
+    if(isPvpBaseCopy) return 8;
+    if(isFavoriteCharacter(name)) return 1;
+    if(unowned && base >= 2 && base <= 6) return 2; // First copies through "명함 추천"
+    if(!unowned && isTreasurePerformanceBelowTwo(name, breakthrough)) return 3; // Treasure target up to 2★
+    if(base >= 2 && base <= 6) return 4;
+    if(unowned) return 5;
+    return 6;
+  }
+
   function normalizePicksToEligibleSSR(source){
     const cleaned = clonePicks(source);
     let changed = false;
@@ -1454,6 +1475,21 @@
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
 
+        if(copyPriority === 0){
+          const aStageGroup = getRequiredFirstSortGroup(aName,aBreakthrough,aUnowned);
+          const bStageGroup = getRequiredFirstSortGroup(bName,bBreakthrough,bUnowned);
+          if(aStageGroup !== bStageGroup) return aStageGroup - bStageGroup;
+
+          const aStagePriority = getWishlistPerformancePriority(aName);
+          const bStagePriority = getWishlistPerformancePriority(bName);
+          if(aStageGroup === 2 && aStagePriority !== bStagePriority) return aStagePriority - bStagePriority;
+          if(aStageGroup === 3 && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
+          if(aStageGroup === 4 && aStagePriority !== bStagePriority) return aStagePriority - bStagePriority;
+          if(aStageGroup === 5 && aStagePriority !== bStagePriority) return aStagePriority - bStagePriority;
+          if(!aUnowned && !bUnowned && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
+          return aName.localeCompare(bName,'ko');
+        }
+
         // General-purpose characters already owned at base copy (0 breakthroughs) are
         // lower priority in all three recommendation stages, even if marked as favorites.
         // They are not removed outright; they can fill a slot only after other candidates.
@@ -1500,19 +1536,29 @@
         }
         return aName.localeCompare(bName,'ko');
       });
-      // Enforce this as a final stable partition, not just a sort-comparator hint:
-      // across all recommendation stages, owned general-purpose characters at 0 breakthroughs
-      // must be behind every other eligible candidate. They can only fill slots if fewer than
-      // five higher-priority candidates remain for that company.
+      // Final stable partition for every stage: an owned base-copy general-purpose unit
+      // or a PVP unit with only its base copy must not displace first-copy candidates or
+      // other current targets. These units may fill a slot only after higher-priority options.
       const lowerPriorityGeneralCopies = candidates.filter(row => {
         const name = String(row['이름'] || '').trim();
         return getBaseWishlistPerformancePriority(name) === 2 &&
           getBreakthrough(name) === 0 && !isMarkedUnowned(name);
       });
-      if(lowerPriorityGeneralCopies.length){
-        const lowerPriorityNames = new Set(lowerPriorityGeneralCopies.map(row => norm(row['이름'])));
+      const lowerPriorityPvpCopies = candidates.filter(row => {
+        const name = String(row['이름'] || '').trim();
+        return (PVP_WISHLIST_NAMES.has(norm(name)) || PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) &&
+          getBreakthrough(name) === 0 && !isMarkedUnowned(name);
+      });
+      const lowerPriorityNames = new Set([
+        ...lowerPriorityGeneralCopies.map(row => norm(row['이름'])),
+        ...lowerPriorityPvpCopies.map(row => norm(row['이름']))
+      ]);
+      if(lowerPriorityNames.size){
         const higherPriorityCandidates = candidates.filter(row => !lowerPriorityNames.has(norm(row['이름'])));
-        candidates.splice(0,candidates.length,...higherPriorityCandidates,...lowerPriorityGeneralCopies);
+        const generalCopyNames = new Set(lowerPriorityGeneralCopies.map(row => norm(row['이름'])));
+        const generalCopies = lowerPriorityGeneralCopies;
+        const pvpCopies = lowerPriorityPvpCopies.filter(row => !generalCopyNames.has(norm(row['이름'])));
+        candidates.splice(0,candidates.length,...higherPriorityCandidates,...generalCopies,...pvpCopies);
       }
       picks[company] = candidates.slice(0,5).map(row => String(row['이름'] || '').trim());
       while(picks[company].length < 5) picks[company].push('');
