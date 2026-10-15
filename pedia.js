@@ -33,8 +33,12 @@ function injectStyle(){
     '.pedia-card{border:1px solid #c9dce6;border-radius:10px;background:#fff;overflow:hidden;box-shadow:0 4px 12px rgba(61,105,130,.07)}',
     'html.dark-theme .pedia-card{background:#151f31;border-color:#354761;box-shadow:0 4px 12px rgba(0,0,0,.18)}',
     '.pedia-image-box{position:relative;aspect-ratio:3/4;background:#edf4f8;display:flex;align-items:center;justify-content:center;overflow:hidden}',
-    '.pedia-limited-badge{position:absolute;right:6px;bottom:6px;z-index:4;display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid #65c5e9;border-radius:8px;background:rgba(228,248,255,.96);color:#167fac;font-size:10px;font-weight:1000;line-height:1;letter-spacing:.02em;box-shadow:0 1px 4px rgba(0,104,151,.12);white-space:nowrap;pointer-events:none}',
+    '.pedia-status-badges{position:absolute;right:6px;bottom:6px;z-index:4;display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-wrap:wrap;max-width:calc(100% - 12px);pointer-events:none}',
+    '.pedia-limited-badge,.pedia-distribution-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:8px;font-size:10px;font-weight:1000;line-height:1;letter-spacing:.02em;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.10)}',
+    '.pedia-limited-badge{border:1px solid #65c5e9;background:rgba(228,248,255,.96);color:#167fac;box-shadow:0 1px 4px rgba(0,104,151,.12)}',
+    '.pedia-distribution-badge{border:1px solid #b49af6;background:rgba(244,237,255,.97);color:#7045b5;box-shadow:0 1px 4px rgba(91,55,155,.15)}',
     'html.dark-theme .pedia-limited-badge{border-color:#55bce5;background:rgba(18,54,74,.96);color:#9de4ff;box-shadow:0 1px 5px rgba(0,0,0,.3)}',
+    'html.dark-theme .pedia-distribution-badge{border-color:#ab91f5;background:rgba(54,39,82,.97);color:#d8c7ff;box-shadow:0 1px 5px rgba(0,0,0,.3)}',
     'html.dark-theme .pedia-image-box{background:#0c1422}',
     '.pedia-image-box img{width:100%;height:100%;object-fit:cover;display:block}',
     '.pedia-placeholder{padding:12px;text-align:center;color:#7a92a2;font-size:10px;font-weight:800;line-height:1.5}',
@@ -163,6 +167,27 @@ const LIMITED_PEDIA_NAMES = new Set([
   "A2"
 ].map(normalizePediaName));
 
+const DISTRIBUTION_PEDIA_NAMES = new Set([
+  "앵커",
+  "네베",
+  "차임",
+  "킬로",
+  "파스칼",
+  "클레어",
+  "쿠루미",
+  "아이기스",
+  "길티",
+  "신",
+  "퀀시",
+  "라푼젤:퓨어그레이스",
+  "람",
+  "릴리",
+  "모리",
+  "미사토",
+  "사쿠라 스즈하라",
+  "아비스타"
+].map(normalizePediaName));
+
 function findPediaSkillData(all,name,id){
   if(!all||typeof all!=='object')return null;
   if(all[name])return all[name];
@@ -278,7 +303,7 @@ function renderPedia(text){
   });
   count.textContent=list.length+' / '+pediaItems.length+'명';
   if(!list.length){grid.innerHTML='<div class="pedia-empty">조건에 맞는 니케가 없습니다.</div>';return;}
-  grid.innerHTML=list.map(item=>{const image=String(item.image||'').trim(),id=item.id??item.i??'';const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';const limited=LIMITED_PEDIA_NAMES.has(normalizePediaName(item.name))?'<span class="pedia-limited-badge">한정</span>':'';return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" data-pedia-id="'+esc(id)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+limited+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';}).join('');
+  grid.innerHTML=list.map(item=>{const image=String(item.image||'').trim(),id=item.id??item.i??'';const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';const isLimited=LIMITED_PEDIA_NAMES.has(normalizePediaName(item.name));const isDistribution=DISTRIBUTION_PEDIA_NAMES.has(normalizePediaName(item.name));const badges=(isLimited||isDistribution)?'<div class="pedia-status-badges">'+(isLimited?'<span class="pedia-limited-badge">한정</span>':'')+(isDistribution?'<span class="pedia-distribution-badge">배포</span>':'')+'</div>':'';return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" data-pedia-id="'+esc(id)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+badges+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';}).join('');
   grid.querySelectorAll('.pedia-card').forEach(card=>card.addEventListener('click',()=>openPediaSkill(card.dataset.pediaName||'',card.dataset.pediaId||'')));
 }
 async function showPedia(){const panel=document.getElementById('pediaPanel');if(!panel)return;panel.hidden=false;document.body.classList.remove('outpost-view','sole-view','drop-rate-view');document.body.classList.add('pedia-view');document.getElementById('kpis')?.setAttribute('hidden','');document.getElementById('outpostPanel')?.setAttribute('hidden','');document.getElementById('soleScorePanel')?.classList.remove('active');document.getElementById('characterPanel')?.setAttribute('hidden','');document.querySelectorAll('.main-view-nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.view==='pedia'));const title=document.getElementById('pageTitle');if(title)title.textContent='니케 도감';try{window.closeSidebar?.()}catch(_){}await loadPediaData();await loadPediaFilterMeta();renderPedia(document.getElementById('pediaSearch')?.value||'');}
