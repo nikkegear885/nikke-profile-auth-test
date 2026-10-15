@@ -158,11 +158,11 @@
       '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
       '아르카나 : 포츈 메이트','리타'
     ]},
-    {rank:7, label:'명함 추천', names:[
+    {rank:8, label:'명함 추천', names:[
       'D : 킬러 와이프','은화 : 택티컬 업','델타 : 닌자 시프',
       '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','마나','페퍼','티아','나가'
     ]},
-    {rank:11, label:'도감작', names:[
+    {rank:10, label:'도감작', names:[
       '엠마 : 택티컬 업',
       '브리드','프리바티 : 언카인드 메이드','메이든','마스트','베스티','엠마',
       '폴리','솔린','디젤','은화','길로틴','D','시그널','마르차나','키리','K',
@@ -239,10 +239,10 @@
   function getWishlistPerformancePriority(name){
     const key = norm(name);
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
-      return pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 8 : 10;
+      return pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
     }
     if(WISHLIST_NAMECARD_NAMES.has(key)){
-      return pvpPriority === 'pvp' ? 7 : 9;
+      return 8;
     }
     return getBaseWishlistPerformancePriority(name);
   }
@@ -269,15 +269,14 @@
     }
     if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
-      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 8 : 10;
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
       return unowned ? rank : rank + 10;
     }
     if(SOLO_RAID_WISHLIST_NAMES.has(key)) return unowned ? 6 : 16;
     if(WISHLIST_NAMECARD_NAMES.has(key)){
-      const rank = pvpPriority === 'pvp' ? 7 : 9;
-      return unowned ? rank : rank + 10;
+      return unowned ? 8 : 18;
     }
-    if(WISHLIST_COLLECTION_NAMES.has(key) && copyPriority === 2) return unowned ? 11 : 21;
+    if(WISHLIST_COLLECTION_NAMES.has(key) && copyPriority === 2) return unowned ? 10 : 20;
     return performancePriority;
   }
 
@@ -306,23 +305,23 @@
     // Rank 3: general-purpose characters.
     if(isGeneral) return unowned ? 3 : 13;
 
-    // PVP characters move to 4 / 8 / 10; Laplace remains last within the PVP group.
+    // PVP characters move to 4 / 7 / 9; namecard recommendations follow at rank 8.
     if(isPvp){
-      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 8 : 10;
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
       return unowned ? rank : rank + 10;
     }
 
-    // Rank 6: Solo Raid; ranks 7 or 9: first-copy recommendations based on PVP mode.
+    // Rank 6: Solo Raid; rank 8: first-copy recommendations, immediately after the PVP tier.
     if(isSoloRaid) return unowned ? 6 : 16;
     if(isNamecard){
       const rank = pvpPriority === 'pvp' ? 7 : 9;
       return unowned ? rank : rank + 10;
     }
 
-    // Rank 11: collection-only characters, included only in collection mode.
-    if(isCollection && stage === 2) return unowned ? 11 : 21;
-    if(stage === 2 && unowned) return 11;
-    if(stage === 2) return 21;
+    // Rank 10: collection-only characters, included only in collection mode.
+    if(isCollection && stage === 2) return unowned ? 10 : 20;
+    if(stage === 2 && unowned) return 10;
+    if(stage === 2) return 20;
     return Number.POSITIVE_INFINITY;
   }
 
