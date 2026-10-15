@@ -4,6 +4,7 @@
 
   const COMPANIES = ['엘리시온','미실리스','테트라','필그림'];
   const STORAGE_KEY = 'nikke_wishlist_recommendations_v1';
+  const EXCLUDED_STORAGE_KEY = 'nikke_wishlist_excluded_characters_v1';
   const IMAGE_URL = 'assets/nikke-pedia-master.json?v=1047';
   const norm = value => String(value == null ? '' : value)
     .normalize('NFKC')
@@ -198,6 +199,8 @@
 
   let picks = loadPicks();
   let savedPicks = clonePicks(picks);
+  let excludedCharacters = loadExcludedCharacters();
+  let savedExcludedCharacters = excludedCharacters.slice();
   let imageMap = new Map();
   let imageLoadPromise = null;
   let panel = null;
@@ -211,6 +214,45 @@
       }
     }catch(_){}
     return STORAGE_KEY;
+  }
+
+  function activeExcludedStorageKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return EXCLUDED_STORAGE_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return EXCLUDED_STORAGE_KEY;
+  }
+
+  function loadExcludedCharacters(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(activeExcludedStorageKey()) || '[]');
+      if(!Array.isArray(raw)) return [];
+      const seen = new Set();
+      return raw.map(name => String(name || '').trim()).filter(name => {
+        const key = norm(name);
+        if(!name || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }catch(_){
+      return [];
+    }
+  }
+
+  function isExcludedCharacter(name){
+    const key = norm(name);
+    return !!key && excludedCharacters.some(value => norm(value) === key);
+  }
+
+  function toggleExcludedCharacter(name){
+    const canonical = String(name || '').trim();
+    if(!canonical) return;
+    const key = norm(canonical);
+    const index = excludedCharacters.findIndex(value => norm(value) === key);
+    if(index >= 0) excludedCharacters.splice(index,1);
+    else excludedCharacters.push(canonical);
   }
 
   const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
@@ -262,7 +304,9 @@
   function savePicks(){
     try{
       localStorage.setItem(activePicksStorageKey(), JSON.stringify(picks));
+      localStorage.setItem(activeExcludedStorageKey(), JSON.stringify(excludedCharacters));
       savedPicks = clonePicks(picks);
+      savedExcludedCharacters = excludedCharacters.slice();
       return true;
     }catch(_){
       return false;
@@ -465,6 +509,34 @@
       '#wishlistPanel .wl-picker-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}',
       '#wishlistPanel .wl-picker-placeholder{color:#738093;font-size:24px;font-weight:900}',
       '#wishlistPanel .wl-picker-name{width:100%;min-height:2.5em;overflow-wrap:anywhere;text-align:center;font-size:11px;font-weight:900;line-height:1.25}',
+      '#wishlistPanel .wl-picker-choice{display:flex;width:100%;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;border-radius:5px;background:transparent;color:inherit;cursor:pointer}',
+      '#wishlistPanel .wl-picker-choice:hover:not(:disabled){filter:brightness(.97)}',
+      '#wishlistPanel .wl-picker-choice:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.7)}',
+      '#wishlistPanel .wl-picker-exclude{width:100%;min-height:26px;padding:4px 5px;border:1px solid #efb8c0;border-radius:6px;background:#fff0f2;color:#b52b43;font-size:10px;font-weight:1000;cursor:pointer}',
+      '#wishlistPanel .wl-picker-exclude.is-excluded{border-color:#b7c1ce;background:#edf1f6;color:#4d596a}',
+      '#wishlistPanel .wl-excluded-panel{position:absolute;left:calc(100% + 16px);top:0;z-index:1;box-sizing:border-box;width:290px;max-width:calc(100vw - 500px);max-height:calc(100vh - 155px);display:flex;flex-direction:column;overflow:hidden;border:1px solid #dce2e9;border-radius:12px;background:#f8fafc;color:#303948;box-shadow:0 5px 20px rgba(25,44,70,.09)}',
+      '#wishlistPanel .wl-excluded-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 13px;border-bottom:1px solid #e1e6ed;background:linear-gradient(135deg,#fff,#edf3fa)}',
+      '#wishlistPanel .wl-excluded-title{font-size:13px;font-weight:1000;color:#354459}',
+      '#wishlistPanel .wl-excluded-count{flex:none;padding:3px 7px;border-radius:999px;background:#e8edf4;color:#536175;font-size:10px;font-weight:1000}',
+      '#wishlistPanel .wl-excluded-note{padding:9px 13px 7px;color:#6f7c8f;font-size:10px;line-height:1.5}',
+      '#wishlistPanel .wl-excluded-list{display:flex;flex-direction:column;gap:6px;min-height:45px;padding:0 10px 11px;overflow:auto}',
+      '#wishlistPanel .wl-excluded-empty{padding:14px 7px;color:#8a95a5;text-align:center;font-size:11px;line-height:1.6}',
+      '#wishlistPanel .wl-excluded-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #e2e7ee;border-radius:8px;background:#fff}',
+      '#wishlistPanel .wl-excluded-identity{display:flex;min-width:0;flex-direction:column;gap:3px}',
+      '#wishlistPanel .wl-excluded-company{color:#8a95a5;font-size:9px;font-weight:900}',
+      '#wishlistPanel .wl-excluded-name{overflow-wrap:anywhere;color:#354052;font-size:11px;font-weight:900;line-height:1.3}',
+      '#wishlistPanel .wl-include-button{flex:none;padding:5px 7px;border:1px solid #cdd6e2;border-radius:6px;background:#f4f6f9;color:#556276;font-size:10px;font-weight:1000;cursor:pointer}',
+      '#wishlistPanel .wl-include-button:hover{border-color:#168fc5;background:#edf9ff;color:#087ba8}',
+      'html.dark-theme #wishlistPanel .wl-excluded-panel{border-color:#354761;background:#151f31;color:#e8eef9;box-shadow:0 5px 20px rgba(0,0,0,.25)}',
+      'html.dark-theme #wishlistPanel .wl-excluded-head{border-color:#354761;background:linear-gradient(135deg,#1a2639,#111a2b)}',
+      'html.dark-theme #wishlistPanel .wl-excluded-title{color:#e8eef9}',
+      'html.dark-theme #wishlistPanel .wl-excluded-count{background:#27364c;color:#cbd6e6}',
+      'html.dark-theme #wishlistPanel .wl-excluded-note,html.dark-theme #wishlistPanel .wl-excluded-empty{color:#9aa9be}',
+      'html.dark-theme #wishlistPanel .wl-excluded-row{border-color:#354761;background:#101a2b}',
+      'html.dark-theme #wishlistPanel .wl-excluded-name{color:#e3ebf8}',
+      'html.dark-theme #wishlistPanel .wl-include-button{border-color:#43546c;background:#1e2c41;color:#d1dcef}',
+      'html.dark-theme #wishlistPanel .wl-picker-exclude{border-color:#75404e;background:#351d27;color:#ffabb9}',
+      'html.dark-theme #wishlistPanel .wl-picker-exclude.is-excluded{border-color:#43546c;background:#1e2c41;color:#d1dcef}',
       '#wishlistPanel .wl-picker-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-top:1px solid #dde3ec;background:#f0f3f7;color:#707b8b;font-size:11px}',
       '#wishlistPanel .wl-picker-clear{flex:none;padding:8px 12px;border:1px solid #d7a9ad;border-radius:7px;background:#fff5f5;color:#b3434a;font-size:12px;font-weight:900;cursor:pointer}',
       '#wishlistPanel .wl-picker-empty{grid-column:1/-1;padding:28px 10px;text-align:center;color:#758196;font-size:13px}',
@@ -478,6 +550,7 @@
       '#wishlistPanel .wl-cancel{border:2px solid #aaa;background:#fff;color:#343434}',
       '#wishlistPanel .wl-confirm{border:2px solid #0da5e2;background:#0ba8eb;color:white}',
       '#wishlistPanel .wl-action:hover{filter:brightness(.97);transform:translateY(-1px)}',
+      '@media(max-width:1000px){#wishlistPanel .wl-excluded-panel{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;max-height:none;margin:12px auto 0}#wishlistPanel .wl-excluded-list{max-height:260px}}',
       '@media(max-width:650px){#wishlistPanel{width:100%;margin:0 auto 12px}#wishlistPanel .wl-dialog{width:100%;height:auto;border-radius:10px}#wishlistPanel .wl-modal-head{min-height:27px;padding:3px 6px}#wishlistPanel .wl-modal-title{font-size:11px;gap:4px}#wishlistPanel .wl-refresh-icon{width:17px;height:17px;border-width:2px}#wishlistPanel .wl-intro{padding:3px 4px;font-size:9px;line-height:1.2}#wishlistPanel .wl-intro .wl-subline{font-size:8px;margin-top:2px}#wishlistPanel .wl-company-list{gap:6px;padding:2px 7px 6px}#wishlistPanel .wl-company-head{min-height:41px;padding:4px 34px}#wishlistPanel .wl-company-symbol{height:25px;font-size:30px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-info{width:20px;height:20px;right:6px;font-size:14px}#wishlistPanel .wl-slots{gap:4px;padding:12px 5px 15px}#wishlistPanel .wl-slot{aspect-ratio:1 / 1;border-radius:4px}#wishlistPanel .wl-corner-mark{width:16px;height:18px;font-size:9px}#wishlistPanel .wl-selected-name{padding:14px 2px 7px;font-size:7px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:1px 2px;font-size:7px;min-width:14px}#wishlistPanel .wl-plus{font-size:28px}#wishlistPanel .wl-empty-mark{gap:1px;padding:2px;font-size:7px}#wishlistPanel .wl-footer{gap:8px;padding:5px 8px 6px}#wishlistPanel .wl-action{width:42%;min-height:36px;font-size:13px}}',
       '@media(max-width:380px){#wishlistPanel .wl-company-list{padding-left:6px;padding-right:6px}#wishlistPanel .wl-slots{gap:4px;padding-left:5px;padding-right:5px}#wishlistPanel .wl-selected-name{font-size:8px}}'
     ].join('\n');
@@ -603,7 +676,12 @@
           '<button type="button" class="wl-action wl-confirm" data-wl-confirm><span aria-hidden="true">✓</span> 결정</button>' +
         '</div>' +
       '</div>' +
-      '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>' +
+      '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="자동편성 제외 캐릭터">' +
+        '<div class="wl-excluded-head"><div class="wl-excluded-title">자동편성 제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
+        '<div class="wl-excluded-note">이 목록의 니케는 자동 편성 후보에서 제외돼. 니케 선택창에서 <b>제외</b>를 눌러 추가할 수 있어.</div>' +
+        '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">아직 제외한 니케가 없어.</div></div>' +
+      '</aside>' +
+      '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>'
         '<div class="wl-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="wlPickerTitle">' +
           '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">니케 선택</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="닫기">×</button></div>' +
           '<div class="wl-picker-search-wrap"><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="니케 이름 검색" aria-label="니케 이름 검색" autocomplete="off"></div>' +
@@ -733,13 +811,17 @@
       const image = findImage(name);
       const duplicate = selectedElsewhere.has(norm(name));
       const isCurrent = !!current && norm(current) === norm(name);
+      const excluded = isExcludedCharacter(name);
       const photo = image
         ? '<img src="' + esc(image) + '" alt="" loading="lazy" draggable="false">'
         : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>' ;
-      return '<button type="button" class="wl-picker-item' + (isCurrent ? ' is-current' : '') + '" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + '>' +
-        '<span class="wl-picker-photo">' + photo + '</span>' +
-        '<span class="wl-picker-name">' + esc(name) + '</span>' +
-        '</button>';
+      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (excluded ? ' is-excluded' : '') + '">' +
+        '<button type="button" class="wl-picker-choice" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + '>' +
+          '<span class="wl-picker-photo">' + photo + '</span>' +
+          '<span class="wl-picker-name">' + esc(name) + '</span>' +
+        '</button>' +
+        '<button type="button" class="wl-picker-exclude' + (excluded ? ' is-excluded' : '') + '" data-wl-exclude-name="' + esc(name) + '" aria-pressed="' + (excluded ? 'true' : 'false') + '">' + (excluded ? '제외 해제' : '제외') + '</button>' +
+      '</div>';
     }).join('');
   }
 
@@ -770,7 +852,10 @@
     }
     COMPANIES.forEach(company => {
       const candidates = getCharactersForCompany(company)
-        .filter(row => !shouldExcludeFromAutoWishlist(String(row['이름'] || '').trim()));
+        .filter(row => {
+          const name = String(row['이름'] || '').trim();
+          return !isExcludedCharacter(name) && !shouldExcludeFromAutoWishlist(name);
+        });
       candidates.sort((a,b) => {
         const aName = String(a['이름'] || '').trim();
         const bName = String(b['이름'] || '').trim();
@@ -842,10 +927,41 @@
         '<div class="wl-slots">' + Array.from({length:5},(_,slot) => buildSlot(company,slot,characters)).join('') + '</div>' +
       '</section>';
     }).join('');
+    renderExcludedCharacters();
     const status = activePanel.querySelector('#wishlistSavedStatus');
-    const changed = JSON.stringify(picks) !== JSON.stringify(savedPicks);
+    const changed = JSON.stringify(picks) !== JSON.stringify(savedPicks) ||
+      JSON.stringify(excludedCharacters) !== JSON.stringify(savedExcludedCharacters);
     if(status) status.textContent = (changed ? '변경 사항 있음 · 결정 버튼을 눌러 저장' : '저장된 위시리스트') +
-      ' · ' + COMPANIES.reduce((sum,company) => sum + picks[company].filter(Boolean).length,0) + ' / 20명';
+      ' · ' + COMPANIES.reduce((sum,company) => sum + picks[company].filter(Boolean).length,0) + ' / 20명' +
+      ' · 제외 ' + excludedCharacters.length + '명';
+  }
+
+  function renderExcludedCharacters(){
+    const pane = panel && panel.querySelector('#wishlistExcludedPanel');
+    const list = pane && pane.querySelector('[data-wl-excluded-list]');
+    const count = pane && pane.querySelector('[data-wl-excluded-count]');
+    if(!pane || !list) return;
+    if(count) count.textContent = excludedCharacters.length + '명';
+    const all = getAllCharacters();
+    const companyOrder = new Map(COMPANIES.map((company,index) => [company,index]));
+    const rows = excludedCharacters.map(name => {
+      const row = all.find(item => norm(item['이름']) === norm(name));
+      return {name,company:row ? String(row['기업'] || '') : '기업 미상'};
+    }).sort((a,b) =>
+      (companyOrder.get(a.company) ?? 99) - (companyOrder.get(b.company) ?? 99) ||
+      a.name.localeCompare(b.name,'ko')
+    );
+    if(!rows.length){
+      list.innerHTML = '<div class="wl-excluded-empty">아직 제외한 니케가 없어.<br>선택창에서 제외 버튼을 눌러 추가해.</div>';
+      return;
+    }
+    list.innerHTML = rows.map(row =>
+      '<div class="wl-excluded-row">' +
+        '<div class="wl-excluded-identity"><span class="wl-excluded-company">' + esc(row.company) + '</span>' +
+        '<span class="wl-excluded-name">' + esc(row.name) + '</span></div>' +
+        '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" title="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>' +
+      '</div>'
+    ).join('');
   }
 
   function onPanelChange(event){
@@ -877,6 +993,26 @@
     const backdrop = event.target.closest && event.target.closest('[data-wl-picker-backdrop]');
     if(closePicker || (backdrop && event.target === backdrop)){
       closeCharacterPicker();
+      return;
+    }
+    const excludeButton = event.target.closest && event.target.closest('[data-wl-exclude-name]');
+    if(excludeButton){
+      const name = String(excludeButton.dataset.wlExcludeName || '').trim();
+      if(name){
+        toggleExcludedCharacter(name);
+        renderWishlist();
+        renderCharacterPicker();
+      }
+      return;
+    }
+    const includeButton = event.target.closest && event.target.closest('[data-wl-include-name]');
+    if(includeButton){
+      const name = String(includeButton.dataset.wlIncludeName || '').trim();
+      if(name){
+        const key = norm(name);
+        excludedCharacters = excludedCharacters.filter(value => norm(value) !== key);
+        renderWishlist();
+      }
       return;
     }
     const pickerClear = event.target.closest && event.target.closest('[data-wl-picker-clear]');
@@ -929,7 +1065,9 @@
 
   function cancelWishlist(){
     picks = clonePicks(savedPicks);
+    excludedCharacters = savedExcludedCharacters.slice();
     renderWishlist();
+    if(pickerSlot !== null) renderCharacterPicker();
   }
 
   function hideWishlist(){
@@ -944,6 +1082,8 @@
   function showWishlist(){
     picks = clonePicks(loadPicks());
     savedPicks = clonePicks(picks);
+    excludedCharacters = loadExcludedCharacters();
+    savedExcludedCharacters = excludedCharacters.slice();
     const activePanel = ensurePanel();
     if(!activePanel) return;
     activePanel.hidden = false;
@@ -992,6 +1132,8 @@
       if(document.body.classList.contains('wishlist-view')){
         picks = clonePicks(loadPicks());
         savedPicks = clonePicks(picks);
+        excludedCharacters = loadExcludedCharacters();
+        savedExcludedCharacters = excludedCharacters.slice();
         wallStatus = loadWallStatus();
         renderAccountSwitcher();
         render160WallControl();
