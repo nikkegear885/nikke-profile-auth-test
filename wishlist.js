@@ -29,10 +29,27 @@
   let panel = null;
   let pickerSlot = null;
 
+  function activePicksStorageKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return STORAGE_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return STORAGE_KEY;
+  }
+
   function loadPicks(){
     const output = blankWishlist();
     try{
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      const key = activePicksStorageKey();
+      let raw = localStorage.getItem(key);
+      // Migrate the old shared wishlist to the first account only; other accounts start separately.
+      if(raw === null && key !== STORAGE_KEY){
+        let isFirstAccount = false;
+        try{ isFirstAccount = Array.isArray(ACCOUNTS) && String(activeAccount) === String(ACCOUNTS[0]); }catch(_){}
+        if(isFirstAccount) raw = localStorage.getItem(STORAGE_KEY);
+      }
+      const saved = JSON.parse(raw || 'null');
       if(saved && typeof saved === 'object'){
         COMPANIES.forEach(company => {
           const list = Array.isArray(saved[company]) ? saved[company] : [];
@@ -47,7 +64,7 @@
 
   function savePicks(){
     try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(picks));
+      localStorage.setItem(activePicksStorageKey(), JSON.stringify(picks));
       savedPicks = clonePicks(picks);
       return true;
     }catch(_){
@@ -586,7 +603,11 @@
     if(typeof original !== 'function' || original.__wishlistPatched) return;
     const wrapped = function(){
       const result = original.apply(this,arguments);
-      if(document.body.classList.contains('wishlist-view')) renderWishlist();
+      if(document.body.classList.contains('wishlist-view')){
+        picks = clonePicks(loadPicks());
+        savedPicks = clonePicks(picks);
+        renderWishlist();
+      }
       return result;
     };
     wrapped.__wishlistPatched = true;
