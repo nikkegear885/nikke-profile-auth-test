@@ -338,13 +338,15 @@
     '</section>';
     const main = document.querySelector('main.main') || document.querySelector('main');
     if(main){
-      const accountSwitcher = ensureAccountSwitcher();
-      if(accountSwitcher) main.insertBefore(accountSwitcher,panel);
       const before = main.querySelector('#pediaPanel, #soleScorePanel, #outpostPanel, #characterPanel');
       if(before) main.insertBefore(panel,before);
       else main.appendChild(panel);
+      const accountSwitcher = ensureAccountSwitcher();
+      if(accountSwitcher) main.insertBefore(accountSwitcher,panel);
     }else{
       document.body.appendChild(panel);
+      const accountSwitcher = ensureAccountSwitcher();
+      if(accountSwitcher) document.body.insertBefore(accountSwitcher,panel);
     }
     panel.addEventListener('change', onPanelChange);
     panel.addEventListener('click', onPanelClick);
