@@ -228,10 +228,14 @@
   }
   function getWishlistPerformancePriority(name){
     const base = getBaseWishlistPerformancePriority(name);
-    // PVP=O moves PVP to rank 3.5; PVP=X keeps it at rank 5.
-    // Laplace remains last within whichever PVP rank is active.
-    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 3.75 : 5.25;
-    if(PVP_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 3.5 : 5;
+    // The dedicated selector gives PVP ranks 3.5, 5, or 6.5 depending on mode.
+    // Laplace remains last within the active PVP priority tier.
+    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))){
+      return pvpPriority === 'pvp' ? 3.75 : pvpPriority === 'solo' ? 5.25 : 6.75;
+    }
+    if(PVP_WISHLIST_NAMES.has(norm(name))){
+      return pvpPriority === 'pvp' ? 3.5 : pvpPriority === 'solo' ? 5 : 6.5;
+    }
     return base;
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
@@ -293,13 +297,20 @@
     // Once they reach 2★, they are completely excluded from auto-build.
     if(isTreasure) return breakthrough < 2 ? 2 : Number.POSITIVE_INFINITY;
 
-    // Acquisition pass: ranks 3–7 use unowned-only targets, in the requested sequence.
-    // Owned characters in these categories are held for the refill pass after missing first copies.
+    // Rank 3 general-purpose units.
     if(isGeneral) return unowned ? 3 : 13;
+
+    // PVP priority depends on the new three-mode control: 3.5 / 5 / 6.5.
     if(isPvp){
-      const rank = pvpIncluded === 'O' ? (isLowestPvp ? 3.75 : 3.5) : (isLowestPvp ? 5.25 : 5);
+      const rank = pvpPriority === 'pvp'
+        ? (isLowestPvp ? 3.75 : 3.5)
+        : pvpPriority === 'solo'
+          ? (isLowestPvp ? 5.25 : 5)
+          : (isLowestPvp ? 6.75 : 6.5);
       return unowned ? rank : rank + 10;
     }
+
+    // Rank 4 Solo Raid, rank 6 first-copy recommendations, rank 7 collection.
     if(isSoloRaid) return unowned ? 4 : 14;
     if(isNamecard) return unowned ? 6 : 16;
     if(isCollection && stage === 2) return unowned ? 7 : 17;
@@ -502,14 +513,20 @@
     }catch(_){}
     return PVP_INCLUDED_KEY;
   }
-  function loadPvpIncluded(){
-    try{ return localStorage.getItem(activePvpIncludedKey()) === 'O' ? 'O' : 'X'; }
-    catch(_){ return 'X'; }
+    function loadPvpPriority(){
+    try{
+      const saved = localStorage.getItem(activePvpIncludedKey());
+      // Migrate the old O/X control: O -> PVP 우선, X -> 솔레 우선.
+      if(saved === 'pvp' || saved === 'solo' || saved === 'exclude') return saved;
+      if(saved === 'O') return 'pvp';
+      if(saved === 'X') return 'solo';
+      return 'solo'; // preserve the former X/default behavior
+    }catch(_){ return 'solo'; }
   }
-  function savePvpIncluded(){
-    try{ localStorage.setItem(activePvpIncludedKey(), pvpIncluded); }catch(_){}
+  function savePvpPriority(){
+    try{ localStorage.setItem(activePvpIncludedKey(), pvpPriority); }catch(_){}
   }
-  let pvpIncluded = loadPvpIncluded();
+  let pvpPriority = loadPvpPriority();
 
   function activeCopyPriorityKey(baseKey = COPY_PRIORITY_KEY){
     try{
@@ -725,8 +742,11 @@
       '#wishlist160WallControl .wl-160-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
       '#wishlist160WallControl .wl-160-button{height:34px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:13px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
       '#wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
-      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active,#wishlist160WallControl .wl-160-button[data-wl-pvp="X"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
-      '#wishlist160WallControl .wl-160-button[data-wl-pvp="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
+      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active,#wishlist160WallControl .wl-160-button[data-wl-pvp="exclude"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
+      '#wishlist160WallControl .wl-160-button[data-wl-pvp="pvp"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
+      '#wishlist160WallControl .wl-160-button[data-wl-pvp="solo"].active{border-color:#668fda;background:#edf4fc;color:#355f97;box-shadow:inset 0 0 0 1px rgba(102,143,218,.14)}',
+      '#wishlist160WallControl .wl-pvp-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}',
+      '#wishlist160WallControl .wl-pvp-options .wl-160-button{padding:4px 2px;font-size:9px;letter-spacing:-.04em}',
       '#wishlist160WallControl .wl-160-note{margin-top:8px;color:#78869a;font-size:9px;line-height:1.4;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-divider{height:1px;margin:12px 1px 10px;background:#e3e8ef}',
       '#wishlist160WallControl .wl-copy-priority-heading{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px;color:#38465a;font-size:11px;font-weight:1000}',
@@ -1013,12 +1033,13 @@
       '</div>' +
       '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-160-title wl-pvp-title">PVP 캐릭 포함 여부</div>' +
-      '<div class="wl-160-options">' +
-        '<button type="button" class="wl-160-button" data-wl-pvp="O" aria-pressed="false">O</button>' +
-        '<button type="button" class="wl-160-button" data-wl-pvp="X" aria-pressed="false">X</button>' +
+      '<div class="wl-160-title wl-pvp-title">PVP 캐릭터 우선도</div>' +
+      '<div class="wl-160-options wl-pvp-options">' +
+        '<button type="button" class="wl-160-button" data-wl-pvp="pvp" aria-pressed="false">PVP 우선</button>' +
+        '<button type="button" class="wl-160-button" data-wl-pvp="solo" aria-pressed="false">솔레 우선</button>' +
+        '<button type="button" class="wl-160-button" data-wl-pvp="exclude" aria-pressed="false">PVP 제외</button>' +
       '</div>' +
-      '<div class="wl-160-note">O 선택 시 범용캐 바로 아래 우선 추천</div>' +
+      '<div class="wl-160-note">PVP 우선도에 따라 3.5 / 5 / 6.5순위 적용</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
       '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
       '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="위시리스트 추천 우선도" />' +
@@ -1037,9 +1058,9 @@
       const pvpButton = event.target.closest && event.target.closest('[data-wl-pvp]');
       if(pvpButton){
         const value = pvpButton.getAttribute('data-wl-pvp');
-        if(value !== 'O' && value !== 'X') return;
-        pvpIncluded = value;
-        savePvpIncluded();
+        if(!['pvp','solo','exclude'].includes(value)) return;
+        pvpPriority = value;
+        savePvpPriority();
         render160WallControl();
         if(typeof renderWishlist === 'function') renderWishlist();
         return;
@@ -1073,7 +1094,7 @@
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
     control.querySelectorAll('[data-wl-pvp]').forEach(button => {
-      const active = button.getAttribute('data-wl-pvp') === pvpIncluded;
+      const active = button.getAttribute('data-wl-pvp') === pvpPriority;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
@@ -1886,7 +1907,7 @@
         favoriteCharacters = loadFavoriteCharacters();
         savedFavoriteCharacters = favoriteCharacters.slice();
         wallStatus = loadWallStatus();
-        pvpIncluded = loadPvpIncluded();
+        pvpPriority = loadPvpPriority();
         copyPriority = loadCopyPriority();
         renderAccountSwitcher();
         render160WallControl();
