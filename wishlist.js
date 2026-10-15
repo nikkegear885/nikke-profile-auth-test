@@ -206,11 +206,16 @@
   }
   function getWishlistPerformancePriority(name){
     const base = getBaseWishlistPerformancePriority(name);
-    // Laplace stays the lowest character in the PVP/Solo Raid tier even when the PVP boost toggle is off.
-    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return pvpIncluded ? 3.5 : base + 0.5;
-    if(!pvpIncluded) return base;
-    if(PVP_WISHLIST_NAMES.has(norm(name))) return 3;
-    return base >= 3 ? base + 1 : base;
+    // The toggle stores the literal strings "O" / "X"; "X" is truthy in JavaScript,
+    // so checking !pvpIncluded accidentally enabled the PVP boost even when switched off.
+    // With PVP enabled, place PVP candidates after general-purpose and collectible-performance
+    // characters, but before the Solo Raid tier. Keep Laplace last among enabled PVP candidates.
+    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))){
+      return pvpIncluded === 'O' ? 3.75 : base + 0.5;
+    }
+    if(pvpIncluded !== 'O') return base;
+    if(PVP_WISHLIST_NAMES.has(norm(name))) return 3.5;
+    return base;
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
   // This rule only affects auto-build; manual picker eligibility and Pedia display remain unchanged.
