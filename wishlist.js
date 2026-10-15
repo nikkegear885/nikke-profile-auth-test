@@ -134,7 +134,9 @@
   // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
   // No Elysion PvP candidates have been supplied yet.
   // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
-  const PVP_WISHLIST_NAMES = new Set(['자칼','센티','드레이크'].map(norm));
+  // Only characters explicitly designated by the user as PVP candidates.
+  // Missilis: 트리나, 자칼, 센티. Elysion: none supplied.
+  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티'].map(norm));
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
   const WISHLIST_PERFORMANCE_TIERS = [
