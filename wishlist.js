@@ -110,8 +110,11 @@
     return rarityDataReady && nikkeRarityMap.get(norm(name)) === 'SSR';
   }
 
-  function isEligibleWishlistName(name){
-    return !!String(name || '').trim() && !isWishlistExcluded(name) && isSSRCharacter(name);
+  function isEligibleWishlistName(name, company){
+    if(!String(name || '').trim()) return false;
+    // Pilgrim wishlist rules will be customized later; exempt it from generic SSR and limited/distribution filters.
+    if(company === '필그림') return true;
+    return !isWishlistExcluded(name) && isSSRCharacter(name);
   }
 
   function normalizePicksToEligibleSSR(source){
@@ -119,7 +122,7 @@
     let changed = false;
     COMPANIES.forEach(company => {
       cleaned[company] = cleaned[company].map(name => {
-        if(name && !isEligibleWishlistName(name)){
+        if(name && !isEligibleWishlistName(name, company)){
           changed = true;
           return '';
         }
@@ -157,6 +160,28 @@
     }catch(_){}
     return STORAGE_KEY;
   }
+
+  const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
+
+  function activeWallStatusKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return WALL_STATUS_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return WALL_STATUS_KEY;
+  }
+
+  function loadWallStatus(){
+    try{ return localStorage.getItem(activeWallStatusKey()) === 'O' ? 'O' : 'X'; }
+    catch(_){ return 'X'; }
+  }
+
+  function saveWallStatus(){
+    try{ localStorage.setItem(activeWallStatusKey(), wallStatus); }catch(_){}
+  }
+
+  let wallStatus = loadWallStatus();
 
   function loadPicks(){
     const output = blankWishlist();
@@ -211,7 +236,7 @@
 
   function getCharactersForCompany(company){
     return getAllCharacters()
-      .filter(row => String(row['기업'] || '').trim() === company && isEligibleWishlistName(row['이름']))
+      .filter(row => String(row['기업'] || '').trim() === company && isEligibleWishlistName(row['이름'], company))
       .sort((a,b) => String(a['이름']).localeCompare(String(b['이름']), 'ko'));
   }
 
@@ -305,6 +330,20 @@
       '#wishlistAccountSwitcher .wl-account-button.active{border-color:#159ed3;background:#eaf8ff;color:#087ca9;box-shadow:0 0 0 1px rgba(21,158,211,.10)}',
       '#wishlistAccountSwitcher .wl-account-button:hover{border-color:#52acd0;background:#f2fbff;color:#086f99}',
       '@media(max-width:520px){#wishlistAccountSwitcher{width:calc(100% - 24px);gap:4px;margin:7px auto 7px}#wishlistAccountSwitcher .wl-account-label{font-size:9px}#wishlistAccountSwitcher .wl-account-button{min-width:52px;padding:6px 8px;font-size:10px}}',
+      '#wishlist160WallControl[hidden]{display:none!important}',
+      '#wishlist160WallControl{position:fixed;left:calc(50% - 231px - 184px);top:142px;z-index:50;box-sizing:border-box;width:164px;padding:12px;border:1px solid #d8dee8;border-radius:11px;background:#fff;color:#344054;box-shadow:0 5px 18px rgba(27,48,75,.10);font-family:inherit}',
+      '#wishlist160WallControl .wl-160-title{margin:0 0 9px;font-size:12px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
+      '#wishlist160WallControl .wl-160-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
+      '#wishlist160WallControl .wl-160-button{height:34px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:13px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
+      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
+      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
+      '#wishlist160WallControl .wl-160-note{margin-top:8px;color:#78869a;font-size:9px;line-height:1.4;text-align:center}',
+      'html.dark-theme #wishlist160WallControl{border-color:#354761;background:#151f31;color:#edf3ff;box-shadow:0 5px 18px rgba(0,0,0,.25)}',
+      'html.dark-theme #wishlist160WallControl .wl-160-title{color:#edf3ff}',
+      'html.dark-theme #wishlist160WallControl .wl-160-button{border-color:#354761;background:#0d1525;color:#adbacd}',
+      'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#3b9f7d;background:#173d33;color:#a5f0d0}',
+      'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#72819b;background:#273449;color:#e1e9f5}',
+      '@media(max-width:1000px){#wishlist160WallControl{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;margin:8px auto;padding:8px 12px}#wishlist160WallControl .wl-160-title{margin-bottom:6px}#wishlist160WallControl .wl-160-note{margin-top:5px}}',
       '#wishlistPanel[hidden]{display:none!important}',
       '#wishlistPanel{position:relative!important;z-index:auto;display:block!important;box-sizing:border-box!important;width:calc(100% - 24px)!important;max-width:462px!important;min-width:0!important;padding:0!important;margin:0 auto 16px!important;overflow:visible;background:transparent;color:#25282d}',
       '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:100%;height:auto;min-height:0;overflow:visible;border:1px solid #dedfe1;border-radius:12px;background:#f8f8f8;box-shadow:0 2px 12px rgba(0,0,0,.10)}',
@@ -431,6 +470,51 @@
       '<button type="button" class="wl-account-button' + (current === account ? ' active' : '') + '" data-wl-account="' + esc(account) + '" aria-pressed="' + (current === account ? 'true' : 'false') + '" title="' + esc(account) + '">' + esc(account || ('계정' + (index+1))) + '</button>'
     ).join('');
     switcher.hidden = !document.body.classList.contains('wishlist-view');
+  } 
+
+  function ensure160WallControl(){
+    let control = document.getElementById('wishlist160WallControl');
+    if(control) return control;
+    control = document.createElement('aside');
+    control.id = 'wishlist160WallControl';
+    control.hidden = true;
+    control.setAttribute('aria-label','160벽 돌파 여부 설정');
+    control.innerHTML =
+      '<div class="wl-160-title">160벽 돌파 여부</div>' +
+      '<div class="wl-160-options">' +
+        '<button type="button" class="wl-160-button" data-wl-160-wall="O" aria-pressed="false">O</button>' +
+        '<button type="button" class="wl-160-button" data-wl-160-wall="X" aria-pressed="false">X</button>' +
+      '</div>' +
+      '<div class="wl-160-note">O 선택 시 돌파 1 이상인 니케 우선</div>';
+    control.addEventListener('click', event => {
+      const button = event.target.closest && event.target.closest('[data-wl-160-wall]');
+      if(!button) return;
+      const value = button.getAttribute('data-wl-160-wall');
+      if(value !== 'O' && value !== 'X') return;
+      wallStatus = value;
+      saveWallStatus();
+      render160WallControl();
+    });
+    const main = document.querySelector('main.main') || document.querySelector('main');
+    if(main){
+      const existingPanel = document.getElementById('wishlistPanel');
+      if(existingPanel && existingPanel.parentElement === main) main.insertBefore(control, existingPanel);
+      else main.appendChild(control);
+    }else{
+      document.body.appendChild(control);
+    }
+    return control;
+  }
+
+  function render160WallControl(){
+    const control = ensure160WallControl();
+    if(!control) return;
+    control.hidden = !document.body.classList.contains('wishlist-view');
+    control.querySelectorAll('[data-wl-160-wall]').forEach(button => {
+      const active = button.getAttribute('data-wl-160-wall') === wallStatus;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
   }
 
   function ensurePanel(){
@@ -452,7 +536,7 @@
         '</div>' +
         '<div class="wl-auto-toolbar">' +
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 계정 상태로 자동 편성</button>' +
-          '<div class="wl-auto-note">SSR 등급만 선택·자동추천되며, 한정·배포 니케는 제외됩니다.</div>' +
+          '<div class="wl-auto-note">일반 기업은 SSR만 선택 가능 · 한정·배포 제외 / 필그림은 별도 규칙 예정</div>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
         '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
@@ -625,11 +709,18 @@
       candidates.sort((a,b) => {
         const aName = String(a['이름'] || '').trim();
         const bName = String(b['이름'] || '').trim();
+        const aBreakthrough = getBreakthrough(aName);
+        const bBreakthrough = getBreakthrough(bName);
+        if(wallStatus === 'O'){
+          const aCleared = aBreakthrough >= 1;
+          const bCleared = bBreakthrough >= 1;
+          if(aCleared !== bCleared) return aCleared ? -1 : 1;
+        }
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
         if(aUnowned !== bUnowned) return aUnowned ? -1 : 1;
         if(!aUnowned){
-          const breakthroughDiff = getBreakthrough(aName) - getBreakthrough(bName);
+          const breakthroughDiff = aBreakthrough - bBreakthrough;
           if(breakthroughDiff) return breakthroughDiff;
         }
         return aName.localeCompare(bName,'ko');
@@ -693,7 +784,7 @@
     const slot = Number(select.dataset.slot);
     if(!COMPANIES.includes(company) || !Number.isInteger(slot) || slot < 0 || slot > 4) return;
     const name = String(select.value || '').trim();
-    if(name && !isEligibleWishlistName(name)){
+    if(name && !isEligibleWishlistName(name, company)){
       renderWishlist();
       return;
     }
@@ -728,7 +819,7 @@
     if(picked){
       if(pickerSlot === null || picked.disabled) return;
       const name = String(picked.dataset.wlPickName || '').trim();
-      if(!isEligibleWishlistName(name) || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
+      if(!isEligibleWishlistName(name, '엘리시온') || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
       picks['엘리시온'][pickerSlot] = name;
       closeCharacterPicker();
       renderWishlist();
@@ -773,6 +864,7 @@
     const switcher = document.getElementById('wishlistAccountSwitcher');
     if(switcher) switcher.hidden = true;
     document.body.classList.remove('wishlist-view');
+    render160WallControl();
   }
 
   function showWishlist(){
@@ -784,6 +876,7 @@
     document.body.classList.remove('outpost-view','sole-view','drop-rate-view','pedia-view');
     document.body.classList.add('wishlist-view');
     renderAccountSwitcher();
+    render160WallControl();
     document.getElementById('kpis')?.setAttribute('hidden','');
     document.getElementById('outpostPanel')?.setAttribute('hidden','');
     document.getElementById('soleScorePanel')?.classList.remove('active');
@@ -825,7 +918,9 @@
       if(document.body.classList.contains('wishlist-view')){
         picks = clonePicks(loadPicks());
         savedPicks = clonePicks(picks);
+        wallStatus = loadWallStatus();
         renderAccountSwitcher();
+        render160WallControl();
         renderWishlist();
       }
       return result;
@@ -840,6 +935,8 @@
     ensureNav();
     ensurePanel();
     renderAccountSwitcher();
+    ensure160WallControl();
+    render160WallControl();
     patchMainViewSwitch();
     patchAccountSwitch();
     window.renderWishlist = renderWishlist;
