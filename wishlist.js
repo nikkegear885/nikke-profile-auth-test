@@ -534,10 +534,6 @@
       '#wishlistPanel .wl-picker-search:focus{border-color:#169fd6;box-shadow:0 0 0 3px rgba(22,159,214,.14)}',
       '#wishlistPanel .wl-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));align-content:start;gap:8px;min-height:100px;padding:8px 14px 14px;overflow:auto}',
       '#wishlistPanel .wl-picker-item{position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:8px 5px;border:1px solid #dce2ea;border-radius:9px;background:#fff;color:#333b49;cursor:pointer;transition:border-color .12s,background .12s,transform .12s}',
-      '#wishlistPanel .wl-picker-info{position:absolute;top:3px;right:3px;z-index:5;display:flex;align-items:center;justify-content:center;width:11px;height:11px;box-sizing:border-box;border:1px solid #8b9aac;border-radius:50%;background:rgba(246,249,253,.96);color:#65748a;font:italic 900 7px/1 Georgia,serif;text-align:center;cursor:help;box-shadow:0 1px 2px rgba(0,0,0,.08)}',
-      '#wishlistPanel .wl-picker-info:hover{border-color:#168fc5;background:#e9f8ff;color:#087ba8}',
-      'html.dark-theme #wishlistPanel .wl-picker-info{border-color:#65758d;background:#192538;color:#cbd8ea}',
-      'html.dark-theme #wishlistPanel .wl-picker-info:hover{border-color:#5ab9df;background:#203b50;color:#bdeaff}',
       '#wishlistPanel .wl-picker-item:hover:not(:disabled){transform:translateY(-1px);border-color:#37a8d7;background:#f0faff}',
       '#wishlistPanel .wl-picker-item.is-current{border:2px solid #149fd6;padding:7px 4px;background:#e9f8ff}',
       '#wishlistPanel .wl-picker-item:disabled{opacity:.36;cursor:not-allowed;filter:grayscale(.7)}',
@@ -557,7 +553,10 @@
       '#wishlistPanel .wl-excluded-note{padding:9px 13px 7px;color:#6f7c8f;font-size:10px;line-height:1.5}',
       '#wishlistPanel .wl-excluded-list{display:flex;flex-direction:column;gap:6px;min-height:45px;padding:0 10px 11px;overflow:auto}',
       '#wishlistPanel .wl-excluded-empty{padding:14px 7px;color:#8a95a5;text-align:center;font-size:11px;line-height:1.6}',
-      '#wishlistPanel .wl-excluded-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #e2e7ee;border-radius:8px;background:#fff}',
+      '#wishlistPanel .wl-excluded-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #e2e7ee;border-radius:8px;background:#fff}',
+      '#wishlistPanel .wl-excluded-row.is-miranda{padding-top:16px}',
+      '#wishlistPanel .wl-excluded-info{position:absolute;top:3px;right:4px;z-index:2;display:flex;align-items:center;justify-content:center;width:11px;height:11px;box-sizing:border-box;border:1px solid #8b9aac;border-radius:50%;background:rgba(246,249,253,.96);color:#65748a;font:italic 900 7px/1 Georgia,serif;text-align:center;cursor:help;box-shadow:0 1px 2px rgba(0,0,0,.08)}',
+      '#wishlistPanel .wl-excluded-info:hover{border-color:#168fc5;background:#e9f8ff;color:#087ba8}',
       '#wishlistPanel .wl-excluded-identity{display:flex;min-width:0;flex-direction:column;gap:3px}',
       '#wishlistPanel .wl-excluded-company{color:#8a95a5;font-size:9px;font-weight:900}',
       '#wishlistPanel .wl-excluded-name{overflow-wrap:anywhere;color:#354052;font-size:11px;font-weight:900;line-height:1.3}',
@@ -571,6 +570,8 @@
       'html.dark-theme #wishlistPanel .wl-excluded-count{background:#27364c;color:#cbd6e6}',
       'html.dark-theme #wishlistPanel .wl-excluded-note,html.dark-theme #wishlistPanel .wl-excluded-empty{color:#9aa9be}',
       'html.dark-theme #wishlistPanel .wl-excluded-row{border-color:#354761;background:#101a2b}',
+      'html.dark-theme #wishlistPanel .wl-excluded-info{border-color:#65758d;background:#192538;color:#cbd8ea}',
+      'html.dark-theme #wishlistPanel .wl-excluded-info:hover{border-color:#5ab9df;background:#203b50;color:#bdeaff}',
       'html.dark-theme #wishlistPanel .wl-excluded-name{color:#e3ebf8}',
       'html.dark-theme #wishlistPanel .wl-excluded-reason{color:#ffbc86}',
       'html.dark-theme #wishlistPanel .wl-auto-exclusion-pill{border-color:#80563d;background:#3a291f;color:#ffc08d}',
@@ -857,10 +858,7 @@
       const photo = image
         ? '<img src="' + esc(image) + '" alt="" loading="lazy" draggable="false">'
         : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>' ;
-      const isMiranda = norm(name) === norm('미란다');
-      const explanation = '시공증 미보유 버프 캐릭터로, 돌파로 인한 데미지 증가량이 미미함.';
-      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (excluded ? ' is-excluded' : '') + '"' + (isMiranda ? ' title="' + esc(explanation) + '"' : '') + '>' +
-        (isMiranda ? '<span class="wl-picker-info" title="' + esc(explanation) + '" aria-label="미란다 설명">i</span>' : '') +
+      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (excluded ? ' is-excluded' : '') + '">' +
         '<button type="button" class="wl-picker-choice" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + '>' +
           '<span class="wl-picker-photo">' + photo + '</span>' +
           '<span class="wl-picker-name">' + esc(name) + '</span>' +
@@ -1013,16 +1011,19 @@
       list.innerHTML = '<div class="wl-excluded-empty">아직 제외한 니케가 없어.<br>선택창에서 제외 버튼을 눌러 추가해.</div>';
       return;
     }
-    list.innerHTML = rows.map(row =>
-      '<div class="wl-excluded-row">' +
+    list.innerHTML = rows.map(row => {
+      const isMiranda = norm(row.name) === norm('미란다');
+      const explanation = '시공증 미보유 버프 캐릭터로, 돌파로 인한 데미지 증가량이 미미함.';
+      return '<div class="wl-excluded-row' + (isMiranda ? ' is-miranda' : '') + '"' + (isMiranda ? ' title="' + esc(explanation) + '"' : '') + '>' +
+        (isMiranda ? '<span class="wl-excluded-info" title="' + esc(explanation) + '" aria-label="미란다 설명">i</span>' : '') +
         '<div class="wl-excluded-identity"><span class="wl-excluded-company">' + esc(row.company) + '</span>' +
         '<span class="wl-excluded-name">' + esc(row.name) + '</span>' +
         (row.automaticOnly ? '<span class="wl-excluded-reason">' + esc(row.automaticReason) + '</span>' : '') + '</div>' +
         (row.automaticOnly
           ? '<span class="wl-auto-exclusion-pill" title="' + esc(row.automaticReason) + '">자동 제외</span>'
           : '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" title="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>') +
-      '</div>'
-    ).join('');
+      '</div>';
+    }).join('');
   }
 
   function onPanelChange(event){
