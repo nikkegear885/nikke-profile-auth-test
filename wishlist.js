@@ -157,6 +157,16 @@
   function getWishlistPerformancePriority(name){
     return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
   }
+  // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
+  // This rule only affects auto-build; manual picker eligibility and Pedia display remain unchanged.
+  const WISHLIST_EXCLUDE_AT_TWO_BREAKTHROUGHS = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '애장품 비성능')
+      .flatMap(tier => tier.names.map(norm))
+  );
+  function shouldExcludeFromAutoWishlist(name){
+    return WISHLIST_EXCLUDE_AT_TWO_BREAKTHROUGHS.has(norm(name)) && getBreakthrough(name) >= 2;
+  }
 
   function normalizePicksToEligibleSSR(source){
     const cleaned = clonePicks(source);
@@ -759,7 +769,8 @@
       return;
     }
     COMPANIES.forEach(company => {
-      const candidates = getCharactersForCompany(company).slice();
+      const candidates = getCharactersForCompany(company)
+        .filter(row => !shouldExcludeFromAutoWishlist(String(row['이름'] || '').trim()));
       candidates.sort((a,b) => {
         const aName = String(a['이름'] || '').trim();
         const bName = String(b['이름'] || '').trim();
