@@ -5,6 +5,7 @@
   const COMPANIES = ['엘리시온','미실리스','테트라','필그림'];
   const STORAGE_KEY = 'nikke_wishlist_recommendations_v1';
   const EXCLUDED_STORAGE_KEY = 'nikke_wishlist_excluded_characters_v1';
+  const EXCLUDED_DEFAULTS_SEEDED_KEY = 'nikke_wishlist_excluded_defaults_seeded_v1';
   const IMAGE_URL = 'assets/nikke-pedia-master.json?v=1047';
   const norm = value => String(value == null ? '' : value)
     .normalize('NFKC')
@@ -225,25 +226,54 @@
     return EXCLUDED_STORAGE_KEY;
   }
 
+  function activeExcludedDefaultsSeededKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return EXCLUDED_DEFAULTS_SEEDED_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return EXCLUDED_DEFAULTS_SEEDED_KEY;
+  }
+
   function loadExcludedCharacters(){
     try{
-      const raw = JSON.parse(localStorage.getItem(activeExcludedStorageKey()) || '[]');
-      if(!Array.isArray(raw)) return [];
+      const storageKey = activeExcludedStorageKey();
+      const raw = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const source = Array.isArray(raw) ? raw : [];
       const seen = new Set();
-      return raw.map(name => String(name || '').trim()).filter(name => {
+      const names = source.map(name => String(name || '').trim()).filter(name => {
         const key = norm(name);
         if(!name || seen.has(key)) return false;
         seen.add(key);
         return true;
       });
+      // Seed Helm once for each account. If the user later releases Helm, it stays released.
+      const seededKey = activeExcludedDefaultsSeededKey();
+      if(localStorage.getItem(seededKey) !== '1'){
+        if(!names.some(name => norm(name) === norm('헬름'))) names.push('헬름');
+        localStorage.setItem(storageKey, JSON.stringify(names));
+        localStorage.setItem(seededKey, '1');
+      }
+      return names;
     }catch(_){
       return [];
     }
   }
 
-  function isExcludedCharacter(name){
+  function getAutomaticExclusionReason(name){
+    if(norm(name) === norm('미란다') && getBreakthrough('미란다') >= 2){
+      return '돌파 2 이상 자동 제외';
+    }
+    return '';
+  }
+
+  function isManuallyExcludedCharacter(name){
     const key = norm(name);
     return !!key && excludedCharacters.some(value => norm(value) === key);
+  }
+
+  function isExcludedCharacter(name){
+    return isManuallyExcludedCharacter(name) || !!getAutomaticExclusionReason(name);
   }
 
   function toggleExcludedCharacter(name){
@@ -525,6 +555,8 @@
       '#wishlistPanel .wl-excluded-identity{display:flex;min-width:0;flex-direction:column;gap:3px}',
       '#wishlistPanel .wl-excluded-company{color:#8a95a5;font-size:9px;font-weight:900}',
       '#wishlistPanel .wl-excluded-name{overflow-wrap:anywhere;color:#354052;font-size:11px;font-weight:900;line-height:1.3}',
+      '#wishlistPanel .wl-excluded-reason{color:#b45b25;font-size:9px;font-weight:900;line-height:1.3}',
+      '#wishlistPanel .wl-auto-exclusion-pill{flex:none;padding:5px 7px;border:1px solid #e9c6ad;border-radius:6px;background:#fff3e9;color:#a84b14;font-size:10px;font-weight:1000;white-space:nowrap}',
       '#wishlistPanel .wl-include-button{flex:none;padding:5px 7px;border:1px solid #cdd6e2;border-radius:6px;background:#f4f6f9;color:#556276;font-size:10px;font-weight:1000;cursor:pointer}',
       '#wishlistPanel .wl-include-button:hover{border-color:#168fc5;background:#edf9ff;color:#087ba8}',
       'html.dark-theme #wishlistPanel .wl-excluded-panel{border-color:#354761;background:#151f31;color:#e8eef9;box-shadow:0 5px 20px rgba(0,0,0,.25)}',
@@ -534,6 +566,8 @@
       'html.dark-theme #wishlistPanel .wl-excluded-note,html.dark-theme #wishlistPanel .wl-excluded-empty{color:#9aa9be}',
       'html.dark-theme #wishlistPanel .wl-excluded-row{border-color:#354761;background:#101a2b}',
       'html.dark-theme #wishlistPanel .wl-excluded-name{color:#e3ebf8}',
+      'html.dark-theme #wishlistPanel .wl-excluded-reason{color:#ffbc86}',
+      'html.dark-theme #wishlistPanel .wl-auto-exclusion-pill{border-color:#80563d;background:#3a291f;color:#ffc08d}',
       'html.dark-theme #wishlistPanel .wl-include-button{border-color:#43546c;background:#1e2c41;color:#d1dcef}',
       'html.dark-theme #wishlistPanel .wl-picker-exclude{border-color:#75404e;background:#351d27;color:#ffabb9}',
       'html.dark-theme #wishlistPanel .wl-picker-exclude.is-excluded{border-color:#43546c;background:#1e2c41;color:#d1dcef}',
@@ -811,7 +845,9 @@
       const image = findImage(name);
       const duplicate = selectedElsewhere.has(norm(name));
       const isCurrent = !!current && norm(current) === norm(name);
-      const excluded = isExcludedCharacter(name);
+      const manualExcluded = isManuallyExcludedCharacter(name);
+      const automaticReason = getAutomaticExclusionReason(name);
+      const excluded = manualExcluded || !!automaticReason;
       const photo = image
         ? '<img src="' + esc(image) + '" alt="" loading="lazy" draggable="false">'
         : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>' ;
@@ -820,7 +856,7 @@
           '<span class="wl-picker-photo">' + photo + '</span>' +
           '<span class="wl-picker-name">' + esc(name) + '</span>' +
         '</button>' +
-        '<button type="button" class="wl-picker-exclude' + (excluded ? ' is-excluded' : '') + '" data-wl-exclude-name="' + esc(name) + '" aria-pressed="' + (excluded ? 'true' : 'false') + '">' + (excluded ? '제외 해제' : '제외') + '</button>' +
+        '<button type="button" class="wl-picker-exclude' + (manualExcluded || automaticReason ? ' is-excluded' : '') + '" data-wl-exclude-name="' + esc(name) + '" aria-pressed="' + (excluded ? 'true' : 'false') + '"' + (automaticReason && !manualExcluded ? ' disabled title="' + esc(automaticReason) + '"' : '') + '>' + (manualExcluded ? '제외 해제' : automaticReason || '제외') + '</button>' +
       '</div>';
     }).join('');
   }
@@ -941,12 +977,25 @@
     const list = pane && pane.querySelector('[data-wl-excluded-list]');
     const count = pane && pane.querySelector('[data-wl-excluded-count]');
     if(!pane || !list) return;
-    if(count) count.textContent = excludedCharacters.length + '명';
+    const automaticNames = [];
+    if(getAutomaticExclusionReason('미란다')) automaticNames.push('미란다');
+    const combined = [];
+    const seen = new Set();
+    [...excludedCharacters,...automaticNames].forEach(name => {
+      const key = norm(name);
+      if(name && !seen.has(key)){
+        seen.add(key);
+        combined.push(name);
+      }
+    });
+    if(count) count.textContent = combined.length + '명';
     const all = getAllCharacters();
     const companyOrder = new Map(COMPANIES.map((company,index) => [company,index]));
-    const rows = excludedCharacters.map(name => {
+    const rows = combined.map(name => {
       const row = all.find(item => norm(item['이름']) === norm(name));
-      return {name,company:row ? String(row['기업'] || '') : '기업 미상'};
+      const automaticReason = getAutomaticExclusionReason(name);
+      const manual = isManuallyExcludedCharacter(name);
+      return {name,company:row ? String(row['기업'] || '') : '기업 미상',automaticOnly:!!automaticReason && !manual,automaticReason};
     }).sort((a,b) =>
       (companyOrder.get(a.company) ?? 99) - (companyOrder.get(b.company) ?? 99) ||
       a.name.localeCompare(b.name,'ko')
@@ -958,8 +1007,11 @@
     list.innerHTML = rows.map(row =>
       '<div class="wl-excluded-row">' +
         '<div class="wl-excluded-identity"><span class="wl-excluded-company">' + esc(row.company) + '</span>' +
-        '<span class="wl-excluded-name">' + esc(row.name) + '</span></div>' +
-        '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" title="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>' +
+        '<span class="wl-excluded-name">' + esc(row.name) + '</span>' +
+        (row.automaticOnly ? '<span class="wl-excluded-reason">' + esc(row.automaticReason) + '</span>' : '') + '</div>' +
+        (row.automaticOnly
+          ? '<span class="wl-auto-exclusion-pill" title="' + esc(row.automaticReason) + '">자동 제외</span>'
+          : '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" title="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>') +
       '</div>'
     ).join('');
   }
