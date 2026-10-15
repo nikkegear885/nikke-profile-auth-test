@@ -149,26 +149,27 @@
 
   const WISHLIST_PERFORMANCE_TIERS = [
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름']},
-    {rank:2, label:'애장품 성능', names:['프리바티','팬텀','미란다','플로라','토브']},
+    {rank:2, label:'애장품 필수', names:['프리바티','팬텀','미란다','플로라','토브']},
     {rank:3, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
-    {rank:4, label:'솔레 명함 추천', names:[
+    {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스']},
+    {rank:5, label:'애장품 솔레캐', names:[]},
+    {rank:6, label:'솔레', names:[
       '아르카나','솔린 : 프로스트 티켓',
       '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
       '아르카나 : 포츈 메이트','리타'
     ]},
-    {rank:5, label:'PVP', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스']},
-    {rank:6, label:'명함 추천', names:[
+    {rank:7, label:'명함 추천', names:[
       'D : 킬러 와이프','은화 : 택티컬 업','델타 : 닌자 시프',
       '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','마나','페퍼','티아','나가'
     ]},
-    {rank:7, label:'도감작', names:[
+    {rank:11, label:'도감작', names:[
       '엠마 : 택티컬 업',
       '브리드','프리바티 : 언카인드 메이드','메이든','마스트','베스티','엠마',
       '폴리','솔린','디젤','은화','길로틴','D','시그널','마르차나','키리','K',
       '소라','레이블','E.H.',
       '백학','애드미','에피넬','유니','율리아','일레그','크로우','트로니'
     ]}
-  ];
+  ];;
   const WISHLIST_PERFORMANCE_PRIORITY = (() => {
     const priorities = new Map();
     WISHLIST_PERFORMANCE_TIERS.forEach(tier => tier.names.forEach(name => {
@@ -203,11 +204,20 @@
     return aName.localeCompare(bName,'ko');
   }
   const DEFAULT_PERFORMANCE_PRIORITY = Math.max(...WISHLIST_PERFORMANCE_TIERS.map(tier => tier.rank)) + 1;
-  const WISHLIST_TREASURE_UPSIDE_NAMES = new Set(
+  const WISHLIST_TREASURE_REQUIRED_NAMES = new Set(
     WISHLIST_PERFORMANCE_TIERS
-      .filter(tier => tier.label === '애장품 성능')
+      .filter(tier => tier.label === '애장품 필수')
       .flatMap(tier => tier.names.map(norm))
   );
+  const WISHLIST_TREASURE_SOLO_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '애장품 솔레캐')
+      .flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_TREASURE_UPSIDE_NAMES = new Set([
+    ...WISHLIST_TREASURE_REQUIRED_NAMES,
+    ...WISHLIST_TREASURE_SOLO_NAMES
+  ]);
   const WISHLIST_REQUIRED_NAMES = new Set(
     WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '필수캐').flatMap(tier => tier.names.map(norm))
   );
@@ -227,16 +237,14 @@
     return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
   }
   function getWishlistPerformancePriority(name){
-    const base = getBaseWishlistPerformancePriority(name);
-    // The dedicated selector gives PVP ranks 3.5, 5, or 6.5 depending on mode.
-    // Laplace remains last within the active PVP priority tier.
-    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))){
-      return pvpPriority === 'pvp' ? 3.75 : pvpPriority === 'solo' ? 5.25 : 6.75;
+    const key = norm(name);
+    if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
+      return pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 8 : 10;
     }
-    if(PVP_WISHLIST_NAMES.has(norm(name))){
-      return pvpPriority === 'pvp' ? 3.5 : pvpPriority === 'solo' ? 5 : 6.5;
+    if(WISHLIST_NAMECARD_NAMES.has(key)){
+      return pvpPriority === 'pvp' ? 7 : 9;
     }
-    return base;
+    return getBaseWishlistPerformancePriority(name);
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
   // This rule only affects auto-build; manual picker eligibility and Pedia display remain unchanged.
@@ -254,24 +262,23 @@
   }
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
-    const treasureTarget = isTreasurePerformanceBelowTwo(name, breakthrough);
-    if(copyPriority === 0){
-      // Stage 1: treasure-item performance characters below 2 breakthrough can outrank required characters.
-      if(treasureTarget) return 0;
-      if(performancePriority === 1) return 1;
-      return 2;
+    const key = norm(name);
+    if(isTreasurePerformanceBelowTwo(name, breakthrough)){
+      return WISHLIST_TREASURE_SOLO_NAMES.has(key) ? 5 : 2;
     }
-    if(copyPriority === 1){
-      // Stage 2: upgrade treasure-item performance characters below 2 first,
-      // then acquire first copies through the "명함 추천" performance tier.
-      if(treasureTarget) return 0;
-      if(unowned && performancePriority <= 6) return 1;
-      return 2;
+    if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
+    if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
+    if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 8 : 10;
+      return unowned ? rank : rank + 10;
     }
-    // Stage 3: treasure-item performance characters below 2 first,
-    // then any missing first copy through the full roster, including collection-only units.
-    if(treasureTarget) return 0;
-    return unowned ? 1 : 2;
+    if(SOLO_RAID_WISHLIST_NAMES.has(key)) return unowned ? 6 : 16;
+    if(WISHLIST_NAMECARD_NAMES.has(key)){
+      const rank = pvpPriority === 'pvp' ? 7 : 9;
+      return unowned ? rank : rank + 10;
+    }
+    if(WISHLIST_COLLECTION_NAMES.has(key) && copyPriority === 2) return unowned ? 11 : 21;
+    return performancePriority;
   }
 
   // Stage 1 ("필수캐 우선") uses explicit groups rather than relying on partial comparator checks.
@@ -281,43 +288,41 @@
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
     const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
-    const isTreasure = WISHLIST_TREASURE_UPSIDE_NAMES.has(key);
+    const isTreasureSolo = WISHLIST_TREASURE_SOLO_NAMES.has(key);
+    const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
     const isPvp = PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key);
-    const isLowestPvp = PVP_LOWEST_WISHLIST_NAMES.has(key);
     const isSoloRaid = SOLO_RAID_WISHLIST_NAMES.has(key);
     const isNamecard = WISHLIST_NAMECARD_NAMES.has(key);
     const isGeneral = WISHLIST_GENERAL_NAMES.has(key);
     const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
 
-    // Stage 1: Required units are mandatory unless they have Core +7 (filtered separately).
-    // Stages 2–3: Required units are only used when the first copy is missing.
+    // Rank 1: required characters; owned copies are skipped in stages 2–3 by the candidate filter.
     if(isRequired) return stage === 0 || unowned ? 1 : Number.POSITIVE_INFINITY;
 
-    // Rank 2 treasure-performance units are always targets below 2 breakthroughs.
-    // Once they reach 2★, they are completely excluded from auto-build.
-    if(isTreasure) return breakthrough < 2 ? 2 : Number.POSITIVE_INFINITY;
+    // Ranks 2 and 5: treasure-item targets are prioritized only below 2 breakthroughs.
+    if(isTreasureRequired) return 2;
+    if(isTreasureSolo) return 5;
 
-    // Rank 3 general-purpose units.
+    // Rank 3: general-purpose characters.
     if(isGeneral) return unowned ? 3 : 13;
 
-    // PVP priority depends on the new three-mode control: 3.5 / 5 / 6.5.
+    // PVP characters move to 4 / 8 / 10; Laplace remains last within the PVP group.
     if(isPvp){
-      const rank = pvpPriority === 'pvp'
-        ? (isLowestPvp ? 3.75 : 3.5)
-        : pvpPriority === 'solo'
-          ? (isLowestPvp ? 5.25 : 5)
-          : (isLowestPvp ? 6.75 : 6.5);
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 8 : 10;
       return unowned ? rank : rank + 10;
     }
 
-    // Rank 4 Solo Raid, rank 6 first-copy recommendations, rank 7 collection.
-    if(isSoloRaid) return unowned ? 4 : 14;
-    if(isNamecard) return unowned ? 6 : 16;
-    if(isCollection && stage === 2) return unowned ? 7 : 17;
+    // Rank 6: Solo Raid; ranks 7 or 9: first-copy recommendations based on PVP mode.
+    if(isSoloRaid) return unowned ? 6 : 16;
+    if(isNamecard){
+      const rank = pvpPriority === 'pvp' ? 7 : 9;
+      return unowned ? rank : rank + 10;
+    }
 
-    // Unknown/unclassified roster entries only participate in stage 3 as collection.
-    if(stage === 2 && unowned) return 7;
-    if(stage === 2) return 17;
+    // Rank 11: collection-only characters, included only in collection mode.
+    if(isCollection && stage === 2) return unowned ? 11 : 21;
+    if(stage === 2 && unowned) return 11;
+    if(stage === 2) return 21;
     return Number.POSITIVE_INFINITY;
   }
 
@@ -1595,7 +1600,7 @@
         if(aGroup !== bGroup) return aGroup - bGroup;
 
         // Within the treasure target, finish the character closest to 2★ first.
-        if(aGroup === 2){
+        if(aGroup === 2 || aGroup === 5){
           if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
           if(aUnowned !== bUnowned) return aUnowned ? 1 : -1;
         }else{
