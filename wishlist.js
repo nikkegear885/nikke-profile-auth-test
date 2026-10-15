@@ -130,6 +130,16 @@
     return match ? Math.max(0,Math.min(3,Number(match[0]))) : 0;
   }
 
+  function getCoreEnhancement(name){
+    const row = findAccountRow(name);
+    if(!row) return 0;
+    const raw = row['코강'];
+    const value = Number(raw);
+    if(Number.isFinite(value)) return Math.max(0,Math.min(7,Math.floor(value)));
+    const match = String(raw == null ? '' : raw).match(/\d+/);
+    return match ? Math.max(0,Math.min(7,Number(match[0]))) : 0;
+  }
+
   function findImage(name){
     try{
       if(typeof NIKKE_PEDIA_IMAGES !== 'undefined' && NIKKE_PEDIA_IMAGES){
@@ -214,6 +224,10 @@
       '#wishlistPanel .wl-tile.wl-photo-only{padding:0;border-color:#8a8a8a;background:#fff}',
       '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
       '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
+      '#wishlistPanel .wl-promotion-stars{position:absolute;left:2px;top:2px;z-index:5;display:flex;align-items:center;gap:0;padding:1px 3px;border:1px solid rgba(255,255,255,.55);border-radius:4px;background:rgba(20,25,34,.76);color:#dce4ef;font-size:clamp(8px,1vw,10px);font-weight:1000;line-height:1;letter-spacing:-.08em;text-shadow:0 1px 2px rgba(0,0,0,.55);white-space:nowrap;pointer-events:none}',
+      '#wishlistPanel .wl-promotion-stars .wl-star-filled{color:#ffd76a}',
+      '#wishlistPanel .wl-promotion-stars .wl-star-empty{color:#e8edf3;opacity:.9}',
+      '#wishlistPanel .wl-core-enhancement{position:absolute;right:2px;top:2px;z-index:6;display:inline-flex;align-items:center;justify-content:center;min-width:15px;padding:2px 3px;border:1px solid rgba(255,255,255,.7);border-radius:4px;background:rgba(24,28,38,.86);color:#ffe18a;font-size:clamp(8px,.95vw,10px);font-weight:1000;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.45);pointer-events:none}',
       '#wishlistPanel .wl-photo-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e4ebf3,#c8d2df);color:#596b80;font-size:28px;font-weight:1000}',
       '#wishlistPanel .wl-photo-status{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:3px 1px;background:rgba(35,39,46,.70);color:#fff;text-align:center;font-size:clamp(8px,1vw,10px);font-weight:1000;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.4)}',
       '#wishlistPanel .wl-picker-backdrop[hidden]{display:none!important}',
@@ -387,7 +401,13 @@
       const photo = image
         ? '<img class="wl-picked-image" src="' + esc(image) + '" alt="' + esc(name) + '" draggable="false">'
         : '<span class="wl-photo-fallback" aria-hidden="true">' + esc(name.slice(0,1)) + '</span>';
+      const stars = Array.from({length:3},(_,i) =>
+        '<span class="' + (i < stage ? 'wl-star-filled' : 'wl-star-empty') + '">' + (i < stage ? '★' : '☆') + '</span>'
+      ).join('');
+      const core = getCoreEnhancement(name);
       tile = '<div class="wl-tile wl-photo-only">' + photo +
+        '<span class="wl-promotion-stars" aria-label="' + stage + '돌파" title="' + stage + '돌파">' + stars + '</span>' +
+        (core > 0 ? '<span class="wl-core-enhancement" aria-label="코어 강화 +' + core + '" title="코어 강화 +' + core + '">+' + core + '</span>' : '') +
         (unowned ? '<span class="wl-photo-status">미보유</span>' : '') +
         '</div>';
     }else{
