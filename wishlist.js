@@ -112,8 +112,8 @@
 
   function isEligibleWishlistName(name, company){
     if(!String(name || '').trim()) return false;
-    // Pilgrim wishlist rules will be customized later; exempt it from generic SSR and limited/distribution filters.
-    if(company === '필그림') return true;
+    // Every company, including Pilgrim, excludes limited/distribution, SR and R characters.
+    // Pilgrim's separate rule applies only to the 160-wall auto-priority logic below.
     return !isWishlistExcluded(name) && isSSRCharacter(name);
   }
 
@@ -536,7 +536,7 @@
         '</div>' +
         '<div class="wl-auto-toolbar">' +
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 계정 상태로 자동 편성</button>' +
-          '<div class="wl-auto-note">일반 기업은 SSR만 선택 가능 · 한정·배포 제외 / 필그림은 별도 규칙 예정</div>' +
+          '<div class="wl-auto-note">전 기업 공통: SSR만 선택 · 한정·배포 제외 / 필그림 160벽 우선순위는 별도</div>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
         '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
