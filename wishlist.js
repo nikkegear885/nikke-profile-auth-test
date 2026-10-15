@@ -1453,15 +1453,6 @@
         const bTreasureTarget = isTreasurePerformanceBelowTwo(bName,bBreakthrough);
         if(aTreasureTarget !== bTreasureTarget) return aTreasureTarget ? -1 : 1;
 
-        if(wallStatus === 'X' && company !== '필그림'){
-          // 160벽 X 선택 시 10단계 중 1돌파·2돌파만 최우선으로 추천한다.
-          // 애장품 성능캐의 2돌파 미만 우선순위는 위에서 먼저 적용한다.
-          // 3돌파와 코어 강화 1~7은 이 우선 그룹에 포함하지 않는다.
-          const aTargetPriority = aBreakthrough >= 1 && aBreakthrough <= 2;
-          const bTargetPriority = bBreakthrough >= 1 && bBreakthrough <= 2;
-          if(aTargetPriority !== bTargetPriority) return aTargetPriority ? -1 : 1;
-        }
-
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
         const aPerformancePriority = getWishlistPerformancePriority(aName);
@@ -1469,7 +1460,21 @@
         const aGroup = getCopyPrioritySortGroup(aName,aPerformancePriority,aBreakthrough,aUnowned);
         const bGroup = getCopyPrioritySortGroup(bName,bPerformancePriority,bBreakthrough,bUnowned);
 
-        // Apply selected recommendation stage after treasure-performance and 160-wall targeting.
+        // In "필수캐 우선" mode, the selected performance tier must outrank the
+        // generic 160-wall 1–2 breakthrough boost; otherwise 1★ general-purpose units
+        // can be placed ahead of required units simply because wallStatus is X.
+        if(copyPriority === 0 && aGroup !== bGroup) return aGroup - bGroup;
+
+        if(wallStatus === 'X' && company !== '필그림'){
+          // 160벽 X 선택 시 10단계 중 1돌파·2돌파만 우선 추천한다.
+          // 단, "필수캐 우선" 모드에서는 성능 우선 그룹을 먼저 비교한다.
+          // 3돌파와 코어 강화 1~7은 이 우선 그룹에 포함하지 않는다.
+          const aTargetPriority = aBreakthrough >= 1 && aBreakthrough <= 2;
+          const bTargetPriority = bBreakthrough >= 1 && bBreakthrough <= 2;
+          if(aTargetPriority !== bTargetPriority) return aTargetPriority ? -1 : 1;
+        }
+
+        // For other recommendation modes, retain their existing stage grouping after 160-wall targeting.
         if(aGroup !== bGroup) return aGroup - bGroup;
         if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
         // Within the treasure-performance target group, favor characters closer to 2 breakthroughs.
