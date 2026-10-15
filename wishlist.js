@@ -698,19 +698,20 @@
       '#wishlistPanel .wl-photo-status{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:3px 1px;background:rgba(35,39,46,.70);color:#fff;text-align:center;font-size:clamp(8px,1vw,10px);font-weight:1000;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.4)}',
       '#wishlistPanel .wl-picker-backdrop[hidden]{display:none!important}',
       '#wishlistPanel .wl-picker-backdrop{position:relative;inset:auto;z-index:20;display:block;box-sizing:border-box;width:100%;margin:0;padding:0 8px 12px;background:transparent;backdrop-filter:none;animation:wl-picker-expand .16s ease-out}',
-      '#wishlistPanel .wl-picker-dialog{display:flex;flex-direction:column;width:100%;max-height:min(68vh,620px);overflow:hidden;border:1px solid #d5dbe5;border-radius:10px;background:#f8fafc;color:#222936;box-shadow:0 6px 18px rgba(0,0,0,.15)}',
+      '#wishlistPanel .wl-picker-dialog{display:flex;flex-direction:column;width:100%;max-height:none;overflow:visible;border:1px solid #d5dbe5;border-radius:10px;background:#f8fafc;color:#222936;box-shadow:0 6px 18px rgba(0,0,0,.15)}',
       '@keyframes wl-picker-expand{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}',
-      '#wishlistPanel .wl-picker-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #dde3ec;background:linear-gradient(135deg,#fff,#edf3fa)}',
-      '#wishlistPanel .wl-picker-title{margin:0;color:#168fc5;font-size:17px;font-weight:1000}',
-      '#wishlistPanel .wl-picker-close{flex:none;width:34px;height:34px;border:0;border-radius:8px;background:#e7ebf1;color:#576171;font-size:25px;line-height:1;cursor:pointer}',
-      '#wishlistPanel .wl-picker-search-wrap{padding:12px 14px 8px}',
-      '#wishlistPanel .wl-picker-search{box-sizing:border-box;width:100%;height:38px;padding:0 12px;border:1px solid #cbd4e0;border-radius:8px;background:#fff;color:#222936;font-size:13px;outline:none}',
+      '#wishlistPanel .wl-picker-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-bottom:1px solid #dde3ec;background:linear-gradient(135deg,#fff,#edf3fa)}',
+      '#wishlistPanel .wl-picker-title{flex:none;margin:0;color:#168fc5;font-size:15px;font-weight:1000;white-space:nowrap}',
+      '#wishlistPanel .wl-picker-close{flex:none;width:30px;height:30px;border:0;border-radius:7px;background:#e7ebf1;color:#576171;font-size:22px;line-height:1;cursor:pointer}',
+      '#wishlistPanel .wl-picker-search-wrap{display:none!important}',
+      '#wishlistPanel .wl-picker-search{box-sizing:border-box;flex:1;min-width:0;width:auto;height:32px;padding:0 9px;border:1px solid #cbd4e0;border-radius:8px;background:#fff;color:#222936;font-size:12px;outline:none}',
       '#wishlistPanel .wl-picker-search:focus{border-color:#169fd6;box-shadow:0 0 0 3px rgba(22,159,214,.14)}',
-      '#wishlistPanel .wl-picker-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-content:start;align-items:start;gap:8px;flex:1;min-height:100px;max-height:min(48vh,420px);padding:8px 14px 14px;overflow:auto}',
-      '#wishlistPanel .wl-picker-item{min-width:0;padding:4px!important;border-radius:7px}',
-      '#wishlistPanel .wl-picker-item.is-current{padding:3px!important}',
+      '#wishlistPanel .wl-picker-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-content:start;align-items:start;gap:3px;flex:none;min-height:0;max-height:none;padding:5px 7px 6px;overflow:visible}',
+      '#wishlistPanel .wl-picker-item{min-width:0;padding:2px!important;border-radius:5px}',
+      '#wishlistPanel .wl-picker-item.is-current{padding:1px!important}',
       '#wishlistPanel .wl-picker-photo{width:100%!important;max-width:100%!important;gap:0!important}',
-      '#wishlistPanel .wl-picker-image-wrap{width:100%!important;height:auto!important;aspect-ratio:1/1!important}',
+      '#wishlistPanel .wl-picker-image-wrap{width:44px!important;max-width:44px!important;height:44px!important;aspect-ratio:1/1!important}',
+      '@media(max-width:650px){#wishlistPanel .wl-picker-head{gap:5px;padding:5px 6px}#wishlistPanel .wl-picker-title{font-size:12px}#wishlistPanel .wl-picker-search{height:29px;font-size:11px;padding:0 7px}#wishlistPanel .wl-picker-close{width:26px;height:26px;font-size:19px}#wishlistPanel .wl-picker-image-wrap{width:42px!important;max-width:42px!important;height:42px!important}}',
       '#wishlistPanel .wl-picker-name{display:none!important}',
       '#wishlistPanel .wl-picker-choice{gap:0!important}',
       '#wishlistPanel .wl-picker-choice:focus-visible{outline:2px solid #168fc5;outline-offset:2px}',
@@ -804,7 +805,7 @@
       'html.dark-theme #wishlistPanel .wl-include-button{border-color:#43546c;background:#1e2c41;color:#d1dcef}',
       'html.dark-theme #wishlistPanel .wl-picker-exclude{border-color:#75404e;background:#351d27;color:#ffabb9}',
       'html.dark-theme #wishlistPanel .wl-picker-exclude.is-excluded{border-color:#43546c;background:#1e2c41;color:#d1dcef}',
-      '#wishlistPanel .wl-picker-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-top:1px solid #dde3ec;background:#f0f3f7;color:#707b8b;font-size:11px}',
+      '#wishlistPanel .wl-picker-foot{display:none!important}',
       '#wishlistPanel .wl-picker-clear{flex:none;padding:8px 12px;border:1px solid #d7a9ad;border-radius:7px;background:#fff5f5;color:#b3434a;font-size:12px;font-weight:900;cursor:pointer}',
       '#wishlistPanel .wl-picker-empty{grid-column:1/-1;padding:28px 10px;text-align:center;color:#758196;font-size:13px}',
       '#wishlistPanel .wl-auto-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;padding:5px 8px 9px}',
@@ -978,8 +979,7 @@
       '</aside>' +
       '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>' +
         '<div class="wl-picker-dialog" role="region" aria-labelledby="wlPickerTitle">' +
-          '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">니케 상태 설정</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="접기">×</button></div>' +
-          '<div class="wl-picker-search-wrap"><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="니케 이름 검색" aria-label="니케 이름 검색" autocomplete="off"></div>' +
+          '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">니케 상태 설정</h3><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="니케 이름 검색" aria-label="니케 이름 검색" autocomplete="off"><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="접기">×</button></div>' +
           '<div class="wl-picker-grid" data-wl-picker-grid></div>' +
           '<div class="wl-picker-foot"><span>캐릭터를 누를 때마다 기본 → 제외 → 애정캐 → 기본으로 바뀝니다.</span></div>' +
         '</div>' +
