@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.187';
+  var EMBEDDED_VERSION='1.188';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -4608,14 +4608,11 @@ body[data-theme="dark"] #characterPanel td.name-column-cell .name-btn:hover {
 </style>
 <!-- TEST-SITE-ONLY RANDOM ACCOUNT TOOL STYLES. Do not port to production. -->
 <style id="test-only-random-account-tool-style">
-.test-random-account-btn{border-color:#99753e!important;background:#2a2115!important;color:#ffe2a7!important;font-weight:900!important}
-.test-random-account-btn:hover{border-color:#d5a750!important;background:#3a2b18!important}
-.test-random-account-note{padding:7px 9px 2px;color:#c9a66c;font-size:10px;line-height:1.55}
 .test-account-switch-btn{border-color:#8f7cff!important;background:#211d3b!important;color:#e2dcff!important;white-space:nowrap}
 .test-account-switch-btn:hover,.test-account-switch-btn.active{border-color:#b5a8ff!important;background:#37305b!important;color:#fff!important}
 </style>
 </head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.187</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.188</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" onclick="openBlablalinkSyncGuide()"><svg class="sync-button-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"></path></svg><span>계정 동기화</span><svg class="sync-button-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><a href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5496829" id="siteHelpTopButton" class="bl-direct-site-help" target="_blank" rel="noopener noreferrer" aria-label="사이트 이용법 (새 탭에서 열기)" title="사이트 이용법 링크 열기">사이트 이용법</a><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -4630,12 +4627,7 @@ body[data-theme="dark"] #characterPanel td.name-column-cell .name-btn:hover {
   <div class="settings-section-title">데이터 관리</div>
   <button type="button" class="settings-action" onclick="closeSettingsMenu();exportNikkeStatusOnlyFile()" title="두 계정의 미사용 및 유효 상태만 저장합니다.">미사용·유효 상태 내보내기</button>
   <button type="button" class="settings-action" onclick="closeSettingsMenu();openNikkeStatusOnlyFilePicker()" title="파일의 미사용 및 유효 상태만 현재 브라우저에 적용합니다.">미사용·유효 상태 불러오기</button>
-  <!-- TEST-SITE-ONLY RANDOM ACCOUNT TOOL. Do not copy this section to the production site. -->
-  <div class="settings-divider"></div>
-  <div class="settings-section-title">테스트 전용 도구</div>
-  <button type="button" class="settings-action test-random-account-btn" onclick="closeSettingsMenu();createRandomTestAccount()" title="실계정과 분리된 가상 계정을 새로 생성합니다.">무작위 테스트 계정 생성</button>
-  <div class="test-random-account-note">보유 여부·돌파·코강을 무작위로 설정합니다. 기존 계정은 변경하지 않으며, 테스트 사이트 전용 기능입니다.</div>
-  <div class="settings-divider"></div>
+
   <button type="button" class="settings-action danger" onclick="closeSettingsMenu();resetAll()">원본 데이터로 초기화</button>
 </div><div class="kpis" id="kpis"></div>
 <section id="soleScorePanel" class="sole-score-panel"><div class="sole-score-intro"><div class="sole-score-intro-copy"><h3>솔로 레이드 점수 기록</h3><p>3% · 10% · 30% 구간별로 한섭과 일섭 점수를 따로 기록할 수 있습니다. 입력 내용은 현재 브라우저에 자동 저장됩니다.</p></div></div><div class="sole-score-grid"><div class="sole-score-card"><div class="sole-score-card-head"><strong>3%</strong><span>일섭 · 한섭</span><button type="button" class="sole-score-add-btn" onclick="addSoleScoreRow('3')" aria-label="3% 점수 기록 행 추가">＋</button></div><div class="sole-score-table-wrap"><table class="sole-score-table"><thead><tr><th>속성</th><th>회차/날짜</th><th>보스</th><th>한섭</th><th>일섭</th><th>차이(%)</th><th>점수 차이</th><th></th></tr></thead><tbody id="soleScoreBody3"></tbody></table></div><div class="sole-score-note">점수 차이(%) = 한섭 ÷ 일섭 × 100 · 점수 차이 = 한섭 − 일섭</div></div><div class="sole-score-card"><div class="sole-score-card-head"><strong>10%</strong><span>한섭 · 일섭</span><button type="button" class="sole-score-add-btn" onclick="addSoleScoreRow('10')" aria-label="10% 점수 기록 행 추가">＋</button></div><div class="sole-score-table-wrap"><table class="sole-score-table"><thead><tr><th>속성</th><th>회차/날짜</th><th>보스</th><th>한섭</th><th>일섭</th><th>차이(%)</th><th>점수 차이</th><th></th></tr></thead><tbody id="soleScoreBody10"></tbody></table></div><div class="sole-score-note">점수 차이 = 일섭 − 한섭</div></div><div class="sole-score-card"><div class="sole-score-card-head"><strong>30%</strong><span>한섭 · 일섭</span><button type="button" class="sole-score-add-btn" onclick="addSoleScoreRow('30')" aria-label="30% 점수 기록 행 추가">＋</button></div><div class="sole-score-table-wrap"><table class="sole-score-table"><thead><tr><th>속성</th><th>회차/날짜</th><th>보스</th><th>한섭</th><th>일섭</th><th>차이</th><th></th></tr></thead><tbody id="soleScoreBody30"></tbody></table></div><div class="sole-score-note">점수 차이 = 일섭 − 한섭</div></div></div></section><section id="outpostPanel" hidden><div class="outpost-calc"><div class="outpost-calc-head"><div></div><div class="outpost-normal-clear-reference"><span>102코더단</span><strong>HARD 28-25</strong></div></div><div class="outpost-calc-progress">
@@ -7089,7 +7081,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=1.055"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=1.056"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
