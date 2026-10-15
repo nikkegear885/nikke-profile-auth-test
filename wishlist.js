@@ -156,6 +156,29 @@
     }));
     return priorities;
   })();
+  // Preserve the ordering of the internal list within each rank for the character picker.
+  const WISHLIST_PERFORMANCE_POSITION = (() => {
+    const positions = new Map();
+    WISHLIST_PERFORMANCE_TIERS.forEach(tier => tier.names.forEach((name,index) => {
+      const key = norm(name);
+      const current = positions.get(key);
+      if(!current || tier.rank < current.rank) positions.set(key,{rank:tier.rank,index});
+    }));
+    return positions;
+  })();
+  function compareWishlistPickerOrder(a,b){
+    const aName = String(a && a['이름'] || '').trim();
+    const bName = String(b && b['이름'] || '').trim();
+    const aRank = getWishlistPerformancePriority(aName);
+    const bRank = getWishlistPerformancePriority(bName);
+    if(aRank !== bRank) return aRank - bRank;
+    const aPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(aName));
+    const bPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(bName));
+    if(aPosition && bPosition && aPosition.index !== bPosition.index) return aPosition.index - bPosition.index;
+    if(aPosition && !bPosition) return -1;
+    if(!aPosition && bPosition) return 1;
+    return aName.localeCompare(bName,'ko');
+  }
   const DEFAULT_PERFORMANCE_PRIORITY = Math.max(...WISHLIST_PERFORMANCE_TIERS.map(tier => tier.rank)) + 1;
   const WISHLIST_TREASURE_UPSIDE_NAMES = new Set(
     WISHLIST_PERFORMANCE_TIERS
@@ -1253,7 +1276,7 @@
     const characters = getCharactersForCompany(company).filter(row => {
       const name = String(row['이름'] || '').trim();
       return name && (!query || norm(name).includes(query));
-    });
+    }).sort(compareWishlistPickerOrder);
     if(!characters.length){
       grid.innerHTML = '<div class="wl-picker-empty">검색 결과가 없습니다.</div>';
       return;
