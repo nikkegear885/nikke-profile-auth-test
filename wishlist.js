@@ -27,6 +27,7 @@
   let imageMap = new Map();
   let imageLoadPromise = null;
   let panel = null;
+  let pickerSlot = null;
 
   function loadPicks(){
     const output = blankWishlist();
@@ -185,6 +186,31 @@
       '#wishlistPanel .wl-slot.is-unowned .wl-selected-name{color:#777}',
       '#wishlistPanel .wl-slot:focus-within{outline:3px solid rgba(22,165,223,.45);outline-offset:2px}',
       '#wishlistPanel .wl-select{position:absolute;inset:0;z-index:8;width:100%;height:100%;opacity:0;cursor:pointer}',
+      '#wishlistPanel .wl-select-trigger{position:absolute;inset:0;z-index:8;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}',
+      '#wishlistPanel .wl-tile.wl-photo-only{padding:0;border-color:#8a8a8a;background:#fff}',
+      '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
+      '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
+      '#wishlistPanel .wl-picker-backdrop[hidden]{display:none!important}',
+      '#wishlistPanel .wl-picker-backdrop{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(9,14,24,.72);backdrop-filter:blur(3px)}',
+      '#wishlistPanel .wl-picker-dialog{display:flex;flex-direction:column;width:min(720px,calc(100vw - 32px));max-height:min(86vh,820px);overflow:hidden;border:1px solid #d5dbe5;border-radius:14px;background:#f8fafc;color:#222936;box-shadow:0 22px 80px rgba(0,0,0,.38)}',
+      '#wishlistPanel .wl-picker-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #dde3ec;background:linear-gradient(135deg,#fff,#edf3fa)}',
+      '#wishlistPanel .wl-picker-title{margin:0;color:#168fc5;font-size:17px;font-weight:1000}',
+      '#wishlistPanel .wl-picker-close{flex:none;width:34px;height:34px;border:0;border-radius:8px;background:#e7ebf1;color:#576171;font-size:25px;line-height:1;cursor:pointer}',
+      '#wishlistPanel .wl-picker-search-wrap{padding:12px 14px 8px}',
+      '#wishlistPanel .wl-picker-search{box-sizing:border-box;width:100%;height:38px;padding:0 12px;border:1px solid #cbd4e0;border-radius:8px;background:#fff;color:#222936;font-size:13px;outline:none}',
+      '#wishlistPanel .wl-picker-search:focus{border-color:#169fd6;box-shadow:0 0 0 3px rgba(22,159,214,.14)}',
+      '#wishlistPanel .wl-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));align-content:start;gap:8px;min-height:100px;padding:8px 14px 14px;overflow:auto}',
+      '#wishlistPanel .wl-picker-item{display:flex;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:8px 5px;border:1px solid #dce2ea;border-radius:9px;background:#fff;color:#333b49;cursor:pointer;transition:border-color .12s,background .12s,transform .12s}',
+      '#wishlistPanel .wl-picker-item:hover:not(:disabled){transform:translateY(-1px);border-color:#37a8d7;background:#f0faff}',
+      '#wishlistPanel .wl-picker-item.is-current{border:2px solid #149fd6;padding:7px 4px;background:#e9f8ff}',
+      '#wishlistPanel .wl-picker-item:disabled{opacity:.36;cursor:not-allowed;filter:grayscale(.7)}',
+      '#wishlistPanel .wl-picker-photo{display:grid;place-items:center;width:72px;height:72px;overflow:hidden;border-radius:7px;background:#e6ebf2}',
+      '#wishlistPanel .wl-picker-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}',
+      '#wishlistPanel .wl-picker-placeholder{color:#738093;font-size:24px;font-weight:900}',
+      '#wishlistPanel .wl-picker-name{width:100%;min-height:2.5em;overflow-wrap:anywhere;text-align:center;font-size:11px;font-weight:900;line-height:1.25}',
+      '#wishlistPanel .wl-picker-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-top:1px solid #dde3ec;background:#f0f3f7;color:#707b8b;font-size:11px}',
+      '#wishlistPanel .wl-picker-clear{flex:none;padding:8px 12px;border:1px solid #d7a9ad;border-radius:7px;background:#fff5f5;color:#b3434a;font-size:12px;font-weight:900;cursor:pointer}',
+      '#wishlistPanel .wl-picker-empty{grid-column:1/-1;padding:28px 10px;text-align:center;color:#758196;font-size:13px}',
       '#wishlistPanel .wl-status{flex:none;padding:0 12px 6px;text-align:right;color:#80858b;font-size:9px}',
       '#wishlistPanel .wl-footer{display:flex;justify-content:center;gap:16px;flex:none;padding:5px 12px 6px;border-top:1px solid #dedede;background:#f8f8f8}',
       '#wishlistPanel .wl-action{display:flex;align-items:center;justify-content:center;gap:7px;width:clamp(120px,25%,220px);min-height:42px;border-radius:6px;font-size:16px;font-weight:1000;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.12)}',
@@ -234,7 +260,16 @@
           '<button type="button" class="wl-action wl-cancel" data-wl-cancel><span aria-hidden="true">×</span> 취소</button>' +
           '<button type="button" class="wl-action wl-confirm" data-wl-confirm><span aria-hidden="true">✓</span> 결정</button>' +
         '</div>' +
-      '</div>';
+      '</div>' +
+      '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>' +
+        '<div class="wl-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="wlPickerTitle">' +
+          '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">엘리시온 니케 선택</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="닫기">×</button></div>' +
+          '<div class="wl-picker-search-wrap"><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="엘리시온 니케 이름 검색" autocomplete="off"></div>' +
+          '<div class="wl-picker-grid" data-wl-picker-grid></div>' +
+          '<div class="wl-picker-foot"><span>이미 다른 칸에 선택한 니케는 중복 선택할 수 없습니다.</span><button type="button" class="wl-picker-clear" data-wl-picker-clear>이 칸 비우기</button></div>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
     const main = document.querySelector('main.main') || document.querySelector('main');
     if(main){
       const before = main.querySelector('#pediaPanel, #soleScorePanel, #outpostPanel, #characterPanel');
@@ -245,6 +280,8 @@
     }
     panel.addEventListener('change', onPanelChange);
     panel.addEventListener('click', onPanelClick);
+    panel.addEventListener('input', onPanelInput);
+    document.addEventListener('keydown', onPickerKeydown);
     return panel;
   }
 
@@ -271,21 +308,92 @@
 
   function buildSlot(company, slot, characters){
     const name = picks[company][slot] || '';
+    const isElysion = company === '엘리시온';
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
-    const tile = name
-      ? '<div class="wl-tile' + (unowned ? ' is-unowned' : '') + '">' +
-          '<span class="wl-corner-mark" aria-hidden="true">◇</span>' +
-          '<div class="wl-selected-name">' + esc(name) + '</div>' +
-          (!unowned ? '<span class="wl-stage">' + stage + '돌</span>' : '<span class="wl-unowned">미보유</span>') +
-        '</div>'
-      : '<div class="wl-tile wl-empty-tile">' +
-          '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (unowned ? ' is-unowned' : '') + '" title="' + esc(name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '클릭해서 니케 선택') + '">' +
-      tile +
-      '<select class="wl-select" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1)) + '" title="' + esc(name || '니케 선택') + '">' +
-      buildOptionList(company,slot,characters) + '</select>' +
+    let tile;
+    if(isElysion && name){
+      const image = findImage(name);
+      tile = '<div class="wl-tile wl-photo-only">' +
+        (image ? '<img class="wl-picked-image" src="' + esc(image) + '" alt="' + esc(name) + '" draggable="false">' : '') +
+        '</div>';
+    }else if(name){
+      tile = '<div class="wl-tile' + (unowned ? ' is-unowned' : '') + '">' +
+        '<span class="wl-corner-mark" aria-hidden="true">◇</span>' +
+        '<div class="wl-selected-name">' + esc(name) + '</div>' +
+        (!unowned ? '<span class="wl-stage">' + stage + '돌</span>' : '<span class="wl-unowned">미보유</span>') +
+        '</div>';
+    }else{
+      tile = '<div class="wl-tile wl-empty-tile">' +
+        '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
+    }
+    const title = name ? name + (isElysion ? '' : (unowned ? ' · 미보유' : ' · ' + stage + '돌')) : '클릭해서 니케 선택';
+    const selector = isElysion
+      ? '<button type="button" class="wl-select-trigger" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1) + ' 선택') + '" title="' + esc(title) + '"></button>'
+      : '<select class="wl-select" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1)) + '" title="' + esc(name || '니케 선택') + '">' +
+        buildOptionList(company,slot,characters) + '</select>';
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (unowned && !isElysion ? ' is-unowned' : '') + '" title="' + esc(title) + '">' +
+      tile + selector +
       '</article>';
+  }
+
+  function openCharacterPicker(slot){
+    if(!Number.isInteger(slot) || slot < 0 || slot > 4) return;
+    pickerSlot = slot;
+    const backdrop = panel && panel.querySelector('[data-wl-picker-backdrop]');
+    if(!backdrop) return;
+    const search = backdrop.querySelector('[data-wl-picker-search]');
+    if(search) search.value = '';
+    backdrop.hidden = false;
+    renderCharacterPicker();
+    loadImageMap().then(renderCharacterPicker);
+    if(search) search.focus();
+  }
+
+  function closeCharacterPicker(){
+    const backdrop = panel && panel.querySelector('[data-wl-picker-backdrop]');
+    if(backdrop) backdrop.hidden = true;
+    pickerSlot = null;
+  }
+
+  function renderCharacterPicker(){
+    if(pickerSlot === null || !panel) return;
+    const backdrop = panel.querySelector('[data-wl-picker-backdrop]');
+    const grid = backdrop && backdrop.querySelector('[data-wl-picker-grid]');
+    const search = backdrop && backdrop.querySelector('[data-wl-picker-search]');
+    if(!grid || !backdrop || backdrop.hidden) return;
+    const query = norm(search ? search.value : '');
+    const current = picks['엘리시온'][pickerSlot] || '';
+    const selectedElsewhere = new Set(picks['엘리시온'].filter((value,index) => index !== pickerSlot && value).map(norm));
+    const characters = getCharactersForCompany('엘리시온').filter(row => {
+      const name = String(row['이름'] || '').trim();
+      return name && (!query || norm(name).includes(query));
+    });
+    if(!characters.length){
+      grid.innerHTML = '<div class="wl-picker-empty">검색 결과가 없습니다.</div>';
+      return;
+    }
+    grid.innerHTML = characters.map(row => {
+      const name = String(row['이름'] || '').trim();
+      const image = findImage(name);
+      const duplicate = selectedElsewhere.has(norm(name));
+      const isCurrent = !!current && norm(current) === norm(name);
+      const photo = image
+        ? '<img src="' + esc(image) + '" alt="" loading="lazy" draggable="false">'
+        : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>' ;
+      return '<button type="button" class="wl-picker-item' + (isCurrent ? ' is-current' : '') + '" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + '>' +
+        '<span class="wl-picker-photo">' + photo + '</span>' +
+        '<span class="wl-picker-name">' + esc(name) + '</span>' +
+        '</button>';
+    }).join('');
+  }
+
+  function onPanelInput(event){
+    if(event.target && event.target.matches && event.target.matches('[data-wl-picker-search]')) renderCharacterPicker();
+  }
+
+  function onPickerKeydown(event){
+    if(event.key === 'Escape' && pickerSlot !== null) closeCharacterPicker();
   }
 
   function renderWishlist(){
@@ -331,6 +439,35 @@
   }
 
   function onPanelClick(event){
+    const closePicker = event.target.closest && event.target.closest('[data-wl-picker-close]');
+    const backdrop = event.target.closest && event.target.closest('[data-wl-picker-backdrop]');
+    if(closePicker || (backdrop && event.target === backdrop)){
+      closeCharacterPicker();
+      return;
+    }
+    const pickerClear = event.target.closest && event.target.closest('[data-wl-picker-clear]');
+    if(pickerClear){
+      if(pickerSlot !== null) picks['엘리시온'][pickerSlot] = '';
+      closeCharacterPicker();
+      renderWishlist();
+      return;
+    }
+    const picked = event.target.closest && event.target.closest('[data-wl-pick-name]');
+    if(picked){
+      if(pickerSlot === null || picked.disabled) return;
+      const name = String(picked.dataset.wlPickName || '').trim();
+      if(!name || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
+      picks['엘리시온'][pickerSlot] = name;
+      closeCharacterPicker();
+      renderWishlist();
+      return;
+    }
+    const slotTrigger = event.target.closest && event.target.closest('.wl-select-trigger');
+    if(slotTrigger && slotTrigger.dataset.company === '엘리시온'){
+      event.preventDefault();
+      openCharacterPicker(Number(slotTrigger.dataset.slot));
+      return;
+    }
     const cancel = event.target.closest && event.target.closest('[data-wl-cancel]');
     if(cancel){
       cancelWishlist();
@@ -383,6 +520,9 @@
     if(title) title.textContent = '위시리스트 모집';
     try{ window.closeSidebar && window.closeSidebar(); }catch(_){}
     renderWishlist();
+    loadImageMap().then(() => {
+      if(document.body.classList.contains('wishlist-view')) renderWishlist();
+    });
   }
 
   function patchMainViewSwitch(){
