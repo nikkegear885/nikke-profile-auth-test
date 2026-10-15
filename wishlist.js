@@ -681,7 +681,7 @@
         '<div class="wl-excluded-note">이 목록의 니케는 자동 편성 후보에서 제외돼. 니케 선택창에서 <b>제외</b>를 눌러 추가할 수 있어.</div>' +
         '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">아직 제외한 니케가 없어.</div></div>' +
       '</aside>' +
-      '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>'
+      '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>' +
         '<div class="wl-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="wlPickerTitle">' +
           '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">니케 선택</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="닫기">×</button></div>' +
           '<div class="wl-picker-search-wrap"><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="니케 이름 검색" aria-label="니케 이름 검색" autocomplete="off"></div>' +
