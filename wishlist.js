@@ -481,6 +481,7 @@
   }
 
   const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
+  const CHARACTER_NAMES_VISIBLE_KEY = 'nikke_wishlist_character_names_visible_v1';
   const COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v3';
   const PREVIOUS_COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v2';
   const LEGACY_COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v1';
@@ -504,6 +505,15 @@
   }
 
   let wallStatus = loadWallStatus();
+
+  function loadCharacterNamesVisible(){
+    try{ return localStorage.getItem(CHARACTER_NAMES_VISIBLE_KEY) === 'on'; }
+    catch(_){ return false; }
+  }
+  function saveCharacterNamesVisible(){
+    try{ localStorage.setItem(CHARACTER_NAMES_VISIBLE_KEY, characterNamesVisible ? 'on' : 'off'); }catch(_){}
+  }
+  let characterNamesVisible = loadCharacterNamesVisible();
 
   function activePvpIncludedKey(){
     try{
@@ -738,6 +748,11 @@
       '@media(max-width:520px){#wishlistAccountSwitcher{width:calc(100% - 24px);gap:4px;margin:7px auto 7px}#wishlistAccountSwitcher .wl-account-label{font-size:9px}#wishlistAccountSwitcher .wl-account-button{min-width:52px;padding:6px 8px;font-size:10px}}',
       '#wishlist160WallControl[hidden]{display:none!important}',
       '#wishlist160WallControl{position:fixed;left:calc(50% - 231px - 184px);top:142px;z-index:50;box-sizing:border-box;width:164px;padding:12px;border:1px solid #d8dee8;border-radius:11px;background:#fff;color:#344054;box-shadow:0 5px 18px rgba(27,48,75,.10);font-family:inherit}',
+      '#wishlist160WallControl .wl-name-view-title{margin:0 0 7px;font-size:12px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
+      '#wishlist160WallControl .wl-name-view-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
+      '#wishlist160WallControl .wl-name-view-button{height:29px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:11px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
+      '#wishlist160WallControl .wl-name-view-button.active{border-color:#5296ce;background:#e9f5ff;color:#17679c;box-shadow:inset 0 0 0 1px rgba(82,150,206,.14)}',
+      '#wishlist160WallControl .wl-name-view-divider{margin:10px 1px 10px}',
       '#wishlist160WallControl .wl-160-title{margin:0 0 9px;font-size:12px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
       '#wishlist160WallControl .wl-160-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
       '#wishlist160WallControl .wl-160-button{height:34px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:13px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
@@ -833,6 +848,12 @@
       '#wishlistPanel .wl-tile.wl-photo-only{padding:0;border-color:#8a8a8a;background:#fff}',
       '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
       '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
+      '#wishlistPanel .wl-character-name-label{display:none;box-sizing:border-box;width:100%;margin-top:3px;padding:0 1px;color:#4a5565;font-size:9px;font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere;word-break:keep-all}',
+      'body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-slot.has-character-name{display:flex;flex-direction:column;align-items:stretch;align-self:start;aspect-ratio:auto;min-height:0}',
+      'body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-slot.has-character-name .wl-tile{position:relative;inset:auto;display:block;width:100%;aspect-ratio:1/1;flex:none;overflow:hidden}',
+      'body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-slot.has-character-name .wl-character-name-label{display:block}',
+      'body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-slot.is-unowned .wl-photo-status{margin-top:2px}',
+      'html.dark-theme body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-character-name-label{color:#d0d9e8}',
       '#wishlistPanel .wl-promotion-stars{position:absolute;left:2px;top:auto;bottom:2px;z-index:5;display:flex;align-items:center;gap:0;padding:0;border:0;border-radius:0;background:transparent;color:#fff;font-size:clamp(8px,1vw,10px);font-weight:1000;line-height:1;letter-spacing:-.08em;text-shadow:0 1px 2px rgba(0,0,0,.85);white-space:nowrap;pointer-events:none}',
       '#wishlistPanel .wl-promotion-stars .wl-star-filled{color:#ffd76a}',
       '#wishlistPanel .wl-promotion-stars .wl-star-empty{color:#e8edf3;opacity:.9}',
@@ -968,7 +989,7 @@
       '#wishlistPanel .wl-confirm{border:2px solid #0da5e2;background:#0ba8eb;color:white}',
       '#wishlistPanel .wl-action:hover{filter:brightness(.97);transform:translateY(-1px)}',
       '@media(max-width:1000px){#wishlistPanel .wl-excluded-panel{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;max-height:none;margin:12px auto 0}#wishlistPanel .wl-excluded-list{max-height:260px}#wishlistPanel .wl-favorite-list{max-height:200px}}',
-      '@media(max-width:650px){#wishlistPanel{width:100%;margin:0 auto 12px}#wishlistPanel .wl-dialog{width:100%;height:auto;border-radius:10px}#wishlistPanel .wl-modal-head{min-height:27px;padding:3px 6px}#wishlistPanel .wl-modal-title{font-size:11px;gap:4px}#wishlistPanel .wl-refresh-icon{width:17px;height:17px;border-width:2px}#wishlistPanel .wl-intro{padding:3px 4px;font-size:9px;line-height:1.2}#wishlistPanel .wl-intro .wl-subline{font-size:8px;margin-top:2px}#wishlistPanel .wl-company-list{gap:6px;padding:2px 7px 6px}#wishlistPanel .wl-company-head{min-height:30px;padding:2px 7px}#wishlistPanel .wl-company-brand{width:min(340px,calc(100vw - 44px))}#wishlistPanel .wl-company-symbol{width:28px;height:24px;font-size:27px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-slots{gap:4px;padding:7px 5px 10px}#wishlistPanel .wl-slot{aspect-ratio:1 / 1;border-radius:4px}#wishlistPanel .wl-corner-mark{width:16px;height:18px;font-size:9px}#wishlistPanel .wl-selected-name{padding:14px 2px 7px;font-size:7px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:1px 2px;font-size:7px;min-width:14px}#wishlistPanel .wl-plus{font-size:28px}#wishlistPanel .wl-empty-mark{gap:1px;padding:2px;font-size:7px}#wishlistPanel .wl-footer{gap:8px;padding:5px 8px 6px}#wishlistPanel .wl-action{width:42%;min-height:36px;font-size:13px}}',
+      '@media(max-width:650px){body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-character-name-label{font-size:7px;line-height:1.15;margin-top:2px}#wishlistPanel{width:100%;margin:0 auto 12px}#wishlistPanel .wl-dialog{width:100%;height:auto;border-radius:10px}#wishlistPanel .wl-modal-head{min-height:27px;padding:3px 6px}#wishlistPanel .wl-modal-title{font-size:11px;gap:4px}#wishlistPanel .wl-refresh-icon{width:17px;height:17px;border-width:2px}#wishlistPanel .wl-intro{padding:3px 4px;font-size:9px;line-height:1.2}#wishlistPanel .wl-intro .wl-subline{font-size:8px;margin-top:2px}#wishlistPanel .wl-company-list{gap:6px;padding:2px 7px 6px}#wishlistPanel .wl-company-head{min-height:30px;padding:2px 7px}#wishlistPanel .wl-company-brand{width:min(340px,calc(100vw - 44px))}#wishlistPanel .wl-company-symbol{width:28px;height:24px;font-size:27px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-slots{gap:4px;padding:7px 5px 10px}#wishlistPanel .wl-slot{aspect-ratio:1 / 1;border-radius:4px}#wishlistPanel .wl-corner-mark{width:16px;height:18px;font-size:9px}#wishlistPanel .wl-selected-name{padding:14px 2px 7px;font-size:7px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:1px 2px;font-size:7px;min-width:14px}#wishlistPanel .wl-plus{font-size:28px}#wishlistPanel .wl-empty-mark{gap:1px;padding:2px;font-size:7px}#wishlistPanel .wl-footer{gap:8px;padding:5px 8px 6px}#wishlistPanel .wl-action{width:42%;min-height:36px;font-size:13px}}',
       '@media(max-width:380px){#wishlistPanel .wl-company-list{padding-left:6px;padding-right:6px}#wishlistPanel .wl-slots{gap:4px;padding-left:5px;padding-right:5px}#wishlistPanel .wl-selected-name{font-size:8px}}'
     ].join('\n');
     document.head.appendChild(style);
@@ -1028,6 +1049,12 @@
     control.hidden = true;
     control.setAttribute('aria-label','160벽 돌파 여부 설정');
     control.innerHTML =
+      '<div class="wl-name-view-title">캐릭터 이름보기</div>' +
+      '<div class="wl-name-view-options">' +
+        '<button type="button" class="wl-name-view-button" data-wl-name-visibility="on" aria-pressed="false">ON</button>' +
+        '<button type="button" class="wl-name-view-button" data-wl-name-visibility="off" aria-pressed="true">OFF</button>' +
+      '</div>' +
+      '<div class="wl-copy-priority-divider wl-name-view-divider"></div>' +
       '<div class="wl-160-title">160벽 돌파 여부</div>' +
       '<div class="wl-160-options">' +
         '<button type="button" class="wl-160-button" data-wl-160-wall="O" aria-pressed="false">O</button>' +
@@ -1065,6 +1092,16 @@
       render160WallControl();
     });
     control.addEventListener('click', event => {
+      const nameButton = event.target.closest && event.target.closest('[data-wl-name-visibility]');
+      if(nameButton){
+        const value = nameButton.getAttribute('data-wl-name-visibility');
+        if(value !== 'on' && value !== 'off') return;
+        characterNamesVisible = value === 'on';
+        saveCharacterNamesVisible();
+        render160WallControl();
+        if(typeof renderWishlist === 'function') renderWishlist();
+        return;
+      }
       const button = event.target.closest && event.target.closest('[data-wl-160-wall]');
       if(!button) return;
       const value = button.getAttribute('data-wl-160-wall');
@@ -1088,6 +1125,12 @@
     const control = ensure160WallControl();
     if(!control) return;
     control.hidden = !document.body.classList.contains('wishlist-view');
+    document.body.classList.toggle('wl-character-names-visible', characterNamesVisible);
+    control.querySelectorAll('[data-wl-name-visibility]').forEach(button => {
+      const active = button.getAttribute('data-wl-name-visibility') === (characterNamesVisible ? 'on' : 'off');
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
     control.querySelectorAll('[data-wl-160-wall]').forEach(button => {
       const active = button.getAttribute('data-wl-160-wall') === wallStatus;
       button.classList.toggle('active', active);
@@ -1214,17 +1257,18 @@
       tile = '<div class="wl-tile wl-photo-only">' + photo +
         (unowned ? '' : '<span class="wl-promotion-stars" aria-label="' + stage + '돌파">' + stars + '</span>') +
         (!unowned && core > 0 ? '<span class="wl-core-enhancement" aria-label="코어 강화 +' + core + '">+' + core + '</span>' : '') +
-        '</div>' +
-        (unowned ? '<span class="wl-photo-status">미보유</span>' : '');
+        '</div>';
     }else{
       tile = '<div class="wl-tile wl-empty-tile">' +
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
     const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '빈 슬롯';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
       (name ? ' data-wl-hover-text="' + esc(name) + '"' : '') +
       ' aria-label="' + esc(accessibleName) + '">' +
       tile +
+      (name ? '<span class="wl-character-name-label">' + esc(name) + '</span>' : '') +
+      (unowned ? '<span class="wl-photo-status">미보유</span>' : '') +
       '</article>';
   }
 
