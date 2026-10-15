@@ -206,9 +206,10 @@
   }
   function getWishlistPerformancePriority(name){
     const base = getBaseWishlistPerformancePriority(name);
+    // Laplace stays the lowest character in the PVP/Solo Raid tier even when the PVP boost toggle is off.
+    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return pvpIncluded ? 3.5 : base + 0.5;
     if(!pvpIncluded) return base;
     if(PVP_WISHLIST_NAMES.has(norm(name))) return 3;
-    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return 3.5;
     return base >= 3 ? base + 1 : base;
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
