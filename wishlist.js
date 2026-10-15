@@ -150,19 +150,19 @@
   const WISHLIST_PERFORMANCE_TIERS = [
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름']},
     {rank:2, label:'애장품 성능', names:['프리바티','팬텀','미란다','플로라','토브']},
-    {rank:3, label:'솔레 명함 추천', names:[
+    {rank:3, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
+    {rank:4, label:'솔레 명함 추천', names:[
       '아르카나','솔린 : 프로스트 티켓',
       '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
       '아르카나 : 포츈 메이트','리타'
     ]},
-    {rank:4, label:'PVP', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스']},
-    {rank:5, label:'명함 추천', names:[
+    {rank:5, label:'PVP', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스']},
+    {rank:6, label:'명함 추천', names:[
       'D : 킬러 와이프','은화 : 택티컬 업','델타 : 닌자 시프',
       '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','마나','페퍼','티아','나가'
     ]},
-    {rank:5.5, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
-    {rank:6, label:'0.01%라도 사용 가능성', names:['엠마 : 택티컬 업']},
-    {rank:6, label:'도감용', names:[
+    {rank:7, label:'도감작', names:[
+      '엠마 : 택티컬 업',
       '브리드','프리바티 : 언카인드 메이드','메이든','마스트','베스티','엠마',
       '폴리','솔린','디젤','은화','길로틴','D','시그널','마르차나','키리','K',
       '소라','레이블','E.H.',
@@ -219,7 +219,7 @@
   );
   const WISHLIST_COLLECTION_NAMES = new Set(
     WISHLIST_PERFORMANCE_TIERS
-      .filter(tier => tier.label === '도감용' || tier.label === '0.01%라도 사용 가능성')
+      .filter(tier => tier.label === '도감작')
       .flatMap(tier => tier.names.map(norm))
   );
   const WISHLIST_TRACKED_NAMES = new Set(WISHLIST_PERFORMANCE_TIERS.flatMap(tier => tier.names.map(norm)));
@@ -228,10 +228,10 @@
   }
   function getWishlistPerformancePriority(name){
     const base = getBaseWishlistPerformancePriority(name);
-    // PVP=O promotes the PVP category to 2.5; when X, it stays at rank 4.
-    // Laplace remains last inside the PVP category.
-    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 2.75 : 4.5;
-    if(PVP_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 2.5 : 4;
+    // PVP=O moves PVP to rank 3.5; PVP=X keeps it at rank 5.
+    // Laplace remains last within whichever PVP rank is active.
+    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 3.75 : 5.25;
+    if(PVP_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 3.5 : 5;
     return base;
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
@@ -284,33 +284,29 @@
     const isNamecard = WISHLIST_NAMECARD_NAMES.has(key);
     const isGeneral = WISHLIST_GENERAL_NAMES.has(key);
     const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
-    const isPvpBaseCopy = isPvp && !unowned && breakthrough === 0;
 
-    // Stage 1: required characters are always included, unless the +7 Core filter removes them.
-    // Stages 2 and 3: required characters are only eligible while their first copy is missing.
+    // Stage 1: Required units are mandatory unless they have Core +7 (filtered separately).
+    // Stages 2–3: Required units are only used when the first copy is missing.
     if(isRequired) return stage === 0 || unowned ? 1 : Number.POSITIVE_INFINITY;
 
-    // Treasure-performance characters are only targets below 2 breakthroughs in every stage.
+    // Rank 2 treasure-performance units are always targets below 2 breakthroughs.
+    // Once they reach 2★, they are completely excluded from auto-build.
     if(isTreasure) return breakthrough < 2 ? 2 : Number.POSITIVE_INFINITY;
 
-    // First-copy acquisition pass. PVP=O is rank 2.5, except a PVP character with only
-    // its owned base copy, which is deliberately delayed. PVP= X keeps missing copies at rank 4.
-    if(isPvp && pvpIncluded === 'O' && !isPvpBaseCopy) return isLowestPvp ? 2.75 : 2.5;
-    if(isSoloRaid && unowned) return 3;
-    if(isPvp && !isPvpBaseCopy && unowned) return isLowestPvp ? 4.5 : 4;
-    if(isNamecard && unowned) return 5;
-    if(isGeneral && unowned) return 5.5;
-    if(stage === 2 && isCollection && unowned) return WISHLIST_COLLECTION_NAMES.has(key) ? 6 : 6.25;
+    // Acquisition pass: ranks 3–7 use unowned-only targets, in the requested sequence.
+    // Owned characters in these categories are held for the refill pass after missing first copies.
+    if(isGeneral) return unowned ? 3 : 13;
+    if(isPvp){
+      const rank = pvpIncluded === 'O' ? (isLowestPvp ? 3.75 : 3.5) : (isLowestPvp ? 5.25 : 5);
+      return unowned ? rank : rank + 10;
+    }
+    if(isSoloRaid) return unowned ? 4 : 14;
+    if(isNamecard) return unowned ? 6 : 16;
+    if(isCollection && stage === 2) return unowned ? 7 : 17;
 
-    // Refill pass once the unowned targets are exhausted: resume at rank 2 and follow
-    // PVP (if enabled), Solo Raid, PVP rank 4, namecard, general and collection in order.
-    if(isPvp && !isPvpBaseCopy && pvpIncluded === 'O') return isLowestPvp ? 12.75 : 12.5;
-    if(isSoloRaid) return 13;
-    if(isPvp && !isPvpBaseCopy) return isLowestPvp ? 14.5 : 14;
-    if(isPvpBaseCopy) return isLowestPvp ? 14.75 : 14.6;
-    if(isNamecard) return 15;
-    if(isGeneral) return 15.5;
-    if(stage === 2 && isCollection) return WISHLIST_COLLECTION_NAMES.has(key) ? 16 : 16.25;
+    // Unknown/unclassified roster entries only participate in stage 3 as collection.
+    if(stage === 2 && unowned) return 7;
+    if(stage === 2) return 17;
     return Number.POSITIVE_INFINITY;
   }
 
