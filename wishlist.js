@@ -485,7 +485,7 @@
         '<button type="button" class="wl-160-button" data-wl-160-wall="O" aria-pressed="false">O</button>' +
         '<button type="button" class="wl-160-button" data-wl-160-wall="X" aria-pressed="false">X</button>' +
       '</div>' +
-      '<div class="wl-160-note">X 선택 시 돌파 1 이상인 니케 우선</div>';
+      '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>';
     control.addEventListener('click', event => {
       const button = event.target.closest && event.target.closest('[data-wl-160-wall]');
       if(!button) return;
@@ -712,9 +712,11 @@
         const aBreakthrough = getBreakthrough(aName);
         const bBreakthrough = getBreakthrough(bName);
         if(wallStatus === 'X' && company !== '필그림'){
-          const aCleared = aBreakthrough >= 1;
-          const bCleared = bBreakthrough >= 1;
-          if(aCleared !== bCleared) return aCleared ? -1 : 1;
+          // 160벽 X 선택 시 10단계 중 1돌파·2돌파만 최우선으로 추천한다.
+          // 3돌파와 코어 강화 1~7은 이 우선 그룹에 포함하지 않는다.
+          const aTargetPriority = aBreakthrough >= 1 && aBreakthrough <= 2;
+          const bTargetPriority = bBreakthrough >= 1 && bBreakthrough <= 2;
+          if(aTargetPriority !== bTargetPriority) return aTargetPriority ? -1 : 1;
         }
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
