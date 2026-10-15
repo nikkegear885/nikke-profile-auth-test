@@ -126,6 +126,38 @@
     return !isWishlistExcluded(name) && isSSRCharacter(name);
   }
 
+  // Internal-only performance ranking for auto wishlist recommendations.
+  // Do not render these labels or ranks in the Pedia or other UI.
+  // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
+  // No Elysion PvP candidates have been supplied yet.
+  const WISHLIST_PERFORMANCE_TIERS = [
+    {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드']},
+    {rank:2, label:'범용캐', names:['베스티 : 택티컬 업','앵커 : 이노센트 메이드']},
+    {rank:3, label:'애장품 성능', names:['프리바티','팬텀','미란다']},
+    {rank:4, label:'솔레 명함 추천 = PVP', names:['아르카나','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트']},
+    {rank:5, label:'애장품 비성능', names:['츠바이']},
+    {rank:6, label:'명함 추천', names:['D : 킬러 와이프','츠바이','은화 : 택티컬 업','델타 : 닌자 시프']},
+    {rank:7, label:'0.01%라도 사용 가능성', names:['엠마 : 택티컬 업']},
+    {rank:8, label:'도감용', names:[
+      '브리드','프리바티 : 언카인드 메이드','메이든','마스트','베스티','엠마',
+      '폴리','솔린','디젤','은화','길로틴','D','시그널','마르차나','키리','K',
+      '소라','레이블','E.H.'
+    ]}
+  ];
+  const WISHLIST_PERFORMANCE_PRIORITY = (() => {
+    const priorities = new Map();
+    WISHLIST_PERFORMANCE_TIERS.forEach(tier => tier.names.forEach(name => {
+      const key = norm(name);
+      // If a Nikke appears in multiple groups, retain its highest (lowest-numbered) priority.
+      if(!priorities.has(key) || tier.rank < priorities.get(key)) priorities.set(key, tier.rank);
+    }));
+    return priorities;
+  })();
+  const DEFAULT_PERFORMANCE_PRIORITY = Math.max(...WISHLIST_PERFORMANCE_TIERS.map(tier => tier.rank)) + 1;
+  function getWishlistPerformancePriority(name){
+    return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
+  }
+
   function normalizePicksToEligibleSSR(source){
     const cleaned = clonePicks(source);
     let changed = false;
@@ -740,6 +772,10 @@
           const bTargetPriority = bBreakthrough >= 1 && bBreakthrough <= 2;
           if(aTargetPriority !== bTargetPriority) return aTargetPriority ? -1 : 1;
         }
+        const aPerformancePriority = getWishlistPerformancePriority(aName);
+        const bPerformancePriority = getWishlistPerformancePriority(bName);
+        if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
+
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
         if(aUnowned !== bUnowned) return aUnowned ? -1 : 1;
