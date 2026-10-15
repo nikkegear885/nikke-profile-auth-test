@@ -1451,26 +1451,25 @@
         const bName = String(b['이름'] || '').trim();
         const aBreakthrough = getBreakthrough(aName);
         const bBreakthrough = getBreakthrough(bName);
+        const aUnowned = isMarkedUnowned(aName);
+        const bUnowned = isMarkedUnowned(bName);
+
+        // General-purpose characters already owned at base copy (0 breakthroughs) are
+        // lower priority in all three recommendation stages, even if marked as favorites.
+        // They are not removed outright; they can fill a slot only after other candidates.
+        const aGeneralBaseCopy = getBaseWishlistPerformancePriority(aName) === 2 && aBreakthrough === 0 && !aUnowned;
+        const bGeneralBaseCopy = getBaseWishlistPerformancePriority(bName) === 2 && bBreakthrough === 0 && !bUnowned;
+        if(aGeneralBaseCopy !== bGeneralBaseCopy) return aGeneralBaseCopy ? 1 : -1;
+
         const aFavorite = isFavoriteCharacter(aName);
         const bFavorite = isFavoriteCharacter(bName);
         if(aFavorite !== bFavorite) return aFavorite ? -1 : 1;
 
         // Collectible-performance characters below 2 breakthroughs must stay ahead of
-        // the general 160-wall 1–2 breakthrough preference; otherwise other units can
-        // fill all five slots and make Flora/Tove disappear despite needing their treasure.
+        // lower-priority candidates so they can reach 2 breakthroughs for their treasure.
         const aTreasureTarget = isTreasurePerformanceBelowTwo(aName,aBreakthrough);
         const bTreasureTarget = isTreasurePerformanceBelowTwo(bName,bBreakthrough);
         if(aTreasureTarget !== bTreasureTarget) return aTreasureTarget ? -1 : 1;
-
-        const aUnowned = isMarkedUnowned(aName);
-        const bUnowned = isMarkedUnowned(bName);
-
-        // General-purpose characters already owned at base copy (0 breakthroughs) are
-        // lower priority in all three recommendation stages. Do not exclude them outright:
-        // they may fill a slot only after better-priority candidates have been considered.
-        const aGeneralBaseCopy = getBaseWishlistPerformancePriority(aName) === 2 && aBreakthrough === 0 && !aUnowned;
-        const bGeneralBaseCopy = getBaseWishlistPerformancePriority(bName) === 2 && bBreakthrough === 0 && !bUnowned;
-        if(aGeneralBaseCopy !== bGeneralBaseCopy) return aGeneralBaseCopy ? 1 : -1;
 
         const aPerformancePriority = getWishlistPerformancePriority(aName);
         const bPerformancePriority = getWishlistPerformancePriority(bName);
