@@ -156,6 +156,11 @@
     return priorities;
   })();
   const DEFAULT_PERFORMANCE_PRIORITY = Math.max(...WISHLIST_PERFORMANCE_TIERS.map(tier => tier.rank)) + 1;
+  const WISHLIST_TREASURE_UPSIDE_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '애장품 성능')
+      .flatMap(tier => tier.names.map(norm))
+  );
   function getWishlistPerformancePriority(name){
     return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
   }
@@ -168,6 +173,34 @@
   );
   function shouldExcludeFromAutoWishlist(name){
     return WISHLIST_EXCLUDE_AT_TWO_BREAKTHROUGHS.has(norm(name)) && getBreakthrough(name) >= 2;
+  }
+
+  function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
+    const usable = performancePriority <= 7;
+    if(copyPriority === 0){
+      // Strongly favor high-performance candidates; within each performance tier, owned breakthrough first.
+      if(usable && !unowned) return 0;
+      if(usable && unowned) return 1;
+      return 2;
+    }
+    if(copyPriority === 1){
+      // Performance duplicates first, then first copies with plausible use, then other owned candidates.
+      if(usable && !unowned && breakthrough > 0) return 0;
+      if(usable && unowned) return 1;
+      if(usable && !unowned) return 2;
+      if(!unowned && breakthrough > 0) return 3;
+      if(unowned) return 4;
+      return 5;
+    }
+    if(copyPriority === 2){
+      // First copies of usable candidates first; then owned "treasure-upside" Nikke still below MLB.
+      if(usable && unowned) return 0;
+      if(!unowned && WISHLIST_TREASURE_UPSIDE_NAMES.has(norm(name)) && breakthrough < 3) return 1;
+      if(usable && !unowned) return 2;
+      return 3;
+    }
+    // Codex-building mode: acquire all missing first copies first.
+    return unowned ? 0 : 1;
   }
 
   function normalizePicksToEligibleSSR(source){
@@ -293,7 +326,8 @@
   }
 
   const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
-  const COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v1';
+  const COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v2';
+  const LEGACY_COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v1';
 
   function activeWallStatusKey(){
     try{
@@ -315,19 +349,32 @@
 
   let wallStatus = loadWallStatus();
 
-  function activeCopyPriorityKey(){
+  function activeCopyPriorityKey(baseKey = COPY_PRIORITY_KEY){
     try{
       if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
-        return COPY_PRIORITY_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+        return baseKey + '_' + encodeURIComponent(String(activeAccount).trim());
       }
     }catch(_){}
-    return COPY_PRIORITY_KEY;
+    return baseKey;
   }
 
   function loadCopyPriority(){
     try{
-      const value = Number(localStorage.getItem(activeCopyPriorityKey()));
-      return Number.isInteger(value) && value >= 0 && value <= 2 ? value : 1;
+      const saved = localStorage.getItem(activeCopyPriorityKey());
+      if(saved !== null){
+        const value = Number(saved);
+        return Number.isInteger(value) && value >= 0 && value <= 3 ? value : 1;
+      }
+
+      // Migrate prior 3-step settings: old 0=breakthrough, 1=balanced, 2=first-copy.
+      const legacy = localStorage.getItem(activeCopyPriorityKey(LEGACY_COPY_PRIORITY_KEY));
+      if(legacy !== null){
+        const legacyValue = Number(legacy);
+        const migrated = legacyValue === 0 ? 0 : legacyValue === 2 ? 3 : 1;
+        localStorage.setItem(activeCopyPriorityKey(), String(migrated));
+        return migrated;
+      }
+      return 1;
     }catch(_){ return 1; }
   }
 
@@ -335,7 +382,13 @@
     try{ localStorage.setItem(activeCopyPriorityKey(), String(copyPriority)); }catch(_){}
   }
 
-  const COPY_PRIORITY_LABELS = ['돌파 우선','균형','명함 우선'];
+  const COPY_PRIORITY_LABELS = ['돌파 최우선','돌파 우선','명함 + 애장품','도감작'];
+  const COPY_PRIORITY_DESCRIPTIONS = [
+    '성능캐 돌파를 최우선 순위로 합니다',
+    '성능캐 돌파를 우선으로 하지만 사용 가능성이 있는 니케의 명함을 우선 획득합니다',
+    '사용 가능성 있는 캐릭터의 명함을 우선으로 하며, 애장품 떡상 가능성이 있는 캐릭부터 돌파하는 걸 목표로 합니다',
+    '명함 획득을 최우선으로 합니다'
+  ];
   let copyPriority = loadCopyPriority();
 
   function loadPicks(){
@@ -507,6 +560,13 @@
       '#wishlist160WallControl .wl-copy-priority-slider{display:block;width:100%;height:18px;margin:2px 0 0;accent-color:#668fda;cursor:pointer}',
       '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:3px;color:#728096;font-size:10px;font-weight:900}',
       '#wishlist160WallControl .wl-copy-priority-note{margin-top:7px;color:#8793a6;font-size:9px;line-height:1.4;text-align:center}',
+      '#wishlist160WallControl .wl-copy-priority-help{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:-1px;padding:0;border:1px solid #9bb0ca;border-radius:50%;background:#edf4fc;color:#47709f;font-size:10px;font-weight:1000;line-height:1;cursor:help}',
+      '#wishlist160WallControl .wl-copy-priority-help:after{content:attr(data-tooltip);position:absolute;left:calc(100% + 9px);top:50%;z-index:1002;width:250px;max-width:calc(100vw - 205px);box-sizing:border-box;padding:10px 12px;border:1px solid rgba(107,195,238,.42);border-radius:10px;background:linear-gradient(145deg,#202d43,#101827);color:#f3f7ff;font:600 11px/1.55 system-ui,sans-serif;letter-spacing:0;text-align:left;white-space:normal;box-shadow:0 10px 28px rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-50%) translateX(-3px);transition:opacity .08s ease,transform .08s ease,visibility 0s linear .08s}',
+      '#wishlist160WallControl .wl-copy-priority-help:hover:after,#wishlist160WallControl .wl-copy-priority-help:focus-visible:after{opacity:1;visibility:visible;transform:translateY(-50%) translateX(0);transition-delay:0s}',
+      '#wishlist160WallControl .wl-copy-priority-help:focus-visible{outline:2px solid #668fda;outline-offset:2px}',
+      '@media(max-width:1000px){#wishlist160WallControl .wl-copy-priority-help:after{left:auto;right:calc(100% + 8px);max-width:calc(100vw - 56px)}}',
+      'html.dark-theme #wishlist160WallControl .wl-copy-priority-help{border-color:#627b9d;background:#1a2d47;color:#a9d5ff}',
+      '@media(prefers-reduced-motion:reduce){#wishlist160WallControl .wl-copy-priority-help:after{transition:none}}',
       'html.dark-theme #wishlist160WallControl .wl-copy-priority-divider{background:#354761}',
       'html.dark-theme #wishlist160WallControl .wl-copy-priority-heading{color:#edf3ff}',
       'html.dark-theme #wishlist160WallControl .wl-copy-priority-value{border-color:#354761;background:#1a2d47;color:#a9d5ff}',
@@ -742,15 +802,15 @@
       '</div>' +
       '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-copy-priority-heading"><span>명함 우선도</span><span class="wl-copy-priority-value" data-wl-copy-priority-value>균형</span></div>' +
-      '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="1" aria-label="돌파와 명함 우선도" />' +
-      '<div class="wl-copy-priority-ends"><span>돌파</span><span>명함</span></div>' +
+      '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 우선으로 하지만 사용 가능성이 있는 니케의 명함을 우선 획득합니다" aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>돌파 우선</span></div>' +
+      '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="3" step="1" value="1" aria-label="위시리스트 추천 우선도" />' +
+      '<div class="wl-copy-priority-ends"><span>돌파</span><span>도감작</span></div>' +
       '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
     control.addEventListener('input', event => {
       const slider = event.target.closest && event.target.closest('[data-wl-copy-priority]');
       if(!slider) return;
       const value = Number(slider.value);
-      if(!Number.isInteger(value) || value < 0 || value > 2) return;
+      if(!Number.isInteger(value) || value < 0 || value > 3) return;
       copyPriority = value;
       saveCopyPriority();
       render160WallControl();
@@ -787,7 +847,12 @@
     const slider = control.querySelector('[data-wl-copy-priority]');
     if(slider) slider.value = String(copyPriority);
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
-    if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '균형';
+    if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '돌파 우선';
+    const help = control.querySelector('[data-wl-copy-priority-help]');
+    if(help){
+      help.setAttribute('data-tooltip', COPY_PRIORITY_DESCRIPTIONS[copyPriority] || COPY_PRIORITY_DESCRIPTIONS[1]);
+      help.setAttribute('aria-label', COPY_PRIORITY_DESCRIPTIONS[copyPriority] || COPY_PRIORITY_DESCRIPTIONS[1]);
+    }
   }
 
   function ensurePanel(){
@@ -1160,27 +1225,26 @@
 
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
-
-        // 3-step preference: 0=breakthrough, 1=balanced (legacy), 2=first copy.
-        // The 160-wall targeting above remains the strongest special-case rule.
-        if(copyPriority === 0){
-          if(aUnowned !== bUnowned) return aUnowned ? 1 : -1;
-          if(!aUnowned){
-            const breakthroughDiff = bBreakthrough - aBreakthrough;
-            if(breakthroughDiff) return breakthroughDiff;
-          }
-        }else if(copyPriority === 2 && aUnowned !== bUnowned){
-          return aUnowned ? -1 : 1;
-        }
-
         const aPerformancePriority = getWishlistPerformancePriority(aName);
         const bPerformancePriority = getWishlistPerformancePriority(bName);
-        if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
+        const aGroup = getCopyPrioritySortGroup(aName,aPerformancePriority,aBreakthrough,aUnowned);
+        const bGroup = getCopyPrioritySortGroup(bName,bPerformancePriority,bBreakthrough,bUnowned);
 
-        if(copyPriority === 1 && aUnowned !== bUnowned) return aUnowned ? -1 : 1;
-        if(!aUnowned){
+        // The 160-wall targeting above remains the strongest special-case rule.
+        // Modes 0 emphasizes performance tier first; the other modes prioritize their defined groups.
+        if(copyPriority === 0){
+          if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
+          if(aGroup !== bGroup) return aGroup - bGroup;
+        }else{
+          if(aGroup !== bGroup) return aGroup - bGroup;
+          if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
+        }
+        if(!aUnowned && !bUnowned){
           const breakthroughDiff = bBreakthrough - aBreakthrough;
           if(breakthroughDiff) return breakthroughDiff;
+        }else if(aUnowned !== bUnowned){
+          // In non-grouped ties, leave first-copy handling to the selected mode's group.
+          if(copyPriority === 3) return aUnowned ? -1 : 1;
         }
         return aName.localeCompare(bName,'ko');
       });
