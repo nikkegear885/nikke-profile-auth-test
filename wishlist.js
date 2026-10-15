@@ -5,7 +5,7 @@
   const COMPANIES = ['엘리시온','미실리스','테트라','필그림'];
   const STORAGE_KEY = 'nikke_wishlist_recommendations_v1';
   const EXCLUDED_STORAGE_KEY = 'nikke_wishlist_excluded_characters_v1';
-  const EXCLUDED_DEFAULTS_SEEDED_KEY = 'nikke_wishlist_excluded_defaults_seeded_v1';
+  const EXCLUDED_HELM_MIGRATED_KEY = 'nikke_wishlist_helm_conditional_migrated_v1';
   const IMAGE_URL = 'assets/nikke-pedia-master.json?v=1047';
   const norm = value => String(value == null ? '' : value)
     .normalize('NFKC')
@@ -226,13 +226,13 @@
     return EXCLUDED_STORAGE_KEY;
   }
 
-  function activeExcludedDefaultsSeededKey(){
+  function activeExcludedHelmMigratedKey(){
     try{
       if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
-        return EXCLUDED_DEFAULTS_SEEDED_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+        return EXCLUDED_HELM_MIGRATED_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
       }
     }catch(_){}
-    return EXCLUDED_DEFAULTS_SEEDED_KEY;
+    return EXCLUDED_HELM_MIGRATED_KEY;
   }
 
   function loadExcludedCharacters(){
@@ -241,18 +241,19 @@
       const raw = JSON.parse(localStorage.getItem(storageKey) || '[]');
       const source = Array.isArray(raw) ? raw : [];
       const seen = new Set();
-      const names = source.map(name => String(name || '').trim()).filter(name => {
+      let names = source.map(name => String(name || '').trim()).filter(name => {
         const key = norm(name);
         if(!name || seen.has(key)) return false;
         seen.add(key);
         return true;
       });
-      // Seed Helm once for each account. If the user later releases Helm, it stays released.
-      const seededKey = activeExcludedDefaultsSeededKey();
-      if(localStorage.getItem(seededKey) !== '1'){
-        if(!names.some(name => norm(name) === norm('헬름'))) names.push('헬름');
+      // Remove Helm if it was added by the earlier always-excluded default.
+      // Run this migration only once so users can still manually exclude Helm afterwards.
+      const migratedKey = activeExcludedHelmMigratedKey();
+      if(localStorage.getItem(migratedKey) !== '1'){
+        names = names.filter(name => norm(name) !== norm('헬름'));
         localStorage.setItem(storageKey, JSON.stringify(names));
-        localStorage.setItem(seededKey, '1');
+        localStorage.setItem(migratedKey, '1');
       }
       return names;
     }catch(_){
@@ -261,7 +262,8 @@
   }
 
   function getAutomaticExclusionReason(name){
-    if(norm(name) === norm('미란다') && getBreakthrough('미란다') >= 2){
+    const key = norm(name);
+    if((key === norm('미란다') || key === norm('헬름')) && getBreakthrough(name) >= 2){
       return '돌파 2 이상 자동 제외';
     }
     return '';
@@ -979,6 +981,7 @@
     if(!pane || !list) return;
     const automaticNames = [];
     if(getAutomaticExclusionReason('미란다')) automaticNames.push('미란다');
+    if(getAutomaticExclusionReason('헬름')) automaticNames.push('헬름');
     const combined = [];
     const seen = new Set();
     [...excludedCharacters,...automaticNames].forEach(name => {
