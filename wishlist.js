@@ -293,6 +293,7 @@
   }
 
   const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
+  const COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v1';
 
   function activeWallStatusKey(){
     try{
@@ -313,6 +314,29 @@
   }
 
   let wallStatus = loadWallStatus();
+
+  function activeCopyPriorityKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return COPY_PRIORITY_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return COPY_PRIORITY_KEY;
+  }
+
+  function loadCopyPriority(){
+    try{
+      const value = Number(localStorage.getItem(activeCopyPriorityKey()));
+      return Number.isInteger(value) && value >= 0 && value <= 2 ? value : 1;
+    }catch(_){ return 1; }
+  }
+
+  function saveCopyPriority(){
+    try{ localStorage.setItem(activeCopyPriorityKey(), String(copyPriority)); }catch(_){}
+  }
+
+  const COPY_PRIORITY_LABELS = ['돌파 우선','균형','명함 우선'];
+  let copyPriority = loadCopyPriority();
 
   function loadPicks(){
     const output = blankWishlist();
@@ -477,6 +501,18 @@
       '#wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
       '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
       '#wishlist160WallControl .wl-160-note{margin-top:8px;color:#78869a;font-size:9px;line-height:1.4;text-align:center}',
+      '#wishlist160WallControl .wl-copy-priority-divider{height:1px;margin:12px 1px 10px;background:#e3e8ef}',
+      '#wishlist160WallControl .wl-copy-priority-heading{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px;color:#38465a;font-size:11px;font-weight:1000}',
+      '#wishlist160WallControl .wl-copy-priority-value{padding:3px 6px;border:1px solid #cbd8e8;border-radius:999px;background:#edf4fc;color:#3e6797;font-size:9px;font-weight:900;white-space:nowrap}',
+      '#wishlist160WallControl .wl-copy-priority-slider{display:block;width:100%;height:18px;margin:2px 0 0;accent-color:#668fda;cursor:pointer}',
+      '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:3px;color:#728096;font-size:10px;font-weight:900}',
+      '#wishlist160WallControl .wl-copy-priority-note{margin-top:7px;color:#8793a6;font-size:9px;line-height:1.4;text-align:center}',
+      'html.dark-theme #wishlist160WallControl .wl-copy-priority-divider{background:#354761}',
+      'html.dark-theme #wishlist160WallControl .wl-copy-priority-heading{color:#edf3ff}',
+      'html.dark-theme #wishlist160WallControl .wl-copy-priority-value{border-color:#354761;background:#1a2d47;color:#a9d5ff}',
+      'html.dark-theme #wishlist160WallControl .wl-copy-priority-slider{accent-color:#9a89ff}',
+      'html.dark-theme #wishlist160WallControl .wl-copy-priority-ends{color:#a3b1c7}',
+      'html.dark-theme #wishlist160WallControl .wl-copy-priority-note{color:#92a0b7}',
       'html.dark-theme #wishlist160WallControl{border-color:#354761;background:#151f31;color:#edf3ff;box-shadow:0 5px 18px rgba(0,0,0,.25)}',
       'html.dark-theme #wishlist160WallControl .wl-160-title{color:#edf3ff}',
       'html.dark-theme #wishlist160WallControl .wl-160-button{border-color:#354761;background:#0d1525;color:#adbacd}',
@@ -704,7 +740,21 @@
         '<button type="button" class="wl-160-button" data-wl-160-wall="O" aria-pressed="false">O</button>' +
         '<button type="button" class="wl-160-button" data-wl-160-wall="X" aria-pressed="false">X</button>' +
       '</div>' +
-      '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>';
+      '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
+      '<div class="wl-copy-priority-divider"></div>' +
+      '<div class="wl-copy-priority-heading"><span>명함 우선도</span><span class="wl-copy-priority-value" data-wl-copy-priority-value>균형</span></div>' +
+      '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="1" aria-label="돌파와 명함 우선도" />' +
+      '<div class="wl-copy-priority-ends"><span>돌파</span><span>명함</span></div>' +
+      '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
+    control.addEventListener('input', event => {
+      const slider = event.target.closest && event.target.closest('[data-wl-copy-priority]');
+      if(!slider) return;
+      const value = Number(slider.value);
+      if(!Number.isInteger(value) || value < 0 || value > 2) return;
+      copyPriority = value;
+      saveCopyPriority();
+      render160WallControl();
+    });
     control.addEventListener('click', event => {
       const button = event.target.closest && event.target.closest('[data-wl-160-wall]');
       if(!button) return;
@@ -734,6 +784,10 @@
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
+    const slider = control.querySelector('[data-wl-copy-priority]');
+    if(slider) slider.value = String(copyPriority);
+    const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
+    if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '균형';
   }
 
   function ensurePanel(){
@@ -1103,15 +1157,29 @@
           const bTargetPriority = bBreakthrough >= 1 && bBreakthrough <= 2;
           if(aTargetPriority !== bTargetPriority) return aTargetPriority ? -1 : 1;
         }
+
+        const aUnowned = isMarkedUnowned(aName);
+        const bUnowned = isMarkedUnowned(bName);
+
+        // 3-step preference: 0=breakthrough, 1=balanced (legacy), 2=first copy.
+        // The 160-wall targeting above remains the strongest special-case rule.
+        if(copyPriority === 0){
+          if(aUnowned !== bUnowned) return aUnowned ? 1 : -1;
+          if(!aUnowned){
+            const breakthroughDiff = bBreakthrough - aBreakthrough;
+            if(breakthroughDiff) return breakthroughDiff;
+          }
+        }else if(copyPriority === 2 && aUnowned !== bUnowned){
+          return aUnowned ? -1 : 1;
+        }
+
         const aPerformancePriority = getWishlistPerformancePriority(aName);
         const bPerformancePriority = getWishlistPerformancePriority(bName);
         if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
 
-        const aUnowned = isMarkedUnowned(aName);
-        const bUnowned = isMarkedUnowned(bName);
-        if(aUnowned !== bUnowned) return aUnowned ? -1 : 1;
+        if(copyPriority === 1 && aUnowned !== bUnowned) return aUnowned ? -1 : 1;
         if(!aUnowned){
-          const breakthroughDiff = aBreakthrough - bBreakthrough;
+          const breakthroughDiff = bBreakthrough - aBreakthrough;
           if(breakthroughDiff) return breakthroughDiff;
         }
         return aName.localeCompare(bName,'ko');
@@ -1414,6 +1482,7 @@
         excludedCharacters = loadExcludedCharacters();
         savedExcludedCharacters = excludedCharacters.slice();
         wallStatus = loadWallStatus();
+        copyPriority = loadCopyPriority();
         renderAccountSwitcher();
         render160WallControl();
         renderWishlist();
