@@ -159,6 +159,7 @@
   let imageMap = new Map();
   let imageLoadPromise = null;
   let panel = null;
+  let pickerCompany = null;
   let pickerSlot = null;
 
   function activePicksStorageKey(){
@@ -562,8 +563,8 @@
       '</div>' +
       '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>' +
         '<div class="wl-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="wlPickerTitle">' +
-          '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">엘리시온 니케 선택</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="닫기">×</button></div>' +
-          '<div class="wl-picker-search-wrap"><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="엘리시온 니케 이름 검색" autocomplete="off"></div>' +
+          '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">니케 선택</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="닫기">×</button></div>' +
+          '<div class="wl-picker-search-wrap"><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="니케 이름 검색" aria-label="니케 이름 검색" autocomplete="off"></div>' +
           '<div class="wl-picker-grid" data-wl-picker-grid></div>' +
           '<div class="wl-picker-foot"><span>이미 다른 칸에 선택한 니케는 중복 선택할 수 없습니다.</span><button type="button" class="wl-picker-clear" data-wl-picker-clear>이 칸 비우기</button></div>' +
         '</div>' +
@@ -611,7 +612,6 @@
 
   function buildSlot(company, slot, characters){
     const name = picks[company][slot] || '';
-    const isElysion = company === '엘리시온';
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
     let tile;
@@ -634,22 +634,27 @@
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
     const title = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '클릭해서 니케 선택';
-    const selector = isElysion
-      ? '<button type="button" class="wl-select-trigger" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1) + ' 선택') + '" title="' + esc(title) + '"></button>'
-      : '<select class="wl-select" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1)) + '" title="' + esc(name || '니케 선택') + '">' +
-        buildOptionList(company,slot,characters) + '</select>';
+    // All company slots use the same clickable photo tile and company-specific picker.
+    const selector = '<button type="button" class="wl-select-trigger" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1) + ' 선택') + '" title="' + esc(title) + '"></button>';
     return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + '" title="' + esc(title) + '">' +
       tile + selector +
       '</article>';
   }
 
-    function openCharacterPicker(slot){
-    if(!Number.isInteger(slot) || slot < 0 || slot > 4) return;
+  function openCharacterPicker(company, slot){
+    if(!COMPANIES.includes(company) || !Number.isInteger(slot) || slot < 0 || slot > 4) return;
+    pickerCompany = company;
     pickerSlot = slot;
     const backdrop = panel && panel.querySelector('[data-wl-picker-backdrop]');
     if(!backdrop) return;
+    const title = backdrop.querySelector('#wlPickerTitle');
+    if(title) title.textContent = company + ' 니케 선택';
     const search = backdrop.querySelector('[data-wl-picker-search]');
-    if(search) search.value = '';
+    if(search){
+      search.value = '';
+      search.placeholder = company + ' 니케 이름 검색';
+      search.setAttribute('aria-label', company + ' 니케 이름 검색');
+    }
     backdrop.hidden = false;
     renderCharacterPicker();
     loadImageMap().then(renderCharacterPicker);
@@ -659,19 +664,21 @@
   function closeCharacterPicker(){
     const backdrop = panel && panel.querySelector('[data-wl-picker-backdrop]');
     if(backdrop) backdrop.hidden = true;
+    pickerCompany = null;
     pickerSlot = null;
   }
 
   function renderCharacterPicker(){
-    if(pickerSlot === null || !panel) return;
+    if(!pickerCompany || !COMPANIES.includes(pickerCompany) || pickerSlot === null || !panel) return;
+    const company = pickerCompany;
     const backdrop = panel.querySelector('[data-wl-picker-backdrop]');
     const grid = backdrop && backdrop.querySelector('[data-wl-picker-grid]');
     const search = backdrop && backdrop.querySelector('[data-wl-picker-search]');
     if(!grid || !backdrop || backdrop.hidden) return;
     const query = norm(search ? search.value : '');
-    const current = picks['엘리시온'][pickerSlot] || '';
-    const selectedElsewhere = new Set(picks['엘리시온'].filter((value,index) => index !== pickerSlot && value).map(norm));
-    const characters = getCharactersForCompany('엘리시온').filter(row => {
+    const current = picks[company][pickerSlot] || '';
+    const selectedElsewhere = new Set(picks[company].filter((value,index) => index !== pickerSlot && value).map(norm));
+    const characters = getCharactersForCompany(company).filter(row => {
       const name = String(row['이름'] || '').trim();
       return name && (!query || norm(name).includes(query));
     });
@@ -827,25 +834,28 @@
     }
     const pickerClear = event.target.closest && event.target.closest('[data-wl-picker-clear]');
     if(pickerClear){
-      if(pickerSlot !== null) picks['엘리시온'][pickerSlot] = '';
+      if(pickerCompany && COMPANIES.includes(pickerCompany) && pickerSlot !== null){
+        picks[pickerCompany][pickerSlot] = '';
+      }
       closeCharacterPicker();
       renderWishlist();
       return;
     }
     const picked = event.target.closest && event.target.closest('[data-wl-pick-name]');
     if(picked){
-      if(pickerSlot === null || picked.disabled) return;
+      if(!pickerCompany || !COMPANIES.includes(pickerCompany) || pickerSlot === null || picked.disabled) return;
+      const company = pickerCompany;
       const name = String(picked.dataset.wlPickName || '').trim();
-      if(!isEligibleWishlistName(name, '엘리시온') || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
-      picks['엘리시온'][pickerSlot] = name;
+      if(!isEligibleWishlistName(name, company) || picks[company].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
+      picks[company][pickerSlot] = name;
       closeCharacterPicker();
       renderWishlist();
       return;
     }
     const slotTrigger = event.target.closest && event.target.closest('.wl-select-trigger');
-    if(slotTrigger && slotTrigger.dataset.company === '엘리시온'){
+    if(slotTrigger && COMPANIES.includes(slotTrigger.dataset.company)){
       event.preventDefault();
-      openCharacterPicker(Number(slotTrigger.dataset.slot));
+      openCharacterPicker(slotTrigger.dataset.company, Number(slotTrigger.dataset.slot));
       return;
     }
     const cancel = event.target.closest && event.target.closest('[data-wl-cancel]');
