@@ -797,7 +797,9 @@
       '#wishlistPanel .wl-company-symbol{width:30px;height:25px;display:flex;align-items:center;justify-content:center;font-size:29px;line-height:1;font-weight:1000;color:#777;letter-spacing:-.08em}',
       '#wishlistPanel .wl-company-name{display:none;font-size:8px;font-weight:900;letter-spacing:.1em;color:#858585}',
 
-      '#wishlistPanel .wl-slots{display:grid;grid-template-columns:repeat(5,minmax(0,min(64px,calc((100vw - 64px)/5))));justify-content:center;gap:5px;align-items:start;padding:8px 8px 12px}',
+      '#wishlistPanel .wl-slots{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,min(64px,calc((100vw - 64px)/5))));justify-content:center;gap:5px;align-items:start;padding:8px 8px 12px}',
+      '#wishlistPanel .wl-row-select-trigger{position:absolute;inset:0;z-index:8;display:block;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:9px;background:transparent;cursor:pointer}',
+      '#wishlistPanel .wl-row-select-trigger:focus-visible{outline:3px solid rgba(22,165,223,.5);outline-offset:2px}',
       '#wishlistPanel .wl-slot{position:relative;min-width:0;aspect-ratio:1 / 1;border:0;border-radius:8px;background:transparent;box-shadow:none;overflow:visible}',
       '#wishlistHoverCard{position:fixed;z-index:2147483647;display:flex;align-items:center;gap:11px;box-sizing:border-box;width:max-content;max-width:min(280px,calc(100vw - 20px));padding:11px 13px;border:1px solid rgba(107,195,238,.45);border-radius:14px;background:linear-gradient(145deg,rgba(25,39,60,.98),rgba(9,16,29,.98));color:#f2f7ff;box-shadow:0 16px 42px rgba(2,8,20,.4),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(14px);pointer-events:none;opacity:0;visibility:hidden;transform:translateY(4px) scale(.985);transform-origin:center;transition:opacity .06s ease,transform .06s ease,visibility 0s linear .06s;font-family:inherit}',
       '#wishlistHoverCard.is-visible{opacity:1;visibility:visible;transform:translateY(0) scale(1);transition-delay:0s}',
@@ -1218,11 +1220,9 @@
       tile = '<div class="wl-tile wl-empty-tile">' +
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
-    const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '클릭해서 니케 선택';
-    // Use the in-page hover card instead of browser-native title tooltips.
-    const selector = '<button type="button" class="wl-select-trigger" data-company="' + esc(company) + '" data-slot="' + slot + '" aria-label="' + esc(company + ' 위시리스트 슬롯 ' + (slot + 1) + ' 선택' + (name ? ': ' + accessibleName : '')) + '"></button>';
+    const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '빈 슬롯';
     return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" aria-label="' + esc(accessibleName) + '">' +
-      tile + selector +
+      tile +
       '</article>';
   }
 
@@ -1338,11 +1338,15 @@
   }
 
   function findWishlistHoverTarget(target){
-    return target && target.closest ? target.closest('.wl-slot, [data-wl-hover-text]') : null;
+    return target && target.closest ? target.closest('[data-wl-hover-text]') : null;
   }
 
   function onPanelPointerOver(event){
     if(event.pointerType === 'touch') return;
+    if(event.target && event.target.closest && event.target.closest('.wl-slots')){
+      hideWishlistHoverCard();
+      return;
+    }
     const target = findWishlistHoverTarget(event.target);
     if(!target || (event.relatedTarget && target.contains(event.relatedTarget))) return;
     showWishlistHoverCard(target);
@@ -1355,6 +1359,10 @@
   }
 
   function onPanelFocusIn(event){
+    if(event.target && event.target.closest && event.target.closest('.wl-slots')){
+      hideWishlistHoverCard();
+      return;
+    }
     const target = findWishlistHoverTarget(event.target);
     if(target) showWishlistHoverCard(target);
   }
@@ -1482,8 +1490,8 @@
     if(pickerSlot === null || !pickerCompany || !panel) return;
     const backdrop = panel.querySelector('[data-wl-picker-backdrop]');
     if(!backdrop || backdrop.hidden || backdrop.contains(event.target)) return;
-    // Slot clicks switch the expanded list (or toggle the current one) in the panel handler.
-    if(event.target && event.target.closest && event.target.closest('.wl-select-trigger')) return;
+    // Row-level company picker clicks are handled inside the panel.
+    if(event.target && event.target.closest && event.target.closest('.wl-row-select-trigger')) return;
     closeCharacterPicker();
   }
 
@@ -1628,7 +1636,9 @@
           '<div class="wl-company-brand"><span class="wl-company-symbol" aria-hidden="true">' + esc(COMPANY_SYMBOLS[company] || '◇') + '</span>' +
           '<span class="wl-company-name">' + esc(company) + '</span></div>' +
         '</div>' +
-        '<div class="wl-slots">' + Array.from({length:5},(_,slot) => buildSlot(company,slot,characters)).join('') + '</div>' +
+        '<div class="wl-slots">' + Array.from({length:5},(_,slot) => buildSlot(company,slot,characters)).join('') +
+          '<button type="button" class="wl-row-select-trigger" data-company="' + esc(company) + '" aria-label="' + esc(company + ' 위시리스트 5칸 선택') + '"></button>' +
+        '</div>' +
       '</section>';
     }).join('');
     if(pickerWasOpen && pickerBackdrop){
@@ -1806,11 +1816,11 @@
       }
       return;
     }
-    const slotTrigger = event.target.closest && event.target.closest('.wl-select-trigger');
-    if(slotTrigger && COMPANIES.includes(slotTrigger.dataset.company)){
+    const rowTrigger = event.target.closest && event.target.closest('.wl-row-select-trigger');
+    if(rowTrigger && COMPANIES.includes(rowTrigger.dataset.company)){
       hideWishlistHoverCard();
       event.preventDefault();
-      openCharacterPicker(slotTrigger.dataset.company, Number(slotTrigger.dataset.slot));
+      openCharacterPicker(rowTrigger.dataset.company, 0);
       return;
     }
     const cancel = event.target.closest && event.target.closest('[data-wl-cancel]');
