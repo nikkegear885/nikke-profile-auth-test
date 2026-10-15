@@ -9,6 +9,69 @@
     .normalize('NFKC')
     .toLowerCase()
     .replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g, '');
+  // Keep limited/distribution characters out of wishlist choices and auto-recommendations.
+  const WISHLIST_EXCLUDED_NAMES = new Set([
+    "2B",
+    "신데렐라 : 크리스탈 웨이브",
+    "길로틴 : 윈터 슬레이어",
+    "네온 : 블루 오션",
+    "도로시 : 세렌디피티",
+    "디젤 : 윈터 스위츠",
+    "레이",
+    "레이 (가칭)",
+    "레이븐",
+    "렘",
+    "로산나 : 시크 오션",
+    "루드밀라 : 윈터 오너",
+    "루피 : 윈터 쇼퍼",
+    "마르차나 : 마린 스터디",
+    "마리",
+    "마키마",
+    "메어리 : 베이 갓데스",
+    "메이든 : 아이스 로즈",
+    "미카 : 스노우 버디",
+    "브리드 : 사일런트 트랙",
+    "사쿠라 : 블룸 인 서머",
+    "아니스 : 스파클링 서머",
+    "아스카",
+    "아스카 : WILLE",
+    "앤 : 미라클 페어리",
+    "에밀리아",
+    "에이다",
+    "유키코",
+    "이브",
+    "일레그 : 붐 앤 쇼크",
+    "질",
+    "치사토",
+    "퀸(마코토)",
+    "타키나",
+    "파워",
+    "헬름 : 아쿠아마린",
+    "A2",
+    "앵커",
+    "네베",
+    "차임",
+    "킬로",
+    "파스칼",
+    "클레어",
+    "쿠루미",
+    "아이기스",
+    "길티",
+    "신",
+    "퀀시",
+    "라푼젤:퓨어그레이스",
+    "람",
+    "릴리",
+    "모리",
+    "미사토",
+    "사쿠라 스즈하라",
+    "아비스타",
+    "니힐리스타",
+    "스노우 화이트 : 이노센트 데이즈",
+    "히메노"
+  ].map(norm));
+  function isWishlistExcluded(name){ return WISHLIST_EXCLUDED_NAMES.has(norm(name)); }
+
   const esc = value => String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({
     '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'
   })[ch]);
@@ -91,7 +154,7 @@
 
   function getCharactersForCompany(company){
     return getAllCharacters()
-      .filter(row => String(row['기업'] || '').trim() === company)
+      .filter(row => String(row['기업'] || '').trim() === company && !isWishlistExcluded(row['이름']))
       .sort((a,b) => String(a['이름']).localeCompare(String(b['이름']), 'ko'));
   }
 
@@ -332,7 +395,7 @@
         '</div>' +
         '<div class="wl-auto-toolbar">' +
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 계정 상태로 자동 편성</button>' +
-          '<div class="wl-auto-note">임시 기준: 미보유 우선 → 낮은 돌파 → 이름순 · 도감 전체가 후보이므로 모집 제외 니케가 포함될 수 있습니다.</div>' +
+          '<div class="wl-auto-note">임시 기준: 미보유 우선 → 낮은 돌파 → 이름순 · 한정·배포 니케는 선택 및 자동추천에서 제외됩니다.</div>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
         '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
@@ -543,6 +606,10 @@
     const slot = Number(select.dataset.slot);
     if(!COMPANIES.includes(company) || !Number.isInteger(slot) || slot < 0 || slot > 4) return;
     const name = String(select.value || '').trim();
+    if(name && isWishlistExcluded(name)){
+      renderWishlist();
+      return;
+    }
     if(name && picks[company].some((value,index) => index !== slot && norm(value) === norm(name))){
       renderWishlist();
       return;
@@ -574,7 +641,7 @@
     if(picked){
       if(pickerSlot === null || picked.disabled) return;
       const name = String(picked.dataset.wlPickName || '').trim();
-      if(!name || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
+      if(!name || isWishlistExcluded(name) || picks['엘리시온'].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
       picks['엘리시온'][pickerSlot] = name;
       closeCharacterPicker();
       renderWishlist();
