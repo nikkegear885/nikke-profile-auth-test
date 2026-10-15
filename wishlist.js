@@ -742,17 +742,16 @@
       '#wishlist160WallControl .wl-160-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
       '#wishlist160WallControl .wl-160-button{height:34px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:13px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
       '#wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
-      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active,#wishlist160WallControl .wl-160-button[data-wl-pvp="exclude"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
-      '#wishlist160WallControl .wl-160-button[data-wl-pvp="pvp"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
-      '#wishlist160WallControl .wl-160-button[data-wl-pvp="solo"].active{border-color:#668fda;background:#edf4fc;color:#355f97;box-shadow:inset 0 0 0 1px rgba(102,143,218,.14)}',
-      '#wishlist160WallControl .wl-pvp-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}',
-      '#wishlist160WallControl .wl-pvp-options .wl-160-button{padding:4px 2px;font-size:9px;letter-spacing:-.04em}',
+      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
       '#wishlist160WallControl .wl-160-note{margin-top:8px;color:#78869a;font-size:9px;line-height:1.4;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-divider{height:1px;margin:12px 1px 10px;background:#e3e8ef}',
       '#wishlist160WallControl .wl-copy-priority-heading{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px;color:#38465a;font-size:11px;font-weight:1000}',
       '#wishlist160WallControl .wl-copy-priority-value{padding:3px 6px;border:1px solid #cbd8e8;border-radius:999px;background:#edf4fc;color:#3e6797;font-size:9px;font-weight:900;white-space:nowrap}',
       '#wishlist160WallControl .wl-copy-priority-slider{display:block;width:100%;height:18px;margin:2px 0 0;accent-color:#668fda;cursor:pointer}',
       '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:3px;color:#728096;font-size:10px;font-weight:900}',
+      '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:3px;color:#728096;font-size:10px;font-weight:900}',
+      '#wishlist160WallControl .wl-pvp-priority-ends span:nth-child(2){text-align:center}',
+      '#wishlist160WallControl .wl-pvp-priority-ends span:last-child{text-align:right}',
       '#wishlist160WallControl .wl-copy-priority-note{margin-top:7px;color:#8793a6;font-size:9px;line-height:1.4;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-help{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:-1px;padding:0;border:1px solid #9bb0ca;border-radius:50%;background:#edf4fc;color:#47709f;font-size:10px;font-weight:1000;line-height:1;cursor:help}',
       '#wishlist160WallControl .wl-copy-priority-help:after{content:attr(data-tooltip);position:absolute;left:calc(100% + 9px);top:50%;z-index:1002;width:250px;max-width:calc(100vw - 205px);box-sizing:border-box;padding:10px 12px;border:1px solid rgba(107,195,238,.42);border-radius:10px;background:linear-gradient(145deg,#202d43,#101827);color:#f3f7ff;font:600 11px/1.55 system-ui,sans-serif;letter-spacing:0;text-align:left;white-space:normal;box-shadow:0 10px 28px rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-50%) translateX(-3px);transition:opacity .08s ease,transform .08s ease,visibility 0s linear .08s}',
@@ -1033,19 +1032,27 @@
       '</div>' +
       '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-160-title wl-pvp-title">PVP 캐릭터 우선도</div>' +
-      '<div class="wl-160-options wl-pvp-options">' +
-        '<button type="button" class="wl-160-button" data-wl-pvp="pvp" aria-pressed="false">PVP 우선</button>' +
-        '<button type="button" class="wl-160-button" data-wl-pvp="solo" aria-pressed="false">솔레 우선</button>' +
-        '<button type="button" class="wl-160-button" data-wl-pvp="exclude" aria-pressed="false">PVP 제외</button>' +
-      '</div>' +
-      '<div class="wl-160-note">PVP 우선도에 따라 3.5 / 5 / 6.5순위 적용</div>' +
+      '<div class="wl-copy-priority-heading"><span>PVP 캐릭터 우선도</span><span class="wl-copy-priority-value" data-wl-pvp-priority-value>솔레 우선</span></div>' +
+      '<input class="wl-copy-priority-slider" data-wl-pvp-priority type="range" min="0" max="2" step="1" value="1" aria-label="PVP 캐릭터 우선도" />' +
+      '<div class="wl-copy-priority-ends wl-pvp-priority-ends"><span>PVP 우선</span><span>솔레 우선</span><span>PVP 제외</span></div>' +
+      '<div class="wl-copy-priority-note">PVP의 추천 순위를 슬라이더로 선택</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
       '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
       '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="위시리스트 추천 우선도" />' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
       '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
     control.addEventListener('input', event => {
+      const pvpSlider = event.target.closest && event.target.closest('[data-wl-pvp-priority]');
+      if(pvpSlider){
+        const value = Number(pvpSlider.value);
+        const modes = ['pvp','solo','exclude'];
+        if(!Number.isInteger(value) || value < 0 || value > 2) return;
+        pvpPriority = modes[value];
+        savePvpPriority();
+        render160WallControl();
+        if(typeof renderWishlist === 'function') renderWishlist();
+        return;
+      }
       const slider = event.target.closest && event.target.closest('[data-wl-copy-priority]');
       if(!slider) return;
       const value = Number(slider.value);
@@ -1055,16 +1062,6 @@
       render160WallControl();
     });
     control.addEventListener('click', event => {
-      const pvpButton = event.target.closest && event.target.closest('[data-wl-pvp]');
-      if(pvpButton){
-        const value = pvpButton.getAttribute('data-wl-pvp');
-        if(!['pvp','solo','exclude'].includes(value)) return;
-        pvpPriority = value;
-        savePvpPriority();
-        render160WallControl();
-        if(typeof renderWishlist === 'function') renderWishlist();
-        return;
-      }
       const button = event.target.closest && event.target.closest('[data-wl-160-wall]');
       if(!button) return;
       const value = button.getAttribute('data-wl-160-wall');
@@ -1093,11 +1090,11 @@
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    control.querySelectorAll('[data-wl-pvp]').forEach(button => {
-      const active = button.getAttribute('data-wl-pvp') === pvpPriority;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
+    const pvpModes = ['pvp','solo','exclude'];
+    const pvpSlider = control.querySelector('[data-wl-pvp-priority]');
+    if(pvpSlider) pvpSlider.value = String(Math.max(0,pvpModes.indexOf(pvpPriority)));
+    const pvpValueLabel = control.querySelector('[data-wl-pvp-priority-value]');
+    if(pvpValueLabel) pvpValueLabel.textContent = ({pvp:'PVP 우선',solo:'솔레 우선',exclude:'PVP 제외'})[pvpPriority] || '솔레 우선';
     const slider = control.querySelector('[data-wl-copy-priority]');
     if(slider) slider.value = String(copyPriority);
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
