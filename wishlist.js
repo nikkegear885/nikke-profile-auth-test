@@ -575,6 +575,25 @@
       '#wishlistPanel .wl-excluded-list{display:flex;flex-direction:column;gap:6px;min-height:45px;padding:0 10px 11px;overflow:auto}',
       '#wishlistPanel .wl-excluded-empty{padding:14px 7px;color:#8a95a5;text-align:center;font-size:11px;line-height:1.6}',
       '#wishlistPanel .wl-excluded-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #e2e7ee;border-radius:8px;background:#fff}',
+      '#wishlistPanel .wl-core7-group{flex:none;overflow:hidden;border:1px solid #cbd8e8;border-radius:9px;background:linear-gradient(135deg,#f7faff,#edf3fa)}',
+      '#wishlistPanel .wl-core7-group>summary{display:flex;align-items:center;gap:8px;min-height:38px;padding:7px 10px;cursor:pointer;list-style:none;color:#354459;font-size:11px;font-weight:900}',
+      '#wishlistPanel .wl-core7-group>summary::-webkit-details-marker{display:none}',
+      '#wishlistPanel .wl-core7-label{flex:1;min-width:0}',
+      '#wishlistPanel .wl-core7-count{flex:none;padding:3px 7px;border:1px solid #c7d9ee;border-radius:999px;background:#e2efff;color:#2468a1;font-size:10px;font-weight:1000;white-space:nowrap}',
+      '#wishlistPanel .wl-core7-chevron{flex:none;color:#73859d;font-size:13px;transition:transform .12s ease}',
+      '#wishlistPanel .wl-core7-group[open] .wl-core7-chevron{transform:rotate(180deg)}',
+      '#wishlistPanel .wl-core7-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:0 8px 8px}',
+      '#wishlistPanel .wl-core7-item{display:flex;align-items:center;gap:6px;min-width:0;padding:5px 7px;border:1px solid #e0e8f2;border-radius:6px;background:rgba(255,255,255,.86)}',
+      '#wishlistPanel .wl-core7-company{flex:none;color:#70829a;font-size:9px;font-weight:800}',
+      '#wishlistPanel .wl-core7-name{min-width:0;overflow-wrap:anywhere;color:#354459;font-size:10px;font-weight:850;line-height:1.35}',
+      'html.dark-theme #wishlistPanel .wl-core7-group{border-color:#354761;background:linear-gradient(135deg,#1b2a40,#121c2d)}',
+      'html.dark-theme #wishlistPanel .wl-core7-group>summary{color:#e7eefb}',
+      'html.dark-theme #wishlistPanel .wl-core7-count{border-color:#34557a;background:#172e49;color:#9fd2ff}',
+      'html.dark-theme #wishlistPanel .wl-core7-chevron{color:#a3b5cd}',
+      'html.dark-theme #wishlistPanel .wl-core7-item{border-color:#354761;background:rgba(12,20,35,.78)}',
+      'html.dark-theme #wishlistPanel .wl-core7-company{color:#9aacc4}',
+      'html.dark-theme #wishlistPanel .wl-core7-name{color:#e4edfb}',
+      '@media(max-width:480px){#wishlistPanel .wl-core7-items{grid-template-columns:1fr}}',
       '#wishlistPanel .wl-excluded-row.is-miranda{padding-top:16px}',
       '#wishlistPanel .wl-excluded-info{position:absolute;top:3px;right:4px;z-index:2;display:flex;align-items:center;justify-content:center;width:11px;height:11px;box-sizing:border-box;border:1px solid #8b9aac;border-radius:50%;background:rgba(246,249,253,.96);color:#65748a;font:italic 900 7px/1 Georgia,serif;text-align:center;cursor:help;box-shadow:0 1px 2px rgba(0,0,0,.08)}',
       '#wishlistPanel .wl-excluded-info:hover{border-color:#168fc5;background:#e9f8ff;color:#087ba8}',
@@ -1182,11 +1201,32 @@
       (companyOrder.get(a.company) ?? 99) - (companyOrder.get(b.company) ?? 99) ||
       a.name.localeCompare(b.name,'ko')
     );
+
+    // Core +7 is a common automatic-exclusion reason, so keep it under one collapsible group.
+    // Manually excluded core +7 characters remain as ordinary rows so their manual "해제" action stays available.
+    const core7Rows = rows.filter(row => row.automaticOnly && row.automaticReason === '코어 강화 7 자동 제외');
+    const core7Names = new Set(core7Rows.map(row => norm(row.name)));
+    const visibleRows = rows.filter(row => !core7Names.has(norm(row.name)));
+
     if(!rows.length){
       list.innerHTML = '<div class="wl-excluded-empty">아직 제외한 니케가 없어.<br>선택창에서 제외 버튼을 눌러 추가해.</div>';
       return;
     }
-    list.innerHTML = rows.map(row => {
+
+    const core7Group = core7Rows.length
+      ? '<details class="wl-core7-group">' +
+          '<summary><span class="wl-core7-label">코어 강화 +7 캐릭터</span>' +
+          '<span class="wl-core7-count">+' + core7Rows.length + '명</span>' +
+          '<span class="wl-core7-chevron" aria-hidden="true">⌄</span></summary>' +
+          '<div class="wl-core7-items">' +
+            core7Rows.map(row =>
+              '<div class="wl-core7-item"><span class="wl-core7-company">' + esc(row.company) + '</span>' +
+              '<span class="wl-core7-name">' + esc(row.name) + '</span></div>'
+            ).join('') +
+          '</div></details>'
+      : '';
+
+    list.innerHTML = core7Group + visibleRows.map(row => {
       const isMiranda = norm(row.name) === norm('미란다');
       const explanation = '시공증 미보유 버프 캐릭터로, 돌파로 인한 데미지 증가량이 미미함.';
       return '<div class="wl-excluded-row' + (isMiranda ? ' is-miranda' : '') + '">' +
