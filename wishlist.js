@@ -133,6 +133,10 @@
   // Do not render these labels or ranks in the Pedia or other UI.
   // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
   // No Elysion PvP candidates have been supplied yet.
+  // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
+  const PVP_WISHLIST_NAMES = new Set(['자칼','센티','드레이크'].map(norm));
+  const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
+
   const WISHLIST_PERFORMANCE_TIERS = [
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름','플로라','토브']},
     {rank:2, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
@@ -193,8 +197,14 @@
       .filter(tier => tier.label === '애장품 성능')
       .flatMap(tier => tier.names.map(norm))
   );
-  function getWishlistPerformancePriority(name){
+  function getBaseWishlistPerformancePriority(name){
     return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
+  }
+  function getWishlistPerformancePriority(name){
+    const base = getBaseWishlistPerformancePriority(name);
+    if(!pvpIncluded) return base;
+    if(PVP_WISHLIST_NAMES.has(norm(name))) return 3;
+    return base >= 3 ? base + 1 : base;
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
   // This rule only affects auto-build; manual picker eligibility and Pedia display remain unchanged.
@@ -416,6 +426,23 @@
 
   let wallStatus = loadWallStatus();
 
+  function activePvpIncludedKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return PVP_INCLUDED_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return PVP_INCLUDED_KEY;
+  }
+  function loadPvpIncluded(){
+    try{ return localStorage.getItem(activePvpIncludedKey()) === 'O' ? 'O' : 'X'; }
+    catch(_){ return 'X'; }
+  }
+  function savePvpIncluded(){
+    try{ localStorage.setItem(activePvpIncludedKey(), pvpIncluded); }catch(_){}
+  }
+  let pvpIncluded = loadPvpIncluded();
+
   function activeCopyPriorityKey(baseKey = COPY_PRIORITY_KEY){
     try{
       if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
@@ -630,7 +657,8 @@
       '#wishlist160WallControl .wl-160-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
       '#wishlist160WallControl .wl-160-button{height:34px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:13px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
       '#wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
-      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
+      '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active,#wishlist160WallControl .wl-160-button[data-wl-pvp="X"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
+      '#wishlist160WallControl .wl-160-button[data-wl-pvp="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
       '#wishlist160WallControl .wl-160-note{margin-top:8px;color:#78869a;font-size:9px;line-height:1.4;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-divider{height:1px;margin:12px 1px 10px;background:#e3e8ef}',
       '#wishlist160WallControl .wl-copy-priority-heading{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px;color:#38465a;font-size:11px;font-weight:1000}',
@@ -917,6 +945,13 @@
       '</div>' +
       '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
+      '<div class="wl-160-title wl-pvp-title">PVP 캐릭 포함 여부</div>' +
+      '<div class="wl-160-options">' +
+        '<button type="button" class="wl-160-button" data-wl-pvp="O" aria-pressed="false">O</button>' +
+        '<button type="button" class="wl-160-button" data-wl-pvp="X" aria-pressed="false">X</button>' +
+      '</div>' +
+      '<div class="wl-160-note">O 선택 시 범용캐 바로 아래 우선 추천</div>' +
+      '<div class="wl-copy-priority-divider"></div>' +
       '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
       '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="위시리스트 추천 우선도" />' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
@@ -931,6 +966,16 @@
       render160WallControl();
     });
     control.addEventListener('click', event => {
+      const pvpButton = event.target.closest && event.target.closest('[data-wl-pvp]');
+      if(pvpButton){
+        const value = pvpButton.getAttribute('data-wl-pvp');
+        if(value !== 'O' && value !== 'X') return;
+        pvpIncluded = value;
+        savePvpIncluded();
+        render160WallControl();
+        if(typeof renderWishlist === 'function') renderWishlist();
+        return;
+      }
       const button = event.target.closest && event.target.closest('[data-wl-160-wall]');
       if(!button) return;
       const value = button.getAttribute('data-wl-160-wall');
@@ -956,6 +1001,11 @@
     control.hidden = !document.body.classList.contains('wishlist-view');
     control.querySelectorAll('[data-wl-160-wall]').forEach(button => {
       const active = button.getAttribute('data-wl-160-wall') === wallStatus;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    control.querySelectorAll('[data-wl-pvp]').forEach(button => {
+      const active = button.getAttribute('data-wl-pvp') === pvpIncluded;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
@@ -1378,7 +1428,7 @@
           if(isManuallyExcludedCharacter(name) || getCoreEnhancement(name) >= 7) return false;
           if(!favorite && shouldExcludeFromAutoWishlist(name)) return false;
           if(copyPriority === 1 && !favorite){
-            const priority = getWishlistPerformancePriority(name);
+            const priority = getBaseWishlistPerformancePriority(name);
             const breakthrough = getBreakthrough(name);
             // Favourite units bypass this stage limit, except Core +7 units handled above.
             return priority <= 6 || isTreasurePerformanceBelowTwo(name, breakthrough);
@@ -1760,6 +1810,7 @@
         favoriteCharacters = loadFavoriteCharacters();
         savedFavoriteCharacters = favoriteCharacters.slice();
         wallStatus = loadWallStatus();
+        pvpIncluded = loadPvpIncluded();
         copyPriority = loadCopyPriority();
         renderAccountSwitcher();
         render160WallControl();
