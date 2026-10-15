@@ -311,12 +311,9 @@
       return unowned ? rank : rank + 10;
     }
 
-    // Rank 6: Solo Raid; rank 8: first-copy recommendations, immediately after the PVP tier.
+    // Rank 6: Solo Raid; rank 8: the single namecard recommendation tier, after the Solo-priority PVP position.
     if(isSoloRaid) return unowned ? 6 : 16;
-    if(isNamecard){
-      const rank = pvpPriority === 'pvp' ? 7 : 9;
-      return unowned ? rank : rank + 10;
-    }
+    if(isNamecard) return unowned ? 8 : 18;
 
     // Rank 10: collection-only characters, included only in collection mode.
     if(isCollection && stage === 2) return unowned ? 10 : 20;
