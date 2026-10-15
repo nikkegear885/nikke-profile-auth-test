@@ -1481,8 +1481,8 @@
     if(pickerSlot === null || !pickerCompany || !panel) return;
     const backdrop = panel.querySelector('[data-wl-picker-backdrop]');
     if(!backdrop || backdrop.hidden || backdrop.contains(event.target)) return;
-    // Row-level company picker clicks are handled inside the panel.
-    if(event.target && event.target.closest && event.target.closest('.wl-row-select-trigger')) return;
+    // Opening clicks from either a slot tile or the row-wide target must not immediately close the picker.
+    if(event.target && event.target.closest && event.target.closest('.wl-slot, .wl-row-select-trigger')) return;
     closeCharacterPicker();
   }
 
