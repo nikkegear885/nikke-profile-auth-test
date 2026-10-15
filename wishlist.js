@@ -211,6 +211,10 @@
       '#wishlistPanel .wl-picker-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-top:1px solid #dde3ec;background:#f0f3f7;color:#707b8b;font-size:11px}',
       '#wishlistPanel .wl-picker-clear{flex:none;padding:8px 12px;border:1px solid #d7a9ad;border-radius:7px;background:#fff5f5;color:#b3434a;font-size:12px;font-weight:900;cursor:pointer}',
       '#wishlistPanel .wl-picker-empty{grid-column:1/-1;padding:28px 10px;text-align:center;color:#758196;font-size:13px}',
+      '#wishlistPanel .wl-auto-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;padding:5px 8px 9px}',
+      '#wishlistPanel .wl-auto-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:32px;padding:7px 14px;border:1px solid #1597ca;border-radius:7px;background:linear-gradient(180deg,#19b5ed,#079bd7);color:#fff;font-size:12px;font-weight:1000;cursor:pointer;box-shadow:0 2px 4px rgba(0,110,160,.15)}',
+      '#wishlistPanel .wl-auto-button:hover{filter:brightness(1.04);transform:translateY(-1px)}',
+      '#wishlistPanel .wl-auto-note{flex-basis:100%;text-align:center;color:#7a8490;font-size:9px;line-height:1.35}',
       '#wishlistPanel .wl-status{flex:none;padding:0 12px 6px;text-align:right;color:#80858b;font-size:9px}',
       '#wishlistPanel .wl-footer{display:flex;justify-content:center;gap:16px;flex:none;padding:5px 12px 6px;border-top:1px solid #dedede;background:#f8f8f8}',
       '#wishlistPanel .wl-action{display:flex;align-items:center;justify-content:center;gap:7px;width:clamp(120px,25%,220px);min-height:42px;border-radius:6px;font-size:16px;font-weight:1000;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.12)}',
@@ -253,6 +257,10 @@
         '<div class="wl-intro">' +
           '<p>대원 모집에서 <span class="wl-blue">SSR 니케를 획득</span>하면<br>더 높은 확률로 위시리스트에 등록한 니케를 획득할 수 있습니다.</p>' +
           '<p class="wl-subline">(SSR 니케 모집 총 확률은 변하지 않습니다)</p>' +
+        '</div>' +
+        '<div class="wl-auto-toolbar">' +
+          '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 계정 상태로 자동 편성</button>' +
+          '<div class="wl-auto-note">임시 기준: 미보유 우선 → 낮은 돌파 → 이름순 · 도감 전체가 후보이므로 모집 제외 니케가 포함될 수 있습니다.</div>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
         '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
@@ -396,6 +404,32 @@
     if(event.key === 'Escape' && pickerSlot !== null) closeCharacterPicker();
   }
 
+  function autoBuildWishlist(){
+    const all = getAllCharacters();
+    if(!all.length){
+      alert('캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    COMPANIES.forEach(company => {
+      const candidates = getCharactersForCompany(company).slice();
+      candidates.sort((a,b) => {
+        const aName = String(a['이름'] || '').trim();
+        const bName = String(b['이름'] || '').trim();
+        const aUnowned = isMarkedUnowned(aName);
+        const bUnowned = isMarkedUnowned(bName);
+        if(aUnowned !== bUnowned) return aUnowned ? -1 : 1;
+        if(!aUnowned){
+          const breakthroughDiff = getBreakthrough(aName) - getBreakthrough(bName);
+          if(breakthroughDiff) return breakthroughDiff;
+        }
+        return aName.localeCompare(bName,'ko');
+      });
+      picks[company] = candidates.slice(0,5).map(row => String(row['이름'] || '').trim());
+      while(picks[company].length < 5) picks[company].push('');
+    });
+    renderWishlist();
+  }
+
   function renderWishlist(){
     const activePanel = ensurePanel();
     if(!activePanel) return;
@@ -439,6 +473,11 @@
   }
 
   function onPanelClick(event){
+    const autoBuildButton = event.target.closest && event.target.closest('[data-wl-auto-build]');
+    if(autoBuildButton){
+      autoBuildWishlist();
+      return;
+    }
     const closePicker = event.target.closest && event.target.closest('[data-wl-picker-close]');
     const backdrop = event.target.closest && event.target.closest('[data-wl-picker-backdrop]');
     if(closePicker || (backdrop && event.target === backdrop)){
