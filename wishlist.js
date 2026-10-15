@@ -137,6 +137,8 @@
   // Only characters explicitly designated by the user as PVP candidates.
   // Missilis: 트리나, 자칼, 센티. Elysion: none supplied.
   const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업'].map(norm));
+  // Laplace is moved into the PVP/Solo Raid tier, but is the lowest-priority character within the PVP-enabled ordering.
+  const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
   const WISHLIST_PERFORMANCE_TIERS = [
@@ -146,12 +148,12 @@
     {rank:4, label:'솔레 명함 추천 = PVP', names:[
       '아르카나','솔린 : 프로스트 티켓',
       '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
-      '아르카나 : 포츈 메이트','베스티 : 택티컬 업','트리나','자칼','센티'
+      '아르카나 : 포츈 메이트','베스티 : 택티컬 업','트리나','자칼','센티','리타','라플라스'
     ]},
     {rank:5, label:'애장품 비성능', names:[]},
     {rank:6, label:'명함 추천', names:[
       'D : 킬러 와이프','은화 : 택티컬 업','델타 : 닌자 시프',
-      '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','라플라스','리타','마나','페퍼','티아','나가'
+      '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','마나','페퍼','티아','나가'
     ]},
     {rank:7, label:'0.01%라도 사용 가능성', names:['엠마 : 택티컬 업']},
     {rank:8, label:'도감용', names:[
@@ -206,6 +208,7 @@
     const base = getBaseWishlistPerformancePriority(name);
     if(!pvpIncluded) return base;
     if(PVP_WISHLIST_NAMES.has(norm(name))) return 3;
+    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return 3.5;
     return base >= 3 ? base + 1 : base;
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
@@ -1429,6 +1432,10 @@
           const favorite = isFavoriteCharacter(name);
           if(isManuallyExcludedCharacter(name) || getCoreEnhancement(name) >= 7) return false;
           if(!favorite && shouldExcludeFromAutoWishlist(name)) return false;
+          // In "필수캐 우선" mode, do not spend slots on already-broken-through general-purpose units.
+          // Their first copy is useful, but 1★+ general-purpose candidates should yield to unfilled higher-priority targets.
+          if(copyPriority === 0 && !favorite &&
+             getBaseWishlistPerformancePriority(name) === 2 && getBreakthrough(name) >= 1) return false;
           if(copyPriority === 1 && !favorite){
             const priority = getBaseWishlistPerformancePriority(name);
             const breakthrough = getBreakthrough(name);
@@ -1460,10 +1467,14 @@
         const aGroup = getCopyPrioritySortGroup(aName,aPerformancePriority,aBreakthrough,aUnowned);
         const bGroup = getCopyPrioritySortGroup(bName,bPerformancePriority,bBreakthrough,bUnowned);
 
-        // In "필수캐 우선" mode, the selected performance tier must outrank the
-        // generic 160-wall 1–2 breakthrough boost; otherwise 1★ general-purpose units
-        // can be placed ahead of required units simply because wallStatus is X.
-        if(copyPriority === 0 && aGroup !== bGroup) return aGroup - bGroup;
+        // In "필수캐 우선" mode, compare both recommendation group and performance rank
+        // before applying the generic 160-wall 1–2 breakthrough boost.
+        // Previously only group differences were checked here, so same-group general units
+        // with 1–2 breakthroughs could jump ahead of higher-ranked characters.
+        if(copyPriority === 0){
+          if(aGroup !== bGroup) return aGroup - bGroup;
+          if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
+        }
 
         if(wallStatus === 'X' && company !== '필그림'){
           // 160벽 X 선택 시 10단계 중 1돌파·2돌파만 우선 추천한다.
