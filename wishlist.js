@@ -5,6 +5,7 @@
   const COMPANIES = ['엘리시온','미실리스','테트라','필그림'];
   const STORAGE_KEY = 'nikke_wishlist_recommendations_v1';
   const EXCLUDED_STORAGE_KEY = 'nikke_wishlist_excluded_characters_v1';
+  const FAVORITE_STORAGE_KEY = 'nikke_wishlist_favorite_characters_v1';
   const EXCLUDED_HELM_MIGRATED_KEY = 'nikke_wishlist_helm_conditional_migrated_v1';
   const IMAGE_URL = 'assets/nikke-pedia-master.json?v=1047';
   const norm = value => String(value == null ? '' : value)
@@ -232,6 +233,8 @@
   let savedPicks = clonePicks(picks);
   let excludedCharacters = loadExcludedCharacters();
   let savedExcludedCharacters = excludedCharacters.slice();
+  let favoriteCharacters = loadFavoriteCharacters();
+  let savedFavoriteCharacters = favoriteCharacters.slice();
   let imageMap = new Map();
   let imageLoadPromise = null;
   let panel = null;
@@ -256,6 +259,31 @@
       }
     }catch(_){}
     return EXCLUDED_STORAGE_KEY;
+  }
+
+  function activeFavoriteStorageKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return FAVORITE_STORAGE_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return FAVORITE_STORAGE_KEY;
+  }
+
+  function loadFavoriteCharacters(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(activeFavoriteStorageKey()) || '[]');
+      const source = Array.isArray(raw) ? raw : [];
+      const seen = new Set();
+      return source.map(name => String(name || '').trim()).filter(name => {
+        const key = norm(name);
+        if(!name || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }catch(_){
+      return [];
+    }
   }
 
   function activeExcludedHelmMigratedKey(){
@@ -309,13 +337,27 @@
     return isManuallyExcludedCharacter(name) || !!getAutomaticExclusionReason(name);
   }
 
-  function toggleExcludedCharacter(name){
+  function isFavoriteCharacter(name){
+    const key = norm(name);
+    return !!key && favoriteCharacters.some(value => norm(value) === key);
+  }
+
+  function getCharacterStatus(name){
+    if(isManuallyExcludedCharacter(name)) return 'excluded';
+    if(isFavoriteCharacter(name)) return 'favorite';
+    return 'normal';
+  }
+
+  // Cycle: normal -> excluded -> favourite -> normal.
+  function cycleCharacterStatus(name){
     const canonical = String(name || '').trim();
     if(!canonical) return;
+    const current = getCharacterStatus(canonical);
     const key = norm(canonical);
-    const index = excludedCharacters.findIndex(value => norm(value) === key);
-    if(index >= 0) excludedCharacters.splice(index,1);
-    else excludedCharacters.push(canonical);
+    excludedCharacters = excludedCharacters.filter(value => norm(value) !== key);
+    favoriteCharacters = favoriteCharacters.filter(value => norm(value) !== key);
+    if(current === 'normal') excludedCharacters.push(canonical);
+    else if(current === 'excluded') favoriteCharacters.push(canonical);
   }
 
   const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
@@ -422,8 +464,10 @@
     try{
       localStorage.setItem(activePicksStorageKey(), JSON.stringify(picks));
       localStorage.setItem(activeExcludedStorageKey(), JSON.stringify(excludedCharacters));
+      localStorage.setItem(activeFavoriteStorageKey(), JSON.stringify(favoriteCharacters));
       savedPicks = clonePicks(picks);
       savedExcludedCharacters = excludedCharacters.slice();
+      savedFavoriteCharacters = favoriteCharacters.slice();
       return true;
     }catch(_){
       return false;
@@ -666,9 +710,13 @@
       '#wishlistPanel .wl-picker-item{position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:8px 5px;border:1px solid #dce2ea;border-radius:9px;background:#fff;color:#333b49;cursor:pointer;transition:border-color .12s,background .12s,transform .12s}',
       '#wishlistPanel .wl-picker-item:hover:not(:disabled){transform:translateY(-1px);border-color:#37a8d7;background:#f0faff}',
       '#wishlistPanel .wl-picker-item.is-current{border:2px solid #149fd6;padding:7px 4px;background:#e9f8ff}',
+      '#wishlistPanel .wl-picker-item.is-manual-excluded{border-color:#e45b70;background:#fff0f2}',
+      '#wishlistPanel .wl-picker-item.is-favorite{border-color:#d5a33b;background:#fff8e7}',
       '#wishlistPanel .wl-picker-item:disabled{opacity:.36;cursor:not-allowed;filter:grayscale(.7)}',
       '#wishlistPanel .wl-picker-photo{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;width:72px;height:auto;overflow:visible;border-radius:7px;background:transparent}',
       '#wishlistPanel .wl-picker-image-wrap{position:relative;display:block;flex:none;width:72px;height:72px;overflow:hidden;border-radius:7px;background:#e6ebf2}',
+      '#wishlistPanel .wl-picker-state-marker{position:absolute;left:2px;top:2px;z-index:8;padding:3px 5px;border-radius:4px;background:rgba(195,43,67,.94);color:#fff;font-size:9px;font-weight:1000;line-height:1.1;box-shadow:0 1px 3px rgba(0,0,0,.28);pointer-events:none}',
+      '#wishlistPanel .wl-picker-state-marker.is-favorite{background:rgba(155,104,15,.95);color:#fff7d6}',
       '#wishlistPanel .wl-picker-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}',
       '#wishlistPanel .wl-picker-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:#738093;font-size:24px;font-weight:900}',
       '#wishlistPanel .wl-picker-name{width:100%;min-height:2.5em;overflow-wrap:anywhere;text-align:center;font-size:11px;font-weight:900;line-height:1.25}',
@@ -684,7 +732,14 @@
       '#wishlistPanel .wl-excluded-title{font-size:13px;font-weight:1000;color:#354459}',
       '#wishlistPanel .wl-excluded-count{flex:none;padding:3px 7px;border-radius:999px;background:#e8edf4;color:#536175;font-size:10px;font-weight:1000}',
       '#wishlistPanel .wl-excluded-note{padding:9px 13px 7px;color:#6f7c8f;font-size:10px;line-height:1.5}',
-      '#wishlistPanel .wl-excluded-list{display:flex;flex-direction:column;gap:6px;min-height:45px;padding:0 10px 11px;overflow:auto}',
+      '#wishlistPanel .wl-excluded-list{display:flex;flex-direction:column;gap:6px;min-height:36px;max-height:min(34vh,300px);padding:0 10px 11px;overflow:auto}',
+      '#wishlistPanel .wl-favorite-section{flex:none;border-top:1px solid #e1e6ed}',
+      '#wishlistPanel .wl-favorite-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 13px;border-bottom:1px solid #e1e6ed;background:linear-gradient(135deg,#fff,#fff4dc)}',
+      '#wishlistPanel .wl-favorite-count{flex:none;padding:3px 7px;border-radius:999px;background:#f7e5b8;color:#8e6411;font-size:10px;font-weight:1000}',
+      '#wishlistPanel .wl-favorite-list{display:flex;flex-direction:column;gap:6px;min-height:32px;max-height:min(24vh,200px);padding:8px 10px 11px;overflow:auto}',
+      '#wishlistPanel .wl-favorite-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #ead9ad;border-radius:8px;background:#fffaf0}',
+      '#wishlistPanel .wl-favorite-remove{flex:none;padding:5px 7px;border:1px solid #dbc78e;border-radius:6px;background:#fff3d0;color:#846018;font-size:10px;font-weight:1000;cursor:pointer}',
+      '#wishlistPanel .wl-favorite-remove:hover{border-color:#b98b29;background:#ffebad}',
       '#wishlistPanel .wl-excluded-empty{padding:14px 7px;color:#8a95a5;text-align:center;font-size:11px;line-height:1.6}',
       '#wishlistPanel .wl-excluded-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #e2e7ee;border-radius:8px;background:#fff}',
       '#wishlistPanel .wl-core7-group{flex:none;overflow:hidden;border:1px solid #cbd8e8;border-radius:9px;background:linear-gradient(135deg,#f7faff,#edf3fa)}',
@@ -727,6 +782,11 @@
       'html.dark-theme #wishlistPanel .wl-excluded-count{background:#27364c;color:#cbd6e6}',
       'html.dark-theme #wishlistPanel .wl-excluded-note,html.dark-theme #wishlistPanel .wl-excluded-empty{color:#9aa9be}',
       'html.dark-theme #wishlistPanel .wl-excluded-row{border-color:#354761;background:#101a2b}',
+      'html.dark-theme #wishlistPanel .wl-favorite-section{border-color:#354761}',
+      'html.dark-theme #wishlistPanel .wl-favorite-head{border-color:#354761;background:linear-gradient(135deg,#302817,#211b12)}',
+      'html.dark-theme #wishlistPanel .wl-favorite-count{background:#59461f;color:#ffe7a1}',
+      'html.dark-theme #wishlistPanel .wl-favorite-row{border-color:#66532d;background:#201b12}',
+      'html.dark-theme #wishlistPanel .wl-favorite-remove{border-color:#6c572d;background:#3c3018;color:#ffe7a1}',
       'html.dark-theme #wishlistPanel .wl-excluded-info{border-color:#65758d;background:#192538;color:#cbd8ea}',
       'html.dark-theme #wishlistPanel .wl-excluded-info:hover{border-color:#5ab9df;background:#203b50;color:#bdeaff}',
       'html.dark-theme #wishlistPanel .wl-excluded-info:after{border-color:#3b4960;background:linear-gradient(145deg,#243249,#121b2b);color:#f3f7ff}',
@@ -750,7 +810,7 @@
       '#wishlistPanel .wl-cancel{border:2px solid #aaa;background:#fff;color:#343434}',
       '#wishlistPanel .wl-confirm{border:2px solid #0da5e2;background:#0ba8eb;color:white}',
       '#wishlistPanel .wl-action:hover{filter:brightness(.97);transform:translateY(-1px)}',
-      '@media(max-width:1000px){#wishlistPanel .wl-excluded-panel{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;max-height:none;margin:12px auto 0}#wishlistPanel .wl-excluded-list{max-height:260px}}',
+      '@media(max-width:1000px){#wishlistPanel .wl-excluded-panel{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;max-height:none;margin:12px auto 0}#wishlistPanel .wl-excluded-list{max-height:260px}#wishlistPanel .wl-favorite-list{max-height:200px}}',
       '@media(max-width:650px){#wishlistPanel{width:100%;margin:0 auto 12px}#wishlistPanel .wl-dialog{width:100%;height:auto;border-radius:10px}#wishlistPanel .wl-modal-head{min-height:27px;padding:3px 6px}#wishlistPanel .wl-modal-title{font-size:11px;gap:4px}#wishlistPanel .wl-refresh-icon{width:17px;height:17px;border-width:2px}#wishlistPanel .wl-intro{padding:3px 4px;font-size:9px;line-height:1.2}#wishlistPanel .wl-intro .wl-subline{font-size:8px;margin-top:2px}#wishlistPanel .wl-company-list{gap:6px;padding:2px 7px 6px}#wishlistPanel .wl-company-head{min-height:41px;padding:4px 34px}#wishlistPanel .wl-company-symbol{height:25px;font-size:30px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-info{width:20px;height:20px;right:6px;font-size:14px}#wishlistPanel .wl-slots{gap:4px;padding:12px 5px 15px}#wishlistPanel .wl-slot{aspect-ratio:1 / 1;border-radius:4px}#wishlistPanel .wl-corner-mark{width:16px;height:18px;font-size:9px}#wishlistPanel .wl-selected-name{padding:14px 2px 7px;font-size:7px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:1px 2px;font-size:7px;min-width:14px}#wishlistPanel .wl-plus{font-size:28px}#wishlistPanel .wl-empty-mark{gap:1px;padding:2px;font-size:7px}#wishlistPanel .wl-footer{gap:8px;padding:5px 8px 6px}#wishlistPanel .wl-action{width:42%;min-height:36px;font-size:13px}}',
       '@media(max-width:380px){#wishlistPanel .wl-company-list{padding-left:6px;padding-right:6px}#wishlistPanel .wl-slots{gap:4px;padding-left:5px;padding-right:5px}#wishlistPanel .wl-selected-name{font-size:8px}}'
     ].join('\n');
@@ -902,15 +962,19 @@
       '</div>' +
       '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="자동편성 제외 캐릭터">' +
         '<div class="wl-excluded-head"><div class="wl-excluded-title">자동편성 제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
-        '<div class="wl-excluded-note">이 목록의 니케는 자동 편성 후보에서 제외돼. 니케 선택창에서 <b>제외</b>를 눌러 추가할 수 있어.</div>' +
-        '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">아직 제외한 니케가 없어.</div></div>' +
+        '<div class="wl-excluded-note">캐릭터 사진을 눌러 상태를 <b>기본 → 제외 → 애정캐 → 기본</b> 순서로 변경해.</div>' +
+        '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
+        '<div class="wl-favorite-section">' +
+          '<div class="wl-favorite-head"><div class="wl-excluded-title">애정캐</div><span class="wl-favorite-count" data-wl-favorite-count>0명</span></div>' +
+          '<div class="wl-favorite-list" data-wl-favorite-list><div class="wl-excluded-empty">애정캐로 지정한 니케가 없어.</div></div>' +
+        '</div>' +
       '</aside>' +
       '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>' +
         '<div class="wl-picker-dialog" role="region" aria-labelledby="wlPickerTitle">' +
-          '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">니케 선택</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="닫기">×</button></div>' +
+          '<div class="wl-picker-head"><h3 class="wl-picker-title" id="wlPickerTitle">니케 상태 설정</h3><button type="button" class="wl-picker-close" data-wl-picker-close aria-label="접기">×</button></div>' +
           '<div class="wl-picker-search-wrap"><input type="search" class="wl-picker-search" data-wl-picker-search placeholder="니케 이름 검색" aria-label="니케 이름 검색" autocomplete="off"></div>' +
           '<div class="wl-picker-grid" data-wl-picker-grid></div>' +
-          '<div class="wl-picker-foot"><span>이미 다른 칸에 선택한 니케는 중복 선택할 수 없습니다.</span><button type="button" class="wl-picker-clear" data-wl-picker-clear>이 칸 비우기</button></div>' +
+          '<div class="wl-picker-foot"><span>캐릭터를 누를 때마다 기본 → 제외 → 애정캐 → 기본으로 바뀝니다.</span></div>' +
         '</div>' +
       '</div>' +
     '</section>';
@@ -1179,8 +1243,6 @@
     const search = backdrop && backdrop.querySelector('[data-wl-picker-search]');
     if(!grid || !backdrop || backdrop.hidden) return;
     const query = norm(search ? search.value : '');
-    const current = picks[company][pickerSlot] || '';
-    const selectedElsewhere = new Set(picks[company].filter((value,index) => index !== pickerSlot && value).map(norm));
     const characters = getCharactersForCompany(company).filter(row => {
       const name = String(row['이름'] || '').trim();
       return name && (!query || norm(name).includes(query));
@@ -1192,31 +1254,40 @@
     grid.innerHTML = characters.map(row => {
       const name = String(row['이름'] || '').trim();
       const image = findImage(name);
-      const duplicate = selectedElsewhere.has(norm(name));
-      const isCurrent = !!current && norm(current) === norm(name);
       const unowned = isMarkedUnowned(name);
       const breakthrough = getBreakthrough(name);
       const core = getCoreEnhancement(name);
       const manualExcluded = isManuallyExcludedCharacter(name);
+      const favorite = isFavoriteCharacter(name);
+      const status = manualExcluded ? 'excluded' : favorite ? 'favorite' : 'normal';
       const automaticReason = getAutomaticExclusionReason(name);
-      const excluded = manualExcluded || !!automaticReason;
       const photo = image
         ? '<img src="' + esc(image) + '" alt="" loading="lazy" draggable="false">'
-        : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>' ;
+        : '<span class="wl-picker-placeholder">' + esc(name.slice(0,1)) + '</span>';
       const stars = Array.from({length:3},(_,i) =>
         '<span class="' + (i < breakthrough ? 'wl-star-filled' : 'wl-star-empty') + '">' + (i < breakthrough ? '★' : '☆') + '</span>'
       ).join('');
-      const statusLabel = unowned ? '미보유' : '돌파 ' + breakthrough + ', 코강 ' + core;
+      const statusLabel = status === 'excluded' ? '제외' : status === 'favorite' ? '애정캐' : '기본';
+      const marker = status === 'excluded'
+        ? '<span class="wl-picker-state-marker" aria-label="제외">제외</span>'
+        : status === 'favorite'
+          ? '<span class="wl-picker-state-marker is-favorite" aria-label="애정캐">애정캐</span>'
+          : '';
+      const statusHint = unowned ? ' · 미보유' : '';
+      const autoHint = automaticReason ? ' · ' + automaticReason : '';
+      const statusClasses = (status === 'excluded' ? ' is-manual-excluded' : '') +
+        (status === 'favorite' ? ' is-favorite' : '');
       const photoWithStatus = '<span class="wl-picker-image-wrap">' + photo +
         (unowned ? '' : '<span class="wl-promotion-stars" aria-label="' + breakthrough + '돌파">' + stars + '</span>') +
         (!unowned && core > 0 ? '<span class="wl-core-enhancement" aria-label="코어 강화 +' + core + '">+' + core + '</span>' : '') +
+        marker +
         '</span>' + (unowned ? '<span class="wl-picker-unowned">미보유</span>' : '');
-      return '<div class="wl-picker-item' + (isCurrent ? ' is-current' : '') + (unowned ? ' is-unowned' : '') + (excluded ? ' is-excluded' : '') + '">' +
-        '<button type="button" class="wl-picker-choice" data-wl-pick-name="' + esc(name) + '"' + (duplicate ? ' disabled' : '') + ' aria-label="' + esc(name + ', ' + statusLabel) + '">' +
+      return '<div class="wl-picker-item' + statusClasses + (unowned ? ' is-unowned' : '') + '">' +
+        '<button type="button" class="wl-picker-choice" data-wl-status-name="' + esc(name) + '" aria-label="' +
+          esc(name + ', 현재 상태 ' + statusLabel + statusHint + autoHint + '. 누르면 다음 상태로 변경') + '">' +
           '<span class="wl-picker-photo">' + photoWithStatus + '</span>' +
           '<span class="wl-picker-name">' + esc(name) + '</span>' +
         '</button>' +
-        '<button type="button" class="wl-picker-exclude' + (manualExcluded || automaticReason ? ' is-excluded' : '') + '" data-wl-exclude-name="' + esc(name) + '" aria-pressed="' + (excluded ? 'true' : 'false') + '"' + (automaticReason && !manualExcluded ? ' disabled data-wl-hover-text="' + esc(automaticReason) + '"' : '') + '>' + (manualExcluded ? '제외 해제' : automaticReason || '제외') + '</button>' +
       '</div>';
     }).join('');
   }
@@ -1255,15 +1326,28 @@
       alert('캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
       return;
     }
+    const overLimitFavorites = COMPANIES.map(company => ({
+      company,
+      names: getCharactersForCompany(company)
+        .map(row => String(row['이름'] || '').trim())
+        .filter(name => isFavoriteCharacter(name) && getCoreEnhancement(name) < 7 && !isManuallyExcludedCharacter(name))
+    })).find(item => item.names.length > 5);
+    if(overLimitFavorites){
+      alert(overLimitFavorites.company + '의 애정캐가 ' + overLimitFavorites.names.length +
+        '명이라 위시리스트 5칸을 초과했습니다. 애정캐를 5명 이하로 줄인 뒤 다시 자동 편성해 주세요.');
+      return;
+    }
     COMPANIES.forEach(company => {
       const candidates = getCharactersForCompany(company)
         .filter(row => {
           const name = String(row['이름'] || '').trim();
-          if(isExcludedCharacter(name) || shouldExcludeFromAutoWishlist(name)) return false;
-          if(copyPriority === 1){
+          const favorite = isFavoriteCharacter(name);
+          if(isManuallyExcludedCharacter(name) || getCoreEnhancement(name) >= 7) return false;
+          if(!favorite && shouldExcludeFromAutoWishlist(name)) return false;
+          if(copyPriority === 1 && !favorite){
             const priority = getWishlistPerformancePriority(name);
             const breakthrough = getBreakthrough(name);
-            // Stage 2 stops at "명함 추천", except treasure-item performance characters below 2 breakthrough.
+            // Favourite units bypass this stage limit, except Core +7 units handled above.
             return priority <= 6 || isTreasurePerformanceBelowTwo(name, breakthrough);
           }
           return true;
@@ -1273,6 +1357,9 @@
         const bName = String(b['이름'] || '').trim();
         const aBreakthrough = getBreakthrough(aName);
         const bBreakthrough = getBreakthrough(bName);
+        const aFavorite = isFavoriteCharacter(aName);
+        const bFavorite = isFavoriteCharacter(bName);
+        if(aFavorite !== bFavorite) return aFavorite ? -1 : 1;
         if(wallStatus === 'X' && company !== '필그림'){
           // 160벽 X 선택 시 10단계 중 1돌파·2돌파만 최우선으로 추천한다.
           // 3돌파와 코어 강화 1~7은 이 우선 그룹에 포함하지 않는다.
@@ -1354,7 +1441,7 @@
         '<div class="wl-company-head">' +
           '<div class="wl-company-brand"><span class="wl-company-symbol" aria-hidden="true">' + esc(COMPANY_SYMBOLS[company] || '◇') + '</span>' +
           '<span class="wl-company-name">' + esc(company) + '</span></div>' +
-          '<button type="button" class="wl-info" data-wl-hover-text="' + esc(company + ' 위시리스트 니케를 5명까지 선택할 수 있습니다.') + '" aria-label="' + esc(company + ' 안내') + '">i</button>' +
+          '<button type="button" class="wl-info" data-wl-hover-text="' + esc(company + ' 위시리스트 니케를 5명까지 추천합니다. 사진을 눌러 제외/애정캐 상태를 바꿀 수 있습니다.') + '" aria-label="' + esc(company + ' 안내') + '">i</button>' +
         '</div>' +
         '<div class="wl-slots">' + Array.from({length:5},(_,slot) => buildSlot(company,slot,characters)).join('') + '</div>' +
       '</section>';
@@ -1377,17 +1464,20 @@
     renderExcludedCharacters();
     const status = activePanel.querySelector('#wishlistSavedStatus');
     const changed = JSON.stringify(picks) !== JSON.stringify(savedPicks) ||
-      JSON.stringify(excludedCharacters) !== JSON.stringify(savedExcludedCharacters);
+      JSON.stringify(excludedCharacters) !== JSON.stringify(savedExcludedCharacters) ||
+      JSON.stringify(favoriteCharacters) !== JSON.stringify(savedFavoriteCharacters);
     if(status) status.textContent = (changed ? '변경 사항 있음 · 결정 버튼을 눌러 저장' : '저장된 위시리스트') +
       ' · ' + COMPANIES.reduce((sum,company) => sum + picks[company].filter(Boolean).length,0) + ' / 20명' +
-      ' · 제외 ' + excludedCharacters.length + '명';
+      ' · 제외 ' + excludedCharacters.length + '명 · 애정캐 ' + favoriteCharacters.length + '명';
   }
 
   function renderExcludedCharacters(){
     const pane = panel && panel.querySelector('#wishlistExcludedPanel');
     const list = pane && pane.querySelector('[data-wl-excluded-list]');
     const count = pane && pane.querySelector('[data-wl-excluded-count]');
-    if(!pane || !list) return;
+    const favoriteList = pane && pane.querySelector('[data-wl-favorite-list]');
+    const favoriteCount = pane && pane.querySelector('[data-wl-favorite-count]');
+    if(!pane || !list || !favoriteList) return;
     const automaticNames = getAllCharacters()
       .map(row => String(row && row['이름'] || '').trim())
       .filter(name => name && !!getAutomaticExclusionReason(name));
@@ -1413,17 +1503,9 @@
       a.name.localeCompare(b.name,'ko')
     );
 
-    // Core +7 is a common automatic-exclusion reason, so keep it under one collapsible group.
-    // Manually excluded core +7 characters remain as ordinary rows so their manual "해제" action stays available.
     const core7Rows = rows.filter(row => row.automaticOnly && row.automaticReason === '코어 강화 7 자동 제외');
     const core7Names = new Set(core7Rows.map(row => norm(row.name)));
     const visibleRows = rows.filter(row => !core7Names.has(norm(row.name)));
-
-    if(!rows.length){
-      list.innerHTML = '<div class="wl-excluded-empty">아직 제외한 니케가 없어.<br>선택창에서 제외 버튼을 눌러 추가해.</div>';
-      return;
-    }
-
     const core7Group = core7Rows.length
       ? '<details class="wl-core7-group">' +
           '<summary><span class="wl-core7-label">코어 강화 +7 캐릭터</span>' +
@@ -1436,20 +1518,40 @@
             ).join('') +
           '</div></details>'
       : '';
+    if(!rows.length){
+      list.innerHTML = '<div class="wl-excluded-empty">제외된 니케가 없어.</div>';
+    }else{
+      list.innerHTML = core7Group + visibleRows.map(row => {
+        const isMiranda = norm(row.name) === norm('미란다');
+        const explanation = '시공증 미보유 버프 캐릭터로, 돌파로 인한 데미지 증가량이 미미함.';
+        return '<div class="wl-excluded-row' + (isMiranda ? ' is-miranda' : '') + '">' +
+          (isMiranda ? '<span class="wl-excluded-info" data-tooltip="' + esc(explanation) + '" tabindex="0" role="note" aria-label="미란다 설명">i</span>' : '') +
+          '<div class="wl-excluded-identity"><span class="wl-excluded-company">' + esc(row.company) + '</span>' +
+          '<span class="wl-excluded-name">' + esc(row.name) + '</span>' +
+          (row.automaticOnly ? '<span class="wl-excluded-reason">' + esc(row.automaticReason) + '</span>' : '') + '</div>' +
+          (row.automaticOnly
+            ? '<span class="wl-auto-exclusion-pill" data-wl-hover-text="' + esc(row.automaticReason) + '">자동 제외</span>'
+            : '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" data-wl-hover-text="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>') +
+        '</div>';
+      }).join('');
+    }
 
-    list.innerHTML = core7Group + visibleRows.map(row => {
-      const isMiranda = norm(row.name) === norm('미란다');
-      const explanation = '시공증 미보유 버프 캐릭터로, 돌파로 인한 데미지 증가량이 미미함.';
-      return '<div class="wl-excluded-row' + (isMiranda ? ' is-miranda' : '') + '">' +
-        (isMiranda ? '<span class="wl-excluded-info" data-tooltip="' + esc(explanation) + '" tabindex="0" role="note" aria-label="미란다 설명">i</span>' : '') +
+    const favoriteRows = favoriteCharacters.map(name => {
+      const row = all.find(item => norm(item['이름']) === norm(name));
+      return {name,company:row ? String(row['기업'] || '') : '기업 미상',core:getCoreEnhancement(name)};
+    }).sort((a,b) =>
+      (companyOrder.get(a.company) ?? 99) - (companyOrder.get(b.company) ?? 99) ||
+      a.name.localeCompare(b.name,'ko')
+    );
+    if(favoriteCount) favoriteCount.textContent = favoriteRows.length + '명';
+    favoriteList.innerHTML = favoriteRows.length ? favoriteRows.map(row =>
+      '<div class="wl-favorite-row">' +
         '<div class="wl-excluded-identity"><span class="wl-excluded-company">' + esc(row.company) + '</span>' +
         '<span class="wl-excluded-name">' + esc(row.name) + '</span>' +
-        (row.automaticOnly ? '<span class="wl-excluded-reason">' + esc(row.automaticReason) + '</span>' : '') + '</div>' +
-        (row.automaticOnly
-          ? '<span class="wl-auto-exclusion-pill" data-wl-hover-text="' + esc(row.automaticReason) + '">자동 제외</span>'
-          : '<button type="button" class="wl-include-button" data-wl-include-name="' + esc(row.name) + '" data-wl-hover-text="' + esc(row.name + ' 자동편성 제외 해제') + '">해제</button>') +
-      '</div>';
-    }).join('');
+        (row.core >= 7 ? '<span class="wl-excluded-reason">코강 +7 · 자동 추천 제외</span>' : '') + '</div>' +
+        '<button type="button" class="wl-favorite-remove" data-wl-favorite-clear="' + esc(row.name) + '" aria-label="' + esc(row.name + ' 애정캐 해제') + '">해제</button>' +
+      '</div>'
+    ).join('') : '<div class="wl-excluded-empty">애정캐로 지정한 니케가 없어.</div>';
   }
 
   function onPanelChange(event){
@@ -1489,13 +1591,12 @@
       closeCharacterPicker();
       return;
     }
-    const excludeButton = event.target.closest && event.target.closest('[data-wl-exclude-name]');
-    if(excludeButton){
-      const name = String(excludeButton.dataset.wlExcludeName || '').trim();
+    const statusCharacter = event.target.closest && event.target.closest('[data-wl-status-name]');
+    if(statusCharacter){
+      const name = String(statusCharacter.dataset.wlStatusName || '').trim();
       if(name){
-        toggleExcludedCharacter(name);
+        cycleCharacterStatus(name);
         renderWishlist();
-        renderCharacterPicker();
       }
       return;
     }
@@ -1509,24 +1610,14 @@
       }
       return;
     }
-    const pickerClear = event.target.closest && event.target.closest('[data-wl-picker-clear]');
-    if(pickerClear){
-      if(pickerCompany && COMPANIES.includes(pickerCompany) && pickerSlot !== null){
-        picks[pickerCompany][pickerSlot] = '';
+    const favoriteClear = event.target.closest && event.target.closest('[data-wl-favorite-clear]');
+    if(favoriteClear){
+      const name = String(favoriteClear.dataset.wlFavoriteClear || '').trim();
+      if(name){
+        const key = norm(name);
+        favoriteCharacters = favoriteCharacters.filter(value => norm(value) !== key);
+        renderWishlist();
       }
-      closeCharacterPicker();
-      renderWishlist();
-      return;
-    }
-    const picked = event.target.closest && event.target.closest('[data-wl-pick-name]');
-    if(picked){
-      if(!pickerCompany || !COMPANIES.includes(pickerCompany) || pickerSlot === null || picked.disabled) return;
-      const company = pickerCompany;
-      const name = String(picked.dataset.wlPickName || '').trim();
-      if(!isEligibleWishlistName(name, company) || picks[company].some((value,index) => index !== pickerSlot && norm(value) === norm(name))) return;
-      picks[company][pickerSlot] = name;
-      closeCharacterPicker();
-      renderWishlist();
       return;
     }
     const slotTrigger = event.target.closest && event.target.closest('.wl-select-trigger');
@@ -1561,6 +1652,7 @@
   function cancelWishlist(){
     picks = clonePicks(savedPicks);
     excludedCharacters = savedExcludedCharacters.slice();
+    favoriteCharacters = savedFavoriteCharacters.slice();
     renderWishlist();
     if(pickerSlot !== null) renderCharacterPicker();
   }
@@ -1580,6 +1672,8 @@
     savedPicks = clonePicks(picks);
     excludedCharacters = loadExcludedCharacters();
     savedExcludedCharacters = excludedCharacters.slice();
+    favoriteCharacters = loadFavoriteCharacters();
+    savedFavoriteCharacters = favoriteCharacters.slice();
     const activePanel = ensurePanel();
     if(!activePanel) return;
     activePanel.hidden = false;
@@ -1630,6 +1724,8 @@
         savedPicks = clonePicks(picks);
         excludedCharacters = loadExcludedCharacters();
         savedExcludedCharacters = excludedCharacters.slice();
+        favoriteCharacters = loadFavoriteCharacters();
+        savedFavoriteCharacters = favoriteCharacters.slice();
         wallStatus = loadWallStatus();
         copyPriority = loadCopyPriority();
         renderAccountSwitcher();
