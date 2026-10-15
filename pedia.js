@@ -122,6 +122,47 @@ async function loadPediaSkillData(){
 function normalizePediaName(v){
   return String(v??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"`\-–—()\[\]{}]/g,'');
 }
+const LIMITED_PEDIA_NAMES = new Set([
+  "2B",
+  "신데렐라 : 크리스탈 웨이브",
+  "길로틴 : 윈터 슬레이어",
+  "네온 : 블루 오션",
+  "도로시 : 세렌디피티",
+  "디젤 : 윈터 스위츠",
+  "레이",
+  "레이 (가칭)",
+  "레이븐",
+  "렘",
+  "로산나 : 시크 오션",
+  "루드밀라 : 윈터 오너",
+  "루피 : 윈터 쇼퍼",
+  "마르차나 : 마린 스터디",
+  "마리",
+  "마키마",
+  "메어리 : 베이 갓데스",
+  "메이든 : 아이스 로즈",
+  "미카 : 스노우 버디",
+  "브리드 : 사일런트 트랙",
+  "사쿠라 : 블룸 인 서머",
+  "아니스 : 스파클링 서머",
+  "아스카",
+  "아스카 : WILLE",
+  "앤 : 미라클 페어리",
+  "에밀리아",
+  "에이다",
+  "유키코",
+  "이브",
+  "일레그 : 붐 앤 쇼크",
+  "질",
+  "치사토",
+  "퀸(마코토)",
+  "타키나",
+  "파워",
+  "헬름 : 아쿠아마린",
+  "히메노",
+  "A2"
+].map(normalizePediaName));
+
 function findPediaSkillData(all,name,id){
   if(!all||typeof all!=='object')return null;
   if(all[name])return all[name];
@@ -237,7 +278,7 @@ function renderPedia(text){
   });
   count.textContent=list.length+' / '+pediaItems.length+'명';
   if(!list.length){grid.innerHTML='<div class="pedia-empty">조건에 맞는 니케가 없습니다.</div>';return;}
-  grid.innerHTML=list.map(item=>{const image=String(item.image||'').trim(),id=item.id??item.i??'';const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';const limited=normalizePediaName(item.name)==='2b'?'<span class="pedia-limited-badge">한정</span>':'';return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" data-pedia-id="'+esc(id)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+limited+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';}).join('');
+  grid.innerHTML=list.map(item=>{const image=String(item.image||'').trim(),id=item.id??item.i??'';const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';const limited=LIMITED_PEDIA_NAMES.has(normalizePediaName(item.name))?'<span class="pedia-limited-badge">한정</span>':'';return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" data-pedia-id="'+esc(id)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+limited+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';}).join('');
   grid.querySelectorAll('.pedia-card').forEach(card=>card.addEventListener('click',()=>openPediaSkill(card.dataset.pediaName||'',card.dataset.pediaId||'')));
 }
 async function showPedia(){const panel=document.getElementById('pediaPanel');if(!panel)return;panel.hidden=false;document.body.classList.remove('outpost-view','sole-view','drop-rate-view');document.body.classList.add('pedia-view');document.getElementById('kpis')?.setAttribute('hidden','');document.getElementById('outpostPanel')?.setAttribute('hidden','');document.getElementById('soleScorePanel')?.classList.remove('active');document.getElementById('characterPanel')?.setAttribute('hidden','');document.querySelectorAll('.main-view-nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.view==='pedia'));const title=document.getElementById('pageTitle');if(title)title.textContent='니케 도감';try{window.closeSidebar?.()}catch(_){}await loadPediaData();await loadPediaFilterMeta();renderPedia(document.getElementById('pediaSearch')?.value||'');}
