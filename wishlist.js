@@ -149,21 +149,20 @@
 
   const WISHLIST_PERFORMANCE_TIERS = [
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름']},
-    {rank:2, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
-    {rank:3, label:'애장품 성능', names:['프리바티','팬텀','미란다','플로라','토브']},
-    {rank:4, label:'솔레 명함 추천', names:[
+    {rank:2, label:'애장품 성능', names:['프리바티','팬텀','미란다','플로라','토브']},
+    {rank:3, label:'솔레 명함 추천', names:[
       '아르카나','솔린 : 프로스트 티켓',
       '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
       '아르카나 : 포츈 메이트','리타'
     ]},
     {rank:4, label:'PVP', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스']},
-    {rank:5, label:'애장품 비성능', names:[]},
-    {rank:6, label:'명함 추천', names:[
+    {rank:5, label:'명함 추천', names:[
       'D : 킬러 와이프','은화 : 택티컬 업','델타 : 닌자 시프',
       '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','마나','페퍼','티아','나가'
     ]},
-    {rank:7, label:'0.01%라도 사용 가능성', names:['엠마 : 택티컬 업']},
-    {rank:8, label:'도감용', names:[
+    {rank:5.5, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
+    {rank:6, label:'0.01%라도 사용 가능성', names:['엠마 : 택티컬 업']},
+    {rank:6, label:'도감용', names:[
       '브리드','프리바티 : 언카인드 메이드','메이든','마스트','베스티','엠마',
       '폴리','솔린','디젤','은화','길로틴','D','시그널','마르차나','키리','K',
       '소라','레이블','E.H.',
@@ -209,20 +208,30 @@
       .filter(tier => tier.label === '애장품 성능')
       .flatMap(tier => tier.names.map(norm))
   );
+  const WISHLIST_REQUIRED_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '필수캐').flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_GENERAL_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '범용캐').flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_NAMECARD_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '명함 추천').flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_COLLECTION_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '도감용' || tier.label === '0.01%라도 사용 가능성')
+      .flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_TRACKED_NAMES = new Set(WISHLIST_PERFORMANCE_TIERS.flatMap(tier => tier.names.map(norm)));
   function getBaseWishlistPerformancePriority(name){
     return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
   }
   function getWishlistPerformancePriority(name){
     const base = getBaseWishlistPerformancePriority(name);
-    // The toggle stores the literal strings "O" / "X"; "X" is truthy in JavaScript,
-    // so checking !pvpIncluded accidentally enabled the PVP boost even when switched off.
-    // With PVP enabled, place PVP candidates after general-purpose and collectible-performance
-    // characters, but before the Solo Raid tier. Keep Laplace last among enabled PVP candidates.
-    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))){
-      return pvpIncluded === 'O' ? 3.75 : base + 0.5;
-    }
-    if(pvpIncluded !== 'O') return base;
-    if(PVP_WISHLIST_NAMES.has(norm(name))) return 3.5;
+    // PVP=O promotes the PVP category to 2.5; when X, it stays at rank 4.
+    // Laplace remains last inside the PVP category.
+    if(PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 2.75 : 4.5;
+    if(PVP_WISHLIST_NAMES.has(norm(name))) return pvpIncluded === 'O' ? 2.5 : 4;
     return base;
   }
   // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
@@ -265,40 +274,46 @@
   // Required units are pinned first, missing first copies from ranks 2–6 come next,
   // owned treasure-performance units are targeted only until 2 breakthroughs, and
   // owned base-copy general/PVP units are sent near the end.
-  function getRequiredFirstSortGroup(name, breakthrough, unowned){
-    const base = getBaseWishlistPerformancePriority(name);
-    const normalized = norm(name);
-    const isPvp = PVP_WISHLIST_NAMES.has(normalized) || PVP_LOWEST_WISHLIST_NAMES.has(normalized);
-    const isLowestPvp = PVP_LOWEST_WISHLIST_NAMES.has(normalized);
-    const isTreasureTarget = WISHLIST_TREASURE_UPSIDE_NAMES.has(normalized) && breakthrough < 2;
-    const isOwnedBaseCopy = !unowned && breakthrough === 0;
-    const isPvpBaseCopy = isPvp && isOwnedBaseCopy;
+  function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
+    const key = norm(name);
+    const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
+    const isTreasure = WISHLIST_TREASURE_UPSIDE_NAMES.has(key);
+    const isPvp = PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key);
+    const isLowestPvp = PVP_LOWEST_WISHLIST_NAMES.has(key);
+    const isSoloRaid = SOLO_RAID_WISHLIST_NAMES.has(key);
+    const isNamecard = WISHLIST_NAMECARD_NAMES.has(key);
+    const isGeneral = WISHLIST_GENERAL_NAMES.has(key);
+    const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
+    const isPvpBaseCopy = isPvp && !unowned && breakthrough === 0;
 
-    // Required-first mode follows the exact priority sequence requested:
-    // 1 Required, 2 treasure-performance targets (<2★), 2.5 PVP if PVP=O,
-    // 3 Solo Raid, 4 PVP, 5 first-copy recommendations, 6 collection.
-    if(base === 1) return 1;
-    if(isTreasureTarget) return 2;
+    // Stage 1: required characters are always included, unless the +7 Core filter removes them.
+    // Stages 2 and 3: required characters are only eligible while their first copy is missing.
+    if(isRequired) return stage === 0 || unowned ? 1 : Number.POSITIVE_INFINITY;
 
-    // A PVP character with only its owned base copy remains low priority even when PVP=O.
-    if(isPvp && !isPvpBaseCopy && pvpIncluded === 'O') return isLowestPvp ? 2.75 : 2.5;
-    if(SOLO_RAID_WISHLIST_NAMES.has(normalized)) return 3;
-    if(isPvp && !isPvpBaseCopy) return isLowestPvp ? 4.5 : 4;
+    // Treasure-performance characters are only targets below 2 breakthroughs in every stage.
+    if(isTreasure) return breakthrough < 2 ? 2 : Number.POSITIVE_INFINITY;
 
-    // Preserve manually marked favorites as an exception, but never let them override
-    // Required, treasure targets, or the selected PVP/Solo Raid categories above.
-    if(isFavoriteCharacter(name) && !isPvpBaseCopy && !(base === 2 && isOwnedBaseCopy)) return 4.75;
+    // First-copy acquisition pass. PVP=O is rank 2.5, except a PVP character with only
+    // its owned base copy, which is deliberately delayed. PVP= X keeps missing copies at rank 4.
+    if(isPvp && pvpIncluded === 'O' && !isPvpBaseCopy) return isLowestPvp ? 2.75 : 2.5;
+    if(isSoloRaid && unowned) return 3;
+    if(isPvp && !isPvpBaseCopy && unowned) return isLowestPvp ? 4.5 : 4;
+    if(isNamecard && unowned) return 5;
+    if(isGeneral && unowned) return 5.5;
+    if(stage === 2 && isCollection && unowned) return WISHLIST_COLLECTION_NAMES.has(key) ? 6 : 6.25;
 
-    // First copies in the general-purpose through name-recommendation tiers.
-    if(unowned && base >= 2 && base <= 7) return 5;
-
-    // Already-owned copies are deliberately after missing first copies.
-    if(isPvpBaseCopy) return 5.75; // PVP base copies, including Laplace, are lower priority.
-    if(base === 2 && !unowned) return 5.5; // Owned general-purpose characters are lower priority.
-    if(base >= 6 && base <= 7) return 5.25; // Owned name-recommendation / niche-use units.
-    if(base >= 2 && base <= 7) return 5.5;
-    return 6;
+    // Refill pass once the unowned targets are exhausted: resume at rank 2 and follow
+    // PVP (if enabled), Solo Raid, PVP rank 4, namecard, general and collection in order.
+    if(isPvp && !isPvpBaseCopy && pvpIncluded === 'O') return isLowestPvp ? 12.75 : 12.5;
+    if(isSoloRaid) return 13;
+    if(isPvp && !isPvpBaseCopy) return isLowestPvp ? 14.5 : 14;
+    if(isPvpBaseCopy) return isLowestPvp ? 14.75 : 14.6;
+    if(isNamecard) return 15;
+    if(isGeneral) return 15.5;
+    if(stage === 2 && isCollection) return WISHLIST_COLLECTION_NAMES.has(key) ? 16 : 16.25;
+    return Number.POSITIVE_INFINITY;
   }
+
   function normalizePicksToEligibleSSR(source){
     const cleaned = clonePicks(source);
     let changed = false;
@@ -1481,17 +1496,27 @@
       const candidates = getCharactersForCompany(company)
         .filter(row => {
           const name = String(row['이름'] || '').trim();
+          const key = norm(name);
+          const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
+          const isTreasure = WISHLIST_TREASURE_UPSIDE_NAMES.has(key);
+          const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
           const favorite = isFavoriteCharacter(name);
-          if(isManuallyExcludedCharacter(name) || getCoreEnhancement(name) >= 7) return false;
-          if(!favorite && shouldExcludeFromAutoWishlist(name)) return false;
-          if(copyPriority === 1 && !favorite){
-            const priority = getBaseWishlistPerformancePriority(name);
-            const breakthrough = getBreakthrough(name);
-            // Favourite units bypass this stage limit, except Core +7 units handled above.
-            return priority <= 6 || isTreasurePerformanceBelowTwo(name, breakthrough);
-          }
+          const unowned = isMarkedUnowned(name);
+          const breakthrough = getBreakthrough(name);
+
+          if(getCoreEnhancement(name) >= 7) return false;
+          // Stage 1 mandatory characters bypass manual exclusion; all other manual exclusions remain.
+          if(isManuallyExcludedCharacter(name) && !(copyPriority === 0 && isRequired)) return false;
+          // Stages 2 and 3 do not re-select a required character after its first copy is owned.
+          if(copyPriority !== 0 && isRequired && !unowned) return false;
+          // Treasure-performance characters stop being targets at 2★ and above.
+          if(isTreasure && breakthrough >= 2) return false;
+          // Collection-only candidates are stage 3 only.
+          if(isCollection && copyPriority !== 2) return false;
+          if(shouldExcludeFromAutoWishlist(name)) return false;
           return true;
         });
+
       candidates.sort((a,b) => {
         const aName = String(a['이름'] || '').trim();
         const bName = String(b['이름'] || '').trim();
@@ -1499,123 +1524,35 @@
         const bBreakthrough = getBreakthrough(bName);
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
+        const aGroup = getWishlistAutoBuildPriority(aName,copyPriority,aBreakthrough,aUnowned);
+        const bGroup = getWishlistAutoBuildPriority(bName,copyPriority,bBreakthrough,bUnowned);
+        if(aGroup !== bGroup) return aGroup - bGroup;
 
-        if(copyPriority === 0){
-          const aStageGroup = getRequiredFirstSortGroup(aName,aBreakthrough,aUnowned);
-          const bStageGroup = getRequiredFirstSortGroup(bName,bBreakthrough,bUnowned);
-          if(aStageGroup !== bStageGroup) return aStageGroup - bStageGroup;
-
-          const aBasePriority = getBaseWishlistPerformancePriority(aName);
-          const bBasePriority = getBaseWishlistPerformancePriority(bName);
-          if(aStageGroup === 2){
-            // Work toward 2★ before starting a fresh treasure character, then keep higher stars first.
-            if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
-            if(aUnowned !== bUnowned) return aUnowned ? 1 : -1;
-          }
-          if(aStageGroup === 2.5 || aStageGroup === 2.75 || aStageGroup === 3 ||
-             aStageGroup === 4 || aStageGroup === 4.5){
-            // For PVP/Solo Raid tiers, missing first copies come before already-owned copies.
-            if(aUnowned !== bUnowned) return aUnowned ? -1 : 1;
-            if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
-            if(aStageGroup === 2.75 || aStageGroup === 4.5){
-              const aLowestPvp = PVP_LOWEST_WISHLIST_NAMES.has(norm(aName));
-              const bLowestPvp = PVP_LOWEST_WISHLIST_NAMES.has(norm(bName));
-              if(aLowestPvp !== bLowestPvp) return aLowestPvp ? 1 : -1;
-            }
-          }
-          if(aStageGroup === 5){
-            if(aUnowned !== bUnowned) return aUnowned ? -1 : 1;
-            if(aBasePriority !== bBasePriority) return aBasePriority - bBasePriority;
-          }
-          if(aStageGroup === 5.25){
-            if(aBasePriority !== bBasePriority) return aBasePriority - bBasePriority;
-            if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
-          }
-          if(aStageGroup === 5.5){
-            if(aBasePriority !== bBasePriority) return aBasePriority - bBasePriority;
-            if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
-          }
-          if(aStageGroup === 5.75){
-            const aLowestPvp = PVP_LOWEST_WISHLIST_NAMES.has(norm(aName));
-            const bLowestPvp = PVP_LOWEST_WISHLIST_NAMES.has(norm(bName));
-            if(aLowestPvp !== bLowestPvp) return aLowestPvp ? 1 : -1;
-          }
-          return aName.localeCompare(bName,'ko');
+        // Within the treasure target, finish the character closest to 2★ first.
+        if(aGroup === 2){
+          if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
+          if(aUnowned !== bUnowned) return aUnowned ? 1 : -1;
+        }else{
+          // On acquisition groups, missing first copies come before owned copies.
+          if(aGroup < 10 && aUnowned !== bUnowned) return aUnowned ? -1 : 1;
+          if(!aUnowned && !bUnowned && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
         }
-
-        // General-purpose characters already owned at base copy (0 breakthroughs) are
-        // lower priority in all three recommendation stages, even if marked as favorites.
-        // They are not removed outright; they can fill a slot only after other candidates.
-        const aGeneralBaseCopy = getBaseWishlistPerformancePriority(aName) === 2 && aBreakthrough === 0 && !aUnowned;
-        const bGeneralBaseCopy = getBaseWishlistPerformancePriority(bName) === 2 && bBreakthrough === 0 && !bUnowned;
-        if(aGeneralBaseCopy !== bGeneralBaseCopy) return aGeneralBaseCopy ? 1 : -1;
 
         const aFavorite = isFavoriteCharacter(aName);
         const bFavorite = isFavoriteCharacter(bName);
         if(aFavorite !== bFavorite) return aFavorite ? -1 : 1;
 
-        // Collectible-performance characters below 2 breakthroughs must stay ahead of
-        // lower-priority candidates so they can reach 2 breakthroughs for their treasure.
-        const aTreasureTarget = isTreasurePerformanceBelowTwo(aName,aBreakthrough);
-        const bTreasureTarget = isTreasurePerformanceBelowTwo(bName,bBreakthrough);
-        if(aTreasureTarget !== bTreasureTarget) return aTreasureTarget ? -1 : 1;
-
-        const aPerformancePriority = getWishlistPerformancePriority(aName);
-        const bPerformancePriority = getWishlistPerformancePriority(bName);
-        const aGroup = getCopyPrioritySortGroup(aName,aPerformancePriority,aBreakthrough,aUnowned);
-        const bGroup = getCopyPrioritySortGroup(bName,bPerformancePriority,bBreakthrough,bUnowned);
-
-        // In "필수캐 우선" mode, compare both recommendation group and performance rank
-        // before applying the generic 160-wall 1–2 breakthrough boost.
-        // Previously only group differences were checked here, so same-group general units
-        // with 1–2 breakthroughs could jump ahead of higher-ranked characters.
-        if(copyPriority === 0){
-          if(aGroup !== bGroup) return aGroup - bGroup;
-          if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
-        }
-
-        // For other recommendation modes, retain their existing stage grouping after 160-wall targeting.
-        if(aGroup !== bGroup) return aGroup - bGroup;
-        if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
-        // Within the treasure-performance target group, favor characters closer to 2 breakthroughs.
-        if(aGroup === 0 && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
-        if(aUnowned !== bUnowned){
-          if(aGroup === 0) return aUnowned ? 1 : -1;
-          return aUnowned ? -1 : 1;
-        }
-        if(!aUnowned && !bUnowned){
-          const breakthroughDiff = bBreakthrough - aBreakthrough;
-          if(breakthroughDiff) return breakthroughDiff;
-        }
+        const aBasePriority = getBaseWishlistPerformancePriority(aName);
+        const bBasePriority = getBaseWishlistPerformancePriority(bName);
+        if(aBasePriority !== bBasePriority) return aBasePriority - bBasePriority;
+        const aPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(aName));
+        const bPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(bName));
+        if(aPosition && bPosition && aPosition.tierOrder !== bPosition.tierOrder) return aPosition.tierOrder - bPosition.tierOrder;
+        if(aPosition && bPosition && aPosition.index !== bPosition.index) return aPosition.index - bPosition.index;
+        if(aPosition && !bPosition) return -1;
+        if(!aPosition && bPosition) return 1;
         return aName.localeCompare(bName,'ko');
       });
-      if(copyPriority !== 0){
-        // In recommendation stages 2 and 3, retain a final partition that sends owned base-copy general-purpose units
-        // or a PVP unit with only its base copy must not displace first-copy candidates or
-        // other current targets. These units may fill a slot only after higher-priority options.
-        const lowerPriorityGeneralCopies = candidates.filter(row => {
-          const name = String(row['이름'] || '').trim();
-          return getBaseWishlistPerformancePriority(name) === 2 &&
-            getBreakthrough(name) === 0 && !isMarkedUnowned(name);
-        });
-        const lowerPriorityPvpCopies = candidates.filter(row => {
-          const name = String(row['이름'] || '').trim();
-          return (PVP_WISHLIST_NAMES.has(norm(name)) || PVP_LOWEST_WISHLIST_NAMES.has(norm(name))) &&
-            getBreakthrough(name) === 0 && !isMarkedUnowned(name);
-        });
-        const lowerPriorityNames = new Set([
-          ...lowerPriorityGeneralCopies.map(row => norm(row['이름'])),
-          ...lowerPriorityPvpCopies.map(row => norm(row['이름']))
-        ]);
-        if(lowerPriorityNames.size){
-          const higherPriorityCandidates = candidates.filter(row => !lowerPriorityNames.has(norm(row['이름'])));
-          const generalCopyNames = new Set(lowerPriorityGeneralCopies.map(row => norm(row['이름'])));
-          const generalCopies = lowerPriorityGeneralCopies;
-          const pvpCopies = lowerPriorityPvpCopies.filter(row => !generalCopyNames.has(norm(row['이름'])));
-          candidates.splice(0,candidates.length,...higherPriorityCandidates,...generalCopies,...pvpCopies);
-        }
-  
-      }
       picks[company] = candidates.slice(0,5).map(row => String(row['이름'] || '').trim());
       while(picks[company].length < 5) picks[company].push('');
     });
