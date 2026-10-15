@@ -1445,8 +1445,17 @@
         const aFavorite = isFavoriteCharacter(aName);
         const bFavorite = isFavoriteCharacter(bName);
         if(aFavorite !== bFavorite) return aFavorite ? -1 : 1;
+
+        // Collectible-performance characters below 2 breakthroughs must stay ahead of
+        // the general 160-wall 1–2 breakthrough preference; otherwise other units can
+        // fill all five slots and make Flora/Tove disappear despite needing their treasure.
+        const aTreasureTarget = isTreasurePerformanceBelowTwo(aName,aBreakthrough);
+        const bTreasureTarget = isTreasurePerformanceBelowTwo(bName,bBreakthrough);
+        if(aTreasureTarget !== bTreasureTarget) return aTreasureTarget ? -1 : 1;
+
         if(wallStatus === 'X' && company !== '필그림'){
           // 160벽 X 선택 시 10단계 중 1돌파·2돌파만 최우선으로 추천한다.
+          // 애장품 성능캐의 2돌파 미만 우선순위는 위에서 먼저 적용한다.
           // 3돌파와 코어 강화 1~7은 이 우선 그룹에 포함하지 않는다.
           const aTargetPriority = aBreakthrough >= 1 && aBreakthrough <= 2;
           const bTargetPriority = bBreakthrough >= 1 && bBreakthrough <= 2;
@@ -1460,7 +1469,7 @@
         const aGroup = getCopyPrioritySortGroup(aName,aPerformancePriority,aBreakthrough,aUnowned);
         const bGroup = getCopyPrioritySortGroup(bName,bPerformancePriority,bBreakthrough,bUnowned);
 
-        // Keep the 160-wall targeting rule above the selected-stage priorities.
+        // Apply selected recommendation stage after treasure-performance and 160-wall targeting.
         if(aGroup !== bGroup) return aGroup - bGroup;
         if(aPerformancePriority !== bPerformancePriority) return aPerformancePriority - bPerformancePriority;
         // Within the treasure-performance target group, favor characters closer to 2 breakthroughs.
