@@ -1903,12 +1903,13 @@
         company,
         names: getCharactersForCompany(company)
           .map(row => String(row['이름'] || '').trim())
-          .filter(name =>
-            (WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(name)) ||
-              WISHLIST_REQUIRED_NAMES.has(norm(name)) ||
-              WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(name))) &&
-            getBreakthrough(name) < 3
-          )
+          .filter(name => {
+            const key = norm(name);
+            const isNamedPriority = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
+            const isUnownedRequired = isMarkedUnowned(name) &&
+              (WISHLIST_REQUIRED_NAMES.has(key) || WISHLIST_TREASURE_REQUIRED_NAMES.has(key));
+            return (isNamedPriority || isUnownedRequired) && getBreakthrough(name) < 3;
+          })
       })).find(item => item.names.length > 5);
       if(overLimitMandatory){
         alert(overLimitMandatory.company + '의 160벽 X 우선 포함 대상이 ' + overLimitMandatory.names.length +
@@ -1929,11 +1930,13 @@
           const favorite = isFavoriteCharacter(name);
           const unowned = isMarkedUnowned(name);
           const breakthrough = getBreakthrough(name);
-          // 160-wall X rule 2: Tia, Naga, Liter, Helm, and Alice are forced in below 3 breakthroughs.
-          // Rule 3's company-required and mandatory-treasure characters are also forced in below 3 breakthroughs.
+          // Rule 2: the five named targets are forced in below 3 breakthroughs regardless of ownership.
+          // Rule 3: company-required and mandatory-treasure characters are forced in only while unowned.
+          // Once a first copy is owned, they leave rule 3 and are ranked by rule 4 instead.
           const is160WallXPriorityTarget = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
+          const isUnownedRequired160WallX = unowned && (isRequired || isTreasureRequired);
           const forceInclude160WallX = wallStatus === 'X' &&
-            (is160WallXPriorityTarget || isRequired || isTreasureRequired);
+            (is160WallXPriorityTarget || isUnownedRequired160WallX);
 
           // 160-wall X always excludes 3-breakthrough characters.
           if(wallStatus === 'X' && breakthrough >= 3) return false;
@@ -1956,16 +1959,18 @@
         const bBreakthrough = getBreakthrough(bName);
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
-        // 160-wall X rule 2: the five named priority targets rank before all other candidates.
-        // Rule 3: company-required and mandatory-treasure characters rank next.
-        // Rule 4: inside each preceding priority tier, higher breakthrough ranks first (2★ > 1★ > 0★).
+        // Rule 2: the five named priority targets rank before all other candidates.
+        // Rule 3: company-required and mandatory-treasure characters rank next only if unowned.
+        // Owned first copies skip rule 3 and are ordered by rule 4 (higher breakthrough first).
         // These comparisons apply only to X; O ordering remains unchanged.
         if(wallStatus === 'X'){
           const aNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(aName));
           const bNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(bName));
           if(aNamedPriority160WallX !== bNamedPriority160WallX) return aNamedPriority160WallX ? -1 : 1;
-          const aMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName));
-          const bMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName));
+          const aMustInclude160WallX = aUnowned &&
+            (WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName)));
+          const bMustInclude160WallX = bUnowned &&
+            (WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName)));
           if(aMustInclude160WallX !== bMustInclude160WallX) return aMustInclude160WallX ? -1 : 1;
           if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
         }
