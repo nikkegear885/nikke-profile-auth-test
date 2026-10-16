@@ -1116,7 +1116,28 @@
       '#wishlistPanel .wl-picker-choice:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.7)}',
       '#wishlistPanel .wl-picker-exclude{width:100%;min-height:26px;padding:4px 5px;border:1px solid #efb8c0;border-radius:6px;background:#fff0f2;color:#b52b43;font-size:10px;font-weight:1000;cursor:pointer}',
       '#wishlistPanel .wl-picker-exclude.is-excluded{border-color:#b7c1ce;background:#edf1f6;color:#4d596a}',
-      '#wishlistPanel .wl-excluded-panel{position:absolute;left:calc(100% + 16px);top:0;z-index:1;box-sizing:border-box;width:290px;max-width:calc(100vw - 500px);max-height:calc(100vh - 155px);display:flex;flex-direction:column;overflow:hidden;border:1px solid #e7aab5;border-radius:12px;background:linear-gradient(180deg,#fff4f5,#ffe9ed);color:#5a2631;box-shadow:0 5px 20px rgba(151,43,66,.12)}',
+      '#wishlistPanel .wl-excluded-panel{position:absolute;left:calc(100% + 16px);top:0;z-index:1;box-sizing:border-box;width:290px;max-width:calc(100vw - 500px);max-height:calc(100vh - 155px);display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;border:1px solid #e7aab5;border-radius:12px;background:linear-gradient(180deg,#fff4f5,#ffe9ed);color:#5a2631;box-shadow:0 5px 20px rgba(151,43,66,.12)}',
+      '#wishlistPanel .wl-clue-list{flex:none;margin:8px 8px 10px;border:1px solid #d8c7a3;border-radius:9px;background:linear-gradient(180deg,#fffaf0,#f9efdc);color:#51452d;overflow:hidden}',
+      '#wishlistPanel .wl-clue-list>summary{display:flex;align-items:center;gap:8px;min-height:38px;padding:8px 10px;cursor:pointer;list-style:none}',
+      '#wishlistPanel .wl-clue-list>summary::-webkit-details-marker{display:none}',
+      '#wishlistPanel .wl-clue-list-title{flex:1;min-width:0;font-size:12px;font-weight:1000;color:#51452d}',
+      '#wishlistPanel .wl-clue-list-count{flex:none;padding:3px 7px;border:1px solid #e3d2ac;border-radius:999px;background:#fff4d7;color:#96712d;font-size:10px;font-weight:1000}',
+      '#wishlistPanel .wl-clue-list-chevron{flex:none;color:#89754d;font-size:15px;line-height:1;transition:transform .12s ease}',
+      '#wishlistPanel .wl-clue-list[open] .wl-clue-list-chevron{transform:rotate(180deg)}',
+      '#wishlistPanel .wl-clue-list-scroll{width:100%;max-height:260px;overflow:auto;overscroll-behavior:contain;border-top:1px solid #e9dcbf}',
+      '#wishlistPanel .wl-clue-list-grid{display:grid;grid-template-columns:repeat(8,minmax(102px,1fr));gap:6px;width:max-content;min-width:870px;padding:8px}',
+      '#wishlistPanel .wl-clue-column{min-width:0;padding:7px 7px 9px;border:1px solid #e5d8bb;border-radius:7px;background:rgba(255,255,255,.72)}',
+      '#wishlistPanel .wl-clue-column h4{margin:0 0 7px;padding-bottom:5px;border-bottom:1px solid #eadfc8;color:#85621f;font-size:10px;font-weight:1000;text-align:center;white-space:nowrap}',
+      '#wishlistPanel .wl-clue-column ol{margin:0;padding-left:20px;color:#554d3f;font-size:10px;font-weight:800;line-height:1.55}',
+      '#wishlistPanel .wl-clue-column li{padding-left:1px;overflow-wrap:anywhere}',
+      'html.dark-theme #wishlistPanel .wl-clue-list{border-color:#67563b;background:linear-gradient(180deg,#2b251b,#211c15);color:#f4e5bf}',
+      'html.dark-theme #wishlistPanel .wl-clue-list-title{color:#f4e5bf}',
+      'html.dark-theme #wishlistPanel .wl-clue-list-count{border-color:#67563b;background:#3a3020;color:#f2d38b}',
+      'html.dark-theme #wishlistPanel .wl-clue-list-chevron{color:#cfb77f}',
+      'html.dark-theme #wishlistPanel .wl-clue-list-scroll{border-color:#55472f}',
+      'html.dark-theme #wishlistPanel .wl-clue-column{border-color:#55472f;background:rgba(13,17,24,.72)}',
+      'html.dark-theme #wishlistPanel .wl-clue-column h4{border-color:#55472f;color:#f2d38b}',
+      'html.dark-theme #wishlistPanel .wl-clue-column ol{color:#e7dfcf}',
       '#wishlistPanel .wl-excluded-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 13px;border-bottom:1px solid #efc0c8;background:linear-gradient(135deg,#ffe8ec,#ffd6de)}',
       '#wishlistPanel .wl-excluded-title{font-size:13px;font-weight:1000;color:#354459}',
       '#wishlistPanel .wl-excluded-count{flex:none;padding:3px 7px;border-radius:999px;background:#e8edf4;color:#536175;font-size:10px;font-weight:1000}',
@@ -1199,7 +1220,7 @@
       '#wishlistPanel .wl-cancel{border:2px solid #aaa;background:#fff;color:#343434}',
       '#wishlistPanel .wl-confirm{border:2px solid #0da5e2;background:#0ba8eb;color:white}',
       '#wishlistPanel .wl-action:hover{filter:brightness(.97);transform:translateY(-1px)}',
-      '@media(max-width:1000px){#wishlistPanel .wl-excluded-panel{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;max-height:none;margin:12px auto 0}#wishlistPanel .wl-excluded-list{max-height:260px}#wishlistPanel .wl-favorite-list{max-height:200px}}',
+      '@media(max-width:1000px){#wishlistPanel .wl-excluded-panel{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;max-height:none;margin:12px auto 0}#wishlistPanel .wl-excluded-list{max-height:260px}#wishlistPanel .wl-favorite-list{max-height:200px}#wishlistPanel .wl-clue-list-grid{min-width:870px}}',
       '@media(max-width:650px){body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-character-name-label{font-size:7px;line-height:1.15;margin-top:2px}#wishlistPanel{width:100%;margin:0 auto 12px}#wishlistPanel .wl-dialog{width:100%;height:auto;border-radius:10px}#wishlistPanel .wl-modal-head{min-height:27px;padding:3px 6px}#wishlistPanel .wl-modal-title{font-size:11px;gap:4px}#wishlistPanel .wl-refresh-icon{width:17px;height:17px;border-width:2px}#wishlistPanel .wl-intro{padding:3px 4px;font-size:9px;line-height:1.2}#wishlistPanel .wl-intro .wl-subline{font-size:8px;margin-top:2px}#wishlistPanel .wl-company-list{gap:6px;padding:2px 7px 6px}#wishlistPanel .wl-company-head{min-height:30px;padding:2px 7px}#wishlistPanel .wl-company-brand{width:min(340px,calc(100vw - 44px))}#wishlistPanel .wl-company-symbol{width:28px;height:24px;font-size:27px}#wishlistPanel .wl-company-name{font-size:7px}#wishlistPanel .wl-slots{gap:4px;padding:7px 5px 10px}#wishlistPanel .wl-slot{aspect-ratio:1 / 1;border-radius:4px}#wishlistPanel .wl-corner-mark{width:16px;height:18px;font-size:9px}#wishlistPanel .wl-selected-name{padding:14px 2px 7px;font-size:7px}#wishlistPanel .wl-stage{top:2px;right:2px;padding:1px 2px;font-size:7px;min-width:14px}#wishlistPanel .wl-plus{font-size:28px}#wishlistPanel .wl-empty-mark{gap:1px;padding:2px;font-size:7px}#wishlistPanel .wl-footer{gap:8px;padding:5px 8px 6px}#wishlistPanel .wl-action{width:42%;min-height:36px;font-size:13px}}',
       '@media(max-width:380px){#wishlistPanel .wl-company-list{padding-left:6px;padding-right:6px}#wishlistPanel .wl-slots{gap:4px;padding-left:5px;padding-right:5px}#wishlistPanel .wl-selected-name{font-size:8px}}'
     ].join('\n');
@@ -1411,6 +1432,21 @@
         '</div>' +
       '</div>' +
       '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="자동편성 제외 캐릭터">' +
+        '<details class="wl-clue-list" data-wl-clue-list>' +
+          '<summary class="wl-clue-list-summary"><span class="wl-clue-list-title">실마 리스트</span><span class="wl-clue-list-count">8개</span><span class="wl-clue-list-chevron" aria-hidden="true">⌄</span></summary>' +
+          '<div class="wl-clue-list-scroll" tabindex="0" aria-label="실마 리스트 1부터 8">' +
+            '<div class="wl-clue-list-grid">' +
+              '<section class="wl-clue-column"><h4>리스트 1</h4><ol><li>밀크</li><li>엠마</li><li>루드밀라</li><li>메어리</li></ol></section>' +
+              '<section class="wl-clue-column"><h4>리스트 2</h4><ol><li>페퍼</li><li>프림</li><li>엑시아</li><li>미란다</li></ol></section>' +
+              '<section class="wl-clue-column"><h4>리스트 3</h4><ol><li>리타</li><li>볼륨</li><li>노이즈</li><li>얀</li><li>아비스타</li></ol></section>' +
+              '<section class="wl-clue-column"><h4>리스트 4</h4><ol><li>노아</li><li>폴크방</li><li>은화</li><li>아리아</li><li>폴리</li><li>루피</li><li>시그널</li><li>디젤</li><li>킬로</li></ol></section>' +
+              '<section class="wl-clue-column"><h4>리스트 5</h4><ol><li>센티</li><li>애드미</li><li>유니</li><li>프리바티</li><li>라이</li><li>스노우 화이트 : 이노센트 데이즈</li></ol></section>' +
+              '<section class="wl-clue-column"><h4>리스트 6</h4><ol><li>프리바티</li><li>크로우</li><li>솔린</li><li>브리드</li></ol></section>' +
+              '<section class="wl-clue-column"><h4>리스트 7</h4><ol><li>드레이크</li><li>슈가</li><li>율리아</li><li>에피넬</li></ol></section>' +
+              '<section class="wl-clue-column"><h4>리스트 8</h4><ol><li>율하</li><li>맥스웰</li><li>메이든</li><li>베스티</li><li>길로틴</li></ol></section>' +
+            '</div>' +
+          '</div>' +
+        '</details>' +
         '<div class="wl-excluded-head"><div class="wl-excluded-title">자동편성 제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
         '<div class="wl-excluded-note">캐릭터 사진을 눌러 상태를 <b>기본 → 제외 → 애정캐 → 기본</b> 순서로 변경해.</div>' +
         '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
