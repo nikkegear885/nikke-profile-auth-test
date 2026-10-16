@@ -195,6 +195,11 @@
   })();
   function getWishlistPerformancePosition(name){
     const key = norm(name);
+    // 프리바티는 2돌 미만이면 비교 정렬에서도 범용캐 그룹(3순위)에 배치한다.
+    // 기본 성능표의 애장품 솔레캐 위치가 정렬 동률 시 우선순위를 덮어쓰지 않게 한다.
+    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2){
+      return {rank:3,tierOrder:2,index:4};
+    }
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)){
       return {rank:3,tierOrder:2,index:997};
     }
