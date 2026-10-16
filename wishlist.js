@@ -195,10 +195,9 @@
   })();
   function getWishlistPerformancePosition(name){
     const key = norm(name);
-    // 프리바티는 2돌 미만이면 비교 정렬에서도 범용캐 그룹(3순위)에 배치한다.
-    // 기본 성능표의 애장품 솔레캐 위치가 정렬 동률 시 우선순위를 덮어쓰지 않게 한다.
-    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2){
-      return {rank:3,tierOrder:2,index:4};
+    // 프리바티는 2돌 미만이면 애장품 필수 그룹의 정렬 위치를 사용한다.
+    if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2){
+      return {rank:2,tierOrder:1,index:998};
     }
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)){
       return {rank:3,tierOrder:2,index:997};
@@ -259,7 +258,8 @@
   );
   const WISHLIST_TRACKED_NAMES = new Set(WISHLIST_PERFORMANCE_TIERS.flatMap(tier => tier.names.map(norm)));
   // Special breakthrough-based priority overrides requested for the wishlist.
-  const WISHLIST_GENERAL_UNDER_TWO_NAMES = new Set(['프리바티'].map(norm));
+  // 프리바티: 2돌 미만이면 애장품 필수, 2돌 이상이면 기본 애장품 솔레캐 우선순위 유지.
+  const WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES = new Set(['프리바티'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES = new Set(['라플라스'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES = new Set(['츠바이','율리아'].map(norm));
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
@@ -279,7 +279,7 @@
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key) && isMarkedUnowned(name)) return 6;
-    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 3;
+    if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 2;
     if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
       return getBreakthrough(name) < 2 ? 8 : DEFAULT_PERFORMANCE_PRIORITY;
     }
@@ -315,7 +315,7 @@
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
     if(WISHLIST_TREASURE_REQUIRED_NAMES.has(key)) return breakthrough < 2 ? 2 : 12;
-    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return unowned ? 3 : 13;
+    if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return 2;
     if(WISHLIST_TREASURE_SOLO_NAMES.has(key)) return breakthrough < 2 ? 5 : 15;
     if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
@@ -360,8 +360,10 @@
       return 18;
     }
 
-    // Privaty behaves as a general-purpose unit until it reaches 2★.
-    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return unowned ? 3 : 13;
+    // 프리바티는 2돌 미만이면 애장품 필수로 편성한다.
+    if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && breakthrough < 2){
+      return stage === 0 ? 1 : 2;
+    }
 
     // Rank 1: required characters; owned copies are skipped in stages 2–3 by the candidate filter.
     if(isRequired) return stage === 0 || unowned ? 1 : Number.POSITIVE_INFINITY;
