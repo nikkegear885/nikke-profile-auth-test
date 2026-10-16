@@ -6569,6 +6569,8 @@ function createRandomTestAccount(){
 
   const mock=structuredClone(RAW);
   const unownedNames=[];
+  // These characters must always have at least one copy in the generated test account.
+  const guaranteedOwnedNames=new Set(['헬름','프리바티','앨리스','나가','티아','리타']);
   // Newbie-like distribution: approximately 35–50% owned, so missing first copies are common.
   const ownedChance=0.55+Math.random()*0.15;
   const parts=['머리','몸통','장갑','다리'];
@@ -6576,7 +6578,7 @@ function createRandomTestAccount(){
   mock.forEach(row=>{
     const name=String(row&&row['이름']||'').trim();
     if(!name)return;
-    const owned=Math.random()<ownedChance;
+    const owned=guaranteedOwnedNames.has(name)||Math.random()<ownedChance;
     if(!owned)unownedNames.push(name);
     else ownedCount++;
 
@@ -7083,7 +7085,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.05"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.06"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
