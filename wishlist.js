@@ -195,6 +195,9 @@
   })();
   function getWishlistPerformancePosition(name){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)){
+      return {rank:3,tierOrder:2,index:997};
+    }
     if(isMarkedUnowned(name) && key === norm('D : 킬러 와이프')){
       return {rank:3,tierOrder:2,index:998};
     }
@@ -255,6 +258,8 @@
   const WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES = new Set(['라플라스'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES = new Set(['츠바이','율리아'].map(norm));
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
+  // 베스티 : 택티컬 업은 미보유 상태에서만 범용캐로 취급하고, 명함 보유 시 기존 PVP 우선도를 따른다.
+  const WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES = new Set(['베스티 : 택티컬 업'].map(norm));
   // Character-specific first-copy priorities:
   // D : Killer Wife and Ruju are general-purpose acquisition targets when unowned,
   // then return to their existing Solo Raid positions after the first copy is acquired.
@@ -266,6 +271,7 @@
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key) && isMarkedUnowned(name)) return 6;
     if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 3;
@@ -299,6 +305,7 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
@@ -329,6 +336,7 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
