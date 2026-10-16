@@ -1727,7 +1727,7 @@
       const characters = getCharactersForCompany(company);
       return '<section class="wl-company" data-wl-company="' + esc(company) + '">' +
         '<div class="wl-company-head">' +
-          '<div class="wl-company-brand"><span class="wl-company-symbol" aria-hidden="true">' + esc(COMPANY_SYMBOLS[company] || '◇') + '</span>' +
+          '<div class="wl-company-brand"><span class="wl-company-symbol" aria-hidden="true"></span>' +
           '<span class="wl-company-name">' + esc(company) + '</span></div>' +
         '</div>' +
         '<div class="wl-slots">' + Array.from({length:5},(_,slot) => buildSlot(company,slot,characters)).join('') +
