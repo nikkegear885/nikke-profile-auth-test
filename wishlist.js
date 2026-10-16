@@ -141,10 +141,10 @@
   const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   // Split the former mixed "Solo Raid = PVP" list into distinct priority categories.
   const SOLO_RAID_WISHLIST_NAMES = new Set([
-    'D : 킬러 와이프','아르카나','솔린 : 프로스트 티켓',
+    '솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
     '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
-    '아르카나 : 포츈 메이트',
-    '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르'
+    '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르',
+    'D : 킬러 와이프','볼륨'
   ].map(norm));
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
@@ -155,13 +155,14 @@
     {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이']},
     {rank:5, label:'애장품 솔레캐', names:['프리바티','팬텀','미란다','슈가','로산나']},
     {rank:6, label:'솔레', names:[
-      'D : 킬러 와이프','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','아르카나',
+      '솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
       '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
-      '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르'
+      '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르',
+      'D : 킬러 와이프'
     ]},
     {rank:8, label:'명함 추천', names:[
       '츠바이','율리아',
-      '델타 : 닌자 시프','프리바티 : 언카인드 메이드','은화 : 택티컬 업','엠마 : 택티컬 업',
+      '프리바티 : 언카인드 메이드','은화 : 택티컬 업','엠마 : 택티컬 업',
       '퀀시 : 이스케이프 퀸','맥스웰 : 오디너리 미케닉','마나','페퍼','맥스웰','티아','나가','리타',
       '볼륨','크러스트','도라','앨리스 : 원더랜드 바니','레오나','네로'
     ]},
@@ -192,14 +193,27 @@
     }));
     return positions;
   })();
+  function getWishlistPerformancePosition(name){
+    const key = norm(name);
+    if(isMarkedUnowned(name) && key === norm('D : 킬러 와이프')){
+      return {rank:3,tierOrder:2,index:998};
+    }
+    if(isMarkedUnowned(name) && key === norm('루주')){
+      return {rank:3,tierOrder:2,index:999};
+    }
+    if(isMarkedUnowned(name) && key === norm('볼륨')){
+      return {rank:6,tierOrder:5,index:-1};
+    }
+    return WISHLIST_PERFORMANCE_POSITION.get(key);
+  }
   function compareWishlistPickerOrder(a,b){
     const aName = String(a && a['이름'] || '').trim();
     const bName = String(b && b['이름'] || '').trim();
     const aRank = getWishlistPerformancePriority(aName);
     const bRank = getWishlistPerformancePriority(bName);
     if(aRank !== bRank) return aRank - bRank;
-    const aPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(aName));
-    const bPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(bName));
+    const aPosition = getWishlistPerformancePosition(aName);
+    const bPosition = getWishlistPerformancePosition(bName);
     if(aPosition && bPosition && aPosition.tierOrder !== bPosition.tierOrder) return aPosition.tierOrder - bPosition.tierOrder;
     if(aPosition && bPosition && aPosition.index !== bPosition.index) return aPosition.index - bPosition.index;
     if(aPosition && !bPosition) return -1;
@@ -241,11 +255,19 @@
   const WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES = new Set(['라플라스'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES = new Set(['츠바이','율리아'].map(norm));
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
+  // Character-specific first-copy priorities:
+  // D : Killer Wife and Ruju are general-purpose acquisition targets when unowned,
+  // then return to their existing Solo Raid positions after the first copy is acquired.
+  const WISHLIST_UNOWNED_GENERAL_LAST_NAMES = new Set(['D : 킬러 와이프','루주'].map(norm));
+  // Volume is promoted to the first Solo Raid slot only while unowned, then returns to Namecard.
+  const WISHLIST_UNOWNED_SOLO_FIRST_NAMES = new Set(['볼륨'].map(norm));
   function getBaseWishlistPerformancePriority(name){
     return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)) return 3;
+    if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key) && isMarkedUnowned(name)) return 6;
     if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 3;
     if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
       return getBreakthrough(name) < 2 ? 8 : DEFAULT_PERFORMANCE_PRIORITY;
@@ -277,6 +299,8 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
+    if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
     if(WISHLIST_TREASURE_REQUIRED_NAMES.has(key)) return breakthrough < 2 ? 2 : 12;
     if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return unowned ? 3 : 13;
@@ -305,6 +329,8 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
+    if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
     const isTreasureSolo = WISHLIST_TREASURE_SOLO_NAMES.has(key);
     const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
@@ -1641,11 +1667,11 @@
         const bFavorite = isFavoriteCharacter(bName);
         if(aFavorite !== bFavorite) return aFavorite ? -1 : 1;
 
-        const aBasePriority = getBaseWishlistPerformancePriority(aName);
-        const bBasePriority = getBaseWishlistPerformancePriority(bName);
+        const aBasePriority = getWishlistPerformancePriority(aName);
+        const bBasePriority = getWishlistPerformancePriority(bName);
         if(aBasePriority !== bBasePriority) return aBasePriority - bBasePriority;
-        const aPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(aName));
-        const bPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(bName));
+        const aPosition = getWishlistPerformancePosition(aName);
+        const bPosition = getWishlistPerformancePosition(bName);
         if(aPosition && bPosition && aPosition.tierOrder !== bPosition.tierOrder) return aPosition.tierOrder - bPosition.tierOrder;
         if(aPosition && bPosition && aPosition.index !== bPosition.index) return aPosition.index - bPosition.index;
         if(aPosition && !bPosition) return -1;
