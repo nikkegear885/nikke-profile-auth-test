@@ -2021,12 +2021,8 @@
       .sort((a,b) => {
         const aName = String(a['이름'] || '').trim();
         const bName = String(b['이름'] || '').trim();
-        const aBreakthrough = getBreakthrough(aName);
-        const bBreakthrough = getBreakthrough(bName);
-        if(wallStatus === 'X' && aBreakthrough !== bBreakthrough){
-          // Rule 4 for Pilgrim: 2★ ranks ahead of 1★, which ranks ahead of 0★.
-          return bBreakthrough - aBreakthrough;
-        }
+        // Pilgrim always keeps the same explicit priority order as 160-wall O.
+        // Rule 4's higher-breakthrough sorting applies only to standard companies, not Pilgrim.
         const aIndex = pilgrimPriorityIndex.get(norm(aName));
         const bIndex = pilgrimPriorityIndex.get(norm(bName));
         return aIndex - bIndex;
