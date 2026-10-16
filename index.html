@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.228';
+  var EMBEDDED_VERSION='1.229';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -6573,8 +6573,8 @@ function createRandomTestAccount(){
   const guaranteedOwnedNames=new Set(['헬름','프리바티','앨리스','나가','티아','리타']);
   // Helm and Drake must always be owned at 3 breakthroughs in random test data.
   const guaranteedThreeBreakthroughNames=new Set(['헬름','드레이크']);
-  // Set unowned probability to approximately 20–30% (70–80% owned), before guaranteed-ownership overrides.
-  const ownedChance=0.70+Math.random()*0.10;
+  // Set unowned probability to approximately 70–80% (20–30% owned), before guaranteed-ownership overrides.
+  const ownedChance=0.20+Math.random()*0.10;
   const parts=['머리','몸통','장갑','다리'];
   let ownedCount=0;
   mock.forEach(row=>{
@@ -6584,11 +6584,11 @@ function createRandomTestAccount(){
     if(!owned)unownedNames.push(name);
     else ownedCount++;
 
-    // Favor mostly-owned test accounts while retaining some missing first copies for wishlist-priority testing.
-    // For owned randomized characters, breakthrough distribution is 0★ 30%, 1★ 37%, 2★ 19%, 3★ 14%.
-    // Guaranteed-owned characters override the random ownership roll; Helm and Drake are fixed at 3★ below.
+    // Favor an unowned-heavy account to test first-copy acquisition priorities.
+    // For owned randomized characters, reduce breakthroughs: 0★ 60%, 1★ 25%, 2★ 10%, 3★ 5%.
+    // Guaranteed-owned characters remain owned, and Helm/Drake are fixed at 3★ below.
     row['돌파']=guaranteedThreeBreakthroughNames.has(name)?3:(owned?randomWeightedValue([
-      {value:0,weight:30},{value:1,weight:37},{value:2,weight:19},{value:3,weight:14}
+      {value:0,weight:60},{value:1,weight:25},{value:2,weight:10},{value:3,weight:5}
     ]):0);
     // Core enhancement is not randomized; clear embedded RAW values to avoid carrying real-account values into the mock.
     row['코강']=0;
