@@ -1228,7 +1228,7 @@
           '<button type="button" class="wl-random-test-account-button" data-wl-random-test-account title="무작위 보유·돌파 데이터가 있는 테스트 계정을 생성합니다">무작위 계정 테스트</button>' +
         '</div>' +
         '<div class="wl-auto-toolbar">' +
-          '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 계정 상태로 자동 편성</button>' +
+          '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 추천 위시리스트 확인</button>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
         '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
