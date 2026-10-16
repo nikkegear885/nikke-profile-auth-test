@@ -1907,11 +1907,13 @@
           const unowned = isMarkedUnowned(name);
           const breakthrough = getBreakthrough(name);
 
+          // 160-wall X has its own candidate rule: exclude 3-breakthrough characters.
+          if(wallStatus === 'X' && breakthrough >= 3) return false;
           if(getCoreEnhancement(name) >= 7) return false;
           // Stage 1 mandatory characters bypass manual exclusion; all other manual exclusions remain.
           if(isManuallyExcludedCharacter(name) && !(copyPriority === 0 && isRequired)) return false;
-          // Stages 2 and 3 do not re-select a required character after its first copy is owned.
-          if(copyPriority !== 0 && isRequired && !unowned) return false;
+          // O retains the existing acquisition-stage rule. X evaluates owned copies independently.
+          if(wallStatus !== 'X' && copyPriority !== 0 && isRequired && !unowned) return false;
           // 2★+ treasure characters stay eligible; their priority is moved behind first-copy targets.
           // Collection-only candidates are stage 3 only.
           if(isCollection && copyPriority !== 2) return false;
@@ -1926,6 +1928,13 @@
         const bBreakthrough = getBreakthrough(bName);
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
+        // 160-wall X's first rule: 1–2 breakthrough candidates come before 0-breakthrough candidates.
+        // This branch is intentionally inactive for O, whose ordering remains unchanged.
+        if(wallStatus === 'X'){
+          const a160WallXGroup = aBreakthrough >= 1 && aBreakthrough < 3 ? 0 : 1;
+          const b160WallXGroup = bBreakthrough >= 1 && bBreakthrough < 3 ? 0 : 1;
+          if(a160WallXGroup !== b160WallXGroup) return a160WallXGroup - b160WallXGroup;
+        }
         const aGroup = getWishlistAutoBuildPriority(aName,copyPriority,aBreakthrough,aUnowned);
         const bGroup = getWishlistAutoBuildPriority(bName,copyPriority,bBreakthrough,bUnowned);
         if(aGroup !== bGroup) return aGroup - bGroup;
@@ -1966,14 +1975,27 @@
       .filter(row => {
         const name = String(row['이름'] || '').trim();
         if(!pilgrimPriorityIndex.has(norm(name))) return false;
-        if(!isMarkedUnowned(name)) return false;
+        const breakthrough = getBreakthrough(name);
+        // Pilgrim follows its own list, with the same X-only wall rule applied independently.
+        if(wallStatus === 'X' && breakthrough >= 3) return false;
+        // O keeps Pilgrim's existing first-copy-only behavior; X allows owned 0–2★ characters.
+        if(wallStatus !== 'X' && !isMarkedUnowned(name)) return false;
         if(getCoreEnhancement(name) >= 7) return false;
         if(isManuallyExcludedCharacter(name)) return false;
         return true;
       })
       .sort((a,b) => {
-        const aIndex = pilgrimPriorityIndex.get(norm(a['이름']));
-        const bIndex = pilgrimPriorityIndex.get(norm(b['이름']));
+        const aName = String(a['이름'] || '').trim();
+        const bName = String(b['이름'] || '').trim();
+        const aBreakthrough = getBreakthrough(aName);
+        const bBreakthrough = getBreakthrough(bName);
+        if(wallStatus === 'X'){
+          const a160WallXGroup = aBreakthrough >= 1 && aBreakthrough < 3 ? 0 : 1;
+          const b160WallXGroup = bBreakthrough >= 1 && bBreakthrough < 3 ? 0 : 1;
+          if(a160WallXGroup !== b160WallXGroup) return a160WallXGroup - b160WallXGroup;
+        }
+        const aIndex = pilgrimPriorityIndex.get(norm(aName));
+        const bIndex = pilgrimPriorityIndex.get(norm(bName));
         return aIndex - bIndex;
       });
     picks[PILGRIM_COMPANY] = pilgrimCandidates.slice(0,5).map(row => String(row['이름'] || '').trim());
