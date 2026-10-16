@@ -500,6 +500,53 @@
   const esc = value => String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({
     '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'
   })[ch]);
+
+  const CLUE_LISTS = [
+    {title:'리스트 1', names:['밀크','엠마','루드밀라','메어리']},
+    {title:'리스트 2', names:['페퍼','프림','엑시아','미란다']},
+    {title:'리스트 3', names:['리타','볼륨','노이즈','얀','아비스타']},
+    {title:'리스트 4', names:['노아','폴크방','은화','아리아','폴리','루피','시그널','디젤','킬로']},
+    {title:'리스트 5', names:['센티','애드미','유니','프리바티','라이','스노우 화이트 : 이노센트 데이즈']},
+    {title:'리스트 6', names:['프리바티','크로우','솔린','브리드']},
+    {title:'리스트 7', names:['드레이크','슈가','율리아','에피넬']},
+    {title:'리스트 8', names:['율하','맥스웰','메이든','베스티','길로틴']}
+  ];
+
+  function openClueListWindow(){
+    const clueWindow = window.open('', 'nikkeClueLists', 'popup=yes,width=1320,height=760,resizable=yes,scrollbars=yes');
+    if(!clueWindow){
+      alert('새 창이 열리지 않았어. 브라우저에서 팝업을 허용한 뒤 다시 눌러 줘.');
+      return;
+    }
+    const columns = CLUE_LISTS.map(list =>
+      '<section class="clue-column"><h2>' + esc(list.title) + '</h2><ol>' +
+      list.names.map(name => '<li>' + esc(name) + '</li>').join('') +
+      '</ol></section>'
+    ).join('');
+    clueWindow.document.open();
+    clueWindow.document.write(
+      '<!doctype html><html lang="ko"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>실마 리스트</title><style>' +
+      '*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,"Noto Sans KR",sans-serif;background:#f4f6fa;color:#28364a}' +
+      'body{padding:22px}header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 auto 18px;max-width:1600px}' +
+      'h1{margin:0;font-size:22px;font-weight:900;letter-spacing:-.03em}header p{margin:5px 0 0;color:#728096;font-size:12px}' +
+      '.close{flex:none;border:1px solid #cbd5e1;border-radius:8px;padding:9px 13px;background:#fff;color:#334155;font-weight:800;cursor:pointer}' +
+      '.clue-scroll{max-width:1600px;margin:0 auto;overflow:auto;padding:2px 2px 12px}' +
+      '.clue-grid{display:grid;grid-template-columns:repeat(8,minmax(135px,1fr));gap:12px;min-width:1160px;align-items:start}' +
+      '.clue-column{min-height:230px;padding:13px 12px 15px;border:1px solid #d8dfeb;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(42,61,88,.05)}' +
+      '.clue-column h2{margin:0 0 12px;padding:0 0 9px;border-bottom:2px solid #d7e1ef;color:#24658e;font-size:14px;font-weight:900;text-align:center}' +
+      '.clue-column ol{margin:0;padding-left:22px;font-size:13px;font-weight:700;line-height:1.9}' +
+      '.clue-column li{padding-left:3px;overflow-wrap:anywhere}' +
+      '@media(max-width:700px){body{padding:12px}header{align-items:flex-start}h1{font-size:19px}.clue-grid{grid-template-columns:repeat(8,minmax(135px,1fr))}}' +
+      '</style></head><body><header><div><h1>실마 리스트</h1><p>번호별로 구분된 8개 리스트 · 가로로 이동해 전체 목록 확인</p></div>' +
+      '<button type="button" class="close" onclick="window.close()">창 닫기</button></header>' +
+      '<main class="clue-scroll"><div class="clue-grid">' + columns + '</div></main>' +
+      '</body></html>'
+    );
+    clueWindow.document.close();
+    try{clueWindow.focus();}catch(_){}
+  }
   const blankWishlist = () => Object.fromEntries(COMPANIES.map(company => [
     company, Array(5).fill('')
   ]));
@@ -1117,6 +1164,14 @@
       '#wishlistPanel .wl-picker-exclude{width:100%;min-height:26px;padding:4px 5px;border:1px solid #efb8c0;border-radius:6px;background:#fff0f2;color:#b52b43;font-size:10px;font-weight:1000;cursor:pointer}',
       '#wishlistPanel .wl-picker-exclude.is-excluded{border-color:#b7c1ce;background:#edf1f6;color:#4d596a}',
       '#wishlistPanel .wl-excluded-panel{position:absolute;left:calc(100% + 16px);top:0;z-index:1;box-sizing:border-box;width:290px;max-width:calc(100vw - 500px);max-height:calc(100vh - 155px);display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;border:1px solid #e7aab5;border-radius:12px;background:linear-gradient(180deg,#fff4f5,#ffe9ed);color:#5a2631;box-shadow:0 5px 20px rgba(151,43,66,.12)}',
+      '#wishlistPanel .wl-clue-window-button{display:flex;flex:none;flex-direction:column;align-items:flex-start;gap:4px;width:calc(100% - 16px);margin:8px 8px 10px;padding:11px 12px;border:1px solid #d8c7a3;border-radius:9px;background:linear-gradient(180deg,#fffaf0,#f9efdc);text-align:left;cursor:pointer}',
+      '#wishlistPanel .wl-clue-window-button:hover{border-color:#c5a76b;background:#fff4d7}',
+      '#wishlistPanel .wl-clue-window-title{color:#51452d;font-size:12px;font-weight:1000}',
+      '#wishlistPanel .wl-clue-window-subtitle{color:#89754d;font-size:10px;font-weight:800}',
+      'html.dark-theme #wishlistPanel .wl-clue-window-button{border-color:#67563b;background:linear-gradient(180deg,#2b251b,#211c15)}',
+      'html.dark-theme #wishlistPanel .wl-clue-window-button:hover{background:#3a3020}',
+      'html.dark-theme #wishlistPanel .wl-clue-window-title{color:#f4e5bf}',
+      'html.dark-theme #wishlistPanel .wl-clue-window-subtitle{color:#cfb77f}',
       '#wishlistPanel .wl-clue-list{flex:none;margin:8px 8px 10px;border:1px solid #d8c7a3;border-radius:9px;background:linear-gradient(180deg,#fffaf0,#f9efdc);color:#51452d;overflow:hidden}',
       '#wishlistPanel .wl-clue-list>summary{display:flex;align-items:center;gap:8px;min-height:38px;padding:8px 10px;cursor:pointer;list-style:none}',
       '#wishlistPanel .wl-clue-list>summary::-webkit-details-marker{display:none}',
@@ -1432,21 +1487,7 @@
         '</div>' +
       '</div>' +
       '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="자동편성 제외 캐릭터">' +
-        '<details class="wl-clue-list" data-wl-clue-list>' +
-          '<summary class="wl-clue-list-summary"><span class="wl-clue-list-title">실마 리스트</span><span class="wl-clue-list-count">8개</span><span class="wl-clue-list-chevron" aria-hidden="true">⌄</span></summary>' +
-          '<div class="wl-clue-list-scroll" tabindex="0" aria-label="실마 리스트 1부터 8">' +
-            '<div class="wl-clue-list-grid">' +
-              '<section class="wl-clue-column"><h4>리스트 1</h4><ol><li>밀크</li><li>엠마</li><li>루드밀라</li><li>메어리</li></ol></section>' +
-              '<section class="wl-clue-column"><h4>리스트 2</h4><ol><li>페퍼</li><li>프림</li><li>엑시아</li><li>미란다</li></ol></section>' +
-              '<section class="wl-clue-column"><h4>리스트 3</h4><ol><li>리타</li><li>볼륨</li><li>노이즈</li><li>얀</li><li>아비스타</li></ol></section>' +
-              '<section class="wl-clue-column"><h4>리스트 4</h4><ol><li>노아</li><li>폴크방</li><li>은화</li><li>아리아</li><li>폴리</li><li>루피</li><li>시그널</li><li>디젤</li><li>킬로</li></ol></section>' +
-              '<section class="wl-clue-column"><h4>리스트 5</h4><ol><li>센티</li><li>애드미</li><li>유니</li><li>프리바티</li><li>라이</li><li>스노우 화이트 : 이노센트 데이즈</li></ol></section>' +
-              '<section class="wl-clue-column"><h4>리스트 6</h4><ol><li>프리바티</li><li>크로우</li><li>솔린</li><li>브리드</li></ol></section>' +
-              '<section class="wl-clue-column"><h4>리스트 7</h4><ol><li>드레이크</li><li>슈가</li><li>율리아</li><li>에피넬</li></ol></section>' +
-              '<section class="wl-clue-column"><h4>리스트 8</h4><ol><li>율하</li><li>맥스웰</li><li>메이든</li><li>베스티</li><li>길로틴</li></ol></section>' +
-            '</div>' +
-          '</div>' +
-        '</details>' +
+        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 리스트</span><span class="wl-clue-window-subtitle">리스트 1~8 · 새 창으로 열기 ↗</span></button>' +
         '<div class="wl-excluded-head"><div class="wl-excluded-title">자동편성 제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
         '<div class="wl-excluded-note">캐릭터 사진을 눌러 상태를 <b>기본 → 제외 → 애정캐 → 기본</b> 순서로 변경해.</div>' +
         '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
@@ -2251,6 +2292,12 @@
   }
 
   function onPanelClick(event){
+    const clueOpenButton = event.target.closest && event.target.closest('[data-wl-clue-open]');
+    if(clueOpenButton){
+      event.preventDefault();
+      openClueListWindow();
+      return;
+    }
     const randomTestButton = event.target.closest && event.target.closest('[data-wl-random-test-account]');
     if(randomTestButton){
       if(typeof window.createRandomTestAccount === 'function') window.createRandomTestAccount();
