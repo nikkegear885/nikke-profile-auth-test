@@ -1958,8 +1958,8 @@
         const bUnowned = isMarkedUnowned(bName);
         // 160-wall X rule 2: the five named priority targets rank before all other candidates.
         // Rule 3: company-required and mandatory-treasure characters rank next.
-        // Rule 4: among remaining ordering decisions, 1–2 breakthroughs precede 0 breakthroughs.
-        // All these comparisons are X-only; O ordering remains unchanged.
+        // Rule 4: inside each preceding priority tier, higher breakthrough ranks first (2★ > 1★ > 0★).
+        // These comparisons apply only to X; O ordering remains unchanged.
         if(wallStatus === 'X'){
           const aNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(aName));
           const bNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(bName));
@@ -1967,9 +1967,7 @@
           const aMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName));
           const bMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName));
           if(aMustInclude160WallX !== bMustInclude160WallX) return aMustInclude160WallX ? -1 : 1;
-          const a160WallXGroup = aBreakthrough >= 1 && aBreakthrough < 3 ? 0 : 1;
-          const b160WallXGroup = bBreakthrough >= 1 && bBreakthrough < 3 ? 0 : 1;
-          if(a160WallXGroup !== b160WallXGroup) return a160WallXGroup - b160WallXGroup;
+          if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
         }
         const aGroup = getWishlistAutoBuildPriority(aName,copyPriority,aBreakthrough,aUnowned);
         const bGroup = getWishlistAutoBuildPriority(bName,copyPriority,bBreakthrough,bUnowned);
@@ -2025,10 +2023,9 @@
         const bName = String(b['이름'] || '').trim();
         const aBreakthrough = getBreakthrough(aName);
         const bBreakthrough = getBreakthrough(bName);
-        if(wallStatus === 'X'){
-          const a160WallXGroup = aBreakthrough >= 1 && aBreakthrough < 3 ? 0 : 1;
-          const b160WallXGroup = bBreakthrough >= 1 && bBreakthrough < 3 ? 0 : 1;
-          if(a160WallXGroup !== b160WallXGroup) return a160WallXGroup - b160WallXGroup;
+        if(wallStatus === 'X' && aBreakthrough !== bBreakthrough){
+          // Rule 4 for Pilgrim: 2★ ranks ahead of 1★, which ranks ahead of 0★.
+          return bBreakthrough - aBreakthrough;
         }
         const aIndex = pilgrimPriorityIndex.get(norm(aName));
         const bIndex = pilgrimPriorityIndex.get(norm(bName));
