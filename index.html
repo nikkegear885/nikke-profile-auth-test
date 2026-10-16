@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.247 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
+<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.265 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
 <title>니케 장비관리</title>
 <style>
 :root{--bg:#080d19;--panel:#0f1729;--panel2:#111c32;--line:#26324b;--text:#edf2ff;--muted:#8490aa;--accent:#927dff;--good:#47d7c7;--danger:#ff6c86}
@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.247';
+  var EMBEDDED_VERSION='1.265';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -4612,7 +4612,7 @@ body[data-theme="dark"] #characterPanel td.name-column-cell .name-btn:hover {
 .test-account-switch-btn:hover,.test-account-switch-btn.active{border-color:#b5a8ff!important;background:#37305b!important;color:#fff!important}
 </style>
 </head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.255</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.265</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" onclick="openBlablalinkSyncGuide()"><svg class="sync-button-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"></path></svg><span>계정 동기화</span><svg class="sync-button-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><a href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5496829" id="siteHelpTopButton" class="bl-direct-site-help" target="_blank" rel="noopener noreferrer" aria-label="사이트 이용법 (새 탭에서 열기)" title="사이트 이용법 링크 열기">사이트 이용법</a><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -6619,24 +6619,35 @@ function createRandomTestAccount(){
     '드레이크','아인','라플라스 : 얼티밋 히어로','에이드 : 에이전트 바니',
     '프리바티','팬텀','미란다','슈가','로산나'
   ]);
-  // Set unowned probability to 50% (50% owned), before guaranteed-ownership overrides.
-  const ownedChance=0.50;
+  // TEST-SITE-ONLY generation settings are controlled by the sliders in the wishlist panel.
+  // The percentages remain independent from wishlist recommendation rules.
+  const randomRules=window.NIKKE_RANDOM_ACCOUNT_RULES || {};
+  const clampRandomPercent=(value,fallback)=>Math.max(0,Math.min(100,Number.isFinite(Number(value))?Number(value):fallback));
+  const ownedChance=clampRandomPercent(randomRules.ownedChance,50)/100;
+  const priorityThreeGuaranteeChance=clampRandomPercent(randomRules.priorityThreeGuarantee,100)/100;
+  const fixedOwnedGuaranteeChance=clampRandomPercent(randomRules.fixedOwnedGuarantee,100)/100;
+  const configuredWeights=randomRules.breakthroughWeights || {zero:60,one:25,two:10,three:5};
+  const breakthroughOptions=[
+    {value:0,weight:Math.max(0,Number(configuredWeights.zero)||0)},
+    {value:1,weight:Math.max(0,Number(configuredWeights.one)||0)},
+    {value:2,weight:Math.max(0,Number(configuredWeights.two)||0)},
+    {value:3,weight:Math.max(0,Number(configuredWeights.three)||0)}
+  ];
+  if(!breakthroughOptions.some(item=>item.weight>0)) breakthroughOptions[0].weight=100;
   const parts=['머리','몸통','장갑','다리'];
   let ownedCount=0;
   mock.forEach(row=>{
     const name=String(row&&row['이름']||'').trim();
     if(!name)return;
-    const guaranteedThree=guaranteedThreeBreakthroughNames.has(name);
-    const owned=guaranteedOwnedNames.has(name)||guaranteedThree||Math.random()<ownedChance;
+    const priorityThreeGuaranteed=guaranteedThreeBreakthroughNames.has(name) && Math.random()<priorityThreeGuaranteeChance;
+    const fixedOwnedGuaranteed=guaranteedOwnedNames.has(name) && Math.random()<fixedOwnedGuaranteeChance;
+    const owned=fixedOwnedGuaranteed||priorityThreeGuaranteed||Math.random()<ownedChance;
     if(!owned)unownedNames.push(name);
     else ownedCount++;
 
-    // Lower 1★, 2★, and 3★ breakthrough odds by 10 percentage points each.
-    // The removed probability is added to 0★, giving 0★ 60%, 1★ 25%, 2★ 10%, 3★ 5%.
-    // Guaranteed priority categories remain fixed at 3★.
-    row['돌파']=guaranteedThree?3:(owned?randomWeightedValue([
-      {value:0,weight:60},{value:1,weight:25},{value:2,weight:10},{value:3,weight:5}
-    ]):0);
+    // 1돌·2돌·3돌 probabilities are adjustable; the remaining probability is assigned to 0돌.
+    // Characters selected by the priority 3돌 guarantee slider remain owned at 3돌.
+    row['돌파']=priorityThreeGuaranteed?3:(owned?randomWeightedValue(breakthroughOptions):0);
     // Core enhancement is not randomized; clear embedded RAW values to avoid carrying real-account values into the mock.
     row['코강']=0;
     row['전투력']=owned?Math.floor(35000+Math.random()*365000):0;
@@ -7135,7 +7146,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.29"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.30"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
