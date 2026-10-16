@@ -1408,7 +1408,7 @@
             '<div class="wl-random-setting-hint">돌파 확률은 보유 니케에만 적용돼. 확률 설정은 브라우저에 저장되고, 무작위 계정을 다시 생성할 때 적용돼.</div>' +
           '</div>' +
         '</details>' +
-        '<div class="wl-auto-toolbar">
+        '<div class="wl-auto-toolbar">' +
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 추천 위시리스트 확인</button>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
