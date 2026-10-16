@@ -132,11 +132,10 @@
   // Internal-only performance ranking for auto wishlist recommendations.
   // Do not render these labels or ranks in the Pedia or other UI.
   // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
-  // No Elysion PvP candidates have been supplied yet.
   // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
   // Only characters explicitly designated by the user as PVP candidates.
-  // Missilis: 트리나, 자칼, 센티. Elysion: 베스티 : 택티컬 업.
-  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업','비스킷','루마니','노이즈','블랑','소다','베이'].map(norm));
+  // Missilis: 트리나, 자칼, 센티. Elysion: 베스티 : 택티컬 업, 엠마 : 택티컬 업 (lowest priority).
+  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업','비스킷','루마니','노이즈','블랑','소다','베이','엠마 : 택티컬 업'].map(norm));
   // Laplace is the lowest-priority member of the PVP category.
   const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   // Split the former mixed "Solo Raid = PVP" list into distinct priority categories.
@@ -152,7 +151,7 @@
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','앵커 : 이노센트 메이드','민트','프리카']},
     {rank:2, label:'애장품 필수', names:['헬름','플로라','토브','목단']},
     {rank:3, label:'범용캐', names:['드레이크','아인','라플라스 : 얼티밋 히어로','에이드 : 에이전트 바니']},
-    {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이']},
+    {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이','엠마 : 택티컬 업']},
     {rank:5, label:'애장품 솔레캐', names:['프리바티','팬텀','미란다','슈가','로산나']},
     {rank:6, label:'솔레', names:[
       '솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
@@ -162,7 +161,7 @@
     ]},
     {rank:8, label:'명함 추천', names:[
       '츠바이','율리아',
-      '프리바티 : 언카인드 메이드','은화 : 택티컬 업','엠마 : 택티컬 업',
+      '프리바티 : 언카인드 메이드','은화 : 택티컬 업',
       '맥스웰 : 오디너리 미케닉','마나','페퍼','맥스웰','티아','나가','리타',
       '볼륨','크러스트','도라','앨리스 : 원더랜드 바니','레오나','네로'
     ]},
@@ -198,6 +197,9 @@
     // 프리바티는 2돌 미만이면 애장품 필수 그룹의 정렬 위치를 사용한다.
     if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2){
       return {rank:2,tierOrder:1,index:998};
+    }
+    if(WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2){
+      return {rank:5,tierOrder:4,index:5};
     }
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)){
       return {rank:3,tierOrder:2,index:997};
@@ -260,6 +262,8 @@
   // Special breakthrough-based priority overrides requested for the wishlist.
   // 프리바티: 2돌 미만이면 애장품 필수, 2돌 이상이면 기본 애장품 솔레캐 우선순위 유지.
   const WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES = new Set(['프리바티'].map(norm));
+  // 센티는 2돌 미만일 때만 PVP 대신 애장품 솔레캐 우선순위를 적용합니다.
+  const WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES = new Set(['센티'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES = new Set(['라플라스'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES = new Set(['츠바이','율리아'].map(norm));
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
@@ -280,6 +284,7 @@
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key) && isMarkedUnowned(name)) return 6;
     if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 2;
+    if(WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 5;
     if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
       return getBreakthrough(name) < 2 ? 8 : DEFAULT_PERFORMANCE_PRIORITY;
     }
@@ -305,7 +310,8 @@
   }
 
   function isTreasurePerformanceBelowTwo(name, breakthrough){
-    return WISHLIST_TREASURE_UPSIDE_NAMES.has(norm(name)) && breakthrough < 2;
+    const key = norm(name);
+    return (WISHLIST_TREASURE_UPSIDE_NAMES.has(key) || WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key)) && breakthrough < 2;
   }
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
@@ -316,6 +322,7 @@
     if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
     if(WISHLIST_TREASURE_REQUIRED_NAMES.has(key)) return breakthrough < 2 ? 2 : 12;
     if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return 2;
+    if(WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return 5;
     if(WISHLIST_TREASURE_SOLO_NAMES.has(key)) return breakthrough < 2 ? 5 : 15;
     if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
