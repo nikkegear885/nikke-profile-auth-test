@@ -1846,7 +1846,6 @@
     const savedValues = {
       ownedChance:normalized.ownedChance,
       priorityThreeGuarantee:normalized.priorityThreeGuarantee,
-      fixedOwnedGuarantee:normalized.fixedOwnedGuarantee,
       breakthroughOneChance:normalized.breakthroughOneChance,
       breakthroughTwoChance:normalized.breakthroughTwoChance,
       breakthroughThreeChance:normalized.breakthroughThreeChance
