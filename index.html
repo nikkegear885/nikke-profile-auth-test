@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.226';
+  var EMBEDDED_VERSION='1.227';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -6573,8 +6573,8 @@ function createRandomTestAccount(){
   const guaranteedOwnedNames=new Set(['헬름','프리바티','앨리스','나가','티아','리타']);
   // Drake must always be owned at 3 breakthroughs in random test data.
   const guaranteedThreeBreakthroughNames=new Set(['드레이크']);
-  // Increase unowned probability by 20 percentage points: approximately 50–65% unowned (35–50% owned).
-  const ownedChance=0.35+Math.random()*0.15;
+  // Set unowned probability to approximately 20–30% (70–80% owned), before guaranteed-ownership overrides.
+  const ownedChance=0.70+Math.random()*0.10;
   const parts=['머리','몸통','장갑','다리'];
   let ownedCount=0;
   mock.forEach(row=>{
@@ -6584,9 +6584,9 @@ function createRandomTestAccount(){
     if(!owned)unownedNames.push(name);
     else ownedCount++;
 
-    // Favor unowned and low-breakthrough units to test beginner wishlist priorities.
-    // Ownership is increased by 20 percentage points; owned breakthrough distribution adds 10 points to each of 1–3 breakthroughs.
-    // The resulting exact probabilities are 0★ 30%, 1★ 37%, 2★ 19%, 3★ 14% (total 100%).
+    // Favor mostly-owned test accounts while retaining some missing first copies for wishlist-priority testing.
+    // For owned randomized characters, breakthrough distribution is 0★ 30%, 1★ 37%, 2★ 19%, 3★ 14%.
+    // Guaranteed-owned characters override the random ownership roll; Drake is fixed at 3★ below.
     row['돌파']=guaranteedThreeBreakthroughNames.has(name)?3:(owned?randomWeightedValue([
       {value:0,weight:30},{value:1,weight:37},{value:2,weight:19},{value:3,weight:14}
     ]):0);
@@ -7087,7 +7087,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.08"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.09"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
