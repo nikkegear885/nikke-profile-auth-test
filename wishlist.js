@@ -132,18 +132,18 @@
   // Internal-only performance ranking for auto wishlist recommendations.
   // Do not render these labels or ranks in the Pedia or other UI.
   // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
-  // Elysion PVP candidate: 베스티 : 택티컬 업.
+  // No Elysion PvP candidates have been supplied yet.
   // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
   // Only characters explicitly designated by the user as PVP candidates.
-  // Missilis: 트리나, 자칼, 센티. Elysion: none supplied.
+  // Missilis: 트리나, 자칼, 센티. Elysion: 베스티 : 택티컬 업.
   const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업','비스킷','루마니','노이즈','베이','소다'].map(norm));
   // Laplace is the lowest-priority member of the PVP category.
   const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   // Split the former mixed "Solo Raid = PVP" list into distinct priority categories.
   const SOLO_RAID_WISHLIST_NAMES = new Set([
-    'D : 킬러 와이프','아르카나','솔린 : 프로스트 티켓','길티 : 마이티 바니',
-    '드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
-    '아르카나 : 포츈 메이트','율리아',
+    'D : 킬러 와이프','아르카나','솔린 : 프로스트 티켓',
+    '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
+    '아르카나 : 포츈 메이트',
     '에이드 : 에이전트 바니','루주','벨벳','볼륨','브래디',
     '소다 : 트윙클링 바니','아크레인저 블랙','도라','누아르'
   ].map(norm));
@@ -152,16 +152,17 @@
   const WISHLIST_PERFORMANCE_TIERS = [
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','앵커 : 이노센트 메이드']},
     {rank:2, label:'애장품 필수', names:['헬름','플로라','토브','목단']},
-    {rank:3, label:'범용캐', names:['아인','라플라스 : 얼티밋 히어로','민트','프리카']},
+    {rank:3, label:'범용캐', names:['드레이크','아인','라플라스 : 얼티밋 히어로','민트','프리카']},
     {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','베이','소다']},
     {rank:5, label:'애장품 솔레캐', names:['프리바티','팬텀','미란다','슈가','로산나']},
     {rank:6, label:'솔레', names:[
       'D : 킬러 와이프','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','아르카나',
-      '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','율리아','신 : 스위프트 바니',
+      '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
       '에이드 : 에이전트 바니','루주','벨벳','볼륨','브래디',
       '소다 : 트윙클링 바니','아크레인저 블랙','도라','누아르'
     ]},
     {rank:8, label:'명함 추천', names:[
+      '츠바이','율리아',
       '델타 : 닌자 시프','프리바티 : 언카인드 메이드','은화 : 택티컬 업','엠마 : 택티컬 업',
       '퀀시 : 이스케이프 퀸','맥스웰 : 오디너리 미케닉','마나','페퍼','맥스웰','티아','나가','리타',
       '앨리스','크러스트','블랑','네로','앨리스 : 원더랜드 바니'
@@ -173,7 +174,456 @@
       '루드밀라','코코아','클레이','폴크방','밀크','바이퍼','루피','메어리',
       '레오나','사쿠라','얀','에이드','엑시아','율하','프림','노벨'
     ]}
-  ]
+  ];
+  const WISHLIST_PERFORMANCE_PRIORITY = (() => {
+    const priorities = new Map();
+    WISHLIST_PERFORMANCE_TIERS.forEach(tier => tier.names.forEach(name => {
+      const key = norm(name);
+      // If a Nikke appears in multiple groups, retain its highest (lowest-numbered) priority.
+      if(!priorities.has(key) || tier.rank < priorities.get(key)) priorities.set(key, tier.rank);
+    }));
+    return priorities;
+  })();
+  // Preserve the ordering of the internal list within each rank for the character picker.
+  const WISHLIST_PERFORMANCE_POSITION = (() => {
+    const positions = new Map();
+    WISHLIST_PERFORMANCE_TIERS.forEach((tier,tierOrder) => tier.names.forEach((name,index) => {
+      const key = norm(name);
+      const current = positions.get(key);
+      if(!current || tier.rank < current.rank) positions.set(key,{rank:tier.rank,tierOrder,index});
+    }));
+    return positions;
+  })();
+  function compareWishlistPickerOrder(a,b){
+    const aName = String(a && a['이름'] || '').trim();
+    const bName = String(b && b['이름'] || '').trim();
+    const aRank = getWishlistPerformancePriority(aName);
+    const bRank = getWishlistPerformancePriority(bName);
+    if(aRank !== bRank) return aRank - bRank;
+    const aPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(aName));
+    const bPosition = WISHLIST_PERFORMANCE_POSITION.get(norm(bName));
+    if(aPosition && bPosition && aPosition.tierOrder !== bPosition.tierOrder) return aPosition.tierOrder - bPosition.tierOrder;
+    if(aPosition && bPosition && aPosition.index !== bPosition.index) return aPosition.index - bPosition.index;
+    if(aPosition && !bPosition) return -1;
+    if(!aPosition && bPosition) return 1;
+    return aName.localeCompare(bName,'ko');
+  }
+  const DEFAULT_PERFORMANCE_PRIORITY = Math.max(...WISHLIST_PERFORMANCE_TIERS.map(tier => tier.rank)) + 1;
+  const WISHLIST_TREASURE_REQUIRED_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '애장품 필수')
+      .flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_TREASURE_SOLO_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '애장품 솔레캐')
+      .flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_TREASURE_UPSIDE_NAMES = new Set([
+    ...WISHLIST_TREASURE_REQUIRED_NAMES,
+    ...WISHLIST_TREASURE_SOLO_NAMES
+  ]);
+  const WISHLIST_REQUIRED_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '필수캐').flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_GENERAL_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '범용캐').flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_NAMECARD_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '명함 추천').flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_COLLECTION_NAMES = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '도감작')
+      .flatMap(tier => tier.names.map(norm))
+  );
+  const WISHLIST_TRACKED_NAMES = new Set(WISHLIST_PERFORMANCE_TIERS.flatMap(tier => tier.names.map(norm)));
+  // Special breakthrough-based priority overrides requested for the wishlist.
+  const WISHLIST_GENERAL_UNDER_TWO_NAMES = new Set(['프리바티'].map(norm));
+  const WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES = new Set(['라플라스'].map(norm));
+  const WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES = new Set(['츠바이','율리아'].map(norm));
+  const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
+  function getBaseWishlistPerformancePriority(name){
+    return WISHLIST_PERFORMANCE_PRIORITY.get(norm(name)) ?? DEFAULT_PERFORMANCE_PRIORITY;
+  }
+  function getWishlistPerformancePriority(name){
+    const key = norm(name);
+    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 3;
+    if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
+      return getBreakthrough(name) < 2 ? 8 : DEFAULT_PERFORMANCE_PRIORITY;
+    }
+    if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
+      return pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
+    }
+    if(WISHLIST_NAMECARD_NAMES.has(key)){
+      return 8;
+    }
+    return getBaseWishlistPerformancePriority(name);
+  }
+  // Non-performance collectible characters should not be auto-recommended at 2+ breakthrough.
+  // This rule only affects auto-build; manual picker eligibility and Pedia display remain unchanged.
+  const WISHLIST_EXCLUDE_AT_TWO_BREAKTHROUGHS = new Set(
+    WISHLIST_PERFORMANCE_TIERS
+      .filter(tier => tier.label === '애장품 비성능')
+      .flatMap(tier => tier.names.map(norm))
+  );
+  function shouldExcludeFromAutoWishlist(name){
+    const key = norm(name);
+    return (WISHLIST_EXCLUDE_AT_TWO_BREAKTHROUGHS.has(key) && getBreakthrough(name) >= 2) ||
+      (WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES.has(key) && getBreakthrough(name) >= 2);
+  }
+
+  function isTreasurePerformanceBelowTwo(name, breakthrough){
+    return WISHLIST_TREASURE_UPSIDE_NAMES.has(norm(name)) && breakthrough < 2;
+  }
+
+  function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
+    const key = norm(name);
+    if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
+    if(WISHLIST_TREASURE_REQUIRED_NAMES.has(key)) return breakthrough < 2 ? 2 : 12;
+    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return unowned ? 3 : 13;
+    if(WISHLIST_TREASURE_SOLO_NAMES.has(key)) return breakthrough < 2 ? 5 : 15;
+    if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
+    if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
+      if(WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return breakthrough < 2 ? rank : rank + 10;
+      return unowned ? rank : rank + 10;
+    }
+    if(SOLO_RAID_WISHLIST_NAMES.has(key)) return unowned ? 6 : 16;
+    if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
+      if(breakthrough < 2) return key === norm('츠바이') ? 7 : 7.5;
+      return 18;
+    }
+    if(WISHLIST_NAMECARD_NAMES.has(key)){
+      return unowned ? 8 : 18;
+    }
+    if(WISHLIST_COLLECTION_NAMES.has(key) && copyPriority === 2) return unowned ? 10 : 20;
+    return performancePriority;
+  }
+
+  // Stage 1 ("필수캐 우선") uses explicit groups rather than relying on partial comparator checks.
+  // Required units are pinned first, missing first copies from ranks 2–6 come next,
+  // owned treasure-performance units are targeted only until 2 breakthroughs, and
+  // owned base-copy general/PVP units are sent near the end.
+  function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
+    const key = norm(name);
+    const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
+    const isTreasureSolo = WISHLIST_TREASURE_SOLO_NAMES.has(key);
+    const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
+    const isPvp = PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key);
+    const isSoloRaid = SOLO_RAID_WISHLIST_NAMES.has(key);
+    const isNamecard = WISHLIST_NAMECARD_NAMES.has(key);
+    const isGeneral = WISHLIST_GENERAL_NAMES.has(key);
+    const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
+
+    // Zwei and Julia are first-copy-tier targets until they have two breakthroughs.
+    // Zwei is first, then Julia; only after both reach 2★ do ordinary namecard targets advance.
+    if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
+      if(breakthrough < 2) return key === norm('츠바이') ? 7 : 7.5;
+      return 18;
+    }
+
+    // Privaty behaves as a general-purpose unit until it reaches 2★.
+    if(WISHLIST_GENERAL_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return unowned ? 3 : 13;
+
+    // Rank 1: required characters; owned copies are skipped in stages 2–3 by the candidate filter.
+    if(isRequired) return stage === 0 || unowned ? 1 : Number.POSITIVE_INFINITY;
+
+    // Treasure-required characters are pinned with required characters in step 1.
+    // In steps 2 and 3, 2★+ copies are retained but pushed back like other already-owned characters.
+    if(isTreasureRequired) return stage === 0 ? 1 : (breakthrough < 2 ? 2 : 12);
+    if(isTreasureSolo) return breakthrough < 2 ? 5 : 15;
+
+    // Rank 3: general-purpose characters.
+    if(isGeneral) return unowned ? 3 : 13;
+
+    // PVP characters move to 4 / 7 / 9. Laplace holds its PVP position until 2★.
+    if(isPvp){
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
+      if(WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return breakthrough < 2 ? rank : rank + 10;
+      return unowned ? rank : rank + 10;
+    }
+
+    // Rank 6: Solo Raid; rank 8: ordinary namecard recommendations.
+    if(isSoloRaid) return unowned ? 6 : 16;
+    if(isNamecard) return unowned ? 8 : 18;
+
+    // Rank 10: collection-only characters, included only in collection mode.
+    if(isCollection && stage === 2) return unowned ? 10 : 20;
+    if(stage === 2 && unowned) return 10;
+    if(stage === 2) return 20;
+    return Number.POSITIVE_INFINITY;
+  }
+
+  function normalizePicksToEligibleSSR(source){
+    const cleaned = clonePicks(source);
+    let changed = false;
+    COMPANIES.forEach(company => {
+      cleaned[company] = cleaned[company].map(name => {
+        if(name && !isEligibleWishlistName(name, company)){
+          changed = true;
+          return '';
+        }
+        return name;
+      });
+    });
+    return {picks:cleaned, changed};
+  }
+
+  const esc = value => String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'
+  })[ch]);
+  const blankWishlist = () => Object.fromEntries(COMPANIES.map(company => [
+    company, Array(5).fill('')
+  ]));
+  const clonePicks = source => Object.fromEntries(COMPANIES.map(company => [
+    company, Array.from({length:5}, (_,i) =>
+      source && Array.isArray(source[company]) && typeof source[company][i] === 'string'
+        ? source[company][i] : ''
+    )
+  ]));
+
+  let picks = loadPicks();
+  let savedPicks = clonePicks(picks);
+  let excludedCharacters = loadExcludedCharacters();
+  let savedExcludedCharacters = excludedCharacters.slice();
+  let favoriteCharacters = loadFavoriteCharacters();
+  let savedFavoriteCharacters = favoriteCharacters.slice();
+  let imageMap = new Map();
+  let imageLoadPromise = null;
+  let panel = null;
+  let pickerCompany = null;
+  let pickerSlot = null;
+  let hoverCard = null;
+  let hoverCardAnchor = null;
+
+  function activePicksStorageKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return STORAGE_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return STORAGE_KEY;
+  }
+
+  function activeExcludedStorageKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return EXCLUDED_STORAGE_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return EXCLUDED_STORAGE_KEY;
+  }
+
+  function activeFavoriteStorageKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return FAVORITE_STORAGE_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return FAVORITE_STORAGE_KEY;
+  }
+
+  function loadFavoriteCharacters(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(activeFavoriteStorageKey()) || '[]');
+      const source = Array.isArray(raw) ? raw : [];
+      const seen = new Set();
+      return source.map(name => String(name || '').trim()).filter(name => {
+        const key = norm(name);
+        if(!name || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }catch(_){
+      return [];
+    }
+  }
+
+  function activeExcludedHelmMigratedKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return EXCLUDED_HELM_MIGRATED_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return EXCLUDED_HELM_MIGRATED_KEY;
+  }
+
+  function loadExcludedCharacters(){
+    try{
+      const storageKey = activeExcludedStorageKey();
+      const raw = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const source = Array.isArray(raw) ? raw : [];
+      const seen = new Set();
+      let names = source.map(name => String(name || '').trim()).filter(name => {
+        const key = norm(name);
+        if(!name || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      // Remove Helm if it was added by the earlier always-excluded default.
+      // Run this migration only once so users can still manually exclude Helm afterwards.
+      const migratedKey = activeExcludedHelmMigratedKey();
+      if(localStorage.getItem(migratedKey) !== '1'){
+        names = names.filter(name => norm(name) !== norm('헬름'));
+        localStorage.setItem(storageKey, JSON.stringify(names));
+        localStorage.setItem(migratedKey, '1');
+      }
+      return names;
+    }catch(_){
+      return [];
+    }
+  }
+
+  function getAutomaticExclusionReason(name){
+    if(getCoreEnhancement(name) >= 7){
+      return '코어 강화 7 자동 제외';
+    }
+    if(WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES.has(norm(name)) && getBreakthrough(name) >= 2){
+      return '미란다 2돌파 이상 자동 제외';
+    }
+    return '';
+  }
+
+  function isManuallyExcludedCharacter(name){
+    const key = norm(name);
+    return !!key && excludedCharacters.some(value => norm(value) === key);
+  }
+
+  function isExcludedCharacter(name){
+    return isManuallyExcludedCharacter(name) || !!getAutomaticExclusionReason(name);
+  }
+
+  function isFavoriteCharacter(name){
+    const key = norm(name);
+    return !!key && favoriteCharacters.some(value => norm(value) === key);
+  }
+
+  function getCharacterStatus(name){
+    if(isManuallyExcludedCharacter(name)) return 'excluded';
+    if(isFavoriteCharacter(name)) return 'favorite';
+    return 'normal';
+  }
+
+  // Cycle: normal -> excluded -> favourite -> normal.
+  function cycleCharacterStatus(name){
+    const canonical = String(name || '').trim();
+    if(!canonical) return;
+    const current = getCharacterStatus(canonical);
+    const key = norm(canonical);
+    excludedCharacters = excludedCharacters.filter(value => norm(value) !== key);
+    favoriteCharacters = favoriteCharacters.filter(value => norm(value) !== key);
+    if(current === 'normal') excludedCharacters.push(canonical);
+    else if(current === 'excluded') favoriteCharacters.push(canonical);
+  }
+
+  const WALL_STATUS_KEY = 'nikke_wishlist_160_wall_v1';
+  const CHARACTER_NAMES_VISIBLE_KEY = 'nikke_wishlist_character_names_visible_v1';
+  const COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v3';
+  const PREVIOUS_COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v2';
+  const LEGACY_COPY_PRIORITY_KEY = 'nikke_wishlist_copy_priority_v1';
+
+  function activeWallStatusKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return WALL_STATUS_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return WALL_STATUS_KEY;
+  }
+
+  function loadWallStatus(){
+    try{ return localStorage.getItem(activeWallStatusKey()) === 'O' ? 'O' : 'X'; }
+    catch(_){ return 'X'; }
+  }
+
+  function saveWallStatus(){
+    try{ localStorage.setItem(activeWallStatusKey(), wallStatus); }catch(_){}
+  }
+
+  let wallStatus = loadWallStatus();
+
+  function loadCharacterNamesVisible(){
+    try{ return localStorage.getItem(CHARACTER_NAMES_VISIBLE_KEY) === 'on'; }
+    catch(_){ return false; }
+  }
+  function saveCharacterNamesVisible(){
+    try{ localStorage.setItem(CHARACTER_NAMES_VISIBLE_KEY, characterNamesVisible ? 'on' : 'off'); }catch(_){}
+  }
+  let characterNamesVisible = loadCharacterNamesVisible();
+
+  function activePvpIncludedKey(){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return PVP_INCLUDED_KEY + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return PVP_INCLUDED_KEY;
+  }
+    function loadPvpPriority(){
+    try{
+      const saved = localStorage.getItem(activePvpIncludedKey());
+      // Migrate the old O/X control: O -> PVP 우선, X -> 솔레 우선.
+      if(saved === 'pvp' || saved === 'solo' || saved === 'exclude') return saved;
+      if(saved === 'O') return 'pvp';
+      if(saved === 'X') return 'solo';
+      return 'solo'; // preserve the former X/default behavior
+    }catch(_){ return 'solo'; }
+  }
+  function savePvpPriority(){
+    try{ localStorage.setItem(activePvpIncludedKey(), pvpPriority); }catch(_){}
+  }
+  let pvpPriority = loadPvpPriority();
+
+  function activeCopyPriorityKey(baseKey = COPY_PRIORITY_KEY){
+    try{
+      if(typeof activeAccount !== 'undefined' && String(activeAccount || '').trim()){
+        return baseKey + '_' + encodeURIComponent(String(activeAccount).trim());
+      }
+    }catch(_){}
+    return baseKey;
+  }
+
+  function loadCopyPriority(){
+    try{
+      const saved = localStorage.getItem(activeCopyPriorityKey());
+      if(saved !== null){
+        const value = Number(saved);
+        return Number.isInteger(value) && value >= 0 && value <= 2 ? value : 0;
+      }
+
+      // Migrate the previous four-step slider after removing its second step:
+      // old 0/1 -> new 0, old 2 -> new 1, old 3 -> new 2.
+      const previous = localStorage.getItem(activeCopyPriorityKey(PREVIOUS_COPY_PRIORITY_KEY));
+      if(previous !== null){
+        const previousValue = Number(previous);
+        const migrated = previousValue === 2 ? 1 : previousValue === 3 ? 2 : 0;
+        localStorage.setItem(activeCopyPriorityKey(), String(migrated));
+        return migrated;
+      }
+
+      // Compatibility with the older three-step setting.
+      const legacy = localStorage.getItem(activeCopyPriorityKey(LEGACY_COPY_PRIORITY_KEY));
+      if(legacy !== null){
+        const legacyValue = Number(legacy);
+        const migrated = legacyValue === 2 ? 2 : legacyValue === 1 ? 1 : 0;
+        localStorage.setItem(activeCopyPriorityKey(), String(migrated));
+        return migrated;
+      }
+      return 0;
+    }catch(_){ return 0; }
+  }
+
+  function saveCopyPriority(){
+    try{ localStorage.setItem(activeCopyPriorityKey(), String(copyPriority)); }catch(_){}
+  }
+
+  const COPY_PRIORITY_LABELS = ['필수캐 우선','명함 추천','도감작'];
+  const COPY_PRIORITY_DESCRIPTIONS = [
+    '성능캐 돌파를 최우선으로 합니다',
+    '사용가능성이 있는 니케 명함을 우선으로합니다',
+    '명함을 최우선으로 합니다'
+  ];
   let copyPriority = loadCopyPriority();
 
   function loadPicks(){
