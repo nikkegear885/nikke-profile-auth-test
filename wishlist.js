@@ -273,7 +273,7 @@
       return getBreakthrough(name) < 2 ? 8 : DEFAULT_PERFORMANCE_PRIORITY;
     }
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
-      return pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
+      return pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 5.5 : 7;
     }
     if(WISHLIST_NAMECARD_NAMES.has(key)){
       return 8;
@@ -307,7 +307,7 @@
     if(WISHLIST_TREASURE_SOLO_NAMES.has(key)) return breakthrough < 2 ? 5 : 15;
     if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
-      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 5.5 : 7;
       if(WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return breakthrough < 2 ? rank : rank + 10;
       return unowned ? rank : rank + 10;
     }
@@ -361,9 +361,9 @@
     // Rank 3: general-purpose characters.
     if(isGeneral) return unowned ? 3 : 13;
 
-    // PVP characters move to 4 / 7 / 9. Laplace holds its PVP position until 2★.
+    // PVP characters move to 4 / 5.5 / 7. Laplace holds its PVP position until 2★.
     if(isPvp){
-      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
+      const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 5.5 : 7;
       if(WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return breakthrough < 2 ? rank : rank + 10;
       return unowned ? rank : rank + 10;
     }
