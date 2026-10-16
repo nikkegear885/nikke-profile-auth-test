@@ -743,7 +743,31 @@
     return getAllCharacters().find(row => norm(row['이름']) === norm(name)) || null;
   }
 
+  function hasOwnershipEvidence(row){
+    if(!row || typeof row !== 'object') return false;
+    // A stale "unowned" marker must not override clear ownership data already saved for this account.
+    for(const key of ['돌파','전투력','협투력','호감도','코강','스킬1','스킬2','버스트스킬']){
+      const value = Number(String(row[key] == null ? '' : row[key]).replace(/,/g,''));
+      if(Number.isFinite(value) && value > 0) return true;
+    }
+    for(const part of ['머리','몸통','장갑','다리']){
+      for(const suffix of ['_티어','_레벨','_옵1값','_옵2값','_옵3값']){
+        const value = Number(String(row[part + suffix] == null ? '' : row[part + suffix]).replace(/,/g,''));
+        if(Number.isFinite(value) && value > 0) return true;
+      }
+      const companyGear = row[part + '_기업장비'];
+      if(companyGear === true || (typeof companyGear === 'string' && companyGear.trim() && !['false','0','nan','null','undefined'].includes(companyGear.trim().toLowerCase()))) return true;
+    }
+    for(const key of ['소장품','큐브']){
+      const value = String(row[key] == null ? '' : row[key]).trim().toLowerCase();
+      if(value && !['nan','null','undefined','none','false','0'].includes(value)) return true;
+    }
+    return false;
+  }
+
   function isMarkedUnowned(name){
+    // Saved progress is stronger evidence than a stale/incomplete unowned-name list.
+    if(hasOwnershipEvidence(findAccountRow(name))) return false;
     try{
       if(typeof unownedCharacters !== 'undefined' && unownedCharacters){
         if(typeof unownedCharacters.has === 'function'){
