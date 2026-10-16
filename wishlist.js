@@ -2009,11 +2009,9 @@
       .filter(row => {
         const name = String(row['이름'] || '').trim();
         if(!pilgrimPriorityIndex.has(norm(name))) return false;
-        const breakthrough = getBreakthrough(name);
-        // Pilgrim follows its own list, with the same X-only wall rule applied independently.
-        if(wallStatus === 'X' && breakthrough >= 3) return false;
-        // O keeps Pilgrim's existing first-copy-only behavior; X allows owned 0–2★ characters.
-        if(wallStatus !== 'X' && !isMarkedUnowned(name)) return false;
+        // Pilgrim is intentionally identical for 160-wall O and X:
+        // only characters marked as unowned can be recommended, regardless of breakthrough.
+        if(!isMarkedUnowned(name)) return false;
         if(getCoreEnhancement(name) >= 7) return false;
         if(isManuallyExcludedCharacter(name)) return false;
         return true;
