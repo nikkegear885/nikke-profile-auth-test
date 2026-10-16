@@ -271,9 +271,8 @@
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
     if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
-    if(isTreasurePerformanceBelowTwo(name, breakthrough)){
-      return WISHLIST_TREASURE_SOLO_NAMES.has(key) ? 5 : 2;
-    }
+    if(WISHLIST_TREASURE_REQUIRED_NAMES.has(key)) return breakthrough < 2 ? 2 : 12;
+    if(WISHLIST_TREASURE_SOLO_NAMES.has(key)) return breakthrough < 2 ? 5 : 15;
     if(WISHLIST_GENERAL_NAMES.has(key)) return unowned ? 3 : 13;
     if(PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key)){
       const rank = pvpPriority === 'pvp' ? 4 : pvpPriority === 'solo' ? 7 : 9;
@@ -305,9 +304,10 @@
     // Rank 1: required characters; owned copies are skipped in stages 2–3 by the candidate filter.
     if(isRequired) return stage === 0 || unowned ? 1 : Number.POSITIVE_INFINITY;
 
-    // Ranks 2 and 5: treasure-item targets are prioritized only below 2 breakthroughs.
-    if(isTreasureRequired) return 2;
-    if(isTreasureSolo) return 5;
+    // Treasure-required characters are pinned with required characters in step 1.
+    // In steps 2 and 3, 2★+ copies are retained but pushed back like other already-owned characters.
+    if(isTreasureRequired) return stage === 0 ? 1 : (breakthrough < 2 ? 2 : 12);
+    if(isTreasureSolo) return breakthrough < 2 ? 5 : 15;
 
     // Rank 3: general-purpose characters.
     if(isGeneral) return unowned ? 3 : 13;
@@ -1572,7 +1572,6 @@
           const name = String(row['이름'] || '').trim();
           const key = norm(name);
           const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
-          const isTreasure = WISHLIST_TREASURE_UPSIDE_NAMES.has(key);
           const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
           const favorite = isFavoriteCharacter(name);
           const unowned = isMarkedUnowned(name);
@@ -1583,8 +1582,7 @@
           if(isManuallyExcludedCharacter(name) && !(copyPriority === 0 && isRequired)) return false;
           // Stages 2 and 3 do not re-select a required character after its first copy is owned.
           if(copyPriority !== 0 && isRequired && !unowned) return false;
-          // Treasure-performance characters stop being targets at 2★ and above.
-          if(isTreasure && breakthrough >= 2) return false;
+          // 2★+ treasure characters stay eligible; their priority is moved behind first-copy targets.
           // Collection-only candidates are stage 3 only.
           if(isCollection && copyPriority !== 2) return false;
           if(shouldExcludeFromAutoWishlist(name)) return false;
