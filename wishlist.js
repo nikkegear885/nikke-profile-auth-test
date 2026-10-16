@@ -3,6 +3,8 @@
   'use strict';
 
   const COMPANIES = ['엘리시온','미실리스','테트라','필그림'];
+  const PILGRIM_COMPANY = '필그림';
+  const STANDARD_PRIORITY_COMPANIES = COMPANIES.filter(company => company !== PILGRIM_COMPANY);
   const STORAGE_KEY = 'nikke_wishlist_recommendations_v1';
   const EXCLUDED_STORAGE_KEY = 'nikke_wishlist_excluded_characters_v1';
   const FAVORITE_STORAGE_KEY = 'nikke_wishlist_favorite_characters_v1';
@@ -120,17 +122,31 @@
     return rarityDataReady && nikkeRarityMap.get(norm(name)) === 'SSR';
   }
 
-  function isEligibleWishlistName(name, company){
+  // Standard-company eligibility (Elysion, Missillis, Tetra).
+  function isEligibleStandardWishlistName(name, company){
     if(!String(name || '').trim()) return false;
     // Overspec characters are available under Pilgrim only.
-    if(isOverspecWishlistName(name) && company !== '필그림') return false;
-    // Every company, including Pilgrim, excludes limited/distribution, SR and R characters.
-    // Pilgrim's separate rule applies only to the 160-wall auto-priority logic below.
+    if(isOverspecWishlistName(name) && company !== PILGRIM_COMPANY) return false;
     return !isWishlistExcluded(name) && isSSRCharacter(name);
   }
 
-  // Internal-only performance ranking for auto wishlist recommendations.
+  // Pilgrim eligibility is intentionally isolated from standard-company eligibility.
+  // Until Pilgrim-specific eligibility rules are provided, preserve the current SSR/exclusion
+  // boundary as a compatibility default; future Pilgrim rules should be added here only.
+  function isEligiblePilgrimWishlistName(name){
+    if(!String(name || '').trim()) return false;
+    return !isWishlistExcluded(name) && isSSRCharacter(name);
+  }
+
+  function isEligibleWishlistName(name, company){
+    return company === PILGRIM_COMPANY
+      ? isEligiblePilgrimWishlistName(name)
+      : isEligibleStandardWishlistName(name, company);
+  }
+
+  // Internal-only performance ranking for standard-company auto recommendations (Elysion/Missillis/Tetra).
   // Do not render these labels or ranks in the Pedia or other UI.
+  // Pilgrim must not be added to this shared table; its dedicated priority rules are defined separately below.
   // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
   // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
   // Only characters explicitly designated by the user as PVP candidates.
@@ -173,6 +189,10 @@
       '얀','엑시아','율하','프림','노벨','아리아'
     ]}
   ];
+  // Pilgrim-specific priority configuration is deliberately independent of WISHLIST_PERFORMANCE_TIERS.
+  // Leave empty until its dedicated rules are supplied; do not infer Pilgrim priorities from standard companies.
+  const PILGRIM_WISHLIST_PRIORITY_TIERS = [];
+
   const WISHLIST_PERFORMANCE_PRIORITY = (() => {
     const priorities = new Map();
     WISHLIST_PERFORMANCE_TIERS.forEach(tier => tier.names.forEach(name => {
@@ -228,6 +248,14 @@
     if(aPosition && !bPosition) return -1;
     if(!aPosition && bPosition) return 1;
     return aName.localeCompare(bName,'ko');
+  }
+
+  function compareWishlistPickerOrderForCompany(a,b,company){
+    const aName = String(a && a['이름'] || '').trim();
+    const bName = String(b && b['이름'] || '').trim();
+    // Pilgrim picker is alphabetical until Pilgrim-only ranking rules are defined.
+    if(company === PILGRIM_COMPANY) return aName.localeCompare(bName,'ko');
+    return compareWishlistPickerOrder(a,b);
   }
   const DEFAULT_PERFORMANCE_PRIORITY = Math.max(...WISHLIST_PERFORMANCE_TIERS.map(tier => tier.rank)) + 1;
   const WISHLIST_TREASURE_REQUIRED_NAMES = new Set(
@@ -1567,7 +1595,7 @@
     const characters = getCharactersForCompany(company).filter(row => {
       const name = String(row['이름'] || '').trim();
       return name && (!query || norm(name).includes(query));
-    }).sort(compareWishlistPickerOrder);
+    }).sort((a,b) => compareWishlistPickerOrderForCompany(a,b,company));
     if(!characters.length){
       grid.innerHTML = '<div class="wl-picker-empty">검색 결과가 없습니다.</div>';
       return;
@@ -1655,7 +1683,7 @@
       alert('캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
       return;
     }
-    const overLimitFavorites = COMPANIES.map(company => ({
+    const overLimitFavorites = STANDARD_PRIORITY_COMPANIES.map(company => ({
       company,
       names: getCharactersForCompany(company)
         .map(row => String(row['이름'] || '').trim())
@@ -1666,7 +1694,9 @@
         '명이라 위시리스트 5칸을 초과했습니다. 애정캐를 5명 이하로 줄인 뒤 다시 자동 편성해 주세요.');
       return;
     }
-    COMPANIES.forEach(company => {
+    // Build only standard companies here. Pilgrim is managed by an independent rule path;
+    // keep its current/manual picks untouched until its dedicated auto-build rules are added.
+    STANDARD_PRIORITY_COMPANIES.forEach(company => {
       const candidates = getCharactersForCompany(company)
         .filter(row => {
           const name = String(row['이름'] || '').trim();
