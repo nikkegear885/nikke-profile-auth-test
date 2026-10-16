@@ -325,6 +325,8 @@
   const WISHLIST_REQUIRED_NAMES = new Set(
     WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '필수캐').flatMap(tier => tier.names.map(norm))
   );
+  // 160-wall X rule 2: prioritize these characters whenever they are below 3 breakthroughs.
+  const WISHLIST_160_WALL_X_PRIORITY_NAMES = new Set(['티아','나가','리타','헬름','앨리스'].map(norm));
   const WISHLIST_GENERAL_NAMES = new Set(
     WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '범용캐').flatMap(tier => tier.names.map(norm))
   );
@@ -1902,13 +1904,15 @@
         names: getCharactersForCompany(company)
           .map(row => String(row['이름'] || '').trim())
           .filter(name =>
-            (WISHLIST_REQUIRED_NAMES.has(norm(name)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(name))) &&
+            (WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(name)) ||
+              WISHLIST_REQUIRED_NAMES.has(norm(name)) ||
+              WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(name))) &&
             getBreakthrough(name) < 3
           )
       })).find(item => item.names.length > 5);
       if(overLimitMandatory){
-        alert(overLimitMandatory.company + '의 필수캐·애장품 필수 캐릭터가 ' + overLimitMandatory.names.length +
-          '명이라 위시리스트 5칸을 초과했습니다. 3돌 이상 캐릭터는 제외되며, 나머지 필수 대상 수를 확인해 주세요.');
+        alert(overLimitMandatory.company + '의 160벽 X 우선 포함 대상이 ' + overLimitMandatory.names.length +
+          '명이라 위시리스트 5칸을 초과했습니다. 3돌 이상은 제외되며, 우선 포함 대상 수를 확인해 주세요.');
         return;
       }
     }
@@ -1925,9 +1929,11 @@
           const favorite = isFavoriteCharacter(name);
           const unowned = isMarkedUnowned(name);
           const breakthrough = getBreakthrough(name);
-          // In 160-wall X, mandatory and mandatory-treasure characters are forced in,
-          // regardless of other candidate filters, unless they have 3 breakthroughs.
-          const forceInclude160WallX = wallStatus === 'X' && (isRequired || isTreasureRequired);
+          // 160-wall X rule 2: Tia, Naga, Liter, Helm, and Alice are forced in below 3 breakthroughs.
+          // Rule 3's company-required and mandatory-treasure characters are also forced in below 3 breakthroughs.
+          const is160WallXPriorityTarget = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
+          const forceInclude160WallX = wallStatus === 'X' &&
+            (is160WallXPriorityTarget || isRequired || isTreasureRequired);
 
           // 160-wall X always excludes 3-breakthrough characters.
           if(wallStatus === 'X' && breakthrough >= 3) return false;
@@ -1950,10 +1956,14 @@
         const bBreakthrough = getBreakthrough(bName);
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
-        // 160-wall X rule 2: mandatory and mandatory-treasure characters rank before other candidates.
-        // Rule 3 (1–2 breakthroughs before 0 breakthroughs) is applied only after this group.
-        // These X-only comparisons never change O ordering.
+        // 160-wall X rule 2: the five named priority targets rank before all other candidates.
+        // Rule 3: company-required and mandatory-treasure characters rank next.
+        // Rule 4: among remaining ordering decisions, 1–2 breakthroughs precede 0 breakthroughs.
+        // All these comparisons are X-only; O ordering remains unchanged.
         if(wallStatus === 'X'){
+          const aNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(aName));
+          const bNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(bName));
+          if(aNamedPriority160WallX !== bNamedPriority160WallX) return aNamedPriority160WallX ? -1 : 1;
           const aMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName));
           const bMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName));
           if(aMustInclude160WallX !== bMustInclude160WallX) return aMustInclude160WallX ? -1 : 1;
