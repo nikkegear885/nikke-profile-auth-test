@@ -351,6 +351,7 @@
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
+    if(WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return 5;
     const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
     const isTreasureSolo = WISHLIST_TREASURE_SOLO_NAMES.has(key);
     const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
