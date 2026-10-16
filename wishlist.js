@@ -189,9 +189,33 @@
       '얀','엑시아','율하','프림','노벨','아리아'
     ]}
   ];
-  // Pilgrim-specific priority configuration is deliberately independent of WISHLIST_PERFORMANCE_TIERS.
-  // Leave empty until its dedicated rules are supplied; do not infer Pilgrim priorities from standard companies.
-  const PILGRIM_WISHLIST_PRIORITY_TIERS = [];
+  // Pilgrim has a fully separate first-copy priority sequence.
+  // Once a character is owned (the account no longer marks it as unowned), skip it regardless of breakthrough.
+  // The names are canonical in-game names; normalization handles spacing variants in user-facing text.
+  const PILGRIM_WISHLIST_PRIORITY_NAMES = [
+    '크라운',
+    '아니스 : 스타',
+    '라피 : 레드 후드',
+    '스노우 화이트 : 헤비암즈',
+    '네온 : 비전 아이',
+    '홍련 : 흑영',
+    '리버렐리오',
+    '나유타',
+    '신데렐라',
+    '미하라 : 본딩 체인',
+    '리틀 머메이드',
+    '노아',
+    '이사벨',
+    '그레이브',
+    '레드 후드',
+    '스노우 화이트',
+    '모더니아',
+    '도로시',
+    '하란'
+  ];
+  const PILGRIM_WISHLIST_PRIORITY_INDEX = new Map(
+    PILGRIM_WISHLIST_PRIORITY_NAMES.map((name,index) => [norm(name),index])
+  );
 
   const WISHLIST_PERFORMANCE_PRIORITY = (() => {
     const priorities = new Map();
@@ -253,8 +277,14 @@
   function compareWishlistPickerOrderForCompany(a,b,company){
     const aName = String(a && a['이름'] || '').trim();
     const bName = String(b && b['이름'] || '').trim();
-    // Pilgrim picker is alphabetical until Pilgrim-only ranking rules are defined.
-    if(company === PILGRIM_COMPANY) return aName.localeCompare(bName,'ko');
+    if(company === PILGRIM_COMPANY){
+      const aIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(aName));
+      const bIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(bName));
+      if(aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
+      if(aIndex !== undefined) return -1;
+      if(bIndex !== undefined) return 1;
+      return aName.localeCompare(bName,'ko');
+    }
     return compareWishlistPickerOrder(a,b);
   }
   const DEFAULT_PERFORMANCE_PRIORITY = Math.max(...WISHLIST_PERFORMANCE_TIERS.map(tier => tier.rank)) + 1;
@@ -765,7 +795,7 @@
   function getCharactersForCompany(company){
     return getAllCharacters()
       .filter(row => String(row['기업'] || '').trim() === company && isEligibleWishlistName(row['이름'], company))
-      .sort((a,b) => String(a['이름']).localeCompare(String(b['이름']), 'ko'));
+      .sort((a,b) => compareWishlistPickerOrderForCompany(a,b,company));
   }
 
   function findAccountRow(name){
@@ -1758,6 +1788,26 @@
       picks[company] = candidates.slice(0,5).map(row => String(row['이름'] || '').trim());
       while(picks[company].length < 5) picks[company].push('');
     });
+
+    // Pilgrim uses its own fixed priority list and only targets missing first copies.
+    // Existing copies (including 0-breakthrough units) are skipped so the next unowned Pilgrim advances.
+    const pilgrimCandidates = getCharactersForCompany(PILGRIM_COMPANY)
+      .filter(row => {
+        const name = String(row['이름'] || '').trim();
+        if(!PILGRIM_WISHLIST_PRIORITY_INDEX.has(norm(name))) return false;
+        if(!isMarkedUnowned(name)) return false;
+        if(getCoreEnhancement(name) >= 7) return false;
+        if(isManuallyExcludedCharacter(name)) return false;
+        return true;
+      })
+      .sort((a,b) => {
+        const aIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(a['이름']));
+        const bIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(b['이름']));
+        return aIndex - bIndex;
+      });
+    picks[PILGRIM_COMPANY] = pilgrimCandidates.slice(0,5).map(row => String(row['이름'] || '').trim());
+    while(picks[PILGRIM_COMPANY].length < 5) picks[PILGRIM_COMPANY].push('');
+
     renderWishlist();
   }
 
