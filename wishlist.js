@@ -134,8 +134,8 @@
   // Lower rank number means higher priority. The Solo Raid MLB tier and PvP tier share rank 4.
   // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
   // Only characters explicitly designated by the user as PVP candidates.
-  // Missilis: 트리나, 자칼, 센티. Elysion: 베스티 : 택티컬 업, 엠마 : 택티컬 업 (lowest priority).
-  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업','비스킷','루마니','노이즈','블랑','소다','베이','엠마 : 택티컬 업'].map(norm));
+  // Missilis: 트리나, 자칼, 센티. Elysion: 베스티 : 택티컬 업.
+  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업','비스킷','루마니','노이즈','블랑','소다','베이'].map(norm));
   // Laplace is the lowest-priority member of the PVP category.
   const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   // Split the former mixed "Solo Raid = PVP" list into distinct priority categories.
@@ -151,7 +151,7 @@
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','앵커 : 이노센트 메이드','민트','프리카']},
     {rank:2, label:'애장품 필수', names:['헬름','플로라','토브','목단']},
     {rank:3, label:'범용캐', names:['드레이크','아인','라플라스 : 얼티밋 히어로','에이드 : 에이전트 바니']},
-    {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이','엠마 : 택티컬 업']},
+    {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이']},
     {rank:5, label:'애장품 솔레캐', names:['프리바티','팬텀','미란다','슈가','로산나']},
     {rank:6, label:'솔레', names:[
       '솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
@@ -161,7 +161,7 @@
     ]},
     {rank:8, label:'명함 추천', names:[
       '츠바이','율리아',
-      '프리바티 : 언카인드 메이드','은화 : 택티컬 업',
+      '프리바티 : 언카인드 메이드','은화 : 택티컬 업','엠마 : 택티컬 업',
       '맥스웰 : 오디너리 미케닉','마나','페퍼','맥스웰','티아','나가','리타',
       '볼륨','크러스트','도라','앨리스 : 원더랜드 바니','레오나','네로'
     ]},
