@@ -1379,13 +1379,8 @@
           '<summary>무작위 계정 생성 규칙 조절</summary>' +
           '<div class="wl-random-settings-body">' +
             '<div class="wl-random-setting">' +
-              '<div class="wl-random-setting-head"><label for="wlRandomOwnedChance">일반 니케 보유 확률</label><output data-wl-random-rule-value="ownedChance">50%</output></div>' +
+              '<div class="wl-random-setting-head"><label for="wlRandomOwnedChance">니케 보유 확률</label><output data-wl-random-rule-value="ownedChance">50%</output></div>' +
               '<input id="wlRandomOwnedChance" type="range" min="0" max="100" step="5" value="50" data-wl-random-rule="ownedChance">' +
-            '</div>' +
-            '<div class="wl-random-setting">' +
-              '<div class="wl-random-setting-head"><label for="wlRandomPriorityThree">우선 캐릭터 3돌 보장 확률</label><output data-wl-random-rule-value="priorityThreeGuarantee">100%</output></div>' +
-              '<input id="wlRandomPriorityThree" type="range" min="0" max="100" step="5" value="100" data-wl-random-rule="priorityThreeGuarantee">' +
-              '<div class="wl-random-setting-hint">필수캐·애장품 필수·범용캐·애장품 솔레캐 대상</div>' +
             '</div>' +
             '<div class="wl-random-setting">' +
               '<div class="wl-random-setting-head"><label for="wlRandomOneChance">1돌 확률</label><output data-wl-random-rule-value="breakthroughOneChance">25%</output></div>' +
@@ -1755,7 +1750,6 @@
   const RANDOM_ACCOUNT_RULES_STORAGE_KEY = 'nikke_random_test_account_rules_v1';
   const RANDOM_ACCOUNT_RULE_DEFAULTS = {
     ownedChance:50,
-    priorityThreeGuarantee:100,
     breakthroughOneChance:25,
     breakthroughTwoChance:10,
     breakthroughThreeChance:5
@@ -1773,7 +1767,6 @@
     const three = clampRandomPercent(values.breakthroughThreeChance,0,100-one-two);
     return {
       ownedChance:clampRandomPercent(values.ownedChance),
-      priorityThreeGuarantee:clampRandomPercent(values.priorityThreeGuarantee),
       breakthroughOneChance:one,
       breakthroughTwoChance:two,
       breakthroughThreeChance:three
@@ -1795,7 +1788,6 @@
     const three = normalized.breakthroughThreeChance;
     window.NIKKE_RANDOM_ACCOUNT_RULES = {
       ownedChance:normalized.ownedChance,
-      priorityThreeGuarantee:normalized.priorityThreeGuarantee,
       breakthroughWeights:{
         zero:Math.max(0,100-one-two-three),
         one:one,
@@ -1845,7 +1837,6 @@
     renderRandomAccountRuleControls(root,normalized);
     const savedValues = {
       ownedChance:normalized.ownedChance,
-      priorityThreeGuarantee:normalized.priorityThreeGuarantee,
       breakthroughOneChance:normalized.breakthroughOneChance,
       breakthroughTwoChance:normalized.breakthroughTwoChance,
       breakthroughThreeChance:normalized.breakthroughThreeChance
