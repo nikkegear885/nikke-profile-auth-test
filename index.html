@@ -6571,6 +6571,8 @@ function createRandomTestAccount(){
   const unownedNames=[];
   // These characters must always have at least one copy in the generated test account.
   const guaranteedOwnedNames=new Set(['헬름','프리바티','앨리스','나가','티아','리타']);
+  // Drake must always be owned at 3 breakthroughs in random test data.
+  const guaranteedThreeBreakthroughNames=new Set(['드레이크']);
   // Newbie-like distribution: approximately 35–50% owned, so missing first copies are common.
   const ownedChance=0.55+Math.random()*0.15;
   const parts=['머리','몸통','장갑','다리'];
@@ -6578,16 +6580,16 @@ function createRandomTestAccount(){
   mock.forEach(row=>{
     const name=String(row&&row['이름']||'').trim();
     if(!name)return;
-    const owned=guaranteedOwnedNames.has(name)||Math.random()<ownedChance;
+    const owned=guaranteedOwnedNames.has(name)||guaranteedThreeBreakthroughNames.has(name)||Math.random()<ownedChance;
     if(!owned)unownedNames.push(name);
     else ownedCount++;
 
     // Favor unowned and low-breakthrough units to test beginner wishlist priorities.
     // Ownership is increased by 20 percentage points; owned breakthrough distribution adds 10 points to each of 1–3 breakthroughs.
     // The resulting exact probabilities are 0★ 30%, 1★ 37%, 2★ 19%, 3★ 14% (total 100%).
-    row['돌파']=owned?randomWeightedValue([
+    row['돌파']=guaranteedThreeBreakthroughNames.has(name)?3:(owned?randomWeightedValue([
       {value:0,weight:30},{value:1,weight:37},{value:2,weight:19},{value:3,weight:14}
-    ]):0;
+    ]):0);
     // Core enhancement is not randomized; clear embedded RAW values to avoid carrying real-account values into the mock.
     row['코강']=0;
     row['전투력']=owned?Math.floor(35000+Math.random()*365000):0;
@@ -7085,7 +7087,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.06"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.07"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
