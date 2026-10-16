@@ -512,40 +512,65 @@
     {title:'리스트 8', names:['율하','맥스웰','메이든','베스티','길로틴']}
   ];
 
-  function openClueListWindow(){
-    const clueWindow = window.open('', 'nikkeClueLists', 'popup=yes,width=1320,height=760,resizable=yes,scrollbars=yes');
-    if(!clueWindow){
-      alert('새 창이 열리지 않았어. 브라우저에서 팝업을 허용한 뒤 다시 눌러 줘.');
-      return;
-    }
+  function openClueListModal(){
+    const existing = document.getElementById('wlClueModal');
+    if(existing) return;
     const columns = CLUE_LISTS.map(list =>
-      '<section class="clue-column"><h2>' + esc(list.title) + '</h2><ol>' +
+      '<section class="wl-clue-modal-column"><h2>' + esc(list.title) + '</h2><ol>' +
       list.names.map(name => '<li>' + esc(name) + '</li>').join('') +
       '</ol></section>'
     ).join('');
-    clueWindow.document.open();
-    clueWindow.document.write(
-      '<!doctype html><html lang="ko"><head><meta charset="utf-8">' +
-      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-      '<title>실마 리스트</title><style>' +
-      '*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,"Noto Sans KR",sans-serif;background:#f4f6fa;color:#28364a}' +
-      'body{padding:22px}header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 auto 18px;max-width:1600px}' +
-      'h1{margin:0;font-size:22px;font-weight:900;letter-spacing:-.03em}header p{margin:5px 0 0;color:#728096;font-size:12px}' +
-      '.close{flex:none;border:1px solid #cbd5e1;border-radius:8px;padding:9px 13px;background:#fff;color:#334155;font-weight:800;cursor:pointer}' +
-      '.clue-scroll{max-width:1600px;margin:0 auto;overflow:auto;padding:2px 2px 12px}' +
-      '.clue-grid{display:grid;grid-template-columns:repeat(8,minmax(135px,1fr));gap:12px;min-width:1160px;align-items:start}' +
-      '.clue-column{min-height:230px;padding:13px 12px 15px;border:1px solid #d8dfeb;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(42,61,88,.05)}' +
-      '.clue-column h2{margin:0 0 12px;padding:0 0 9px;border-bottom:2px solid #d7e1ef;color:#24658e;font-size:14px;font-weight:900;text-align:center}' +
-      '.clue-column ol{margin:0;padding-left:22px;font-size:13px;font-weight:700;line-height:1.9}' +
-      '.clue-column li{padding-left:3px;overflow-wrap:anywhere}' +
-      '@media(max-width:700px){body{padding:12px}header{align-items:flex-start}h1{font-size:19px}.clue-grid{grid-template-columns:repeat(8,minmax(135px,1fr))}}' +
-      '</style></head><body><header><div><h1>실마 리스트</h1><p>번호별로 구분된 8개 리스트 · 가로로 이동해 전체 목록 확인</p></div>' +
-      '<button type="button" class="close" onclick="window.close()">창 닫기</button></header>' +
-      '<main class="clue-scroll"><div class="clue-grid">' + columns + '</div></main>' +
-      '</body></html>'
-    );
-    clueWindow.document.close();
-    try{clueWindow.focus();}catch(_){}
+    const overlay = document.createElement('div');
+    overlay.id = 'wlClueModal';
+    overlay.className = 'wl-clue-modal-backdrop';
+    overlay.innerHTML =
+      '<style>' +
+      '#wlClueModal{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(13,22,37,.44);backdrop-filter:blur(2px)}' +
+      '#wlClueModal *{box-sizing:border-box}' +
+      '#wlClueModal .wl-clue-modal-dialog{display:flex;flex-direction:column;width:min(900px,calc(100vw - 32px));max-height:min(590px,calc(100vh - 32px));overflow:hidden;border:1px solid #d6deeb;border-radius:13px;background:#f7f9fc;color:#28364a;box-shadow:0 14px 46px rgba(12,24,44,.25)}' +
+      '#wlClueModal .wl-clue-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:12px 15px;border-bottom:1px solid #e1e7f0;background:#fff}' +
+      '#wlClueModal .wl-clue-modal-title{margin:0;font-size:16px;font-weight:900;letter-spacing:-.02em}' +
+      '#wlClueModal .wl-clue-modal-note{margin-top:3px;color:#718096;font-size:11px;line-height:1.35}' +
+      '#wlClueModal .wl-clue-modal-close{flex:none;padding:6px 10px;border:1px solid #cbd5e1;border-radius:7px;background:#f8fafc;color:#475569;font-size:12px;font-weight:900;cursor:pointer}' +
+      '#wlClueModal .wl-clue-modal-close:hover{background:#eaf1f8;border-color:#aab9cd}' +
+      '#wlClueModal .wl-clue-modal-scroll{overflow:auto;overscroll-behavior:contain;padding:10px}' +
+      '#wlClueModal .wl-clue-modal-grid{display:grid;grid-template-columns:repeat(8,minmax(82px,1fr));gap:7px;min-width:720px;align-items:start}' +
+      '#wlClueModal .wl-clue-modal-column{min-height:150px;padding:9px 8px 10px;border:1px solid #dce4ef;border-radius:8px;background:#fff}' +
+      '#wlClueModal .wl-clue-modal-column h2{margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #dce5f0;color:#24658e;font-size:11px;font-weight:900;text-align:center}' +
+      '#wlClueModal .wl-clue-modal-column ol{margin:0;padding-left:19px;color:#344256;font-size:10px;font-weight:750;line-height:1.7}' +
+      '#wlClueModal .wl-clue-modal-column li{padding-left:1px;overflow-wrap:anywhere}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-dialog{border-color:#354761;background:#121d2d;color:#e7eefb}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-head{border-color:#354761;background:#1b2a40}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-note{color:#9aacc4}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-close{border-color:#425773;background:#26364d;color:#e7eefb}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-close:hover{background:#314761}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-column{border-color:#354761;background:#182438}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-column h2{border-color:#354761;color:#9fd2ff}' +
+      'html.dark-theme #wlClueModal .wl-clue-modal-column ol{color:#e0e9f7}' +
+      '@media(max-width:560px){#wlClueModal{padding:8px}#wlClueModal .wl-clue-modal-dialog{width:calc(100vw - 16px);max-height:calc(100vh - 16px)}#wlClueModal .wl-clue-modal-head{padding:10px}#wlClueModal .wl-clue-modal-title{font-size:14px}#wlClueModal .wl-clue-modal-scroll{padding:8px}}' +
+      '</style>' +
+      '<section class="wl-clue-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="wlClueModalTitle">' +
+        '<header class="wl-clue-modal-head"><div><h2 class="wl-clue-modal-title" id="wlClueModalTitle">실마 리스트</h2>' +
+        '<div class="wl-clue-modal-note">리스트 1~8 · 바깥을 누르거나 Esc를 누르면 닫혀</div></div>' +
+        '<button type="button" class="wl-clue-modal-close" data-wl-clue-close>닫기 ×</button></header>' +
+        '<div class="wl-clue-modal-scroll"><div class="wl-clue-modal-grid">' + columns + '</div></div>' +
+      '</section>';
+    document.body.appendChild(overlay);
+    const closeButton = overlay.querySelector('[data-wl-clue-close]');
+    const closeModal = () => {
+      document.removeEventListener('keydown', onKeydown);
+      overlay.remove();
+    };
+    const onKeydown = event => {
+      if(event.key === 'Escape') closeModal();
+    };
+    overlay.addEventListener('click', event => {
+      if(event.target === overlay || (event.target.closest && event.target.closest('[data-wl-clue-close]'))){
+        closeModal();
+      }
+    });
+    document.addEventListener('keydown', onKeydown);
+    if(closeButton) closeButton.focus();
   }
   const blankWishlist = () => Object.fromEntries(COMPANIES.map(company => [
     company, Array(5).fill('')
@@ -1487,7 +1512,7 @@
         '</div>' +
       '</div>' +
       '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="자동편성 제외 캐릭터">' +
-        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 리스트</span><span class="wl-clue-window-subtitle">리스트 1~8 · 새 창으로 열기 ↗</span></button>' +
+        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 리스트</span><span class="wl-clue-window-subtitle">리스트 1~8 · 작은 팝업으로 보기 ↗</span></button>' +
         '<div class="wl-excluded-head"><div class="wl-excluded-title">자동편성 제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
         '<div class="wl-excluded-note">캐릭터 사진을 눌러 상태를 <b>기본 → 제외 → 애정캐 → 기본</b> 순서로 변경해.</div>' +
         '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
@@ -2295,7 +2320,7 @@
     const clueOpenButton = event.target.closest && event.target.closest('[data-wl-clue-open]');
     if(clueOpenButton){
       event.preventDefault();
-      openClueListWindow();
+      openClueListModal();
       return;
     }
     const randomTestButton = event.target.closest && event.target.closest('[data-wl-random-test-account]');
