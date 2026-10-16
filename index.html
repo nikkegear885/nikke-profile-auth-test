@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.295 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
+<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.296 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
 <title>니케 장비관리</title>
 <style>
 :root{--bg:#080d19;--panel:#0f1729;--panel2:#111c32;--line:#26324b;--text:#edf2ff;--muted:#8490aa;--accent:#927dff;--good:#47d7c7;--danger:#ff6c86}
@@ -6627,13 +6627,28 @@ function createRandomTestAccount(){
   mock.forEach(row=>{
     const name=String(row&&row['이름']||'').trim();
     if(!name)return;
-    const owned=Math.random()<ownedChance;
+    let owned=Math.random()<ownedChance;
+    let breakthrough=owned?randomWeightedValue(breakthroughOptions):0;
+
+    // TEST-SITE-ONLY character overrides are applied after the global random roll:
+    // Helm must be at least 2★; Privaty and Alice must be owned; Drake must be at least 1★.
+    if(name==='헬름'){
+      owned=true;
+      breakthrough=Math.max(breakthrough,2);
+    }else if(name==='프리바티'||name==='앨리스'){
+      owned=true;
+    }else if(name==='드레이크'){
+      owned=true;
+      breakthrough=Math.max(breakthrough,1);
+    }
+
+    // Update ownership tracking only after character-specific overrides are applied.
     if(!owned)unownedNames.push(name);
     else ownedCount++;
 
-    // Every character uses the same configured breakthrough probability distribution.
+    // All non-overridden breakthrough values follow the configured probability distribution.
     // The remaining probability is assigned to 0돌.
-    row['돌파']=owned?randomWeightedValue(breakthroughOptions):0;
+    row['돌파']=owned?breakthrough:0;
     // Core enhancement is not randomized; clear embedded RAW values to avoid carrying real-account values into the mock.
     row['코강']=0;
     row['전투력']=owned?Math.floor(35000+Math.random()*365000):0;
