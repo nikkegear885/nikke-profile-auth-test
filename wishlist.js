@@ -1388,11 +1388,6 @@
               '<div class="wl-random-setting-hint">필수캐·애장품 필수·범용캐·애장품 솔레캐 대상</div>' +
             '</div>' +
             '<div class="wl-random-setting">' +
-              '<div class="wl-random-setting-head"><label for="wlRandomFixedOwned">지정 캐릭터 보유 보장 확률</label><output data-wl-random-rule-value="fixedOwnedGuarantee">100%</output></div>' +
-              '<input id="wlRandomFixedOwned" type="range" min="0" max="100" step="5" value="100" data-wl-random-rule="fixedOwnedGuarantee">' +
-              '<div class="wl-random-setting-hint">헬름·프리바티·앨리스·나가·티아·리타</div>' +
-            '</div>' +
-            '<div class="wl-random-setting">' +
               '<div class="wl-random-setting-head"><label for="wlRandomOneChance">1돌 확률</label><output data-wl-random-rule-value="breakthroughOneChance">25%</output></div>' +
               '<input id="wlRandomOneChance" type="range" min="0" max="85" step="5" value="25" data-wl-random-rule="breakthroughOneChance">' +
             '</div>' +
@@ -1761,7 +1756,6 @@
   const RANDOM_ACCOUNT_RULE_DEFAULTS = {
     ownedChance:50,
     priorityThreeGuarantee:100,
-    fixedOwnedGuarantee:100,
     breakthroughOneChance:25,
     breakthroughTwoChance:10,
     breakthroughThreeChance:5
@@ -1780,7 +1774,6 @@
     return {
       ownedChance:clampRandomPercent(values.ownedChance),
       priorityThreeGuarantee:clampRandomPercent(values.priorityThreeGuarantee),
-      fixedOwnedGuarantee:clampRandomPercent(values.fixedOwnedGuarantee),
       breakthroughOneChance:one,
       breakthroughTwoChance:two,
       breakthroughThreeChance:three
@@ -1803,7 +1796,6 @@
     window.NIKKE_RANDOM_ACCOUNT_RULES = {
       ownedChance:normalized.ownedChance,
       priorityThreeGuarantee:normalized.priorityThreeGuarantee,
-      fixedOwnedGuarantee:normalized.fixedOwnedGuarantee,
       breakthroughWeights:{
         zero:Math.max(0,100-one-two-three),
         one:one,
