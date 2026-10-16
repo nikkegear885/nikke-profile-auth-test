@@ -981,6 +981,29 @@
       '#wishlistPanel .wl-modal-title{position:relative;display:flex;align-items:center;gap:4px;color:#16a5df;font-size:11px;font-weight:1000;letter-spacing:-.04em}',
       '#wishlistPanel .wl-random-test-account-button{position:relative;z-index:1;flex:none;max-width:54%;padding:4px 7px;border:1px solid #b98a38;border-radius:5px;background:#fff8e8;color:#795315;font-size:9px;font-weight:1000;line-height:1.2;white-space:nowrap;cursor:pointer}',
       '#wishlistPanel .wl-random-test-account-button:hover{border-color:#d5a750;background:#fff0cf;color:#65430e}',
+      '#wishlistPanel .wl-random-settings{flex:none;margin:6px 8px 3px;border:1px solid #e3cf9e;border-radius:7px;background:#fffaf0;color:#654f26;overflow:hidden}',
+      '#wishlistPanel .wl-random-settings>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 9px;cursor:pointer;list-style:none;font-size:10px;font-weight:1000;line-height:1.4}',
+      '#wishlistPanel .wl-random-settings>summary::-webkit-details-marker{display:none}',
+      '#wishlistPanel .wl-random-settings>summary:after{content:"⌄";font-size:14px;transition:transform .15s ease}',
+      '#wishlistPanel .wl-random-settings[open]>summary:after{transform:rotate(180deg)}',
+      '#wishlistPanel .wl-random-settings[open]>summary{border-bottom:1px solid #ebdfc3}',
+      '#wishlistPanel .wl-random-settings-body{display:grid;gap:9px;max-height:42vh;overflow-y:auto;padding:9px 10px 10px;overscroll-behavior:contain}',
+      '#wishlistPanel .wl-random-setting{display:grid;gap:3px;min-width:0}',
+      '#wishlistPanel .wl-random-setting-head{display:flex;align-items:center;justify-content:space-between;gap:7px;font-size:10px;font-weight:900;line-height:1.35}',
+      '#wishlistPanel .wl-random-setting-head label{min-width:0;flex:1}',
+      '#wishlistPanel .wl-random-setting-head output{flex:none;color:#8b6218;font-size:10px;font-weight:1000;font-variant-numeric:tabular-nums}',
+      '#wishlistPanel .wl-random-setting input[type=range]{display:block;width:100%;height:18px;margin:0;accent-color:#bd8c2e;cursor:pointer}',
+      '#wishlistPanel .wl-random-setting-hint{color:#887957;font-size:9px;line-height:1.4}',
+      '#wishlistPanel .wl-random-derived-chance{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:5px 7px;border:1px dashed #d4bb7d;border-radius:5px;background:#fff4d9;font-size:10px;font-weight:900}',
+      '#wishlistPanel .wl-random-derived-chance strong{color:#805811;font-size:11px;font-variant-numeric:tabular-nums}',
+      'html.dark-theme #wishlistPanel .wl-random-settings{border-color:#655333;background:#211f1a;color:#f2e3bd}',
+      'html.dark-theme #wishlistPanel .wl-random-settings[open]>summary{border-bottom-color:#51442b}',
+      'html.dark-theme #wishlistPanel .wl-random-setting-head output{color:#ffd27f}',
+      'html.dark-theme #wishlistPanel .wl-random-setting input[type=range]{accent-color:#d4a64d}',
+      'html.dark-theme #wishlistPanel .wl-random-setting-hint{color:#c3b38e}',
+      'html.dark-theme #wishlistPanel .wl-random-derived-chance{border-color:#655333;background:#302817;color:#f2e3bd}',
+      'html.dark-theme #wishlistPanel .wl-random-derived-chance strong{color:#ffd27f}',
+      '@media(prefers-reduced-motion:reduce){#wishlistPanel .wl-random-settings>summary:after{transition:none}}',
       'html.dark-theme #wishlistPanel .wl-random-test-account-button{border-color:#8b6a31;background:#352a19;color:#ffe2a7}',
       'html.dark-theme #wishlistPanel .wl-random-test-account-button:hover{border-color:#c49a47;background:#49371c;color:#fff0ca}',
       '#wishlistPanel .wl-refresh-icon{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:2px solid #16a5df;border-right-color:transparent;border-radius:50%;font-size:0;position:relative;transform:rotate(-35deg)}',
@@ -1352,7 +1375,40 @@
           '<div class="wl-modal-title" id="wishlistModalTitle"><span class="wl-refresh-icon" aria-hidden="true"></span><span>위시리스트 모집</span></div>' +
           '<button type="button" class="wl-random-test-account-button" data-wl-random-test-account title="무작위 보유·돌파 데이터가 있는 테스트 계정을 생성합니다">무작위 계정 테스트</button>' +
         '</div>' +
-        '<div class="wl-auto-toolbar">' +
+        '<details class="wl-random-settings" data-wl-random-settings>' +
+          '<summary>무작위 계정 생성 규칙 조절</summary>' +
+          '<div class="wl-random-settings-body">' +
+            '<div class="wl-random-setting">' +
+              '<div class="wl-random-setting-head"><label for="wlRandomOwnedChance">일반 니케 보유 확률</label><output data-wl-random-rule-value="ownedChance">50%</output></div>' +
+              '<input id="wlRandomOwnedChance" type="range" min="0" max="100" step="5" value="50" data-wl-random-rule="ownedChance">' +
+            '</div>' +
+            '<div class="wl-random-setting">' +
+              '<div class="wl-random-setting-head"><label for="wlRandomPriorityThree">우선 캐릭터 3돌 보장 확률</label><output data-wl-random-rule-value="priorityThreeGuarantee">100%</output></div>' +
+              '<input id="wlRandomPriorityThree" type="range" min="0" max="100" step="5" value="100" data-wl-random-rule="priorityThreeGuarantee">' +
+              '<div class="wl-random-setting-hint">필수캐·애장품 필수·범용캐·애장품 솔레캐 대상</div>' +
+            '</div>' +
+            '<div class="wl-random-setting">' +
+              '<div class="wl-random-setting-head"><label for="wlRandomFixedOwned">지정 캐릭터 보유 보장 확률</label><output data-wl-random-rule-value="fixedOwnedGuarantee">100%</output></div>' +
+              '<input id="wlRandomFixedOwned" type="range" min="0" max="100" step="5" value="100" data-wl-random-rule="fixedOwnedGuarantee">' +
+              '<div class="wl-random-setting-hint">헬름·프리바티·앨리스·나가·티아·리타</div>' +
+            '</div>' +
+            '<div class="wl-random-setting">' +
+              '<div class="wl-random-setting-head"><label for="wlRandomOneChance">1돌 확률</label><output data-wl-random-rule-value="breakthroughOneChance">25%</output></div>' +
+              '<input id="wlRandomOneChance" type="range" min="0" max="85" step="5" value="25" data-wl-random-rule="breakthroughOneChance">' +
+            '</div>' +
+            '<div class="wl-random-setting">' +
+              '<div class="wl-random-setting-head"><label for="wlRandomTwoChance">2돌 확률</label><output data-wl-random-rule-value="breakthroughTwoChance">10%</output></div>' +
+              '<input id="wlRandomTwoChance" type="range" min="0" max="70" step="5" value="10" data-wl-random-rule="breakthroughTwoChance">' +
+            '</div>' +
+            '<div class="wl-random-setting">' +
+              '<div class="wl-random-setting-head"><label for="wlRandomThreeChance">3돌 확률</label><output data-wl-random-rule-value="breakthroughThreeChance">5%</output></div>' +
+              '<input id="wlRandomThreeChance" type="range" min="0" max="65" step="5" value="5" data-wl-random-rule="breakthroughThreeChance">' +
+            '</div>' +
+            '<div class="wl-random-derived-chance"><span>남는 확률은 0돌에 자동 배정</span><strong data-wl-random-zero-chance>60%</strong></div>' +
+            '<div class="wl-random-setting-hint">돌파 확률은 보유 니케에만 적용돼. 확률 설정은 브라우저에 저장되고, 무작위 계정을 다시 생성할 때 적용돼.</div>' +
+          '</div>' +
+        '</details>' +
+        '<div class="wl-auto-toolbar">
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 추천 위시리스트 확인</button>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
@@ -1398,6 +1454,7 @@
     panel.addEventListener('pointerout', onPanelPointerOut);
     panel.addEventListener('focusin', onPanelFocusIn);
     panel.addEventListener('focusout', onPanelFocusOut);
+    renderRandomAccountRuleControls(panel);
     window.addEventListener('scroll', hideWishlistHoverCard, true);
     window.addEventListener('resize', hideWishlistHoverCard);
     document.addEventListener('keydown', onPickerKeydown);
@@ -1699,8 +1756,119 @@
       ownedHtml;
   }
 
+
+  const RANDOM_ACCOUNT_RULES_STORAGE_KEY = 'nikke_random_test_account_rules_v1';
+  const RANDOM_ACCOUNT_RULE_DEFAULTS = {
+    ownedChance:50,
+    priorityThreeGuarantee:100,
+    fixedOwnedGuarantee:100,
+    breakthroughOneChance:25,
+    breakthroughTwoChance:10,
+    breakthroughThreeChance:5
+  };
+
+  function clampRandomPercent(value, min=0, max=100){
+    const number = Number(value);
+    return Math.max(min, Math.min(max, Number.isFinite(number) ? number : min));
+  }
+
+  function sanitizeRandomAccountRuleValues(source){
+    const values = Object.assign({},RANDOM_ACCOUNT_RULE_DEFAULTS,source || {});
+    const one = clampRandomPercent(values.breakthroughOneChance);
+    const two = clampRandomPercent(values.breakthroughTwoChance,0,100-one);
+    const three = clampRandomPercent(values.breakthroughThreeChance,0,100-one-two);
+    return {
+      ownedChance:clampRandomPercent(values.ownedChance),
+      priorityThreeGuarantee:clampRandomPercent(values.priorityThreeGuarantee),
+      fixedOwnedGuarantee:clampRandomPercent(values.fixedOwnedGuarantee),
+      breakthroughOneChance:one,
+      breakthroughTwoChance:two,
+      breakthroughThreeChance:three
+    };
+  }
+
+  function loadRandomAccountRuleValues(){
+    let saved = {};
+    try{
+      saved = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_RULES_STORAGE_KEY) || '{}') || {};
+    }catch(_){}
+    return sanitizeRandomAccountRuleValues(saved);
+  }
+
+  function publishRandomAccountRuleValues(values){
+    const normalized = sanitizeRandomAccountRuleValues(values);
+    const one = normalized.breakthroughOneChance;
+    const two = normalized.breakthroughTwoChance;
+    const three = normalized.breakthroughThreeChance;
+    window.NIKKE_RANDOM_ACCOUNT_RULES = {
+      ownedChance:normalized.ownedChance,
+      priorityThreeGuarantee:normalized.priorityThreeGuarantee,
+      fixedOwnedGuarantee:normalized.fixedOwnedGuarantee,
+      breakthroughWeights:{
+        zero:Math.max(0,100-one-two-three),
+        one:one,
+        two:two,
+        three:three
+      }
+    };
+    return normalized;
+  }
+
+  function renderRandomAccountRuleControls(root, sourceValues){
+    if(!root) return;
+    const section = root.querySelector('[data-wl-random-settings]');
+    if(!section) return;
+    const values = publishRandomAccountRuleValues(sourceValues || loadRandomAccountRuleValues());
+    section.querySelectorAll('[data-wl-random-rule]').forEach(input => {
+      const key = input.dataset.wlRandomRule;
+      if(Object.prototype.hasOwnProperty.call(values,key)) input.value = String(values[key]);
+    });
+    const one = values.breakthroughOneChance;
+    const two = values.breakthroughTwoChance;
+    const three = values.breakthroughThreeChance;
+    const maxByKey = {
+      breakthroughOneChance:100-two-three,
+      breakthroughTwoChance:100-one-three,
+      breakthroughThreeChance:100-one-two
+    };
+    section.querySelectorAll('[data-wl-random-rule]').forEach(input => {
+      const key = input.dataset.wlRandomRule;
+      if(Object.prototype.hasOwnProperty.call(maxByKey,key)) input.max = String(maxByKey[key]);
+      const output = section.querySelector('[data-wl-random-rule-value="' + key + '"]');
+      if(output) output.textContent = values[key] + '%';
+    });
+    const zeroOutput = section.querySelector('[data-wl-random-zero-chance]');
+    if(zeroOutput) zeroOutput.textContent = Math.max(0,100-one-two-three) + '%';
+  }
+
+  function updateRandomAccountRuleControls(root, changedInput){
+    if(!root || !changedInput) return;
+    const section = root.querySelector('[data-wl-random-settings]');
+    if(!section) return;
+    const values = {};
+    section.querySelectorAll('[data-wl-random-rule]').forEach(input => {
+      values[input.dataset.wlRandomRule] = Number(input.value);
+    });
+    const normalized = sanitizeRandomAccountRuleValues(values);
+    renderRandomAccountRuleControls(root,normalized);
+    const savedValues = {
+      ownedChance:normalized.ownedChance,
+      priorityThreeGuarantee:normalized.priorityThreeGuarantee,
+      fixedOwnedGuarantee:normalized.fixedOwnedGuarantee,
+      breakthroughOneChance:normalized.breakthroughOneChance,
+      breakthroughTwoChance:normalized.breakthroughTwoChance,
+      breakthroughThreeChance:normalized.breakthroughThreeChance
+    };
+    try{localStorage.setItem(RANDOM_ACCOUNT_RULES_STORAGE_KEY,JSON.stringify(savedValues));}catch(_){}
+  }
+
   function onPanelInput(event){
-    if(event.target && event.target.matches && event.target.matches('[data-wl-picker-search]')) renderCharacterPicker();
+    if(event.target && event.target.matches && event.target.matches('[data-wl-picker-search]')){
+      renderCharacterPicker();
+      return;
+    }
+    const ruleInput = event.target && event.target.closest && event.target.closest('[data-wl-random-rule]');
+    if(ruleInput) updateRandomAccountRuleControls(panel,ruleInput);
   }
 
   function onPickerKeydown(event){
