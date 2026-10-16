@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.240 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
+<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.241 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
 <title>니케 장비관리</title>
 <style>
 :root{--bg:#080d19;--panel:#0f1729;--panel2:#111c32;--line:#26324b;--text:#edf2ff;--muted:#8490aa;--accent:#927dff;--good:#47d7c7;--danger:#ff6c86}
@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.240';
+  var EMBEDDED_VERSION='1.241';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -4962,14 +4962,23 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   // 이번 동기화에서 보유로 확인되지 않은 기존 미보유는 유지하고,
   // 새로 보유 목록에 없는 니케는 미보유로 추가합니다.
   // 수동 "미사용" 니케는 미보유 대상에서 제외합니다.
+  const rowForName=name=>{
+    const idx=byName.get(String(name??'').trim());
+    return idx==null?null:targetData[idx];
+  };
+  // Keep a saved character marked as owned if account data shows power, breakthroughs, skills, or gear,
+  // even when the profile-sync payload temporarily omits that character.
   const nextUnowned=new Set(
-    [...preservedUnownedNames].filter(name=>!syncedNames.has(name) && !preservedUnusedNames.has(name))
+    [...preservedUnownedNames].filter(name=>
+      !syncedNames.has(name) && !preservedUnusedNames.has(name) && !hasSavedOwnershipEvidence(rowForName(name))
+    )
   );
   targetData
     .map(r=>String(r?.['이름']??'').trim())
     .filter(Boolean)
     .filter(name=>!syncedNames.has(name))
     .filter(name=>!preservedUnusedNames.has(name))
+    .filter(name=>!hasSavedOwnershipEvidence(rowForName(name)))
     .forEach(name=>nextUnowned.add(name));
   // 미사용 상태는 유지하되, 이번 동기화에서 실제 장비 응답을 받은 니케의 결과는 다시 초기화하지 않습니다.
   // 응답이 없는 미사용 니케에 한해서만 기존 동작대로 장비/육성 수치를 최저 상태로 초기화합니다.
@@ -5762,7 +5771,38 @@ function loadAccountUnowned(account){
   }catch(e){}
   return new Set();
 }
+function hasSavedOwnershipEvidence(row){
+  if(!row || typeof row !== 'object') return false;
+  // Keep explicit ownership progress from being overridden by an incomplete profile-sync result.
+  for(const key of ['돌파','전투력','협투력','호감도','코강','스킬1','스킬2','버스트스킬']){
+    const value=Number(String(row[key]??'').replace(/,/g,''));
+    if(Number.isFinite(value)&&value>0)return true;
+  }
+  for(const part of ['머리','몸통','장갑','다리']){
+    for(const suffix of ['_티어','_레벨','_옵1값','_옵2값','_옵3값']){
+      const value=Number(String(row[part+suffix]??'').replace(/,/g,''));
+      if(Number.isFinite(value)&&value>0)return true;
+    }
+    const companyGear=row[part+'_기업장비'];
+    if(companyGear===true||(typeof companyGear==='string'&&companyGear.trim()&&!['false','0','nan','null','undefined'].includes(companyGear.trim().toLowerCase())))return true;
+  }
+  for(const key of ['소장품','큐브']){
+    const value=String(row[key]??'').trim().toLowerCase();
+    if(value&&!['nan','null','undefined','none','false','0'].includes(value))return true;
+  }
+  return false;
+}
+function pruneUnownedMarkersWithOwnedData(){
+  if(!Array.isArray(data)||!(unownedCharacters instanceof Set))return;
+  const rowsByName=new Map(data.map(row=>[String(row?.['이름']??'').trim(),row]));
+  const next=new Set([...unownedCharacters].filter(name=>!hasSavedOwnershipEvidence(rowsByName.get(String(name).trim()))));
+  if(next.size!==unownedCharacters.size){
+    unownedCharacters=next;
+    try{localStorage.setItem(accountStorageKey(ACCOUNT_UNOWNED_PREFIX,activeAccount),JSON.stringify([...next]));}catch(e){}
+  }
+}
 let unownedCharacters=loadAccountUnowned(activeAccount);
+pruneUnownedMarkersWithOwnedData();
 function loadAccountUnused(account){
   try{
     const key=accountStorageKey(ACCOUNT_UNUSED_PREFIX,account);
@@ -6660,6 +6700,7 @@ function switchAccount(account){
   selectedCharacters=loadAccountSelection(activeAccount);
   unusedCharacters=loadAccountUnused(activeAccount);
   unownedCharacters=loadAccountUnowned(activeAccount);
+  pruneUnownedMarkersWithOwnedData();
   editIndex=-1;
   closeHeaderFilter();
   closeCompletionFilter();
@@ -7087,7 +7128,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.18"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.022"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.19"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
