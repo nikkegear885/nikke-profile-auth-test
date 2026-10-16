@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.227';
+  var EMBEDDED_VERSION='1.228';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -6571,8 +6571,8 @@ function createRandomTestAccount(){
   const unownedNames=[];
   // These characters must always have at least one copy in the generated test account.
   const guaranteedOwnedNames=new Set(['헬름','프리바티','앨리스','나가','티아','리타']);
-  // Drake must always be owned at 3 breakthroughs in random test data.
-  const guaranteedThreeBreakthroughNames=new Set(['드레이크']);
+  // Helm and Drake must always be owned at 3 breakthroughs in random test data.
+  const guaranteedThreeBreakthroughNames=new Set(['헬름','드레이크']);
   // Set unowned probability to approximately 20–30% (70–80% owned), before guaranteed-ownership overrides.
   const ownedChance=0.70+Math.random()*0.10;
   const parts=['머리','몸통','장갑','다리'];
@@ -6586,7 +6586,7 @@ function createRandomTestAccount(){
 
     // Favor mostly-owned test accounts while retaining some missing first copies for wishlist-priority testing.
     // For owned randomized characters, breakthrough distribution is 0★ 30%, 1★ 37%, 2★ 19%, 3★ 14%.
-    // Guaranteed-owned characters override the random ownership roll; Drake is fixed at 3★ below.
+    // Guaranteed-owned characters override the random ownership roll; Helm and Drake are fixed at 3★ below.
     row['돌파']=guaranteedThreeBreakthroughNames.has(name)?3:(owned?randomWeightedValue([
       {value:0,weight:30},{value:1,weight:37},{value:2,weight:19},{value:3,weight:14}
     ]):0);
