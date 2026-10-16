@@ -136,38 +136,45 @@
   // PVP inclusion is an optional auto-recommendation priority, separate from the fixed tier table.
   // Only characters explicitly designated by the user as PVP candidates.
   // Missilis: 트리나, 자칼, 센티. Elysion: none supplied.
-  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업'].map(norm));
+  const PVP_WISHLIST_NAMES = new Set(['트리나','자칼','센티','베스티 : 택티컬 업','비스킷','루마니','노이즈','베이','소다'].map(norm));
   // Laplace is the lowest-priority member of the PVP category.
   const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   // Split the former mixed "Solo Raid = PVP" list into distinct priority categories.
   const SOLO_RAID_WISHLIST_NAMES = new Set([
     '아르카나','솔린 : 프로스트 티켓','길티 : 마이티 바니',
     '드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
-    '아르카나 : 포츈 메이트','리타'
+    '아르카나 : 포츈 메이트','리타',
+    '에이드 : 에이전트 바니','루주','벨벳','볼륨','브래디',
+    '소다 : 트윙클링 바니','아크레인저 블랙','도라','누아르'
   ].map(norm));
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
   const WISHLIST_PERFORMANCE_TIERS = [
     {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','헬름']},
-    {rank:2, label:'애장품 필수', names:['프리바티','팬텀','미란다','플로라','토브']},
-    {rank:3, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로']},
-    {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스']},
-    {rank:5, label:'애장품 솔레캐', names:[]},
+    {rank:2, label:'애장품 필수', names:['프리바티','팬텀','미란다','플로라','토브','목단']},
+    {rank:3, label:'범용캐', names:['앵커 : 이노센트 메이드','아인','라플라스 : 얼티밋 히어로','민트','프리카']},
+    {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','베이','소다']},
+    {rank:5, label:'애장품 솔레캐', names:['슈가','로산나']},
     {rank:6, label:'솔레', names:[
       '아르카나','솔린 : 프로스트 티켓',
       '길티 : 마이티 바니','드레이크','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
-      '아르카나 : 포츈 메이트','리타'
+      '아르카나 : 포츈 메이트','리타',
+      '에이드 : 에이전트 바니','루주','벨벳','볼륨','브래디',
+      '소다 : 트윙클링 바니','아크레인저 블랙','도라','누아르'
     ]},
     {rank:8, label:'명함 추천', names:[
       'D : 킬러 와이프','은화 : 택티컬 업','델타 : 닌자 시프',
-      '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','마나','페퍼','티아','나가'
+      '퀀시 : 이스케이프 퀸','맥스웰','맥스웰 : 오디너리 미케닉','마나','페퍼','티아','나가',
+      '앨리스','크러스트','블랑','네로','앨리스 : 원더랜드 바니'
     ]},
     {rank:10, label:'도감작', names:[
       '엠마 : 택티컬 업',
       '브리드','프리바티 : 언카인드 메이드','메이든','마스트','베스티','엠마',
       '폴리','솔린','디젤','은화','길로틴','D','시그널','마르차나','키리','K',
       '소라','레이블','E.H.',
-      '백학','애드미','에피넬','유니','율리아','일레그','크로우','트로니'
+      '백학','애드미','에피넬','유니','율리아','일레그','크로우','트로니',
+      '루드밀라','코코아','클레이','폴크방','밀크','바이퍼','루피','메어리',
+      '레오나','사쿠라','얀','에이드','엑시아','율하','프림','노벨'
     ]}
   ];;
   const WISHLIST_PERFORMANCE_PRIORITY = (() => {
