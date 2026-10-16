@@ -211,11 +211,30 @@
     '스노우 화이트',
     '모더니아',
     '도로시',
-    '하란'
+    '하란',
+    // These two stay last unless PVP priority is set to stage 1.
+    '홍련',
+    '라푼젤'
   ];
-  const PILGRIM_WISHLIST_PRIORITY_INDEX = new Map(
-    PILGRIM_WISHLIST_PRIORITY_NAMES.map((name,index) => [norm(name),index])
-  );
+
+  const PILGRIM_PVP_PROMOTED_NAMES = ['홍련','라푼젤'];
+
+  function getPilgrimWishlistPriorityNames(){
+    const promotedKeys = new Set(PILGRIM_PVP_PROMOTED_NAMES.map(norm));
+    const names = PILGRIM_WISHLIST_PRIORITY_NAMES.filter(name => !promotedKeys.has(norm(name)));
+    // PVP priority stage 1 promotes Scarlet > Rapunzel immediately after Noah.
+    if(pvpPriority === 'pvp'){
+      const noahIndex = names.findIndex(name => norm(name) === norm('노아'));
+      names.splice(noahIndex >= 0 ? noahIndex + 1 : names.length, 0, ...PILGRIM_PVP_PROMOTED_NAMES);
+    }else{
+      names.push(...PILGRIM_PVP_PROMOTED_NAMES);
+    }
+    return names;
+  }
+
+  function getPilgrimWishlistPriorityIndex(){
+    return new Map(getPilgrimWishlistPriorityNames().map((name,index) => [norm(name),index]));
+  }
 
   const WISHLIST_PERFORMANCE_PRIORITY = (() => {
     const priorities = new Map();
@@ -278,8 +297,9 @@
     const aName = String(a && a['이름'] || '').trim();
     const bName = String(b && b['이름'] || '').trim();
     if(company === PILGRIM_COMPANY){
-      const aIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(aName));
-      const bIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(bName));
+      const priorityIndex = getPilgrimWishlistPriorityIndex();
+      const aIndex = priorityIndex.get(norm(aName));
+      const bIndex = priorityIndex.get(norm(bName));
       if(aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
       if(aIndex !== undefined) return -1;
       if(bIndex !== undefined) return 1;
@@ -1791,18 +1811,19 @@
 
     // Pilgrim uses its own fixed priority list and only targets missing first copies.
     // Existing copies (including 0-breakthrough units) are skipped so the next unowned Pilgrim advances.
+    const pilgrimPriorityIndex = getPilgrimWishlistPriorityIndex();
     const pilgrimCandidates = getCharactersForCompany(PILGRIM_COMPANY)
       .filter(row => {
         const name = String(row['이름'] || '').trim();
-        if(!PILGRIM_WISHLIST_PRIORITY_INDEX.has(norm(name))) return false;
+        if(!pilgrimPriorityIndex.has(norm(name))) return false;
         if(!isMarkedUnowned(name)) return false;
         if(getCoreEnhancement(name) >= 7) return false;
         if(isManuallyExcludedCharacter(name)) return false;
         return true;
       })
       .sort((a,b) => {
-        const aIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(a['이름']));
-        const bIndex = PILGRIM_WISHLIST_PRIORITY_INDEX.get(norm(b['이름']));
+        const aIndex = pilgrimPriorityIndex.get(norm(a['이름']));
+        const bIndex = pilgrimPriorityIndex.get(norm(b['이름']));
         return aIndex - bIndex;
       });
     picks[PILGRIM_COMPANY] = pilgrimCandidates.slice(0,5).map(row => String(row['이름'] || '').trim());
