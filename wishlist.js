@@ -1894,6 +1894,24 @@
         '명이라 위시리스트 5칸을 초과했습니다. 애정캐를 5명 이하로 줄인 뒤 다시 자동 편성해 주세요.');
       return;
     }
+    // 160-wall X: mandatory and mandatory-treasure characters must all fit in the wishlist,
+    // except characters already at 3 breakthroughs. Stop rather than silently dropping any of them.
+    if(wallStatus === 'X'){
+      const overLimitMandatory = STANDARD_PRIORITY_COMPANIES.map(company => ({
+        company,
+        names: getCharactersForCompany(company)
+          .map(row => String(row['이름'] || '').trim())
+          .filter(name =>
+            (WISHLIST_REQUIRED_NAMES.has(norm(name)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(name))) &&
+            getBreakthrough(name) < 3
+          )
+      })).find(item => item.names.length > 5);
+      if(overLimitMandatory){
+        alert(overLimitMandatory.company + '의 필수캐·애장품 필수 캐릭터가 ' + overLimitMandatory.names.length +
+          '명이라 위시리스트 5칸을 초과했습니다. 3돌 이상 캐릭터는 제외되며, 나머지 필수 대상 수를 확인해 주세요.');
+        return;
+      }
+    }
     // Build only standard companies here. Pilgrim is managed by an independent rule path;
     // keep its current/manual picks untouched until its dedicated auto-build rules are added.
     STANDARD_PRIORITY_COMPANIES.forEach(company => {
@@ -1902,22 +1920,26 @@
           const name = String(row['이름'] || '').trim();
           const key = norm(name);
           const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
+          const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
           const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
           const favorite = isFavoriteCharacter(name);
           const unowned = isMarkedUnowned(name);
           const breakthrough = getBreakthrough(name);
+          // In 160-wall X, mandatory and mandatory-treasure characters are forced in,
+          // regardless of other candidate filters, unless they have 3 breakthroughs.
+          const forceInclude160WallX = wallStatus === 'X' && (isRequired || isTreasureRequired);
 
-          // 160-wall X has its own candidate rule: exclude 3-breakthrough characters.
+          // 160-wall X always excludes 3-breakthrough characters.
           if(wallStatus === 'X' && breakthrough >= 3) return false;
-          if(getCoreEnhancement(name) >= 7) return false;
-          // Stage 1 mandatory characters bypass manual exclusion; all other manual exclusions remain.
-          if(isManuallyExcludedCharacter(name) && !(copyPriority === 0 && isRequired)) return false;
+          if(getCoreEnhancement(name) >= 7 && !forceInclude160WallX) return false;
+          // Stage 1 mandatory characters bypass manual exclusion; X's forced mandatory targets do too.
+          if(isManuallyExcludedCharacter(name) && !forceInclude160WallX && !(copyPriority === 0 && isRequired)) return false;
           // O retains the existing acquisition-stage rule. X evaluates owned copies independently.
           if(wallStatus !== 'X' && copyPriority !== 0 && isRequired && !unowned) return false;
           // 2★+ treasure characters stay eligible; their priority is moved behind first-copy targets.
-          // Collection-only candidates are stage 3 only.
-          if(isCollection && copyPriority !== 2) return false;
-          if(shouldExcludeFromAutoWishlist(name)) return false;
+          // Collection-only candidates are stage 3 only, except X's forced mandatory targets.
+          if(isCollection && copyPriority !== 2 && !forceInclude160WallX) return false;
+          if(shouldExcludeFromAutoWishlist(name) && !forceInclude160WallX) return false;
           return true;
         });
 
@@ -1928,9 +1950,13 @@
         const bBreakthrough = getBreakthrough(bName);
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
-        // 160-wall X's first rule: 1–2 breakthrough candidates come before 0-breakthrough candidates.
-        // This branch is intentionally inactive for O, whose ordering remains unchanged.
+        // 160-wall X rule 2: mandatory and mandatory-treasure characters rank before other candidates.
+        // Rule 3 (1–2 breakthroughs before 0 breakthroughs) is applied only after this group.
+        // These X-only comparisons never change O ordering.
         if(wallStatus === 'X'){
+          const aMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName));
+          const bMustInclude160WallX = WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName));
+          if(aMustInclude160WallX !== bMustInclude160WallX) return aMustInclude160WallX ? -1 : 1;
           const a160WallXGroup = aBreakthrough >= 1 && aBreakthrough < 3 ? 0 : 1;
           const b160WallXGroup = bBreakthrough >= 1 && bBreakthrough < 3 ? 0 : 1;
           if(a160WallXGroup !== b160WallXGroup) return a160WallXGroup - b160WallXGroup;
