@@ -1010,27 +1010,29 @@
       '#wishlistAccountSwitcher .wl-account-button:hover{border-color:#52acd0;background:#f2fbff;color:#086f99}',
       '@media(max-width:520px){#wishlistAccountSwitcher{width:calc(100% - 24px);gap:4px;margin:7px auto 7px}#wishlistAccountSwitcher .wl-account-label{font-size:9px}#wishlistAccountSwitcher .wl-account-button{min-width:52px;padding:6px 8px;font-size:10px}}',
       '#wishlist160WallControl[hidden]{display:none!important}',
-      '#wishlist160WallControl{position:fixed;left:calc(50% - 231px - 184px);top:142px;z-index:50;box-sizing:border-box;width:164px;padding:12px;border:1px solid #d8dee8;border-radius:11px;background:#fff;color:#344054;box-shadow:0 5px 18px rgba(27,48,75,.10);font-family:inherit}',
-      '#wishlist160WallControl .wl-name-view-title{margin:0 0 7px;font-size:12px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
-      '#wishlist160WallControl .wl-name-view-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
-      '#wishlist160WallControl .wl-name-view-button{height:29px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:11px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
+      '#wishlist160WallControl{position:fixed;left:calc(50% - 231px - 233px);top:142px;z-index:50;box-sizing:border-box;width:213px;padding:16px;border:1px solid #d8dee8;border-radius:13px;background:#fff;color:#344054;box-shadow:0 6px 21px rgba(27,48,75,.10);font-family:inherit}',
+      '#wishlist160WallControl .wl-name-view-title{margin:0 0 9px;font-size:15px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
+      '#wishlist160WallControl .wl-name-view-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}',
+      '#wishlist160WallControl .wl-name-view-button{height:38px;border:1px solid #d3dbe7;border-radius:8px;background:#f7f9fc;color:#69778b;font-size:14px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
       '#wishlist160WallControl .wl-name-view-button.active{border-color:#5296ce;background:#e9f5ff;color:#17679c;box-shadow:inset 0 0 0 1px rgba(82,150,206,.14)}',
-      '#wishlist160WallControl .wl-name-view-divider{margin:10px 1px 10px}',
-      '#wishlist160WallControl .wl-160-title{margin:0 0 9px;font-size:12px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
-      '#wishlist160WallControl .wl-160-options{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
-      '#wishlist160WallControl .wl-160-button{height:34px;border:1px solid #d3dbe7;border-radius:7px;background:#f7f9fc;color:#69778b;font-size:13px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
+      '#wishlist160WallControl .wl-name-view-divider{margin:13px 1px 13px}',
+      '#wishlist160WallControl .wl-160-title{margin:0 0 12px;font-size:15px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
+      '#wishlist160WallControl .wl-160-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}',
+      '#wishlist160WallControl .wl-160-button{height:44px;border:1px solid #d3dbe7;border-radius:8px;background:#f7f9fc;color:#69778b;font-size:17px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
       '#wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#239b76;background:#e5f7ef;color:#16724f;box-shadow:inset 0 0 0 1px rgba(35,155,118,.14)}',
       '#wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#8a96a8;background:#e8edf4;color:#344054;box-shadow:inset 0 0 0 1px rgba(90,106,128,.12)}',
-      '#wishlist160WallControl .wl-160-note{margin-top:8px;color:#78869a;font-size:9px;line-height:1.4;text-align:center}',
-      '#wishlist160WallControl .wl-copy-priority-divider{height:1px;margin:12px 1px 10px;background:#e3e8ef}',
-      '#wishlist160WallControl .wl-copy-priority-heading{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px;color:#38465a;font-size:11px;font-weight:1000}',
-      '#wishlist160WallControl .wl-copy-priority-value{padding:3px 6px;border:1px solid #cbd8e8;border-radius:999px;background:#edf4fc;color:#3e6797;font-size:9px;font-weight:900;white-space:nowrap}',
-      '#wishlist160WallControl .wl-copy-priority-slider{display:block;width:100%;height:18px;margin:2px 0 0;accent-color:#668fda;cursor:pointer}',
-      '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:3px;color:#728096;font-size:10px;font-weight:900}',
-      '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:3px;color:#728096;font-size:10px;font-weight:900}',
+      '#wishlist160WallControl .wl-160-note{margin-top:10px;color:#78869a;font-size:11.5px;line-height:1.4;text-align:center}',
+      '#wishlist160WallControl .wl-copy-priority-divider{height:1px;margin:16px 1px 13px;background:#e3e8ef}',
+      '#wishlist160WallControl .wl-copy-priority-heading{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;color:#38465a;font-size:14px;font-weight:1000}',
+      '#wishlist160WallControl .wl-copy-priority-value{padding:4px 8px;border:1px solid #cbd8e8;border-radius:999px;background:#edf4fc;color:#3e6797;font-size:11.5px;font-weight:900;white-space:nowrap}',
+      '#wishlist160WallControl .wl-priority-slider-wrap{position:relative;width:100%;height:23px;margin:3px 0 0}',
+      '#wishlist160WallControl .wl-copy-priority-slider{position:absolute;inset:0;display:block;width:100%;height:23px;margin:0;accent-color:#668fda;cursor:pointer}',
+      '#wishlist160WallControl .wl-priority-star{position:absolute;top:50%;z-index:2;transform:translate(-50%,-50%);pointer-events:none;color:#f0182b;font-family:Arial,sans-serif;font-size:31px;font-weight:1000;line-height:1;-webkit-text-stroke:.75px #f0182b;text-shadow:-1px 0 #fff,0 1px #fff,1px 0 #fff,0 -1px #fff}',
+      '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
+      '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:nth-child(2){text-align:center}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:last-child{text-align:right}',
-      '#wishlist160WallControl .wl-copy-priority-note{margin-top:7px;color:#8793a6;font-size:9px;line-height:1.4;text-align:center}',
+      '#wishlist160WallControl .wl-copy-priority-note{margin-top:9px;color:#8793a6;font-size:11.5px;line-height:1.4;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-help{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:-1px;padding:0;border:1px solid #9bb0ca;border-radius:50%;background:#edf4fc;color:#47709f;font-size:10px;font-weight:1000;line-height:1;cursor:help}',
       '#wishlist160WallControl .wl-copy-priority-help:after{content:attr(data-tooltip);position:absolute;left:calc(100% + 9px);top:50%;z-index:1002;width:250px;max-width:calc(100vw - 205px);box-sizing:border-box;padding:10px 12px;border:1px solid rgba(107,195,238,.42);border-radius:10px;background:linear-gradient(145deg,#202d43,#101827);color:#f3f7ff;font:600 11px/1.55 system-ui,sans-serif;letter-spacing:0;text-align:left;white-space:normal;box-shadow:0 10px 28px rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-50%) translateX(-3px);transition:opacity .08s ease,transform .08s ease,visibility 0s linear .08s}',
       '#wishlist160WallControl .wl-copy-priority-help:hover:after,#wishlist160WallControl .wl-copy-priority-help:focus-visible:after{opacity:1;visibility:visible;transform:translateY(-50%) translateX(0);transition-delay:0s}',
@@ -1049,7 +1051,7 @@
       'html.dark-theme #wishlist160WallControl .wl-160-button{border-color:#354761;background:#0d1525;color:#adbacd}',
       'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#3b9f7d;background:#173d33;color:#a5f0d0}',
       'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#72819b;background:#273449;color:#e1e9f5}',
-      '@media(max-width:1000px){#wishlist160WallControl{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:462px;margin:8px auto;padding:8px 12px}#wishlist160WallControl .wl-160-title{margin-bottom:6px}#wishlist160WallControl .wl-160-note{margin-top:5px}}',
+      '@media(max-width:1000px){#wishlist160WallControl{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:600px;margin:10px auto;padding:10px 16px}#wishlist160WallControl .wl-160-title{margin-bottom:8px}#wishlist160WallControl .wl-160-note{margin-top:7px}#wishlist160WallControl .wl-copy-priority-help{width:19px;height:19px;font-size:12px}#wishlist160WallControl .wl-priority-star{font-size:32px}}',
       '#wishlistPanel[hidden]{display:none!important}',
       '#wishlistPanel{position:relative!important;z-index:auto;display:block!important;box-sizing:border-box!important;width:calc(100% - 24px)!important;max-width:462px!important;min-width:0!important;padding:0!important;margin:0 auto 16px!important;overflow:visible;background:transparent;color:#25282d}',
       '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:100%;height:auto;min-height:0;overflow:visible;border:1px solid #dedfe1;border-radius:12px;background:#f8f8f8;box-shadow:0 2px 12px rgba(0,0,0,.10)}',
@@ -1377,13 +1379,19 @@
       '</div>' +
       '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-copy-priority-heading"><span>PVP 캐릭터 우선도</span><span class="wl-copy-priority-value" data-wl-pvp-priority-value>솔레 우선</span></div>' +
-      '<input class="wl-copy-priority-slider" data-wl-pvp-priority type="range" min="0" max="2" step="1" value="1" aria-label="PVP 캐릭터 우선도" />' +
+      '<div class="wl-copy-priority-heading"><span>PVP 캐릭터 선호도</span><span class="wl-copy-priority-value" data-wl-pvp-priority-value>솔레 우선</span></div>' +
+      '<div class="wl-priority-slider-wrap wl-pvp-slider-wrap">' +
+         '<input class="wl-copy-priority-slider" data-wl-pvp-priority type="range" min="0" max="2" step="1" value="1" aria-label="PVP 캐릭터 선호도" />' +
+         '<span class="wl-priority-star" data-wl-pvp-star aria-hidden="true" style="left:5%">☆</span>' +
+       '</div>' +
       '<div class="wl-copy-priority-ends wl-pvp-priority-ends"><span>PVP 우선</span><span>솔레 우선</span><span>PVP 제외</span></div>' +
       '<div class="wl-copy-priority-note">PVP의 추천 순위를 슬라이더로 선택</div>' +
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-copy-priority-heading"><span>추천 우선도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 추천 우선도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
-      '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="위시리스트 추천 우선도" />' +
+      '<div class="wl-copy-priority-heading"><span>명함작 선호도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 명함작 선호도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
+      '<div class="wl-priority-slider-wrap wl-copy-slider-wrap">' +
+         '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="명함작 선호도" />' +
+         '<span class="wl-priority-star" data-wl-copy-star aria-hidden="true" style="left:95%">☆</span>' +
+       '</div>' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
       '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
     control.addEventListener('input', event => {
@@ -1454,10 +1462,14 @@
     const pvpModes = ['pvp','solo','exclude'];
     const pvpSlider = control.querySelector('[data-wl-pvp-priority]');
     if(pvpSlider) pvpSlider.value = String(Math.max(0,pvpModes.indexOf(pvpPriority)));
+    const pvpStar = control.querySelector('[data-wl-pvp-star]');
+    if(pvpStar) pvpStar.style.left = '5%';
     const pvpValueLabel = control.querySelector('[data-wl-pvp-priority-value]');
     if(pvpValueLabel) pvpValueLabel.textContent = ({pvp:'PVP 우선',solo:'솔레 우선',exclude:'PVP 제외'})[pvpPriority] || '솔레 우선';
     const slider = control.querySelector('[data-wl-copy-priority]');
     if(slider) slider.value = String(copyPriority);
+    const copyStar = control.querySelector('[data-wl-copy-star]');
+    if(copyStar) copyStar.style.left = wallStatus === 'X' ? '95%' : '50%';
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
     if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '필수캐 우선';
     const help = control.querySelector('[data-wl-copy-priority-help]');
