@@ -860,7 +860,8 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
     }
   }catch(_){}
 
-  // Preserve the full ownership roster separately from equipment details.
+  // GetUserCharacters is the authoritative roster. Do not infer ownership only
+  // from the equipment-detail response: some owned characters can have no detail rows.
   const ownedNames = [...new Set(
     selected.characters
       .map(item => String(BUILTIN_NAME_CODES[String(item?.name_code ?? '').trim()] || '').trim())
