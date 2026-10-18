@@ -825,7 +825,15 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
           level:(equipLevel===undefined||equipLevel===null||equipLevel==='') ? null : Number(equipLevel)
         };
       }
-      updates.push({name,name_code:code,parts});
+      const gradeRaw = char?.grade;
+      const coreRaw = char?.core;
+      updates.push({
+        name,
+        name_code:code,
+        grade:(gradeRaw===undefined || gradeRaw===null || gradeRaw==='') ? null : Number(gradeRaw),
+        core:(coreRaw===undefined || coreRaw===null || coreRaw==='') ? null : Number(coreRaw),
+        parts
+      });
     }
   }
 
@@ -852,6 +860,13 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
     }
   }catch(_){}
 
+  // Preserve the full ownership roster separately from equipment details.
+  const ownedNames = [...new Set(
+    selected.characters
+      .map(item => String(BUILTIN_NAME_CODES[String(item?.name_code ?? '').trim()] || '').trim())
+      .filter(Boolean)
+  )];
+
   return {
     ok:true,
     intl_open_id:intlOpenId,
@@ -863,6 +878,8 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
       remark:profile.remark || ''
     },
     character_count:selected.characters.length,
+    ownedNames,
+    owned_name_count:ownedNames.length,
     detail_count:detailCount,
     updates,
     unresolved
