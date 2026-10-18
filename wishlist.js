@@ -512,6 +512,9 @@
     {title:'리스트 8', names:['율하','맥스웰','메이든','베스티','길로틴']}
   ];
 
+  // The displayed "실마 리스트" is also the authoritative silver-mileage priority set for 160-wall X.
+  const SILVER_MILEAGE_NAMES = new Set(CLUE_LISTS.flatMap(list => list.names.map(norm)));
+
   function openClueListModal(){
     const existing = document.getElementById('wlClueModal');
     if(existing) return;
@@ -2061,33 +2064,43 @@
         const bBreakthrough = getBreakthrough(bName);
         const aUnowned = isMarkedUnowned(aName);
         const bUnowned = isMarkedUnowned(bName);
-        // Rule 2: the five named priority targets rank before all other candidates.
-        // Rule 3: company-required and mandatory-treasure characters rank next only if unowned.
-        // Owned first copies skip rule 3 and are ordered by rule 4 (higher breakthrough first).
-        // These comparisons apply only to X; O ordering remains unchanged.
+        // 160-wall X tiers: Rule 2 named targets > Rule 3 unowned required/mandatory-treasure targets > Rule 4 breakthrough priority.
+        // Rule 4 uses the visible silver-mileage list; non-silver characters only enter Rule 4 at 2★,
+        // and only when they are not already in Rule 3. O mode keeps the existing ordering unchanged.
         if(wallStatus === 'X'){
           const aNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(aName));
           const bNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(bName));
           if(aNamedPriority160WallX !== bNamedPriority160WallX) return aNamedPriority160WallX ? -1 : 1;
+
           const aMustInclude160WallX = aUnowned &&
             (WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName)));
           const bMustInclude160WallX = bUnowned &&
             (WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName)));
           if(aMustInclude160WallX !== bMustInclude160WallX) return aMustInclude160WallX ? -1 : 1;
-          if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
+
+          const aSilverMileage = SILVER_MILEAGE_NAMES.has(norm(aName));
+          const bSilverMileage = SILVER_MILEAGE_NAMES.has(norm(bName));
+          const aRule4Priority = aSilverMileage || (!aMustInclude160WallX && aBreakthrough === 2);
+          const bRule4Priority = bSilverMileage || (!bMustInclude160WallX && bBreakthrough === 2);
+          if(aRule4Priority !== bRule4Priority) return aRule4Priority ? -1 : 1;
+          if(aRule4Priority && bRule4Priority && aBreakthrough !== bBreakthrough){
+            return bBreakthrough - aBreakthrough;
+          }
         }
         const aGroup = getWishlistAutoBuildPriority(aName,copyPriority,aBreakthrough,aUnowned);
         const bGroup = getWishlistAutoBuildPriority(bName,copyPriority,bBreakthrough,bUnowned);
         if(aGroup !== bGroup) return aGroup - bGroup;
 
-        // Within the treasure target, finish the character closest to 2★ first.
+        // Preserve the original treasure-target and owned-copy breakthrough tiebreakers in O mode.
+        // Under 160-wall X, breakthrough ranking is handled explicitly by Rule 4 above; do not
+        // let these fallback comparisons promote non-silver 0★/1★ characters.
         if(aGroup === 2 || aGroup === 5){
-          if(aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
+          if(wallStatus !== 'X' && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
           if(aUnowned !== bUnowned) return aUnowned ? 1 : -1;
         }else{
           // On acquisition groups, missing first copies come before owned copies.
           if(aGroup < 10 && aUnowned !== bUnowned) return aUnowned ? -1 : 1;
-          if(!aUnowned && !bUnowned && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
+          if(wallStatus !== 'X' && !aUnowned && !bUnowned && aBreakthrough !== bBreakthrough) return bBreakthrough - aBreakthrough;
         }
 
         const aFavorite = isFavoriteCharacter(aName);
