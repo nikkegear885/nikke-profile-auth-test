@@ -524,6 +524,7 @@
     {title:'리스트 6', names:['센티','애드미','유니','라이','스노우 화이트 : 이노센트 데이즈']},
     {title:'리스트 7', names:['프리바티','크로우','솔린','브리드','라푼젤 : 퓨어 그레이스']},
     {title:'리스트 8', names:['드레이크','슈가','율리아','에피넬','모리']},
+    {title:'리스트 9', names:['율하','맥스웰','메이든','베스티','길로틴']},
     {title:'애장품 시즌6', names:['팬텀','센티','플로라','로산나','슈가']}
   ];
 
@@ -533,7 +534,7 @@
   function openClueListModal(){
     const existing = document.getElementById('wlClueModal');
     if(existing) return;
-    const columns = CLUE_LISTS.map(list =>
+    const renderClueList = list =>
       '<section class="wl-clue-modal-column"><h2>' + esc(list.title) + '</h2><ol>' +
       list.names.map(name => {
         const image = findImage(name);
@@ -542,8 +543,9 @@
           : '<span class="wl-clue-nikke-placeholder">' + esc(name.slice(0,1)) + '</span>';
         return '<li><div class="wl-clue-nikke-row"><span class="wl-clue-nikke-photo" data-wl-clue-photo="' + esc(name) + '">' + photo + '</span><span class="wl-clue-nikke-name">' + esc(name) + '</span></div></li>';
       }).join('') +
-      '</ol></section>'
-    ).join('');
+      '</ol></section>';
+    const columns = CLUE_LISTS.filter(list => list.title !== '애장품 시즌6').map(renderClueList).join('');
+    const seasonColumn = CLUE_LISTS.filter(list => list.title === '애장품 시즌6').map(renderClueList).join('');
     const overlay = document.createElement('div');
     overlay.id = 'wlClueModal';
     overlay.className = 'wl-clue-modal-backdrop';
@@ -559,6 +561,9 @@
       '#wlClueModal .wl-clue-modal-close:hover{background:#eaf1f8;border-color:#aab9cd}' +
       '#wlClueModal .wl-clue-modal-scroll{overflow:auto;overscroll-behavior:contain;padding:10px}' +
       '#wlClueModal .wl-clue-modal-grid{display:grid;grid-template-columns:repeat(9,minmax(82px,1fr));gap:7px;min-width:794px;align-items:start}' +
+      '#wlClueModal .wl-clue-modal-season-row{margin-top:10px}' +
+      '#wlClueModal .wl-clue-modal-season-row .wl-clue-modal-column{min-height:0}' +
+      '#wlClueModal .wl-clue-modal-season-row .wl-clue-modal-column ol{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0;padding-left:17px}' +
       '#wlClueModal .wl-clue-modal-column{min-height:150px;padding:9px 8px 10px;border:1px solid #dce4ef;border-radius:8px;background:#fff}' +
       '#wlClueModal .wl-clue-modal-column h2{margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #dce5f0;color:#24658e;font-size:9px;font-weight:900;text-align:center}' +
       '#wlClueModal .wl-clue-modal-column ol{margin:0;padding-left:17px;color:#344256;font-size:8px;font-weight:750;line-height:1.55}' +
@@ -582,7 +587,8 @@
         '<header class="wl-clue-modal-head"><div><h2 class="wl-clue-modal-title" id="wlClueModalTitle">실마 상점 스페어바디 목록</h2>' +
         '<div class="wl-clue-modal-note">리스트별 니케 사진과 이름 · 바깥을 누르거나 Esc를 누르면 닫혀</div></div>' +
         '<button type="button" class="wl-clue-modal-close" data-wl-clue-close>닫기 ×</button></header>' +
-        '<div class="wl-clue-modal-scroll"><div class="wl-clue-modal-grid">' + columns + '</div></div>' +
+        '<div class="wl-clue-modal-scroll"><div class="wl-clue-modal-grid">' + columns + '</div>' +
+        '<div class="wl-clue-modal-season-row">' + seasonColumn + '</div></div>' +
       '</section>';
     document.body.appendChild(overlay);
     loadImageMap().then(() => {
