@@ -509,7 +509,8 @@
     {title:'리스트 5', names:['센티','애드미','유니','프리바티','라이','스노우 화이트 : 이노센트 데이즈']},
     {title:'리스트 6', names:['프리바티','크로우','솔린','브리드']},
     {title:'리스트 7', names:['드레이크','슈가','율리아','에피넬']},
-    {title:'리스트 8', names:['율하','맥스웰','메이든','베스티','길로틴']}
+    {title:'리스트 8', names:['율하','맥스웰','메이든','베스티','길로틴']},
+    {title:'리스트 9', names:['팬텀','센티','플로라','로산나','슈가']}
   ];
 
   // The displayed "실마 리스트" is also the authoritative silver-mileage priority set for 160-wall X.
