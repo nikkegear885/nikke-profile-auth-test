@@ -2048,7 +2048,7 @@
             const isNamedPriority = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
             const isUnownedRequired = isMarkedUnowned(name) &&
               (WISHLIST_REQUIRED_NAMES.has(key) || WISHLIST_TREASURE_REQUIRED_NAMES.has(key));
-            return (isNamedPriority || isUnownedRequired) && getBreakthrough(name) < 3;
+            return !isManuallyExcludedCharacter(name) && (isNamedPriority || isUnownedRequired) && getBreakthrough(name) < 3;
           })
       })).find(item => item.names.length > 5);
       if(overLimitMandatory){
@@ -2082,7 +2082,7 @@
           if(wallStatus === 'X' && breakthrough >= 3) return false;
           if(getCoreEnhancement(name) >= 7 && !forceInclude160WallX) return false;
           // Stage 1 mandatory characters bypass manual exclusion; X's forced mandatory targets do too.
-          if(isManuallyExcludedCharacter(name) && !forceInclude160WallX && !(copyPriority === 0 && isRequired)) return false;
+          if(isManuallyExcludedCharacter(name)) return false;
           // O retains the existing acquisition-stage rule. X evaluates owned copies independently.
           if(wallStatus !== 'X' && copyPriority !== 0 && isRequired && !unowned) return false;
           // 2★+ treasure characters stay eligible; their priority is moved behind first-copy targets.
