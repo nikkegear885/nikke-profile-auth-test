@@ -1586,7 +1586,7 @@
       '<div class="wl-dialog">' +
         '<div class="wl-modal-head">' +
           '<div class="wl-modal-title" id="wishlistModalTitle"><span class="wl-refresh-icon" aria-hidden="true"></span><span>위시리스트 모집</span></div>' +
-          '<span class="wl-recommend-warning" data-wl-recommend-warning hidden tabindex="0" role="note" aria-label="위시리스트 추천 안내" data-tooltip="해당 위시리스트 추천리스트는 명함 획득을 목표로 제작되었습니다.&#10;돌파 우선도 체크용으로는 추천하지 않습니다">필독!</span>' +
+          '<span class="wl-recommend-warning" data-wl-recommend-warning hidden tabindex="0" role="note" aria-label="위시리스트 추천 안내" data-tooltip="해당 위시리스트 추천리스트는 뉴비들의 160벽 돌파,명함 획득을 목표로 제작되었습니다.&#10;니청년~니할배들의 돌파,코강 우선도 체크용으로는 추천하지 않습니다.">필독!</span>' +
           '<button type="button" class="wl-random-test-account-button" data-wl-random-test-account title="무작위 보유·돌파 데이터가 있는 테스트 계정을 생성합니다">무작위 계정 테스트</button>' +
         '</div>' +
         '<details class="wl-random-settings" data-wl-random-settings>' +
