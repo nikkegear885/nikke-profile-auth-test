@@ -7,21 +7,16 @@ GitHub Pages 테스트 사이트의 공개 프로필 동기화는 Cloudflare Wor
 - Cloudflare Cron Trigger가 매일 12:00 KST에 세션 갱신을 시도합니다.
 - 사용자가 계정 동기화를 누를 때도 갱신을 먼저 시도합니다.
 - 갱신 성공 후 받은 쿠키는 `SERVICE_SESSION_KV`에 저장되어 다음 요청에도 이어집니다.
-- 만료/폐기된 세션이나 BlaBlaLink 측의 재로그인 요구까지 항상 자동 복구할 수 있는 것은 아닙니다. 갱신 API가 세션을 거부하면 BlaBlaLink에 다시 로그인하여 초기 값을 업데이트해야 합니다.
+- 만료/폐기된 세션이나 BlaBlaLink 측의 재로그인 요구까지 항상 자동 복구할 수 있는 것은 아닙니다. 갱신 API가 세션을 거부하면 BlaBlaLink에 다시 로그인해야 합니다.
 
-## 1. KV 네임스페이스 만들기 (한 번만)
+## 1. Worker 프로젝트 파일 준비
 
-Worker 배포 폴더에서 실행합니다.
+이 테스트 저장소의 최신 `cloudflare-worker.js`와 `wrangler.toml`을 로컬 Worker 배포 폴더에 반영합니다. `wrangler.toml`의 Worker 이름이 `nikke-profile-verify`인지 확인하세요.
 
-    npx.cmd wrangler kv namespace create SERVICE_SESSION_KV
-
-명령 결과에 표시된 `id`를 복사합니다. 이 테스트 저장소의 `wrangler.toml`에서 아래 항목의 placeholder를 해당 ID로 바꿉니다.
+현재 Wrangler 4.151.1은 아래 KV 바인딩에 ID가 없으면 배포 시 네임스페이스를 생성하도록 설정할 수 있습니다. 프로젝트 설정에 아래 항목이 있어야 합니다.
 
     [[kv_namespaces]]
     binding = "SERVICE_SESSION_KV"
-    id = "여기에_생성된_KV_ID"
-
-KV 네임스페이스를 이미 만들었다면 새로 만들지 말고 기존 ID를 사용합니다.
 
 ## 2. 초기 세션 Secret 설정
 
@@ -49,15 +44,13 @@ BlaBlaLink에 로그인된 브라우저의 쿠키 목록에서 **값만** 읽어
 
 처음 두 Secret은 이미 설정했다면 다시 입력할 필요가 없습니다. `BLABLALINK_SERVICE_INTL_OPENID`는 새 코드에서 사용하지 않는 기존 호환용 항목입니다.
 
-## 3. Worker 코드 배포
+## 3. Worker 배포
 
-GitHub의 이 테스트 저장소에서 최신 `cloudflare-worker.js`와 `wrangler.toml`을 배포 폴더에 반영하고, `wrangler.toml`의 KV ID가 실제 ID인지 확인합니다. placeholder가 남아 있으면 배포하면 안 됩니다.
-
-그다음 실행합니다.
+로컬 배포 폴더에 최신 `cloudflare-worker.js`와 `wrangler.toml`이 반영되어 있고 위의 Secret 7개가 설정되어 있는지 확인한 뒤 실행합니다.
 
     npx.cmd wrangler deploy
 
-배포 대상은 `nikke-profile-verify` Worker입니다. 이는 테스트 사이트용 동기화 서버이며, 메인 사이트 파일은 변경하지 않습니다.
+배포가 KV 바인딩을 생성하면 Wrangler가 네임스페이스 ID를 `wrangler.toml`에 기록합니다. 이 배포는 `nikke-profile-verify` Worker에 적용되며, 메인 사이트의 파일은 변경하지 않습니다.
 
 ## 4. 동작 확인
 
@@ -67,8 +60,12 @@ GitHub의 이 테스트 저장소에서 최신 `cloudflare-worker.js`와 `wrangl
 
 정상적으로 갱신되면 로그에 `scheduled refresh succeeded`가 표시됩니다. 자동 갱신이 실패하면 로그에는 실패 유형만 남기며, 토큰 값은 기록하지 않습니다.
 
-## 보안
+## 이후 세션이 완전히 만료된 경우
+
+BlaBlaLink에서 다시 로그인한 다음 해당 쿠키를 Secret에 갱신합니다. Worker는 저장된 Secret 지문이 바뀐 것을 감지해 KV 세션을 새 값으로 다시 초기화합니다. KV를 직접 삭제할 필요가 없습니다.
+
+## 보안 및 제한
 
 - 쿠키와 토큰은 Worker Secret 또는 Worker 전용 KV에만 저장합니다.
 - 토큰/쿠키 값을 GitHub에 올리거나 채팅으로 보내지 않습니다.
-- 이 갱신은 BlaBlaLink 로그인 갱신 API에 의존하는 실험적인 자동화입니다. 세션이 완전히 만료·폐기되었거나 서비스 정책이 바뀌면 수동 로그인이 필요할 수 있습니다.
+- 세션 갱신은 BlaBlaLink 로그인 갱신 API에 의존하는 커뮤니티에서 확인된 방식입니다. 서버 측 정책이나 하드 만료로 인해 갱신 요청이 거부되면 수동 로그인이 필요할 수 있습니다.
