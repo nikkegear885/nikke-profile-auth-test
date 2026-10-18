@@ -6630,16 +6630,10 @@ function createRandomTestAccount(){
     let owned=Math.random()<ownedChance;
     let breakthrough=owned?randomWeightedValue(breakthroughOptions):0;
 
-    // TEST-SITE-ONLY character overrides are applied after the global random roll:
-    // Helm must be at least 2★; Privaty and Alice must be owned; Drake must be at least 1★.
-    if(name==='헬름'){
+    // TEST-SITE-ONLY minimum-ownership overrides: Alice and Privaty are always at least 0★ owned.
+    // Their breakthrough values still follow the configured probability distribution when initially owned.
+    if(name==='프리바티'||name==='앨리스'){
       owned=true;
-      breakthrough=Math.max(breakthrough,2);
-    }else if(name==='프리바티'||name==='앨리스'){
-      owned=true;
-    }else if(name==='드레이크'){
-      owned=true;
-      breakthrough=Math.max(breakthrough,1);
     }
 
     // Update ownership tracking only after character-specific overrides are applied.
@@ -7147,7 +7141,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.023"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.87"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.023"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.88"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
