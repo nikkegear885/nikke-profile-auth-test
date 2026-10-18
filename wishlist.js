@@ -1777,9 +1777,9 @@
       const isBonusRecruit = slot.classList.contains('is-bonus-recruit');
       const isRoadToVillain = slot.classList.contains('is-road-to-villain');
       if(isBonusRecruit){
-        nameLabel.textContent = '보너스 리크루트에 포함된 니케입니다.\\n본인의 포인트 상황에 따라 제외 추천';
+        nameLabel.textContent = '보너스 리크루트에 포함된 니케입니다.\n본인의 포인트 상황에 따라 제외 추천';
       }else if(isRoadToVillain){
-        nameLabel.textContent = '로드 투 빌런 상시 이벤트로 2돌파 까지 획득 가능한 니케입니다.\\n1회라도 직접 획득했다면 제외 추천';
+        nameLabel.textContent = '로드 투 빌런 상시 이벤트로 2돌파 까지 획득 가능한 니케입니다.\n1회라도 직접 획득했다면 제외 추천';
       }else{
         nameLabel.textContent = name;
       }
