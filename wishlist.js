@@ -1025,7 +1025,7 @@
       '#wishlistAccountSwitcher .wl-account-button:hover{border-color:#52acd0;background:#f2fbff;color:#086f99}',
       '@media(max-width:520px){#wishlistAccountSwitcher{width:calc(100% - 24px);gap:4px;margin:7px auto 7px}#wishlistAccountSwitcher .wl-account-label{font-size:9px}#wishlistAccountSwitcher .wl-account-button{min-width:52px;padding:6px 8px;font-size:10px}}',
       '#wishlist160WallControl[hidden]{display:none!important}',
-      '#wishlist160WallControl{position:fixed;left:calc(50% - 231px - 233px);top:142px;z-index:50;box-sizing:border-box;width:213px;padding:16px;border:1px solid #d8dee8;border-radius:13px;background:#fff;color:#344054;box-shadow:0 6px 21px rgba(27,48,75,.10);font-family:inherit}',
+      '#wishlist160WallControl{position:fixed;left:calc(50% - 231px - 297px);top:142px;z-index:50;box-sizing:border-box;width:277px;padding:16px;border:1px solid #d8dee8;border-radius:13px;background:#fff;color:#344054;box-shadow:0 6px 21px rgba(27,48,75,.10);font-family:inherit}',
       '#wishlist160WallControl .wl-name-view-title{margin:0 0 9px;font-size:15px;font-weight:1000;line-height:1.35;text-align:center;color:#38465a}',
       '#wishlist160WallControl .wl-name-view-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}',
       '#wishlist160WallControl .wl-name-view-button{height:38px;border:1px solid #d3dbe7;border-radius:8px;background:#f7f9fc;color:#69778b;font-size:14px;font-weight:1000;cursor:pointer;transition:background .12s,border-color .12s,color .12s}',
@@ -1070,7 +1070,7 @@
       'html.dark-theme #wishlist160WallControl .wl-160-button{border-color:#354761;background:#0d1525;color:#adbacd}',
       'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#3b9f7d;background:#173d33;color:#a5f0d0}',
       'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#72819b;background:#273449;color:#e1e9f5}',
-      '@media(max-width:1000px){#wishlist160WallControl{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:600px;margin:10px auto;padding:10px 16px}#wishlist160WallControl .wl-160-title{margin-bottom:8px}#wishlist160WallControl .wl-160-note{margin-top:7px}#wishlist160WallControl .wl-copy-priority-help{width:19px;height:19px;font-size:12px}#wishlist160WallControl .wl-priority-star{width:18px;height:18px;font-size:11px}}',
+      '@media(max-width:1080px){#wishlist160WallControl{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:600px;margin:10px auto;padding:10px 16px}#wishlist160WallControl .wl-160-title{margin-bottom:8px}#wishlist160WallControl .wl-160-note{margin-top:7px}#wishlist160WallControl .wl-copy-priority-help{width:19px;height:19px;font-size:12px}#wishlist160WallControl .wl-priority-star{width:18px;height:18px;font-size:11px}}',
       '#wishlistPanel[hidden]{display:none!important}',
       '#wishlistPanel{position:relative!important;z-index:auto;display:block!important;box-sizing:border-box!important;width:calc(100% - 24px)!important;max-width:462px!important;min-width:0!important;padding:0!important;margin:0 auto 16px!important;overflow:visible;background:transparent;color:#25282d}',
       '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:100%;height:auto;min-height:0;overflow:visible;border:1px solid #dedfe1;border-radius:12px;background:#f8f8f8;box-shadow:0 2px 12px rgba(0,0,0,.10)}',
@@ -1253,6 +1253,7 @@
       '#wishlistPanel .wl-excluded-title{font-size:13px;font-weight:1000;color:#354459}',
       '#wishlistPanel .wl-excluded-count{flex:none;padding:3px 7px;border-radius:999px;background:#e8edf4;color:#536175;font-size:10px;font-weight:1000}',
       '#wishlistPanel .wl-excluded-note{padding:9px 13px 7px;color:#6f7c8f;font-size:10px;line-height:1.5}',
+       '#wishlistPanel .wl-favorite-note{padding:9px 13px 7px;color:#456d88;font-size:10px;line-height:1.5}',
       '#wishlistPanel .wl-excluded-list{display:flex;flex-direction:column;gap:6px;min-height:36px;max-height:min(34vh,300px);padding:0 10px 11px;overflow:auto}',
       '#wishlistPanel .wl-favorite-section{flex:none;border-top:1px solid #a9d5f1;background:linear-gradient(180deg,#f0f9ff,#e0f2ff)}',
       '#wishlistPanel .wl-favorite-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 13px;border-bottom:1px solid #b7dcf4;background:linear-gradient(135deg,#e5f5ff,#cdeaff)}',
@@ -1302,6 +1303,7 @@
       'html.dark-theme #wishlistPanel .wl-excluded-title{color:#e8eef9}',
       'html.dark-theme #wishlistPanel .wl-excluded-count{background:#27364c;color:#cbd6e6}',
       'html.dark-theme #wishlistPanel .wl-excluded-note,html.dark-theme #wishlistPanel .wl-excluded-empty{color:#9aa9be}',
+       'html.dark-theme #wishlistPanel .wl-favorite-note{color:#a3c8e2}',
       'html.dark-theme #wishlistPanel .wl-excluded-row{border-color:#75404d;background:#3b202a;color:#ffe8ed}',
       'html.dark-theme #wishlistPanel .wl-favorite-section{border-color:#315e7d;background:linear-gradient(180deg,#142b3b,#102333)}',
       'html.dark-theme #wishlistPanel .wl-favorite-head{border-color:#315e7d;background:linear-gradient(135deg,#193d54,#153146)}',
@@ -1403,7 +1405,7 @@
         '<button type="button" class="wl-160-button" data-wl-160-wall="O" aria-pressed="false">O</button>' +
         '<button type="button" class="wl-160-button" data-wl-160-wall="X" aria-pressed="false">X</button>' +
       '</div>' +
-      '<div class="wl-160-note">X 선택 시 1~2돌파 니케 우선</div>' +
+      
       '<div class="wl-copy-priority-divider"></div>' +
       '<div class="wl-copy-priority-heading"><span>PVP 캐릭터 선호도</span><span class="wl-copy-priority-value" data-wl-pvp-priority-value>솔레 우선</span></div>' +
       '<div class="wl-priority-slider-wrap wl-pvp-slider-wrap">' +
@@ -1411,7 +1413,7 @@
          '<span class="wl-priority-star" data-wl-pvp-star aria-hidden="true" style="left:5.5%">★</span>' +
        '</div>' +
       '<div class="wl-copy-priority-ends wl-pvp-priority-ends"><span>PVP 우선</span><span>솔레 우선</span><span>PVP 제외</span></div>' +
-      '<div class="wl-copy-priority-note">PVP의 추천 순위를 슬라이더로 선택</div>' +
+      
       '<div class="wl-copy-priority-divider"></div>' +
       '<div class="wl-copy-priority-heading"><span>명함작 선호도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 명함작 선호도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
       '<div class="wl-priority-slider-wrap wl-copy-slider-wrap">' +
@@ -1420,7 +1422,7 @@
           '<span class="wl-priority-prohibit" data-wl-copy-prohibit aria-hidden="true" hidden></span>' +
        '</div>' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
-      '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>' +
+      
        '<div class="wl-copy-priority-warning" data-wl-copy-warning hidden>160벽 돌파 못한 상태에선 추천하지 않는 설정입니다</div>';
     control.addEventListener('input', event => {
       const pvpSlider = event.target.closest && event.target.closest('[data-wl-pvp-priority]');
@@ -1559,13 +1561,14 @@
           '<button type="button" class="wl-action wl-confirm" data-wl-confirm><span aria-hidden="true">✓</span> 결정</button>' +
         '</div>' +
       '</div>' +
-      '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="자동편성 제외 캐릭터">' +
-        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 리스트</span><span class="wl-clue-window-subtitle">리스트 1~8 · 작은 팝업으로 보기 ↗</span></button>' +
-        '<div class="wl-excluded-head"><div class="wl-excluded-title">자동편성 제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
-        '<div class="wl-excluded-note">캐릭터 사진을 눌러 상태를 <b>기본 → 제외 → 애정캐 → 기본</b> 순서로 변경해.</div>' +
+      '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="제외 캐릭터">' +
+        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 상점 니케 목록</span><span class="wl-clue-window-subtitle">리스트 1~8 · 작은 팝업으로 보기 ↗</span></button>' +
+        '<div class="wl-excluded-head"><div class="wl-excluded-title">제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
+        '<div class="wl-excluded-note">캐릭터 사진을 눌러 제외 캐릭터로 지정가능합니다</div>' +
         '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
         '<div class="wl-favorite-section">' +
           '<div class="wl-favorite-head"><div class="wl-excluded-title">애정캐</div><span class="wl-favorite-count" data-wl-favorite-count>0명</span></div>' +
+           '<div class="wl-favorite-note">캐릭터 사진을 눌러 제외 → 애정캐로 지정할 수 있습니다. 애정캐로 지정한 니케는 반드시 포함됩니다.</div>' +
           '<div class="wl-favorite-list" data-wl-favorite-list><div class="wl-excluded-empty">애정캐로 지정한 니케가 없어.</div></div>' +
         '</div>' +
       '</aside>' +
@@ -2486,6 +2489,22 @@
     if(pickerSlot !== null) renderCharacterPicker();
   }
 
+  // Align the fixed settings card with the wishlist panel when opened. It does not move on scroll.
+  function alignWishlistControlPosition(){
+    const control = document.getElementById('wishlist160WallControl');
+    const panel = document.getElementById('wishlistPanel');
+    if(!control || !panel || panel.hidden) return;
+    if(window.innerWidth <= 1080){
+      control.style.removeProperty('left');
+      control.style.removeProperty('top');
+      return;
+    }
+    const rect = panel.getBoundingClientRect();
+    if(!rect.width) return;
+    control.style.left = Math.max(8, rect.left - control.offsetWidth - 16) + 'px';
+    control.style.top = Math.max(8, rect.top) + 'px';
+  }
+
   function hideWishlist(){
     hideWishlistHoverCard();
     const activePanel = document.getElementById('wishlistPanel');
@@ -2521,6 +2540,7 @@
     if(title) title.textContent = '위시리스트 모집';
     try{ window.closeSidebar && window.closeSidebar(); }catch(_){}
     renderWishlist();
+    requestAnimationFrame(alignWishlistControlPosition);
     loadImageMap().then(() => {
       if(document.body.classList.contains('wishlist-view')) renderWishlist();
     });
@@ -2578,6 +2598,7 @@
     render160WallControl();
     patchMainViewSwitch();
     patchAccountSwitch();
+    window.addEventListener('resize', alignWishlistControlPosition);
     window.renderWishlist = renderWishlist;
   }
 
