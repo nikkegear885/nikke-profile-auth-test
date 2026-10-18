@@ -1618,11 +1618,11 @@
         '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 상점 스페어바디 목록</span></button>' +
         '<div class="wl-excluded-head"><div class="wl-excluded-title">제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
         '<div class="wl-excluded-note">캐릭터 사진을 눌러 제외 캐릭터로 지정가능합니다</div>' +
-        '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
+        '<div class="wl-excluded-list" data-wl-excluded-list></div>' +
         '<div class="wl-favorite-section">' +
           '<div class="wl-favorite-head"><div class="wl-excluded-title">애정캐</div><span class="wl-favorite-count" data-wl-favorite-count>0명</span></div>' +
            '<div class="wl-favorite-note">캐릭터 사진을 눌러 제외 → 애정캐로 지정할 수 있습니다. 애정캐로 지정한 니케는 반드시 포함됩니다.</div>' +
-          '<div class="wl-favorite-list" data-wl-favorite-list><div class="wl-excluded-empty">애정캐로 지정한 니케가 없어.</div></div>' +
+          '<div class="wl-favorite-list" data-wl-favorite-list></div>' +
         '</div>' +
       '</aside>' +
       '<div class="wl-picker-backdrop" data-wl-picker-backdrop hidden>' +
@@ -2395,7 +2395,7 @@
           '</div></details>'
       : '';
     if(!rows.length){
-      list.innerHTML = '<div class="wl-excluded-empty">제외된 니케가 없어.</div>';
+      list.innerHTML = '';
     }else{
       list.innerHTML = core7Group + visibleRows.map(row => {
         const isMiranda = norm(row.name) === norm('미란다');
@@ -2427,7 +2427,7 @@
         (row.core >= 7 ? '<span class="wl-excluded-reason">코강 +7 · 자동 추천 제외</span>' : '') + '</div>' +
         '<button type="button" class="wl-favorite-remove" data-wl-favorite-clear="' + esc(row.name) + '" aria-label="' + esc(row.name + ' 애정캐 해제') + '">해제</button>' +
       '</div>'
-    ).join('') : '<div class="wl-excluded-empty">애정캐로 지정한 니케가 없어.</div>';
+    ).join('') : '';
   }
 
   function onPanelChange(event){
