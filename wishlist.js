@@ -838,17 +838,17 @@
   const COPY_PRIORITY_LABELS = ['필수캐','균형','도감작'];
   const PVP_PRIORITY_DESCRIPTIONS = {
     pvp: '솔레보다 PVP 캐릭터를 우선으로 추천합니다.',
-    solo: 'PVP보다 솔레 캐릭터를 우선으로 추천합니다.\\n완전히 아레나를 포기한 유저가 아니라면 추천하지 않습니다.',
-    exclude: 'PVP 캐릭터를 완전히 제외합니다.\\n묵은지 계정 등 PVP 자체가 불가능한 상황에서만 추천합니다.'
+    solo: 'PVP보다 솔레 캐릭터를 우선으로 추천합니다.\n완전히 아레나를 포기한 유저가 아니라면 추천하지 않습니다.',
+    exclude: 'PVP 캐릭터를 완전히 제외합니다.\n묵은지 계정 등 PVP 자체가 불가능한 상황에서만 추천합니다.'
   };
   function getCopyPriorityDescription(){
     if(wallStatus === 'X'){
       if(copyPriority === 0) return '';
-      if(copyPriority === 1) return '과금 유저 추천\\n단순 돌파보다는 어느 정도 성능이 보장된 캐릭터의 명함 획득을 우선으로 합니다.';
+      if(copyPriority === 1) return '과금 유저 추천\n단순 돌파보다는 어느 정도 성능이 보장된 캐릭터의 명함 획득을 우선으로 합니다.';
       return '일반적으로 추천되는 160벽 위시리스트입니다.';
     }
-    if(copyPriority === 0) return '필수캐릭터로 취급받는 캐릭터를 반드시 포함합니다.\\n어느 정도 성능 캐릭터를 보유한 뒤 체크하는 걸 추천합니다.';
-    if(copyPriority === 1) return '현재 쓰이지 않는 캐릭터를 제외하고 명함을 취득하는 걸 우선으로 합니다.\\n애장품으로 떡상할 가능성 등은 고려하지 않습니다.';
+    if(copyPriority === 0) return '필수캐릭터로 취급받는 캐릭터를 반드시 포함합니다.\n어느 정도 성능 캐릭터를 보유한 뒤 체크하는 걸 추천합니다.';
+    if(copyPriority === 1) return '현재 쓰이지 않는 캐릭터를 제외하고 명함을 취득하는 걸 우선으로 합니다.\n애장품으로 떡상할 가능성 등은 고려하지 않습니다.';
     return '캐릭터의 사용 여부와 상관없이 명함 획득을 최우선으로 합니다.';
   }
   let copyPriority = loadCopyPriority();
