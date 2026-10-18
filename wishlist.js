@@ -519,11 +519,11 @@
     {title:'리스트 1', names:['밀크','엠마','루드밀라','메어리']},
     {title:'리스트 2', names:['페퍼','프림','엑시아','미란다']},
     {title:'리스트 3', names:['리타','볼륨','노이즈','얀','아비스타']},
-    {title:'리스트 4', names:['노아','폴크방','은화','아리아','폴리','루피','시그널','디젤','킬로']},
-    {title:'리스트 5', names:['센티','애드미','유니','프리바티','라이','스노우 화이트 : 이노센트 데이즈']},
-    {title:'리스트 6', names:['프리바티','크로우','솔린','브리드']},
-    {title:'리스트 7', names:['드레이크','슈가','율리아','에피넬']},
-    {title:'리스트 8', names:['율하','맥스웰','메이든','베스티','길로틴']},
+    {title:'리스트 4', names:['노아','폴크방','은화','아리아','차임']},
+    {title:'리스트 5', names:['폴리','루피','시그널','디젤','킬로']},
+    {title:'리스트 6', names:['센티','애드미','유니','라이','스노우 화이트 : 이노센트 데이즈']},
+    {title:'리스트 7', names:['프리바티','크로우','솔린','브리드','라푼젤 : 퓨어 그레이스']},
+    {title:'리스트 8', names:['드레이크','슈가','율리아','에피넬','모리']},
     {title:'애장품 시즌6', names:['팬텀','센티','플로라','로산나','슈가']}
   ];
 
@@ -551,7 +551,7 @@
       '<style>' +
       '#wlClueModal{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(13,22,37,.44);backdrop-filter:blur(2px)}' +
       '#wlClueModal *{box-sizing:border-box}' +
-      '#wlClueModal .wl-clue-modal-dialog{display:flex;flex-direction:column;width:min(900px,calc(100vw - 32px));max-height:min(590px,calc(100vh - 32px));overflow:hidden;border:1px solid #d6deeb;border-radius:13px;background:#f7f9fc;color:#28364a;box-shadow:0 14px 46px rgba(12,24,44,.25)}' +
+      '#wlClueModal .wl-clue-modal-dialog{display:flex;flex-direction:column;width:min(1170px,calc(100vw - 32px));max-height:min(590px,calc(100vh - 32px));overflow:hidden;border:1px solid #d6deeb;border-radius:13px;background:#f7f9fc;color:#28364a;box-shadow:0 14px 46px rgba(12,24,44,.25)}' +
       '#wlClueModal .wl-clue-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:12px 15px;border-bottom:1px solid #e1e7f0;background:#fff}' +
       '#wlClueModal .wl-clue-modal-title{margin:0;font-size:20px;line-height:1.2;font-weight:900;letter-spacing:-.02em}' +
       '#wlClueModal .wl-clue-modal-note{margin-top:3px;color:#718096;font-size:11px;line-height:1.35}' +
@@ -579,7 +579,7 @@
       '@media(max-width:560px){#wlClueModal{padding:8px}#wlClueModal .wl-clue-modal-dialog{width:calc(100vw - 16px);max-height:calc(100vh - 16px)}#wlClueModal .wl-clue-modal-head{padding:10px}#wlClueModal .wl-clue-modal-title{font-size:18px}#wlClueModal .wl-clue-modal-scroll{padding:8px}}' +
       '</style>' +
       '<section class="wl-clue-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="wlClueModalTitle">' +
-        '<header class="wl-clue-modal-head"><div><h2 class="wl-clue-modal-title" id="wlClueModalTitle">실마 상점 니케 목록</h2>' +
+        '<header class="wl-clue-modal-head"><div><h2 class="wl-clue-modal-title" id="wlClueModalTitle">실마 상점 스페어바디 목록</h2>' +
         '<div class="wl-clue-modal-note">리스트별 니케 사진과 이름 · 바깥을 누르거나 Esc를 누르면 닫혀</div></div>' +
         '<button type="button" class="wl-clue-modal-close" data-wl-clue-close>닫기 ×</button></header>' +
         '<div class="wl-clue-modal-scroll"><div class="wl-clue-modal-grid">' + columns + '</div></div>' +
@@ -1609,7 +1609,7 @@
         '</div>' +
       '</div>' +
       '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="제외 캐릭터">' +
-        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 상점 니케 목록</span></button>' +
+        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 상점 스페어바디 목록</span></button>' +
         '<div class="wl-excluded-head"><div class="wl-excluded-title">제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
         '<div class="wl-excluded-note">캐릭터 사진을 눌러 제외 캐릭터로 지정가능합니다</div>' +
         '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
