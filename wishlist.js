@@ -156,10 +156,10 @@
   const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   // Split the former mixed "Solo Raid = PVP" list into distinct priority categories.
   const SOLO_RAID_WISHLIST_NAMES = new Set([
-    '밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
+    'D : 킬러 와이프','밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
     '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
     '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르',
-    'D : 킬러 와이프','볼륨','퀀시 : 이스케이프 퀸'
+    '볼륨','퀀시 : 이스케이프 퀸'
   ].map(norm));
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
@@ -170,10 +170,10 @@
     {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이']},
     {rank:5, label:'애장품 솔레캐', names:['프리바티','팬텀','미란다','슈가','로산나']},
     {rank:6, label:'솔레', names:[
-      '밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
+      'D : 킬러 와이프','밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
       '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
       '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르',
-      'D : 킬러 와이프','퀀시 : 이스케이프 퀸'
+      '퀀시 : 이스케이프 퀸'
     ]},
     {rank:8, label:'명함 추천', names:[
       '맥스웰 : 오디너리 미케닉','율리아','츠바이',
@@ -267,9 +267,6 @@
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)){
       return {rank:3,tierOrder:2,index:997};
     }
-    if(isMarkedUnowned(name) && key === norm('D : 킬러 와이프')){
-      return {rank:3,tierOrder:2,index:998};
-    }
     if(isMarkedUnowned(name) && key === norm('루주')){
       return {rank:3,tierOrder:2,index:999};
     }
@@ -350,9 +347,8 @@
   // 베스티 : 택티컬 업은 미보유 상태에서만 범용캐로 취급하고, 명함 보유 시 기존 PVP 우선도를 따른다.
   const WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES = new Set(['베스티 : 택티컬 업'].map(norm));
   // Character-specific first-copy priorities:
-  // D : Killer Wife and Ruju are general-purpose acquisition targets when unowned,
-  // then return to their existing Solo Raid positions after the first copy is acquired.
-  const WISHLIST_UNOWNED_GENERAL_LAST_NAMES = new Set(['D : 킬러 와이프','루주'].map(norm));
+  // 루주는 미보유 상태에서 범용캐 우선순위로 취급하고, 보유 후에는 기존 솔레 순위로 돌아간다.
+  const WISHLIST_UNOWNED_GENERAL_LAST_NAMES = new Set(['루주'].map(norm));
   // Volume is promoted to the first Solo Raid slot only while unowned, then returns to Namecard.
   const WISHLIST_UNOWNED_SOLO_FIRST_NAMES = new Set(['볼륨'].map(norm));
   function getBaseWishlistPerformancePriority(name){
