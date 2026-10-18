@@ -381,7 +381,7 @@ function makeServiceSessionFromSecrets(env){
 }
 
 async function getSeedSecretFingerprint(env){
-  const values = SERVICE_SESSION_FIELDS.map(([,secret]) => String(env?.[secret] || '').trim()).join('\\u001f');
+  const values = JSON.stringify(SERVICE_SESSION_FIELDS.map(([,secret]) => String(env?.[secret] || '').trim()));
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(values));
   return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2,'0')).join('');
 }
