@@ -1197,6 +1197,9 @@
       '#wishlistPanel .wl-picker-image-wrap{width:44px!important;max-width:44px!important;height:44px!important;aspect-ratio:1/1!important}',
       '@media(max-width:650px){#wishlistPanel .wl-picker-head{gap:5px;padding:5px 6px}#wishlistPanel .wl-picker-title{font-size:12px}#wishlistPanel .wl-picker-search{height:29px;font-size:11px;padding:0 7px}#wishlistPanel .wl-picker-close{width:26px;height:26px;font-size:19px}#wishlistPanel .wl-picker-image-wrap{width:42px!important;max-width:42px!important;height:42px!important}}',
       '#wishlistPanel .wl-picker-name{display:none!important}',
+      'body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-picker-name{display:block!important;box-sizing:border-box;min-height:0;padding:1px 2px 2px;color:#354052;font-size:10px;font-weight:900;line-height:1.2;text-align:center;overflow-wrap:anywhere;word-break:keep-all}',
+      'html.dark-theme body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-picker-name{color:#e4edfb}',
+      '@media(max-width:650px){body.wishlist-view.wl-character-names-visible #wishlistPanel .wl-picker-name{font-size:8px;line-height:1.15;padding:1px 1px 2px}}',
       '#wishlistPanel .wl-picker-choice{gap:0!important}',
       '#wishlistPanel .wl-picker-choice:focus-visible{outline:2px solid #168fc5;outline-offset:2px}',
       '#wishlistPanel .wl-picker-item{position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;gap:6px;padding:8px 5px;border:1px solid #dce2ea;border-radius:9px;background:#fff;color:#333b49;cursor:pointer;transition:border-color .12s,background .12s,transform .12s}',
@@ -1657,8 +1660,8 @@
       (name ? ' data-wl-hover-text="' + esc(name) + '"' : '') +
       ' aria-label="' + esc(accessibleName) + '">' +
       tile +
-      (name ? '<span class="wl-character-name-label">' + esc(name) + '</span>' : '') +
       (unowned ? '<span class="wl-photo-status">미보유</span>' : '') +
+      (name ? '<span class="wl-character-name-label">' + esc(name) + '</span>' : '') +
       '</article>';
   }
 
