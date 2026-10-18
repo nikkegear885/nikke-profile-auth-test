@@ -1391,16 +1391,20 @@
 
   function ensureNav(){
     const nav = document.querySelector('.nav');
-    if(!nav || nav.querySelector('[data-view="wishlist"]')) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'main-view-nav';
-    button.dataset.view = 'wishlist';
-    button.textContent = '위시리스트 추천';
-    button.addEventListener('click', () => window.switchMainView && window.switchMainView('wishlist'));
+    if(!nav) return;
+    let button = nav.querySelector('[data-view="wishlist"]');
+    if(!button){
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'main-view-nav';
+      button.dataset.view = 'wishlist';
+      button.textContent = '위시리스트 추천';
+      button.addEventListener('click', () => window.switchMainView && window.switchMainView('wishlist'));
+    }
     const pediaButton = nav.querySelector('[data-view="pedia"]');
-    if(pediaButton) pediaButton.after(button);
-    else nav.appendChild(button);
+    // Keep Wishlist Recommendation immediately above the encyclopedia item.
+    if(pediaButton) nav.insertBefore(button,pediaButton);
+    else if(button.parentElement !== nav) nav.appendChild(button);
   }
 
   function ensureAccountSwitcher(){
