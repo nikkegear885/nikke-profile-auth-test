@@ -271,7 +271,10 @@
       return {rank:3,tierOrder:2,index:997};
     }
     if(isMarkedUnowned(name) && key === norm('루주')){
-      return {rank:3,tierOrder:2,index:999};
+      // 아니스 : 스타 미보유 시에는 범용캐 맨 뒤, 보유 시에는 에이드 : 에이전트 바니 바로 뒤의 솔레 순위.
+      return isMarkedUnowned('아니스 : 스타')
+        ? {rank:3,tierOrder:2,index:999}
+        : {rank:6,tierOrder:5,index:3};
     }
     if(isMarkedUnowned(name) && key === norm('볼륨')){
       return {rank:6,tierOrder:5,index:-1};
@@ -349,10 +352,10 @@
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
   // 베스티 : 택티컬 업은 미보유 상태에서만 범용캐로 취급하고, 명함 보유 시 기존 PVP 우선도를 따른다.
   const WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES = new Set(['베스티 : 택티컬 업'].map(norm));
-  // 프리카는 미보유 시 필수캐, 명함 보유 후에는 기존 범용캐 우선순위를 적용한다.
-  const WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES = new Set(['프리카'].map(norm));
-  // Character-specific first-copy priorities:
-  // 루주는 미보유 상태에서 범용캐 우선순위로 취급하고, 보유 후에는 기존 솔레 순위로 돌아간다.
+  // 프리카는 별도 특수조건 없이 기본 범용캐 우선순위를 적용한다.
+  const WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES = new Set();
+  // 루주는 본인 명함이 없을 때 아니스 : 스타 보유 여부에 따라 범용캐 또는 에이드 뒤 솔레로 배치한다.
+  // 명함을 보유하면 기존 솔레 순서를 그대로 적용한다.
   const WISHLIST_UNOWNED_GENERAL_LAST_NAMES = new Set(['루주'].map(norm));
   // Volume is promoted to the first Solo Raid slot only while unowned, then returns to Namecard.
   const WISHLIST_UNOWNED_SOLO_FIRST_NAMES = new Set(['볼륨'].map(norm));
@@ -363,7 +366,9 @@
     const key = norm(name);
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 1;
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 3;
-    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)) return 3;
+    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)){
+      return isMarkedUnowned('아니스 : 스타') ? 3 : 6;
+    }
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key) && isMarkedUnowned(name)) return 6;
     if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 2;
     if(WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2) return 5;
@@ -399,7 +404,10 @@
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
-    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
+    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)){
+      if(!unowned) return 16;
+      return isMarkedUnowned('아니스 : 스타') ? 3 : 6;
+    }
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     if(WISHLIST_REQUIRED_NAMES.has(key)) return 1;
     if(WISHLIST_TREASURE_REQUIRED_NAMES.has(key)) return breakthrough < 2 ? 2 : 12;
@@ -432,7 +440,10 @@
     const key = norm(name);
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && unowned) return 1;
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
-    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
+    if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)){
+      if(!unowned) return 16;
+      return isMarkedUnowned('아니스 : 스타') ? 3 : 6;
+    }
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     if(WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return 5;
     const isRequired = WISHLIST_REQUIRED_NAMES.has(key) || (WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && unowned);
