@@ -556,7 +556,7 @@
       '#wlClueModal .wl-clue-modal-dialog{display:flex;flex-direction:column;width:min(1320px,calc(100vw - 32px));max-height:min(590px,calc(100vh - 32px));overflow:hidden;border:1px solid #d6deeb;border-radius:13px;background:#f7f9fc;color:#28364a;box-shadow:0 14px 46px rgba(12,24,44,.25)}' +
       '#wlClueModal .wl-clue-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:12px 15px;border-bottom:1px solid #e1e7f0;background:#fff}' +
       '#wlClueModal .wl-clue-modal-title{margin:0;font-size:20px;line-height:1.2;font-weight:900;letter-spacing:-.02em}' +
-      '#wlClueModal .wl-clue-modal-note{margin-top:3px;color:#718096;font-size:11px;line-height:1.35}' +
+      '#wlClueModal .wl-clue-modal-note{margin-top:5px;color:#d52232;font-size:14px;font-weight:1000;line-height:1.4}' +
       '#wlClueModal .wl-clue-modal-close{flex:none;padding:6px 10px;border:1px solid #cbd5e1;border-radius:7px;background:#f8fafc;color:#475569;font-size:12px;font-weight:900;cursor:pointer}' +
       '#wlClueModal .wl-clue-modal-close:hover{background:#eaf1f8;border-color:#aab9cd}' +
       '#wlClueModal .wl-clue-modal-scroll{overflow:auto;overscroll-behavior:contain;padding:10px}' +
@@ -585,7 +585,7 @@
       '</style>' +
       '<section class="wl-clue-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="wlClueModalTitle">' +
         '<header class="wl-clue-modal-head"><div><h2 class="wl-clue-modal-title" id="wlClueModalTitle">실마 상점 스페어바디 목록</h2>' +
-        '<div class="wl-clue-modal-note">리스트별 니케 사진과 이름 · 바깥을 누르거나 Esc를 누르면 닫혀</div></div>' +
+        '<div class="wl-clue-modal-note">실마 상점으로 획득하는건 명함이 아닌 스페어바디(돌파재료)니까 주의!</div></div>' +
         '<button type="button" class="wl-clue-modal-close" data-wl-clue-close>닫기 ×</button></header>' +
         '<div class="wl-clue-modal-scroll"><div class="wl-clue-modal-grid">' + columns + '</div>' +
         '<div class="wl-clue-modal-season-row">' + seasonColumn + '</div></div>' +
