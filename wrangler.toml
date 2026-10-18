@@ -3,11 +3,9 @@ main = "cloudflare-worker.js"
 compatibility_date = "2026-10-05"
 workers_dev = true
 
-# Create once with: npx.cmd wrangler kv namespace create SERVICE_SESSION_KV
-# Replace the placeholder below with the returned namespace ID before deploying.
+# Wrangler 4.151+ provisions the namespace on deploy if the binding has no ID.
 [[kv_namespaces]]
 binding = "SERVICE_SESSION_KV"
-id = "REPLACE_WITH_CREATED_KV_NAMESPACE_ID"
 
 # Refresh the service session once per day (03:00 UTC / 12:00 Korea time).
 [triggers]
