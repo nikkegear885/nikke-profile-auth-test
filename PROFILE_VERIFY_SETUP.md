@@ -1,49 +1,74 @@
-# NIKKE Gear Manager - BlaBlaLink 공개 프로필 동기화
+# NIKKE Gear Manager 테스트 사이트 - BlaBlaLink 공개 프로필 동기화
 
-이 기능은 GitHub Pages에서 BlaBlaLink 게임 API를 직접 호출할 수 없는 문제를 Cloudflare Workers 중계로 해결합니다.
+GitHub Pages 테스트 사이트의 공개 프로필 동기화는 Cloudflare Worker `nikke-profile-verify`를 사용합니다. 이 Worker는 서비스용 BlaBlaLink 세션을 갱신하고, 갱신된 쿠키를 Worker 전용 KV에 저장합니다.
 
-## 1. Cloudflare Worker 배포
+## 자동 갱신 방식
 
-이 저장소의 `cloudflare-worker.js`를 Worker에 배포합니다.
+- Cloudflare Cron Trigger가 매일 12:00 KST에 세션 갱신을 시도합니다.
+- 사용자가 계정 동기화를 누를 때도 갱신을 먼저 시도합니다.
+- 갱신 성공 후 받은 쿠키는 `SERVICE_SESSION_KV`에 저장되어 다음 요청에도 이어집니다.
+- 만료/폐기된 세션이나 BlaBlaLink 측의 재로그인 요구까지 항상 자동 복구할 수 있는 것은 아닙니다. 갱신 API가 세션을 거부하면 BlaBlaLink에 다시 로그인하여 초기 값을 업데이트해야 합니다.
 
-예:
+## 1. KV 네임스페이스 만들기 (한 번만)
 
-    npx wrangler login
-    npx wrangler deploy
+Worker 배포 폴더에서 실행합니다.
 
-## 2. 서비스용 BlaBlaLink 세션 Secret 설정
+    npx.cmd wrangler kv namespace create SERVICE_SESSION_KV
 
-사용자의 비밀번호·Cookie·토큰을 사이트에서 입력받지 않습니다.
+명령 결과에 표시된 `id`를 복사합니다. 이 테스트 저장소의 `wrangler.toml`에서 아래 항목의 placeholder를 해당 ID로 바꿉니다.
 
-Worker에는 운영자가 별도로 유지하는 서비스 세션만 Secret으로 저장합니다.
+    [[kv_namespaces]]
+    binding = "SERVICE_SESSION_KV"
+    id = "여기에_생성된_KV_ID"
 
-    npx wrangler secret put BLABLALINK_GAME_TOKEN
-    npx wrangler secret put BLABLALINK_GAME_OPENID
-    npx wrangler secret put BLABLALINK_SERVICE_INTL_OPENID
+KV 네임스페이스를 이미 만들었다면 새로 만들지 말고 기존 ID를 사용합니다.
 
-필요한 경우 서비스 세션을 갱신하고 해당 Secret만 교체합니다.
+## 2. 초기 세션 Secret 설정
 
-## 3. 사이트 동기화 방식
+BlaBlaLink에 로그인된 브라우저의 쿠키 목록에서 **값만** 읽어서 Worker Secret에 저장합니다. 사용자 비밀번호는 필요하지 않습니다. 값은 채팅에 보내거나 GitHub 소스에 작성하지 마세요.
 
-사용자는 NIKKE Gear Manager의 **계정 동기화** 버튼을 누른 뒤 공개 BlaBlaLink 프로필 URL만 입력합니다.
+각 명령을 한 번씩 실행하고, Wrangler가 `Enter a secret value`라고 물으면 해당 쿠키의 값을 입력합니다.
 
-Worker가 다음 정보를 조회합니다.
+    npx.cmd wrangler secret put BLABLALINK_GAME_TOKEN
+    npx.cmd wrangler secret put BLABLALINK_GAME_OPENID
+    npx.cmd wrangler secret put BLABLALINK_GAME_UID
+    npx.cmd wrangler secret put BLABLALINK_GAME_USER_NAME
+    npx.cmd wrangler secret put BLABLALINK_GAME_ADULT_STATUS
+    npx.cmd wrangler secret put BLABLALINK_GAME_CHANNELID
+    npx.cmd wrangler secret put BLABLALINK_GAME_GAMEID
 
-- 공개 프로필 정보
-- 공개 NIKKE 로스터
-- 캐릭터 상세 정보
-- 캐릭터별 장비 기업/티어/레벨
+| Worker Secret | BlaBlaLink 쿠키 이름 |
+| --- | --- |
+| `BLABLALINK_GAME_TOKEN` | `game_token` |
+| `BLABLALINK_GAME_OPENID` | `game_openid` |
+| `BLABLALINK_GAME_UID` | `game_uid` |
+| `BLABLALINK_GAME_USER_NAME` | `game_user_name` |
+| `BLABLALINK_GAME_ADULT_STATUS` | `game_adult_status` |
+| `BLABLALINK_GAME_CHANNELID` | `game_channelid` |
+| `BLABLALINK_GAME_GAMEID` | `game_gameid` |
 
-조회 결과는 현재 브라우저의 선택한 계정에 적용되고 기존 LocalStorage 데이터 구조를 그대로 사용합니다.
+처음 두 Secret은 이미 설정했다면 다시 입력할 필요가 없습니다. `BLABLALINK_SERVICE_INTL_OPENID`는 새 코드에서 사용하지 않는 기존 호환용 항목입니다.
 
-## 개인정보 및 보안
+## 3. Worker 코드 배포
 
-사용자의 BlaBlaLink 비밀번호, Cookie, `game_token`을 수집하거나 저장하지 않습니다.
+GitHub의 이 테스트 저장소에서 최신 `cloudflare-worker.js`와 `wrangler.toml`을 배포 폴더에 반영하고, `wrangler.toml`의 KV ID가 실제 ID인지 확인합니다. placeholder가 남아 있으면 배포하면 안 됩니다.
 
-사용자가 입력하는 것은 공개 프로필 URL뿐이며, 브라우저는 동기화 요청에 로그인 Cookie를 포함하지 않습니다.
+그다음 실행합니다.
 
-서비스용 BlaBlaLink Secret은 Worker 환경변수에만 저장하고 소스 코드나 GitHub에 넣지 않습니다.
+    npx.cmd wrangler deploy
 
-## 기존 Tampermonkey 스크립트
+배포 대상은 `nikke-profile-verify` Worker입니다. 이는 테스트 사이트용 동기화 서버이며, 메인 사이트 파일은 변경하지 않습니다.
 
-기존 `blablalink-sync*.user.js` 파일은 호환성/백업용으로 저장되어 있으며, 현재 웹사이트의 공개 프로필 URL 동기화에는 필요하지 않습니다.
+## 4. 동작 확인
+
+테스트 사이트에서 강력 새로고침(Ctrl + F5)한 뒤 계정 동기화를 실행합니다. 로그를 확인하려면 별도 PowerShell 창에서 실행합니다.
+
+    npx.cmd wrangler tail nikke-profile-verify
+
+정상적으로 갱신되면 로그에 `scheduled refresh succeeded`가 표시됩니다. 자동 갱신이 실패하면 로그에는 실패 유형만 남기며, 토큰 값은 기록하지 않습니다.
+
+## 보안
+
+- 쿠키와 토큰은 Worker Secret 또는 Worker 전용 KV에만 저장합니다.
+- 토큰/쿠키 값을 GitHub에 올리거나 채팅으로 보내지 않습니다.
+- 이 갱신은 BlaBlaLink 로그인 갱신 API에 의존하는 실험적인 자동화입니다. 세션이 완전히 만료·폐기되었거나 서비스 정책이 바뀌면 수동 로그인이 필요할 수 있습니다.
