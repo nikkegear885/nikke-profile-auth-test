@@ -8,6 +8,7 @@
   const STORAGE_KEY = 'nikke_wishlist_recommendations_v1';
   const EXCLUDED_STORAGE_KEY = 'nikke_wishlist_excluded_characters_v1';
   const FAVORITE_STORAGE_KEY = 'nikke_wishlist_favorite_characters_v1';
+  const SYNCED_OWNED_STORAGE_PREFIX = 'nikke_synced_owned_characters_v1_';
   const EXCLUDED_HELM_MIGRATED_KEY = 'nikke_wishlist_helm_conditional_migrated_v1';
   const IMAGE_URL = 'assets/nikke-pedia-master.json?v=1047';
   const norm = value => String(value == null ? '' : value)
@@ -980,23 +981,67 @@
     return false;
   }
 
-  function isMarkedUnowned(name){
-    // Saved progress is stronger evidence than a stale/incomplete unowned-name list.
-    if(hasOwnershipEvidence(findAccountRow(name))) return false;
+  let syncedOwnedRosterAccount = null;
+  let syncedOwnedRoster = null;
+  function refreshSyncedOwnedRoster(force=false){
+    const account = (typeof activeAccount !== 'undefined' && activeAccount != null)
+      ? String(activeAccount).trim()
+      : '';
+    if(!force && account === syncedOwnedRosterAccount) return syncedOwnedRoster;
+    syncedOwnedRosterAccount = account;
+    syncedOwnedRoster = null;
+    if(!account) return syncedOwnedRoster;
+
+    // The account-specific synced roster is authoritative; don't read stale local/test row flags first.
     try{
-      if(typeof unownedCharacters !== 'undefined' && unownedCharacters){
-        if(typeof unownedCharacters.has === 'function'){
-          if(unownedCharacters.has(name)) return true;
-          for(const savedName of unownedCharacters){
-            if(norm(savedName) === norm(name)) return true;
-          }
+      const key = SYNCED_OWNED_STORAGE_PREFIX + encodeURIComponent(account);
+      const raw = localStorage.getItem(key);
+      if(raw !== null){
+        const saved = JSON.parse(raw);
+        if(Array.isArray(saved)){
+          syncedOwnedRoster = new Set(saved.map(norm).filter(Boolean));
+          return syncedOwnedRoster;
         }
       }
     }catch(_){}
-    return false;
+
+    // Support accounts synced before the detached roster key existed.
+    try{
+      const accountRows = (typeof data !== 'undefined' && Array.isArray(data)) ? data : [];
+      const hasSyncedFlags = accountRows.some(row => row && typeof row.__nikkeSyncedOwned === 'boolean');
+      if(hasSyncedFlags){
+        syncedOwnedRoster = new Set(
+          accountRows
+            .filter(row => row && row.__nikkeSyncedOwned === true)
+            .map(row => norm(row['이름']))
+            .filter(Boolean)
+        );
+      }
+    }catch(_){}
+    return syncedOwnedRoster;
+  }
+
+  function isMarkedUnowned(name){
+    // With a synced roster, membership in that exact account's roster is the ownership source of truth.
+    try{
+      const syncedRoster = refreshSyncedOwnedRoster();
+      if(syncedRoster) return !syncedRoster.has(norm(name));
+    }catch(_){}
+    // A site-embedded RAW snapshot is not the user's personal roster on a new device.
+    try{
+      if(typeof unownedCharacters !== 'undefined' && unownedCharacters){
+        if(typeof unownedCharacters.has === 'function' && unownedCharacters.has(name)) return true;
+        for(const savedName of unownedCharacters){
+          if(norm(savedName) === norm(name)) return true;
+        }
+      }
+    }catch(_){}
+    // Until a synced roster exists, ownership is unknown; do not display embedded defaults as owned.
+    return true;
   }
 
   function getBreakthrough(name){
+    if(!refreshSyncedOwnedRoster()) return 0;
     const row = findAccountRow(name);
     if(!row) return 0;
     const raw = row['돌파'];
@@ -1007,6 +1052,7 @@
   }
 
   function getCoreEnhancement(name){
+    if(!refreshSyncedOwnedRoster()) return 0;
     const row = findAccountRow(name);
     if(!row) return 0;
     const raw = row['코강'];
@@ -1914,6 +1960,7 @@
   }
 
   function renderCharacterPicker(){
+    refreshSyncedOwnedRoster(true);
     if(!pickerCompany || !COMPANIES.includes(pickerCompany) || pickerSlot === null || !panel) return;
     const company = pickerCompany;
     const backdrop = panel.querySelector('[data-wl-picker-backdrop]');
@@ -2295,6 +2342,7 @@
   }
 
   function renderWishlist(){
+    refreshSyncedOwnedRoster(true);
     hideWishlistHoverCard();
     const activePanel = ensurePanel();
     if(!activePanel) return;
