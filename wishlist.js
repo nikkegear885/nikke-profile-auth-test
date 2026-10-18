@@ -1076,7 +1076,7 @@
       '#wishlist160WallControl .wl-priority-star{position:absolute;top:14.5px;z-index:4;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:1px solid #e5bb50;border-radius:50%;background:linear-gradient(180deg,#fffdf3,#ffefb9);color:#bd8611;font-family:Arial,sans-serif;font-size:11px;font-weight:900;line-height:1;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,65,18,.18)}',
       '#wishlist160WallControl .wl-priority-star:after{display:none!important;pointer-events:none}',
 '#wishlist160WallControl .wl-priority-prohibit[hidden],#wishlist160WallControl .wl-copy-priority-warning[hidden],#wishlist160WallControl .wl-priority-info[hidden]{display:none!important}',
-'#wishlist160WallControl .wl-priority-prohibit{position:absolute;left:10px;top:14.5px;z-index:5;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:2px solid #d92d37;border-radius:50%;background:linear-gradient(45deg,#fff 43%,#d92d37 44%,#d92d37 56%,#fff 57%);transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,20,20,.2)}',
+'#wishlist160WallControl .wl-priority-prohibit{position:absolute;left:12px;top:14.5px;z-index:5;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:2px solid #d92d37;border-radius:50%;background:linear-gradient(45deg,#fff 43%,#d92d37 44%,#d92d37 56%,#fff 57%);transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,20,20,.2)}',
 '#wishlist160WallControl .wl-copy-priority-warning{margin-top:6px;padding:7px 8px;border:1px solid #f0b8bd;border-radius:7px;background:#fff0f1;color:#c52632;font-size:8.3px;font-weight:900;line-height:1.45;text-align:center}',
        '#wishlist160WallControl .wl-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:8.3px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
        'html.dark-theme #wishlist160WallControl .wl-priority-info{border-color:#345c85;background:#172d47;color:#c6e3ff}',
@@ -1175,7 +1175,7 @@
       '#wishlistHoverCard.is-compact .wl-hover-card-name{font-size:11px;line-height:1.45;max-width:230px}',
       '#wishlistHoverCard.is-guidance{box-sizing:border-box;width:260px;max-width:min(260px,calc(100vw - 20px));min-height:84px;justify-content:center;padding:9px 12px;border:1px solid #cbd9e5;border-left:3px solid #59a3bb;border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(237,244,249,.99));color:#34465a;box-shadow:0 8px 24px rgba(37,56,79,.20),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(10px)}',
       '#wishlistHoverCard.is-guidance .wl-hover-card-content{width:100%;min-width:0}',
-      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:8px!important;font-weight:750;line-height:1.5;letter-spacing:0;overflow-wrap:anywhere;text-shadow:none}',
+      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:6px!important;font-weight:750;line-height:1.5;letter-spacing:0;overflow-wrap:anywhere;text-shadow:none}',
       'html.dark-theme #wishlistHoverCard.is-guidance{border-color:#3c526b;border-left-color:#58b8c5;background:linear-gradient(145deg,rgba(28,42,62,.99),rgba(15,24,39,.99));color:#e5eff9;box-shadow:0 10px 26px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.05)}',
       'html.dark-theme #wishlistHoverCard.is-guidance .wl-hover-card-name{color:#e5eff9!important}',
       '@media(prefers-reduced-motion:reduce){#wishlistHoverCard{transition:none}}',
@@ -1532,7 +1532,7 @@
     const pvpSlider = control.querySelector('[data-wl-pvp-priority]');
     if(pvpSlider) pvpSlider.value = String(Math.max(0,pvpModes.indexOf(pvpPriority)));
     const pvpStar = control.querySelector('[data-wl-pvp-star]');
-    if(pvpStar) pvpStar.style.left = '5.5%';
+    if(pvpStar) pvpStar.style.left = '12px';
      const pvpInfo = control.querySelector('[data-wl-pvp-info]');
      if(pvpInfo) pvpInfo.textContent = PVP_PRIORITY_DESCRIPTIONS[pvpPriority] || PVP_PRIORITY_DESCRIPTIONS.solo;
     const pvpValueLabel = control.querySelector('[data-wl-pvp-priority-value]');
@@ -1540,7 +1540,7 @@
     const slider = control.querySelector('[data-wl-copy-priority]');
     if(slider) slider.value = String(copyPriority);
     const copyStar = control.querySelector('[data-wl-copy-star]');
-    if(copyStar) copyStar.style.left = wallStatus === 'O' ? '50%' : '94.5%';
+    if(copyStar) copyStar.style.left = wallStatus === 'O' ? '50%' : 'calc(100% - 12px)';
     const copyProhibit = control.querySelector('[data-wl-copy-prohibit]');
     if(copyProhibit) copyProhibit.hidden = wallStatus !== 'X';
     const copyWarning = control.querySelector('[data-wl-copy-warning]');
@@ -1779,7 +1779,7 @@
       if(isBonusRecruit){
         nameLabel.textContent = '보너스 리크루트에 포함된 캐릭터입니다.\n본인의 보유 포인트 상황에 따라 제외 추천';
       }else if(isRoadToVillain){
-        nameLabel.textContent = '로드 투 빌런으로 2돌파까지 가능한 캐릭터입니다.\n1회라도 직접 획득했다면 제외 추천';
+        nameLabel.textContent = '로드 투 빌런 상시 이벤트로 2돌파까지\n획득가능한 니케입니다.\n1회라도 획득했으면 제외 추천';
       }else{
         nameLabel.textContent = name;
       }
