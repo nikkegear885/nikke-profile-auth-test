@@ -257,6 +257,9 @@
   })();
   function getWishlistPerformancePosition(name){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)){
+      return {rank:1,tierOrder:0,index:997};
+    }
     // 프리바티는 2돌 미만이면 애장품 필수 그룹의 정렬 위치를 사용한다.
     if(WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) && getBreakthrough(name) < 2){
       return {rank:2,tierOrder:1,index:998};
@@ -346,6 +349,8 @@
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
   // 베스티 : 택티컬 업은 미보유 상태에서만 범용캐로 취급하고, 명함 보유 시 기존 PVP 우선도를 따른다.
   const WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES = new Set(['베스티 : 택티컬 업'].map(norm));
+  // 프리카는 미보유 시 필수캐, 명함 보유 후에는 기존 범용캐 우선순위를 적용한다.
+  const WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES = new Set(['프리카'].map(norm));
   // Character-specific first-copy priorities:
   // 루주는 미보유 상태에서 범용캐 우선순위로 취급하고, 보유 후에는 기존 솔레 순위로 돌아간다.
   const WISHLIST_UNOWNED_GENERAL_LAST_NAMES = new Set(['루주'].map(norm));
@@ -356,6 +361,7 @@
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 1;
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key) && isMarkedUnowned(name)) return 6;
@@ -424,11 +430,12 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
+    if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && unowned) return 1;
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)) return unowned ? 3 : 16;
     if(WISHLIST_UNOWNED_SOLO_FIRST_NAMES.has(key)) return unowned ? 6 : 18;
     if(WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) && breakthrough < 2) return 5;
-    const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
+    const isRequired = WISHLIST_REQUIRED_NAMES.has(key) || (WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && unowned);
     const isTreasureSolo = WISHLIST_TREASURE_SOLO_NAMES.has(key);
     const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
     const isPvp = PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key);
@@ -2052,7 +2059,7 @@
             const key = norm(name);
             const isNamedPriority = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
             const isUnownedRequired = isMarkedUnowned(name) &&
-              (WISHLIST_REQUIRED_NAMES.has(key) || WISHLIST_TREASURE_REQUIRED_NAMES.has(key));
+              (WISHLIST_REQUIRED_NAMES.has(key) || WISHLIST_TREASURE_REQUIRED_NAMES.has(key) || WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key));
             return !isManuallyExcludedCharacter(name) && (isNamedPriority || isUnownedRequired) && getBreakthrough(name) < 3;
           })
       })).find(item => item.names.length > 5);
@@ -2069,12 +2076,12 @@
         .filter(row => {
           const name = String(row['이름'] || '').trim();
           const key = norm(name);
-          const isRequired = WISHLIST_REQUIRED_NAMES.has(key);
           const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
           const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
           const favorite = isFavoriteCharacter(name);
           const unowned = isMarkedUnowned(name);
           const breakthrough = getBreakthrough(name);
+          const isRequired = WISHLIST_REQUIRED_NAMES.has(key) || (WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && unowned);
           // Rule 2: the five named targets are forced in below 3 breakthroughs regardless of ownership.
           // Rule 3: company-required and mandatory-treasure characters are forced in only while unowned.
           // Once a first copy is owned, they leave rule 3 and are ranked by rule 4 instead.
@@ -2117,9 +2124,9 @@
           if(aNamedPriority160WallX !== bNamedPriority160WallX) return aNamedPriority160WallX ? -1 : 1;
 
           const aMustInclude160WallX = aUnowned &&
-            (WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName)));
+            (WISHLIST_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(aName)) || WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(norm(aName)));
           const bMustInclude160WallX = bUnowned &&
-            (WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName)));
+            (WISHLIST_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_TREASURE_REQUIRED_NAMES.has(norm(bName)) || WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(norm(bName)));
           if(aMustInclude160WallX !== bMustInclude160WallX) return aMustInclude160WallX ? -1 : 1;
 
           const aSilverMileage = SILVER_MILEAGE_NAMES.has(norm(aName));
