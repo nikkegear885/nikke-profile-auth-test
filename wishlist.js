@@ -835,12 +835,22 @@
     try{ localStorage.setItem(activeCopyPriorityKey(), String(copyPriority)); }catch(_){}
   }
 
-  const COPY_PRIORITY_LABELS = ['필수캐 우선','명함 추천','도감작'];
-  const COPY_PRIORITY_DESCRIPTIONS = [
-    '성능캐 돌파를 최우선으로 합니다',
-    '사용가능성이 있는 니케 명함을 우선으로합니다',
-    '명함을 최우선으로 합니다'
-  ];
+  const COPY_PRIORITY_LABELS = ['필수캐','균형','도감작'];
+  const PVP_PRIORITY_DESCRIPTIONS = {
+    pvp: '솔레보다 PVP 캐릭터를 우선으로 추천합니다.',
+    solo: 'PVP보다 솔레 캐릭터를 우선으로 추천합니다.\\n완전히 아레나를 포기한 유저가 아니라면 추천하지 않습니다.',
+    exclude: 'PVP 캐릭터를 완전히 제외합니다.\\n묵은지 계정 등 PVP 자체가 불가능한 상황에서만 추천합니다.'
+  };
+  function getCopyPriorityDescription(){
+    if(wallStatus === 'X'){
+      if(copyPriority === 0) return '';
+      if(copyPriority === 1) return '과금 유저 추천\\n단순 돌파보다는 어느 정도 성능이 보장된 캐릭터의 명함 획득을 우선으로 합니다.';
+      return '일반적으로 추천되는 160벽 위시리스트입니다.';
+    }
+    if(copyPriority === 0) return '필수캐릭터로 취급받는 캐릭터를 반드시 포함합니다.\\n어느 정도 성능 캐릭터를 보유한 뒤 체크하는 걸 추천합니다.';
+    if(copyPriority === 1) return '현재 쓰이지 않는 캐릭터를 제외하고 명함을 취득하는 걸 우선으로 합니다.\\n애장품으로 떡상할 가능성 등은 고려하지 않습니다.';
+    return '캐릭터의 사용 여부와 상관없이 명함 획득을 최우선으로 합니다.';
+  }
   let copyPriority = loadCopyPriority();
 
   function loadPicks(){
@@ -1042,15 +1052,19 @@
       '#wishlist160WallControl .wl-copy-priority-value{padding:4px 8px;border:1px solid #cbd8e8;border-radius:999px;background:#edf4fc;color:#3e6797;font-size:11.5px;font-weight:900;white-space:nowrap}',
       '#wishlist160WallControl .wl-priority-slider-wrap{position:relative;width:100%;height:26px;margin:7px 0 0}',
       '#wishlist160WallControl .wl-copy-priority-slider{position:absolute;left:0;right:0;top:3px;display:block;width:100%;height:23px;margin:0;accent-color:#668fda;cursor:pointer}',
-      '#wishlist160WallControl .wl-priority-star{position:absolute;top:14px;z-index:4;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:1px solid #e5bb50;border-radius:50%;background:linear-gradient(180deg,#fffdf3,#ffefb9);color:#bd8611;font-family:Arial,sans-serif;font-size:11px;font-weight:900;line-height:1;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,65,18,.18)}',
+      '#wishlist160WallControl .wl-priority-star{position:absolute;top:14.5px;z-index:4;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:1px solid #e5bb50;border-radius:50%;background:linear-gradient(180deg,#fffdf3,#ffefb9);color:#bd8611;font-family:Arial,sans-serif;font-size:11px;font-weight:900;line-height:1;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,65,18,.18)}',
       '#wishlist160WallControl .wl-priority-star:after{display:none!important;pointer-events:none}',
-'#wishlist160WallControl .wl-priority-prohibit[hidden],#wishlist160WallControl .wl-copy-priority-warning[hidden]{display:none!important}',
-'#wishlist160WallControl .wl-priority-prohibit{position:absolute;left:5.5%;top:14px;z-index:4;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:2px solid #d92d37;border-radius:50%;background:linear-gradient(45deg,#fff 43%,#d92d37 44%,#d92d37 56%,#fff 57%);transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,20,20,.2)}',
+'#wishlist160WallControl .wl-priority-prohibit[hidden],#wishlist160WallControl .wl-copy-priority-warning[hidden],#wishlist160WallControl .wl-priority-info[hidden]{display:none!important}',
+'#wishlist160WallControl .wl-priority-prohibit{position:absolute;left:5.5%;top:14.5px;z-index:5;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:2px solid #d92d37;border-radius:50%;background:linear-gradient(45deg,#fff 43%,#d92d37 44%,#d92d37 56%,#fff 57%);transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,20,20,.2)}',
 '#wishlist160WallControl .wl-copy-priority-warning{margin-top:6px;padding:7px 8px;border:1px solid #f0b8bd;border-radius:7px;background:#fff0f1;color:#c52632;font-size:11px;font-weight:900;line-height:1.45;text-align:center}',
+       '#wishlist160WallControl .wl-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:11px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
+       'html.dark-theme #wishlist160WallControl .wl-priority-info{border-color:#345c85;background:#172d47;color:#c6e3ff}',
       '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:nth-child(2){text-align:center}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:last-child{text-align:right}',
+       '#wishlist160WallControl .wl-pvp-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:11px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
+       'html.dark-theme #wishlist160WallControl .wl-pvp-priority-info{border-color:#345c85;background:#172d47;color:#c6e3ff}',
       '#wishlist160WallControl .wl-copy-priority-note{margin-top:9px;color:#8793a6;font-size:11.5px;line-height:1.4;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-help{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:-1px;padding:0;border:1px solid #9bb0ca;border-radius:50%;background:#edf4fc;color:#47709f;font-size:10px;font-weight:1000;line-height:1;cursor:help}',
       '#wishlist160WallControl .wl-copy-priority-help:after{content:attr(data-tooltip);position:absolute;left:calc(100% + 9px);top:50%;z-index:1002;width:250px;max-width:calc(100vw - 205px);box-sizing:border-box;padding:10px 12px;border:1px solid rgba(107,195,238,.42);border-radius:10px;background:linear-gradient(145deg,#202d43,#101827);color:#f3f7ff;font:600 11px/1.55 system-ui,sans-serif;letter-spacing:0;text-align:left;white-space:normal;box-shadow:0 10px 28px rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-50%) translateX(-3px);transition:opacity .08s ease,transform .08s ease,visibility 0s linear .08s}',
@@ -1416,6 +1430,7 @@
          '<span class="wl-priority-star" data-wl-pvp-star aria-hidden="true" style="left:5.5%">★</span>' +
        '</div>' +
       '<div class="wl-copy-priority-ends wl-pvp-priority-ends"><span>PVP 우선</span><span>솔레 우선</span><span>PVP 제외</span></div>' +
+       '<div class="wl-priority-info wl-pvp-priority-info" data-wl-pvp-info></div>' +
       
       '<div class="wl-copy-priority-divider"></div>' +
       '<div class="wl-copy-priority-heading"><span>명함작 선호도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 명함작 선호도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
@@ -1426,7 +1441,8 @@
        '</div>' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
       
-       '<div class="wl-copy-priority-warning" data-wl-copy-warning hidden>160벽 돌파 못한 상태에선 추천하지 않는 설정입니다</div>';
+       '<div class="wl-copy-priority-warning" data-wl-copy-warning hidden>160벽 돌파 못한 상태에선 추천하지 않는 설정입니다</div>' +
+        '<div class="wl-priority-info wl-copy-priority-info" data-wl-copy-info hidden></div>';
     control.addEventListener('input', event => {
       const pvpSlider = event.target.closest && event.target.closest('[data-wl-pvp-priority]');
       if(pvpSlider){
@@ -1497,23 +1513,32 @@
     const pvpSlider = control.querySelector('[data-wl-pvp-priority]');
     if(pvpSlider) pvpSlider.value = String(Math.max(0,pvpModes.indexOf(pvpPriority)));
     const pvpStar = control.querySelector('[data-wl-pvp-star]');
-    if(pvpStar) pvpStar.style.left = '5.5%';
+    if(pvpStar) pvpStar.style.left = (['5.5%','50%','94.5%'][Math.max(0,pvpModes.indexOf(pvpPriority))] || '50%');
+     const pvpInfo = control.querySelector('[data-wl-pvp-info]');
+     if(pvpInfo) pvpInfo.textContent = PVP_PRIORITY_DESCRIPTIONS[pvpPriority] || PVP_PRIORITY_DESCRIPTIONS.solo;
     const pvpValueLabel = control.querySelector('[data-wl-pvp-priority-value]');
     if(pvpValueLabel) pvpValueLabel.textContent = ({pvp:'PVP 우선',solo:'솔레 우선',exclude:'PVP 제외'})[pvpPriority] || '솔레 우선';
     const slider = control.querySelector('[data-wl-copy-priority]');
     if(slider) slider.value = String(copyPriority);
     const copyStar = control.querySelector('[data-wl-copy-star]');
-    if(copyStar) copyStar.style.left = wallStatus === 'X' ? '94.5%' : '50%';
+    if(copyStar) copyStar.style.left = (['5.5%','50%','94.5%'][copyPriority] || '5.5%');
     const copyProhibit = control.querySelector('[data-wl-copy-prohibit]');
     if(copyProhibit) copyProhibit.hidden = wallStatus !== 'X';
     const copyWarning = control.querySelector('[data-wl-copy-warning]');
     if(copyWarning) copyWarning.hidden = !(wallStatus === 'X' && copyPriority === 0);
+     const copyInfo = control.querySelector('[data-wl-copy-info]');
+     const copyInfoText = getCopyPriorityDescription();
+     if(copyInfo){
+       copyInfo.textContent = copyInfoText;
+       copyInfo.hidden = !copyInfoText || (wallStatus === 'X' && copyPriority === 0);
+     }
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
     if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '필수캐 우선';
     const help = control.querySelector('[data-wl-copy-priority-help]');
     if(help){
-      help.setAttribute('data-tooltip', COPY_PRIORITY_DESCRIPTIONS[copyPriority] || COPY_PRIORITY_DESCRIPTIONS[1]);
-      help.setAttribute('aria-label', COPY_PRIORITY_DESCRIPTIONS[copyPriority] || COPY_PRIORITY_DESCRIPTIONS[1]);
+      const description = copyInfoText || '160벽 돌파 못한 상태에선 추천하지 않는 설정입니다';
+       help.setAttribute('data-tooltip', description);
+      help.setAttribute('aria-label', description);
     }
   }
 
