@@ -2093,10 +2093,10 @@
 
           const aSilverMileage = SILVER_MILEAGE_NAMES.has(norm(aName));
           const bSilverMileage = SILVER_MILEAGE_NAMES.has(norm(bName));
-          // Owned namecard (0★) characters do not get a Rule 4 boost just for appearing in the silver-mileage list.
-          // Unowned first-copy targets and owned 1★/2★ silver-mileage characters retain the silver-list priority.
-          const aRule4Priority = (aSilverMileage && (aUnowned || aBreakthrough > 0)) || (!aMustInclude160WallX && aBreakthrough === 2);
-          const bRule4Priority = (bSilverMileage && (bUnowned || bBreakthrough > 0)) || (!bMustInclude160WallX && bBreakthrough === 2);
+          // Only owned silver-mileage characters already at 1★/2★ get the special Rule 4 boost.
+          // Unowned candidates use their normal character-priority rules, regardless of silver-list membership.
+          const aRule4Priority = !aUnowned && ((aSilverMileage && aBreakthrough > 0) || (!aMustInclude160WallX && aBreakthrough === 2));
+          const bRule4Priority = !bUnowned && ((bSilverMileage && bBreakthrough > 0) || (!bMustInclude160WallX && bBreakthrough === 2));
           if(aRule4Priority !== bRule4Priority) return aRule4Priority ? -1 : 1;
           if(aRule4Priority && bRule4Priority && aBreakthrough !== bBreakthrough){
             return bBreakthrough - aBreakthrough;
