@@ -1609,7 +1609,6 @@
               '<input id="wlRandomThreeChance" type="range" min="0" max="65" step="5" value="5" data-wl-random-rule="breakthroughThreeChance">' +
             '</div>' +
             '<div class="wl-random-derived-chance"><span>남는 확률은 0돌에 자동 배정</span><strong data-wl-random-zero-chance>60%</strong></div>' +
-            '
           '</div>' +
         '</details>' +
         '<div class="wl-auto-toolbar">' +
