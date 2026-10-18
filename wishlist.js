@@ -1173,9 +1173,9 @@
       '#wishlistHoverCard.is-compact .wl-hover-card-image,#wishlistHoverCard.is-compact .wl-hover-card-company,#wishlistHoverCard.is-compact .wl-hover-card-meta{display:none}',
       '#wishlistHoverCard.is-compact .wl-hover-card-content{gap:0}',
       '#wishlistHoverCard.is-compact .wl-hover-card-name{font-size:11px;line-height:1.45;max-width:230px}',
-      '#wishlistHoverCard.is-guidance{box-sizing:border-box;width:260px;max-width:min(260px,calc(100vw - 20px));min-height:84px;justify-content:center;padding:9px 12px;border:1px solid #cbd9e5;border-left:3px solid #59a3bb;border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(237,244,249,.99));color:#34465a;box-shadow:0 8px 24px rgba(37,56,79,.20),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(10px)}',
+      '#wishlistHoverCard.is-guidance{box-sizing:border-box;width:430px;max-width:min(430px,calc(100vw - 20px));min-height:84px;justify-content:center;padding:9px 12px;border:1px solid #cbd9e5;border-left:3px solid #59a3bb;border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(237,244,249,.99));color:#34465a;box-shadow:0 8px 24px rgba(37,56,79,.20),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(10px)}',
       '#wishlistHoverCard.is-guidance .wl-hover-card-content{width:100%;min-width:0}',
-      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:7px!important;font-weight:750;line-height:1.5;letter-spacing:0;overflow-wrap:anywhere;text-shadow:none}',
+      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:7px!important;font-weight:750;line-height:1.5;letter-spacing:0;white-space:nowrap;overflow-wrap:normal;text-shadow:none}',
       'html.dark-theme #wishlistHoverCard.is-guidance{border-color:#3c526b;border-left-color:#58b8c5;background:linear-gradient(145deg,rgba(28,42,62,.99),rgba(15,24,39,.99));color:#e5eff9;box-shadow:0 10px 26px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.05)}',
       'html.dark-theme #wishlistHoverCard.is-guidance .wl-hover-card-name{color:#e5eff9!important}',
       '@media(prefers-reduced-motion:reduce){#wishlistHoverCard{transition:none}}',
@@ -1777,13 +1777,13 @@
       const isBonusRecruit = slot.classList.contains('is-bonus-recruit');
       const isRoadToVillain = slot.classList.contains('is-road-to-villain');
       if(isBonusRecruit){
-        nameLabel.textContent = '보너스 리크루트에 포함된 캐릭터입니다.\n본인의 보유 포인트 상황에 따라 제외 추천';
+        nameLabel.textContent = '보너스 리크루트에 포함된 캐릭터입니다. 본인의 보유 포인트 상황에 따라 제외 추천';
       }else if(isRoadToVillain){
-        nameLabel.textContent = '로드 투 빌런 상시 이벤트로 2돌파까지\n획득가능한 니케입니다.\n1회라도 획득했으면 제외 추천';
+        nameLabel.textContent = '로드 투 빌런 상시 이벤트로 2돌파까지 획득가능한 니케입니다. 1회라도 획득했으면 제외 추천';
       }else{
         nameLabel.textContent = name;
       }
-      nameLabel.style.whiteSpace = (isBonusRecruit || isRoadToVillain) ? 'pre-line' : '';
+      nameLabel.style.whiteSpace = (isBonusRecruit || isRoadToVillain) ? 'nowrap' : '';
       companyLabel.textContent = '';
     }else{
       const text = String(target.getAttribute('data-wl-hover-text') || '').trim();
