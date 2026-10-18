@@ -9,16 +9,25 @@ GitHub Pages 테스트 사이트의 공개 프로필 동기화는 Cloudflare Wor
 - 갱신 성공 후 받은 쿠키는 `SERVICE_SESSION_KV`에 저장되어 다음 요청에도 이어집니다.
 - 만료/폐기된 세션이나 BlaBlaLink 측의 재로그인 요구까지 항상 자동 복구할 수 있는 것은 아닙니다. 갱신 API가 세션을 거부하면 BlaBlaLink에 다시 로그인해야 합니다.
 
-## 1. Worker 프로젝트 파일 준비
+## 1. 최신 Worker 파일 준비
 
-이 테스트 저장소의 최신 `cloudflare-worker.js`와 `wrangler.toml`을 로컬 Worker 배포 폴더에 반영합니다. `wrangler.toml`의 Worker 이름이 `nikke-profile-verify`인지 확인하세요.
+이 테스트 저장소의 최신 `cloudflare-worker.js`와 `wrangler.toml`을 로컬 Worker 배포 폴더에 반영합니다. `wrangler.toml`의 Worker 이름은 `nikke-profile-verify`여야 합니다.
 
-현재 Wrangler 4.151.1은 아래 KV 바인딩에 ID가 없으면 배포 시 네임스페이스를 생성하도록 설정할 수 있습니다. 프로젝트 설정에 아래 항목이 있어야 합니다.
+## 2. KV 네임스페이스 만들기 (한 번만)
+
+Worker 배포 폴더에서 실행합니다.
+
+    npx.cmd wrangler kv namespace create SERVICE_SESSION_KV
+
+명령 결과의 `id`를 복사한 뒤 `wrangler.toml`의 다음 항목에서 placeholder를 해당 ID로 바꿉니다.
 
     [[kv_namespaces]]
     binding = "SERVICE_SESSION_KV"
+    id = "여기에_생성된_KV_ID"
 
-## 2. 초기 세션 Secret 설정
+이미 같은 용도로 만든 네임스페이스가 있으면 중복 생성하지 말고 기존 ID를 사용합니다.
+
+## 3. 초기 세션 Secret 설정
 
 BlaBlaLink에 로그인된 브라우저의 쿠키 목록에서 **값만** 읽어서 Worker Secret에 저장합니다. 사용자 비밀번호는 필요하지 않습니다. 값은 채팅에 보내거나 GitHub 소스에 작성하지 마세요.
 
@@ -42,17 +51,17 @@ BlaBlaLink에 로그인된 브라우저의 쿠키 목록에서 **값만** 읽어
 | `BLABLALINK_GAME_CHANNELID` | `game_channelid` |
 | `BLABLALINK_GAME_GAMEID` | `game_gameid` |
 
-처음 두 Secret은 이미 설정했다면 다시 입력할 필요가 없습니다. `BLABLALINK_SERVICE_INTL_OPENID`는 새 코드에서 사용하지 않는 기존 호환용 항목입니다.
+처음 두 Secret은 이미 설정했다면 다시 입력할 필요가 없습니다. 나머지 다섯 값은 **현재 로그인된 동일 계정의 쿠키**에서 가져와야 합니다. `BLABLALINK_SERVICE_INTL_OPENID`는 새 코드에서 사용하지 않는 기존 호환용 항목입니다.
 
-## 3. Worker 배포
+## 4. Worker 배포
 
-로컬 배포 폴더에 최신 `cloudflare-worker.js`와 `wrangler.toml`이 반영되어 있고 위의 Secret 7개가 설정되어 있는지 확인한 뒤 실행합니다.
+먼저 `wrangler.toml`의 KV ID가 placeholder가 아닌 실제 ID인지 확인하고, 필요한 Secret 7개가 설정됐는지 확인한 다음 실행합니다.
 
     npx.cmd wrangler deploy
 
-배포가 KV 바인딩을 생성하면 Wrangler가 네임스페이스 ID를 `wrangler.toml`에 기록합니다. 이 배포는 `nikke-profile-verify` Worker에 적용되며, 메인 사이트의 파일은 변경하지 않습니다.
+이 배포는 `nikke-profile-verify` Worker에 적용되며, 메인 사이트의 파일은 변경하지 않습니다.
 
-## 4. 동작 확인
+## 5. 동작 확인
 
 테스트 사이트에서 강력 새로고침(Ctrl + F5)한 뒤 계정 동기화를 실행합니다. 로그를 확인하려면 별도 PowerShell 창에서 실행합니다.
 
@@ -62,7 +71,7 @@ BlaBlaLink에 로그인된 브라우저의 쿠키 목록에서 **값만** 읽어
 
 ## 이후 세션이 완전히 만료된 경우
 
-BlaBlaLink에서 다시 로그인한 다음 해당 쿠키를 Secret에 갱신합니다. Worker는 저장된 Secret 지문이 바뀐 것을 감지해 KV 세션을 새 값으로 다시 초기화합니다. KV를 직접 삭제할 필요가 없습니다.
+BlaBlaLink에서 다시 로그인한 다음 해당 쿠키들을 Secret에 갱신합니다. Worker는 저장된 초기 Secret 지문이 바뀐 것을 감지해 KV 세션을 새 값으로 다시 초기화하므로, KV를 직접 삭제할 필요가 없습니다.
 
 ## 보안 및 제한
 
