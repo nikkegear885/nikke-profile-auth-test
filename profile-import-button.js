@@ -41,20 +41,6 @@
     return u.toString();
   }
 
-  async function requestProfileSync(url, areaId){
-    var body = {profile_url:url};
-    if(areaId != null) body.area_id = Number(areaId);
-    var response = await fetch(API + '/sync', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body),
-      cache:'no-store',
-      credentials:'omit'
-    });
-    var payload = await response.json().catch(function(){ return {}; });
-    return {responseOk:response.ok,payload:payload};
-  }
-
   async function requestSessionCheck(url){
     var response = await fetch(API + '/session-check', {
       method:'POST',
@@ -318,32 +304,35 @@
       status.textContent = '프로필과 NIKKE 장비 정보를 조회하는 중…';
 
       try{
-        var syncResult = await requestProfileSync(url, requestedAreaId);
-        var payload = syncResult.payload;
+        var response = await fetch(API + '/sync', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(requestedAreaId === null ? {profile_url:url} : {profile_url:url,area_id:requestedAreaId}),
+          cache: 'no-store',
+          credentials: 'omit'
+        });
 
-        if(payload && payload.ok !== true &&
-           payload.sync_type === 'multiple_rosters' &&
-           Array.isArray(payload.candidates) && payload.candidates.length > 1){
-          if(regionSelect){
-            regionSelect.innerHTML = '<option value="">지역 선택…</option>';
-            payload.candidates.forEach(function(candidate){
-              var areaId = Number(candidate && candidate.area_id);
-              if(![81,82,83,84,85].includes(areaId)) return;
-              var option = document.createElement('option');
-              option.value = String(areaId);
-              option.textContent = regionLabel(areaId) + ' · ' + String(Number(candidate.character_count)||0) + '명';
-              regionSelect.appendChild(option);
-            });
+        var payload = await response.json().catch(function(){ return {}; });
+        if(!response.ok || payload.ok !== true){
+          if(payload.sync_type === 'multiple_rosters' && Array.isArray(payload.candidates) && payload.candidates.length > 1){
+            if(regionSelect){
+              regionSelect.innerHTML = '<option value="">지역 선택…</option>';
+              payload.candidates.forEach(function(candidate){
+                var areaId = Number(candidate && candidate.area_id);
+                if(![81,82,83,84,85].includes(areaId)) return;
+                var option = document.createElement('option');
+                option.value = String(areaId);
+                option.textContent = regionLabel(areaId) + ' · ' + String(Number(candidate.character_count)||0) + '명';
+                regionSelect.appendChild(option);
+              });
+            }
+            if(regionPicker) regionPicker.hidden = false;
+            primary.textContent = '선택한 지역으로 동기화';
+            status.className = 'bl-direct-status error';
+            status.textContent = '여러 지역에서 보유 니케가 확인되었습니다. 올바른 지역을 선택한 다음 아래 버튼을 다시 눌러 주세요.';
+            return;
           }
-          if(regionPicker) regionPicker.hidden = false;
-          primary.textContent = '선택한 지역으로 동기화';
-          status.className = 'bl-direct-status error';
-          status.textContent = '여러 지역에서 보유 니케가 확인되었습니다. 올바른 지역을 선택한 다음 아래 버튼을 다시 눌러 주세요.';
-          return;
-        }
-
-        if(!syncResult.responseOk || !payload || payload.ok !== true){
-          throw new Error((payload && payload.message) || 'BlaBlaLink 동기화에 실패했습니다.');
+          throw new Error(payload.message || 'BlaBlaLink 동기화에 실패했습니다.');
         }
 
         var apply = window.__NIKKE_GM_APPLY_SYNC__;
