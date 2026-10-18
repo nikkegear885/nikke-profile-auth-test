@@ -291,15 +291,124 @@
 
 
 
-  async function fetchCharacters(){
-    const j = await postJson(API.chars, {
+  const NIKKE_AREAS = Object.freeze([
+    {id:81, code:'JP', label:'일본 (JP)'},
+    {id:82, code:'NA', label:'북미 (NA)'},
+    {id:83, code:'KR', label:'한국 (KR)'},
+    {id:84, code:'Global', label:'글로벌 (Global)'},
+    {id:85, code:'SEA', label:'동남아 (SEA)'}
+  ]);
+
+  function isRegionAmbiguityError(message){
+    const s = String(message || '').toLowerCase();
+    const ambiguous = /(여러|multiple|several|more than one|ambiguous)/i.test(s);
+    const regionRelated = /(nikke|니케|region|지역|server|서버|area|로스터|roster|character|캐릭터)/i.test(s);
+    return ambiguous && regionRelated;
+  }
+
+  async function requestCharactersForArea(areaId){
+    return await postJson(API.chars, {
       intl_open_id: state.intlOpenId,
-      nikke_area_id: Number(state.areaId)
+      nikke_area_id: Number(areaId)
     });
-    if (String(j?.code ?? '') !== '0') {
-      throw new Error(j?.message || j?.msg || '캐릭터 목록 조회 실패');
+  }
+
+  async function probeAreaByDetails(areaId){
+    try{
+      const j = await postJson(API.details, {
+        intl_open_id: state.intlOpenId,
+        nikke_area_id: Number(areaId),
+        name_codes: [5167]
+      });
+      return String(j?.code ?? '') === '0';
+    }catch(_){
+      return false;
     }
-    return Array.isArray(j?.data?.characters) ? j.data.characters : [];
+  }
+
+  function chooseNikkeArea(candidates){
+    if(candidates.length === 1) return candidates[0];
+    const options = candidates.map(a => a.id + ' = ' + a.label).join('\n');
+    const answer = window.prompt(
+      '여러 NIKKE 지역에서 로스터가 확인되었습니다. 잘못된 지역의 장비를 가져오지 않도록 동기화할 지역을 직접 선택해 주세요.\n\n' +
+      options + '\n\n지역 ID 또는 코드(JP / NA / KR / Global / SEA)를 입력하세요.',
+      ''
+    );
+    if(answer === null) throw new Error('지역 선택이 취소되었습니다. 동기화를 다시 실행하고 올바른 지역을 선택해 주세요.');
+    const normalizeRegionInput = value => String(value || '').trim().toLowerCase().replace(/[\\s()（）]/g, '');
+    const value = normalizeRegionInput(answer);
+    const selected = candidates.find(a => {
+      const labelWithoutCode = String(a.label || '').replace(/\\s*[（(][^）)]*[）)]\\s*/g, '').trim();
+      return [String(a.id), a.code, a.label, labelWithoutCode]
+        .some(candidate => normalizeRegionInput(candidate) === value);
+    });
+    if(!selected) throw new Error('선택한 지역을 확인하지 못했습니다. 지역 ID, 코드 또는 지역명(예: 83 / KR / 한국)을 입력해 주세요.');
+    return selected;
+  }
+
+  async function fetchCharacters(){
+    const j = await requestCharactersForArea(state.areaId);
+    if (String(j?.code ?? '') === '0') {
+      return Array.isArray(j?.data?.characters) ? j.data.characters : [];
+    }
+
+    const originalMessage = String(j?.message || j?.msg || '캐릭터 목록 조회 실패');
+    if(!isRegionAmbiguityError(originalMessage)) throw new Error(originalMessage);
+
+    showStatus('NIKKE Gear Manager: 여러 지역 로스터를 확인 중…');
+
+    // 먼저 지역별 캐릭터 목록을 직접 조회해 로스터가 존재하는 지역을 찾습니다.
+    const rosterMatches = [];
+    for(const area of NIKKE_AREAS){
+      try{
+        const candidate = await requestCharactersForArea(area.id);
+        if(String(candidate?.code ?? '') === '0'){
+          const characters = Array.isArray(candidate?.data?.characters) ? candidate.data.characters : [];
+          if(characters.length) rosterMatches.push({...area, characters});
+        }
+      }catch(_){}
+      await delay(120);
+    }
+
+    if(rosterMatches.length === 1){
+      state.areaId = rosterMatches[0].id;
+      showStatus('지역 확인: ' + rosterMatches[0].label, true);
+      return rosterMatches[0].characters;
+    }
+
+    if(rosterMatches.length > 1){
+      const selected = chooseNikkeArea(rosterMatches);
+      state.areaId = selected.id;
+      return selected.characters;
+    }
+
+    // 캐릭터 목록 API가 계속 모호하게 응답하면 상세 API로 조회 가능한 지역을 판별합니다.
+    const availableAreas = [];
+    for(const area of NIKKE_AREAS){
+      if(await probeAreaByDetails(area.id)) availableAreas.push(area);
+      await delay(120);
+    }
+    if(!availableAreas.length){
+      throw new Error(originalMessage + ' 지역별 조회도 실패했습니다. BlablaLink 로그인 상태를 확인한 뒤 다시 시도해 주세요.');
+    }
+
+    const selected = chooseNikkeArea(availableAreas);
+    state.areaId = selected.id;
+
+    // 지역별 상세 API는 되지만 캐릭터 목록 API는 계속 모호하다고 응답하는 경우,
+    // 같은 캐릭터 목록 API를 재호출하면 같은 오류가 반복됩니다. 알려진 이름 코드를
+    // 상세 API에 직접 조회해 실제 보유 니케만 결과로 받습니다.
+    const allKnownCodes = Array.from(new Set([
+      ...Object.keys(BUILTIN_NAME_CODES),
+      ...state.codeToName.keys()
+    ])).filter(code => String(code || '').trim() !== '');
+    if(!allKnownCodes.length){
+      throw new Error('캐릭터 이름 코드 목록을 불러오지 못했습니다. BlablaLink 페이지가 완전히 열린 뒤 다시 시도해 주세요.');
+    }
+    const fallbackCharacters = allKnownCodes.map(name_code => ({name_code}));
+    fallbackCharacters.__detailsOnlyFallback = true;
+    showStatus('지역 확인: ' + selected.label + ' · 상세 API로 보유 니케 조회', true);
+    return fallbackCharacters;
   }
 
   async function fetchDetails(codes){
@@ -402,8 +511,9 @@
       await delay(800);
 
       const chars = await fetchCharacters();
+      const detailsOnlyFallback = chars && chars.__detailsOnlyFallback === true;
       // 계정에 있는 전체 캐릭터 중 현재 사이트/내장 매핑으로 이름을 확인할 수 있는 캐릭터만 조회합니다.
-      // 새 캐릭터가 아직 사이트에 없더라도 동기화 자체가 "미매칭"으로 끝나지 않게 합니다.
+      // 상세 API 우회 모드에서는 알려진 이름 코드를 조회하고, 보유 니케만 상세 응답으로 추립니다.
       const codes = chars
         .map(x => x?.name_code)
         .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
@@ -412,16 +522,23 @@
         .filter(code => Boolean(BUILTIN_NAME_CODES[code]) || Boolean(state.codeToName.get(code)));
       if(!codes.length) throw new Error('현재 사이트와 매칭되는 보유 캐릭터를 찾지 못했습니다. 동기화 스크립트가 최신 버전인지 확인하세요.');
 
-      showStatus('NIKKE Gear Manager: 장비 기업 정보를 조회 중… ('+codes.length+'명)');
+      showStatus(detailsOnlyFallback
+        ? 'NIKKE Gear Manager: 선택 지역의 보유 니케 상세 정보를 조회 중…'
+        : 'NIKKE Gear Manager: 장비 기업 정보를 조회 중… ('+codes.length+'명)');
       const details = await fetchDetails(codes);
       const {updates, unresolved} = makeUpdates(details);
-      // Preserve the full roster, even when only a subset has equipment-detail rows.
-      const ownedNames = Array.from(new Set(chars
+      // The normal character-list endpoint is the source of truth for ownership.
+      // In details-only fallback mode, the response contains only owned characters, so use details.
+      const rosterSource = detailsOnlyFallback ? details : chars;
+      const ownedNames = Array.from(new Set(rosterSource
         .map(char => {
           const code = String(char?.name_code ?? '');
           return String(BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || '').trim();
         })
         .filter(Boolean)));
+      const actualCharacterCount = detailsOnlyFallback
+        ? new Set(details.map(char => String(char?.name_code ?? '')).filter(Boolean)).size
+        : codes.length;
 
       if(sourceWindow && sourceWindow.postMessage){
         sourceWindow.postMessage({
@@ -431,7 +548,7 @@
             ok:true,
             nickname:state.nickname,
             areaId:state.areaId,
-            characterCount:ownedNames.length,
+            characterCount:actualCharacterCount,
             detailCount:details.length,
             ownedNames,
             updates,
