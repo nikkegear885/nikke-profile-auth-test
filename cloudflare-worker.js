@@ -653,6 +653,7 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
   // Refresh before each sync; if refresh is temporarily unavailable, try the current session once.
   try{
     session = await renewServiceSession(env, session);
+    console.log('[service-session] on-demand refresh succeeded');
   }catch(refreshError){
     console.warn('[service-session] on-demand refresh failed:', String(refreshError?.sync_type || 'refresh_error'));
   }
