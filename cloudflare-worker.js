@@ -1010,6 +1010,72 @@ export default {
         });
       }
 
+      if(action === '/session-check'){
+        const profileUrl = String(body?.profile_url || '').trim();
+        if(!profileUrl){
+          return json({ok:false,sync_type:'missing_profile_url',message:'공개 BlaBlaLink 프로필 URL을 입력해 주세요.'}, 400);
+        }
+
+        try{
+          const decoded = decodeOpenIdFromProfileUrl(profileUrl);
+          const intlOpenId = extractIntlOpenId(decoded);
+          let session = await getServiceSession(env);
+
+          // Deliberately test both the renewal endpoint and a read-only NIKKE API call.
+          session = await renewServiceSession(env, session);
+          console.log('[service-session] preflight refresh succeeded');
+
+          const areasChecked = [];
+          for(const areaId of NIKKE_AREAS){
+            const result = await callNikkeGameApi(
+              NIKKE_CHARACTERS_API,
+              {intl_open_id:intlOpenId, nikke_area_id:areaId},
+              session
+            );
+            areasChecked.push({
+              area_id:areaId,
+              http_status:result.http_status,
+              code:Number.isFinite(result.code) ? result.code : null
+            });
+
+            if(result.code === BLABLALINK_INVALID_TOKEN_CODE){
+              console.warn('[service-session] preflight API rejected session token');
+              return json({
+                ok:false,
+                sync_type:'service_session_expired',
+                message:'갱신 요청은 성공했지만 NIKKE 데이터 API가 세션을 거부했습니다. 자동 갱신으로 인증 문제가 해결되지 않았습니다.',
+                areas_checked:areasChecked
+              }, 503);
+            }
+            if(result.code === 0){
+              console.log('[service-session] preflight API validation succeeded');
+              return json({
+                ok:true,
+                sync_type:'service_session_valid',
+                message:'세션 갱신과 NIKKE 데이터 API 인증이 모두 정상입니다. 계정 데이터는 변경하지 않았습니다.',
+                checked_area:areaId,
+                session_refreshed:true
+              }, 200);
+            }
+          }
+
+          return json({
+            ok:false,
+            sync_type:'session_check_inconclusive',
+            message:'세션 갱신은 성공했지만 NIKKE 데이터 API에서 조회 가능한 지역을 확인하지 못했습니다. 공개 프로필의 NIKKE 로스터 및 지역 설정을 확인해 주세요.',
+            areas_checked:areasChecked
+          }, 502);
+        }catch(e){
+          const status = Number.isInteger(e?.status) ? e.status : 502;
+          console.warn('[service-session] preflight failed:', String(e?.sync_type || 'session_check_error'));
+          return json({
+            ok:false,
+            sync_type:String(e?.sync_type || 'session_check_error'),
+            message:String(e?.message || '서비스 세션 사전 검사에 실패했습니다.')
+          }, status);
+        }
+      }
+
       if(action === '/sync'){
         const profileUrl = String(body?.profile_url || '').trim();
         if(!profileUrl){
