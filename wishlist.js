@@ -1115,7 +1115,14 @@
       '#wishlistPanel[hidden]{display:none!important}',
       '#wishlistPanel{position:relative!important;z-index:auto;display:block!important;box-sizing:border-box!important;width:calc(100% - 24px)!important;max-width:462px!important;min-width:0!important;padding:0!important;margin:0 auto 16px!important;overflow:visible;background:transparent;color:#25282d}',
       '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:100%;height:auto;min-height:0;overflow:visible;border:1px solid #dedfe1;border-radius:12px;background:#f8f8f8;box-shadow:0 2px 12px rgba(0,0,0,.10)}',
-      '#wishlistPanel .wl-modal-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;min-height:31px;padding:3px 7px;overflow:hidden;background:linear-gradient(135deg,#f5f5f5 0%,#eeeeef 42%,#fafafa 100%);border-bottom:1px solid #dedfe1}',
+      '#wishlistPanel .wl-modal-head{position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;min-height:31px;padding:3px 7px;overflow:visible;background:linear-gradient(135deg,#f5f5f5 0%,#eeeeef 42%,#fafafa 100%);border-bottom:1px solid #dedfe1}',
+      '#wishlistPanel .wl-recommend-warning[hidden]{display:none!important}',
+      '#wishlistPanel .wl-recommend-warning{position:relative;z-index:3;flex:none;color:#d92332;font-size:11px;font-weight:1000;line-height:1.2;white-space:nowrap;cursor:help;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}',
+      '#wishlistPanel .wl-recommend-warning:after{content:attr(data-tooltip);position:absolute;left:50%;top:calc(100% + 8px);z-index:1000;display:block;width:380px;max-width:calc(100vw - 24px);box-sizing:border-box;padding:11px 13px;border:1px solid #e3b4bb;border-left:3px solid #d92332;border-radius:9px;background:#fffafa;color:#354256;font-size:10px;font-weight:800;line-height:1.6;letter-spacing:0;text-align:left;white-space:pre-line;box-shadow:0 8px 24px rgba(40,25,30,.2);opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-3px);transition:opacity .08s ease,transform .08s ease,visibility 0s linear .08s}',
+      '#wishlistPanel .wl-recommend-warning:hover:after,#wishlistPanel .wl-recommend-warning:focus-visible:after{opacity:1;visibility:visible;transform:translate(-50%,0);transition-delay:0s}',
+      '#wishlistPanel .wl-recommend-warning:focus-visible{outline:2px solid #d92332;outline-offset:3px}',
+      'html.dark-theme #wishlistPanel .wl-recommend-warning{color:#ff858f}',
+      'html.dark-theme #wishlistPanel .wl-recommend-warning:after{border-color:#6e3841;border-left-color:#ff858f;background:#211922;color:#f7e9eb}',
       '#wishlistPanel .wl-modal-head:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,transparent 0 8%,rgba(210,214,218,.35) 8% 20%,transparent 20% 37%,rgba(255,255,255,.62) 37% 48%,transparent 48% 62%,rgba(218,221,224,.35) 62% 77%,transparent 77%)}',
       '#wishlistPanel .wl-modal-title{position:relative;display:flex;align-items:center;gap:4px;color:#16a5df;font-size:11px;font-weight:1000;letter-spacing:-.04em}',
       '#wishlistPanel .wl-random-test-account-button{position:relative;z-index:1;flex:none;max-width:54%;padding:4px 7px;border:1px solid #b98a38;border-radius:5px;background:#fff8e8;color:#795315;font-size:9px;font-weight:1000;line-height:1.2;white-space:nowrap;cursor:pointer}',
@@ -1579,6 +1586,7 @@
       '<div class="wl-dialog">' +
         '<div class="wl-modal-head">' +
           '<div class="wl-modal-title" id="wishlistModalTitle"><span class="wl-refresh-icon" aria-hidden="true"></span><span>위시리스트 모집</span></div>' +
+          '<span class="wl-recommend-warning" data-wl-recommend-warning hidden tabindex="0" role="note" aria-label="위시리스트 추천 안내" data-tooltip="해당 위시리스트 추천리스트는 명함 획득을 목표로 제작되었습니다.&#10;돌파 우선도 체크용으로는 추천하지 않습니다">필독!</span>' +
           '<button type="button" class="wl-random-test-account-button" data-wl-random-test-account title="무작위 보유·돌파 데이터가 있는 테스트 계정을 생성합니다">무작위 계정 테스트</button>' +
         '</div>' +
         '<details class="wl-random-settings" data-wl-random-settings>' +
@@ -2345,6 +2353,26 @@
     if(status) status.textContent = (changed ? '변경 사항 있음 · 결정 버튼을 눌러 저장' : '저장된 위시리스트') +
       ' · ' + COMPANIES.reduce((sum,company) => sum + picks[company].filter(Boolean).length,0) + ' / 20명' +
       ' · 제외 ' + excludedCharacters.length + '명 · 애정캐 ' + favoriteCharacters.length + '명';
+    updateRecommendedWarning();
+  }
+
+  function updateRecommendedWarning(){
+    const warning = panel && panel.querySelector('[data-wl-recommend-warning]');
+    if(!warning) return;
+    const recommendedNames = COMPANIES.flatMap(company =>
+      (Array.isArray(picks[company]) ? picks[company] : []).map(name => String(name || '').trim()).filter(Boolean)
+    );
+    const allRecommendedOwned = recommendedNames.length > 0 && recommendedNames.every(name => !isMarkedUnowned(name));
+    const roster = getAllCharacters();
+    const threeBreakthroughCount = roster.reduce((count,row) => {
+      const name = String(row && row['이름'] || '').trim();
+      return count + (name && getBreakthrough(name) >= 3 ? 1 : 0);
+    },0);
+    const hasCoreSeven = roster.some(row => {
+      const name = String(row && row['이름'] || '').trim();
+      return !!name && getCoreEnhancement(name) >= 7;
+    });
+    warning.hidden = !(allRecommendedOwned || threeBreakthroughCount >= 9 || hasCoreSeven);
   }
 
   function renderExcludedCharacters(){
