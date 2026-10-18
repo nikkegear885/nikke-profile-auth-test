@@ -837,19 +837,19 @@
 
   const COPY_PRIORITY_LABELS = ['필수캐','균형','도감작'];
   const PVP_PRIORITY_DESCRIPTIONS = {
-    pvp: '솔레보다 PVP 캐릭터를 우선으로 추천합니다.',
-    solo: 'PVP보다 솔레 캐릭터를 우선으로 추천합니다.\n완전히 아레나를 포기한 유저가 아니라면 추천하지 않습니다.',
-    exclude: 'PVP 캐릭터를 완전히 제외합니다.\n묵은지 계정 등 PVP 자체가 불가능한 상황에서만 추천합니다.'
+    pvp: '일반적으로 추천하는 설정입니다',
+    solo: 'PVP캐릭터보다 솔레 캐릭터를\n우선으로 추천합니다.\n아레나를 포기한 유저가\n아니라면 추천하지 않습니다.',
+    exclude: 'PVP 캐릭터를 후순위로 설정합니다.\n묵은지 계정 등 PVP 자체가 불가능한\n상황이 아니라면 추천하지 않습니다.'
   };
   function getCopyPriorityDescription(){
     if(wallStatus === 'X'){
       if(copyPriority === 0) return '';
-      if(copyPriority === 1) return '과금 유저 추천\n단순 돌파보다는 어느 정도 성능이 보장된 캐릭터의 명함 획득을 우선으로 합니다.';
-      return '일반적으로 추천되는 160벽 위시리스트입니다.';
+      if(copyPriority === 1) return '과금 유저 추천\n단순 돌파보다는 어느 정도 성능이 보장된\n캐릭터의 명함 획득을 우선으로 합니다.';
+      return '일반적으로 추천되는\n160벽 돌파 위시리스트입니다.';
     }
-    if(copyPriority === 0) return '필수캐릭터로 취급받는 캐릭터를 반드시 포함합니다.\n어느 정도 성능 캐릭터를 보유한 뒤 체크하는 걸 추천합니다.';
-    if(copyPriority === 1) return '현재 쓰이지 않는 캐릭터를 제외하고 명함을 취득하는 걸 우선으로 합니다.\n애장품으로 떡상할 가능성 등은 고려하지 않습니다.';
-    return '캐릭터의 사용 여부와 상관없이 명함 획득을 최우선으로 합니다.';
+    if(copyPriority === 0) return '성능캐로 취급받는 캐릭터의\n돌파를 우선으로 합니다.';
+    if(copyPriority === 1) return '현재 쓰이지 않는 캐릭은 제외\n돌파보다는 명함 취득을 우선합니다.\n애장품 떡상 가능성은 고려하지 않습니다.';
+    return '캐릭터의 사용 여부와 상관없이\n명함 획득을 최우선으로 합니다.';
   }
   let copyPriority = loadCopyPriority();
 
@@ -1056,14 +1056,14 @@
       '#wishlist160WallControl .wl-priority-star:after{display:none!important;pointer-events:none}',
 '#wishlist160WallControl .wl-priority-prohibit[hidden],#wishlist160WallControl .wl-copy-priority-warning[hidden],#wishlist160WallControl .wl-priority-info[hidden]{display:none!important}',
 '#wishlist160WallControl .wl-priority-prohibit{position:absolute;left:5.5%;top:14.5px;z-index:5;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:2px solid #d92d37;border-radius:50%;background:linear-gradient(45deg,#fff 43%,#d92d37 44%,#d92d37 56%,#fff 57%);transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,20,20,.2)}',
-'#wishlist160WallControl .wl-copy-priority-warning{margin-top:6px;padding:7px 8px;border:1px solid #f0b8bd;border-radius:7px;background:#fff0f1;color:#c52632;font-size:11px;font-weight:900;line-height:1.45;text-align:center}',
-       '#wishlist160WallControl .wl-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:11px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
+'#wishlist160WallControl .wl-copy-priority-warning{margin-top:6px;padding:7px 8px;border:1px solid #f0b8bd;border-radius:7px;background:#fff0f1;color:#c52632;font-size:8.3px;font-weight:900;line-height:1.45;text-align:center}',
+       '#wishlist160WallControl .wl-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:8.3px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
        'html.dark-theme #wishlist160WallControl .wl-priority-info{border-color:#345c85;background:#172d47;color:#c6e3ff}',
       '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:nth-child(2){text-align:center}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:last-child{text-align:right}',
-       '#wishlist160WallControl .wl-pvp-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:11px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
+       '#wishlist160WallControl .wl-pvp-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:8.3px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
        'html.dark-theme #wishlist160WallControl .wl-pvp-priority-info{border-color:#345c85;background:#172d47;color:#c6e3ff}',
       '#wishlist160WallControl .wl-copy-priority-note{margin-top:9px;color:#8793a6;font-size:11.5px;line-height:1.4;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-help{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:-1px;padding:0;border:1px solid #9bb0ca;border-radius:50%;background:#edf4fc;color:#47709f;font-size:10px;font-weight:1000;line-height:1;cursor:help}',
