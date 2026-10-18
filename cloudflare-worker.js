@@ -347,23 +347,180 @@ function getRawCorp(char, slot) {
 }
 
 
-function getServiceSession(env){
-  const gameToken = String(env?.BLABLALINK_GAME_TOKEN || '').trim();
-  const gameOpenId = String(env?.BLABLALINK_GAME_OPENID || '').trim();
-  const serviceIntlOpenId = String(env?.BLABLALINK_SERVICE_INTL_OPENID || '').trim();
+const SERVICE_SESSION_KV_KEY = 'blablalink-service-session-v1';
+const SERVICE_SESSION_FIELDS = Object.freeze([
+  ['gameToken','BLABLALINK_GAME_TOKEN'],
+  ['gameOpenId','BLABLALINK_GAME_OPENID'],
+  ['gameUid','BLABLALINK_GAME_UID'],
+  ['gameUserName','BLABLALINK_GAME_USER_NAME'],
+  ['gameAdultStatus','BLABLALINK_GAME_ADULT_STATUS'],
+  ['gameChannelId','BLABLALINK_GAME_CHANNELID'],
+  ['gameGameId','BLABLALINK_GAME_GAMEID']
+]);
 
-  if(!gameToken || !gameOpenId || !serviceIntlOpenId){
-    const missing = [];
-    if(!gameToken) missing.push('BLABLALINK_GAME_TOKEN');
-    if(!gameOpenId) missing.push('BLABLALINK_GAME_OPENID');
-    if(!serviceIntlOpenId) missing.push('BLABLALINK_SERVICE_INTL_OPENID');
-    const err = new Error('서비스용 BlaBlaLink Secret이 부족합니다: ' + missing.join(', '));
+function makeServiceSessionFromSecrets(env){
+  const session = {
+    gameToken:String(env?.BLABLALINK_GAME_TOKEN || '').trim(),
+    gameOpenId:String(env?.BLABLALINK_GAME_OPENID || '').trim(),
+    gameUid:String(env?.BLABLALINK_GAME_UID || '').trim(),
+    gameUserName:String(env?.BLABLALINK_GAME_USER_NAME || '').trim(),
+    gameAdultStatus:String(env?.BLABLALINK_GAME_ADULT_STATUS || '').trim(),
+    gameChannelId:String(env?.BLABLALINK_GAME_CHANNELID || '').trim(),
+    gameGameId:String(env?.BLABLALINK_GAME_GAMEID || '').trim()
+  };
+  const missing = SERVICE_SESSION_FIELDS
+    .filter(([field]) => !session[field])
+    .map(([,secret]) => secret);
+  if(missing.length){
+    const err = new Error('자동 세션 갱신에 필요한 Secret이 부족합니다: ' + missing.join(', '));
     err.sync_type = 'service_secret_missing';
     err.status = 503;
     throw err;
   }
+  return session;
+}
 
-  return {gameToken, gameOpenId, serviceIntlOpenId};
+async function getServiceSession(env){
+  if(!env?.SERVICE_SESSION_KV){
+    const err = new Error('자동 세션 갱신용 KV 저장소가 설정되지 않았습니다.');
+    err.sync_type = 'service_session_storage_missing';
+    err.status = 503;
+    throw err;
+  }
+  let saved = null;
+  try{
+    saved = await env.SERVICE_SESSION_KV.get(SERVICE_SESSION_KV_KEY, {type:'json'});
+  }catch(e){
+    const err = new Error('서비스 세션 저장소를 읽지 못했습니다.');
+    err.sync_type = 'service_session_storage_error';
+    err.status = 503;
+    throw err;
+  }
+  if(saved && typeof saved === 'object' && !Array.isArray(saved)){
+    const missing = SERVICE_SESSION_FIELDS.filter(([field]) => !String(saved[field] || '').trim()).map(([,secret]) => secret);
+    if(!missing.length) return saved;
+    const err = new Error('저장된 서비스 세션 정보가 부족합니다: ' + missing.join(', ') + '. 초기 Secret과 KV 저장소를 확인해 주세요.');
+    err.sync_type = 'service_session_storage_invalid';
+    err.status = 503;
+    throw err;
+  }
+
+  // 최초 1회만 Secret에서 시작 정보를 읽어 KV에 저장합니다.
+  const initial = makeServiceSessionFromSecrets(env);
+  await env.SERVICE_SESSION_KV.put(SERVICE_SESSION_KV_KEY, JSON.stringify(initial));
+  return initial;
+}
+
+function splitSetCookieHeader(value){
+  return String(value || '').split(/,\\s*(?=game_[a-z0-9_]+=)/i).filter(Boolean);
+}
+
+function readUpdatedGameCookies(headers){
+  let setCookies = [];
+  try{
+    if(typeof headers?.getSetCookie === 'function') setCookies = headers.getSetCookie();
+  }catch(_){}
+  if(!setCookies.length){
+    let combined = '';
+    try{ combined = headers?.get('set-cookie') || ''; }catch(_){}
+    setCookies = splitSetCookieHeader(combined);
+  }
+  const updated = {};
+  setCookies.forEach(cookie => {
+    const pair = String(cookie || '').split(';',1)[0].trim();
+    const equals = pair.indexOf('=');
+    if(equals < 1) return;
+    const name = pair.slice(0,equals).trim();
+    const value = pair.slice(equals+1).trim();
+    if(name.startsWith('game_') && value) updated[name] = value;
+  });
+  return updated;
+}
+
+async function renewServiceSession(env, current){
+  const expireAt = Math.floor(Date.now()/1000) + 29*24*60*60;
+  const cookieValues = {
+    game_token:current.gameToken,
+    game_uid:current.gameUid,
+    game_openid:current.gameOpenId,
+    game_gameid:current.gameGameId,
+    game_channelid:current.gameChannelId,
+    game_user_name:current.gameUserName,
+    game_adult_status:current.gameAdultStatus
+  };
+  let response;
+  try{
+    response = await fetch('https://api.blablalink.com/api/user/Login', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Accept':'application/json, text/plain, */*',
+        'Origin':'https://www.blablalink.com',
+        'Referer':'https://www.blablalink.com/',
+        'X-Channel-Type':'2',
+        'X-Language':'en',
+        'Cookie':Object.entries(cookieValues)
+          .filter(([,value]) => String(value || '').trim())
+          .map(([name,value]) => name + '=' + value)
+          .join('; ')
+      },
+      body:JSON.stringify({
+        game_openid:current.gameOpenId,
+        game_channelid:Number(current.gameChannelId),
+        game_token:current.gameToken,
+        game_id:current.gameGameId || '29080',
+        game_expire_time:expireAt,
+        game_uid:current.gameUid,
+        game_user_name:current.gameUserName,
+        game_adult_status:Number(current.gameAdultStatus)
+      })
+    });
+  }catch(e){
+    const err = new Error('BlaBlaLink 세션 자동 갱신 API에 연결하지 못했습니다.');
+    err.sync_type = 'service_session_refresh_network_error';
+    err.status = 502;
+    throw err;
+  }
+
+  let payload = {};
+  try{ payload = await response.json(); }catch(_){}
+  if(!response.ok || Number(payload?.code) !== 0){
+    const reason = String(payload?.message || payload?.msg || '').trim();
+    const err = new Error('BlaBlaLink 세션 자동 갱신에 실패했습니다.' + (reason ? ' (' + reason.slice(0,160) + ')' : ''));
+    err.sync_type = 'service_session_refresh_failed';
+    err.status = 502;
+    err.http_status = response.status;
+    err.code = Number.isFinite(Number(payload?.code)) ? Number(payload.code) : null;
+    throw err;
+  }
+
+  const updatedCookies = readUpdatedGameCookies(response.headers);
+  const next = {
+    ...current,
+    gameToken:updatedCookies.game_token || current.gameToken,
+    gameUid:updatedCookies.game_uid || current.gameUid,
+    gameOpenId:updatedCookies.game_openid || current.gameOpenId,
+    gameGameId:updatedCookies.game_gameid || current.gameGameId,
+    gameChannelId:updatedCookies.game_channelid || current.gameChannelId,
+    gameUserName:updatedCookies.game_user_name || current.gameUserName,
+    gameAdultStatus:updatedCookies.game_adult_status || current.gameAdultStatus
+  };
+  if(!updatedCookies.game_token){
+    const err = new Error('BlaBlaLink 갱신 API가 새 game_token 쿠키를 반환하지 않았습니다.');
+    err.sync_type = 'service_session_refresh_no_cookie';
+    err.status = 502;
+    throw err;
+  }
+
+  try{
+    await env.SERVICE_SESSION_KV.put(SERVICE_SESSION_KV_KEY, JSON.stringify(next));
+  }catch(e){
+    const err = new Error('갱신된 서비스 세션을 저장하지 못했습니다.');
+    err.sync_type = 'service_session_storage_error';
+    err.status = 503;
+    throw err;
+  }
+  return next;
 }
 
 function makeGameCommonParams(){
@@ -394,8 +551,8 @@ function makeGameHeaders(session){
     'Cookie':[
       'game_token=' + session.gameToken,
       'game_openid=' + session.gameOpenId,
-      'game_gameid=29080',
-      'game_channelid=6'
+      'game_gameid=' + (session.gameGameId || '29080'),
+      'game_channelid=' + (session.gameChannelId || '6')
     ].join('; ')
   };
 }
@@ -477,7 +634,13 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
   // 공개 프로필 자체가 정상인지 먼저 확인합니다.
   const profile = await getProfile(profileUrl, decoded);
 
-  const session = getServiceSession(env);
+  let session = await getServiceSession(env);
+  // Refresh before each sync; if refresh is temporarily unavailable, try the current session once.
+  try{
+    session = await renewServiceSession(env, session);
+  }catch(refreshError){
+    console.warn('[service-session] on-demand refresh failed:', String(refreshError?.sync_type || 'refresh_error'));
+  }
 
   const areasChecked = [];
   const candidates = [];
@@ -910,5 +1073,18 @@ export default {
         message:String(e?.message || '프로필 인증 처리 중 오류가 발생했습니다.')
       }, 400);
     }
+  },
+
+  // Cloudflare Cron Trigger runs daily to renew the service session before it expires.
+  async scheduled(controller, env, ctx){
+    ctx.waitUntil((async()=>{
+      try{
+        const current = await getServiceSession(env);
+        await renewServiceSession(env, current);
+        console.log('[service-session] scheduled refresh succeeded');
+      }catch(error){
+        console.error('[service-session] scheduled refresh failed:', String(error?.sync_type || 'refresh_error'));
+      }
+    })());
   }
 };
