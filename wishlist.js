@@ -551,14 +551,14 @@
       '<style>' +
       '#wlClueModal{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(13,22,37,.44);backdrop-filter:blur(2px)}' +
       '#wlClueModal *{box-sizing:border-box}' +
-      '#wlClueModal .wl-clue-modal-dialog{display:flex;flex-direction:column;width:min(1170px,calc(100vw - 32px));max-height:min(590px,calc(100vh - 32px));overflow:hidden;border:1px solid #d6deeb;border-radius:13px;background:#f7f9fc;color:#28364a;box-shadow:0 14px 46px rgba(12,24,44,.25)}' +
+      '#wlClueModal .wl-clue-modal-dialog{display:flex;flex-direction:column;width:min(1320px,calc(100vw - 32px));max-height:min(590px,calc(100vh - 32px));overflow:hidden;border:1px solid #d6deeb;border-radius:13px;background:#f7f9fc;color:#28364a;box-shadow:0 14px 46px rgba(12,24,44,.25)}' +
       '#wlClueModal .wl-clue-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:12px 15px;border-bottom:1px solid #e1e7f0;background:#fff}' +
       '#wlClueModal .wl-clue-modal-title{margin:0;font-size:20px;line-height:1.2;font-weight:900;letter-spacing:-.02em}' +
       '#wlClueModal .wl-clue-modal-note{margin-top:3px;color:#718096;font-size:11px;line-height:1.35}' +
       '#wlClueModal .wl-clue-modal-close{flex:none;padding:6px 10px;border:1px solid #cbd5e1;border-radius:7px;background:#f8fafc;color:#475569;font-size:12px;font-weight:900;cursor:pointer}' +
       '#wlClueModal .wl-clue-modal-close:hover{background:#eaf1f8;border-color:#aab9cd}' +
       '#wlClueModal .wl-clue-modal-scroll{overflow:auto;overscroll-behavior:contain;padding:10px}' +
-      '#wlClueModal .wl-clue-modal-grid{display:grid;grid-template-columns:repeat(8,minmax(82px,1fr));gap:7px;min-width:720px;align-items:start}' +
+      '#wlClueModal .wl-clue-modal-grid{display:grid;grid-template-columns:repeat(9,minmax(82px,1fr));gap:7px;min-width:794px;align-items:start}' +
       '#wlClueModal .wl-clue-modal-column{min-height:150px;padding:9px 8px 10px;border:1px solid #dce4ef;border-radius:8px;background:#fff}' +
       '#wlClueModal .wl-clue-modal-column h2{margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #dce5f0;color:#24658e;font-size:9px;font-weight:900;text-align:center}' +
       '#wlClueModal .wl-clue-modal-column ol{margin:0;padding-left:17px;color:#344256;font-size:8px;font-weight:750;line-height:1.55}' +
