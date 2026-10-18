@@ -55,6 +55,18 @@
     return {responseOk:response.ok,payload:payload};
   }
 
+  async function requestSessionCheck(url){
+    var response = await fetch(API + '/session-check', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({profile_url:url}),
+      cache:'no-store',
+      credentials:'omit'
+    });
+    var payload = await response.json().catch(function(){ return {}; });
+    return {responseOk:response.ok,payload:payload};
+  }
+
   function regionLabel(areaId){
     return ({'81':'JP','82':'NA','83':'KR','84':'Global','85':'SEA'})[String(areaId)] || ('지역 ' + String(areaId));
   }
@@ -106,6 +118,11 @@
       '.bl-direct-status.success{color:#2e8765}',
       '.bl-direct-status.error{color:#bd5e62}',
       '.bl-direct-actions{display:flex;gap:8px;margin-top:14px}',
+      '.bl-direct-check{display:block;width:100%;margin-top:8px;padding:8px 10px;border:1px solid #8dc6ad;border-radius:8px;background:#effaf4;color:#247552;font-size:11px;font-weight:900;cursor:pointer}',
+      '.bl-direct-check:hover:not(:disabled){background:#e0f5e9;border-color:#65ae8d}',
+      '.bl-direct-check:disabled{opacity:.55;cursor:not-allowed}',
+      'html.dark-theme .bl-direct-check{border-color:#376e58;background:#142b24;color:#9be0ba}',
+      'html.dark-theme .bl-direct-check:hover:not(:disabled){background:#1c3a30;border-color:#4c9877}',
       '.bl-direct-primary{flex:1;border:1px solid #d88926;border-radius:9px;background:#f39a2f;color:#fff;padding:10px 12px;font-size:11px;font-weight:900;cursor:pointer}',
       '.bl-direct-primary:disabled{opacity:.55;cursor:not-allowed}',
       '.bl-direct-secondary{border:1px solid #bfd5e0;border-radius:9px;background:#fff;color:#61798a;padding:10px 12px;font-size:11px;font-weight:900;cursor:pointer}',
@@ -154,6 +171,7 @@
             '<button type="button" class="bl-direct-primary">동기화 시작</button>' +
             '<button type="button" class="bl-direct-secondary">닫기</button>' +
           '</div>' +
+          '<button type="button" class="bl-direct-check">서비스 세션 유효성 확인 · 계정 데이터 변경 없음</button>' +
           '<div class="bl-direct-status" id="blDirectStatus"></div>' +
           '<div class="bl-direct-note">비밀번호·Cookie·game_token은 이 사이트에 입력하지 않습니다. 사이트의 동기화 서버가 별도 서비스 세션으로 공개 프로필을 조회합니다.</div>' +
           '<div class="bl-direct-profile" id="blDirectProfile" hidden>' +
@@ -191,6 +209,50 @@
         });
         btn.classList.add('active');
       });
+    });
+
+    overlay.querySelector('.bl-direct-check').addEventListener('click', async function(){
+      if(working) return;
+
+      var input = overlay.querySelector('#blDirectUrl');
+      var status = overlay.querySelector('#blDirectStatus');
+      var checkButton = overlay.querySelector('.bl-direct-check');
+      var primary = overlay.querySelector('.bl-direct-primary');
+
+      var url;
+      try{
+        url = validateProfileUrl(input.value.trim());
+      }catch(err){
+        status.className = 'bl-direct-status error';
+        status.textContent = text(err && err.message || err);
+        return;
+      }
+
+      working = true;
+      checkButton.disabled = true;
+      primary.disabled = true;
+      status.className = 'bl-direct-status';
+      status.textContent = '서비스 세션을 갱신하고 NIKKE API 인증을 읽기 전용으로 확인하는 중…';
+
+      try{
+        var checkResult = await requestSessionCheck(url);
+        var payload = checkResult.payload;
+        if(!checkResult.responseOk || !payload || payload.ok !== true){
+          throw new Error((payload && payload.message) || '세션 유효성 확인에 실패했습니다.');
+        }
+        status.className = 'bl-direct-status success';
+        status.textContent = payload.message || '세션과 NIKKE API 인증이 정상입니다. 계정 데이터는 변경하지 않았습니다.';
+        if(payload.checked_area){
+          status.textContent += ' 확인 지역: ' + regionLabel(payload.checked_area) + '.';
+        }
+      }catch(err){
+        status.className = 'bl-direct-status error';
+        status.textContent = text(err && err.message || err || '세션 유효성 확인에 실패했습니다.');
+      }finally{
+        working = false;
+        checkButton.disabled = false;
+        primary.disabled = false;
+      }
     });
 
     overlay.querySelector('.bl-direct-primary').addEventListener('click', async function(){
