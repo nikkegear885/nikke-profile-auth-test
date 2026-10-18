@@ -357,6 +357,8 @@ const SERVICE_SESSION_FIELDS = Object.freeze([
   ['gameChannelId','BLABLALINK_GAME_CHANNELID'],
   ['gameGameId','BLABLALINK_GAME_GAMEID']
 ]);
+// BlaBlaLink may leave game_user_name blank; the renewal request can omit it.
+const SERVICE_SESSION_REQUIRED_FIELDS = SERVICE_SESSION_FIELDS.filter(([field]) => field !== 'gameUserName');
 
 function makeServiceSessionFromSecrets(env){
   const session = {
@@ -368,7 +370,7 @@ function makeServiceSessionFromSecrets(env){
     gameChannelId:String(env?.BLABLALINK_GAME_CHANNELID || '').trim(),
     gameGameId:String(env?.BLABLALINK_GAME_GAMEID || '').trim()
   };
-  const missing = SERVICE_SESSION_FIELDS
+  const missing = SERVICE_SESSION_REQUIRED_FIELDS
     .filter(([field]) => !session[field])
     .map(([,secret]) => secret);
   if(missing.length){
@@ -405,7 +407,7 @@ async function getServiceSession(env){
 
   const fingerprint = await getSeedSecretFingerprint(env);
   const savedMissing = saved && typeof saved === 'object' && !Array.isArray(saved)
-    ? SERVICE_SESSION_FIELDS.filter(([field]) => !String(saved[field] || '').trim()).length > 0
+    ? SERVICE_SESSION_REQUIRED_FIELDS.filter(([field]) => !String(saved[field] || '').trim()).length > 0
     : true;
   if(saved && typeof saved === 'object' && !Array.isArray(saved) &&
      !savedMissing && saved.seedFingerprint === fingerprint){
@@ -486,7 +488,7 @@ async function renewServiceSession(env, current){
         game_id:current.gameGameId || '29080',
         game_expire_time:expireAt,
         game_uid:current.gameUid,
-        game_user_name:current.gameUserName,
+        ...(String(current.gameUserName || '').trim() ? {game_user_name:current.gameUserName} : {}),
         game_adult_status:Number(current.gameAdultStatus)
       })
     });
