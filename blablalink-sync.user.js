@@ -2,10 +2,10 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.26
+// @version      1.0.30
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
-// @description  테스트 사이트 계정동기화에서 캐릭터별 기업장비 정보를 가져옵니다.
+// @description  테스트 사이트 계정동기화에서 보유·돌파·코강·장비 정보를 가져옵니다.
 // @author       NIKKE Gear Manager
 // @match        https://*.blablalink.com/*
 // @match        http://*.blablalink.com/*
@@ -363,7 +363,15 @@
           level: (equipLevel===undefined||equipLevel===null||equipLevel==='') ? null : Number(equipLevel)
         };
       }
-      updates.push({name, name_code:code, parts});
+      const gradeRaw = char?.grade;
+      const coreRaw = char?.core;
+      updates.push({
+        name,
+        name_code:code,
+        grade:(gradeRaw===undefined || gradeRaw===null || gradeRaw==='') ? null : Number(gradeRaw),
+        core:(coreRaw===undefined || coreRaw===null || coreRaw==='') ? null : Number(coreRaw),
+        parts
+      });
     }
     return {updates, unresolved};
   }
@@ -407,6 +415,13 @@
       showStatus('NIKKE Gear Manager: 장비 기업 정보를 조회 중… ('+codes.length+'명)');
       const details = await fetchDetails(codes);
       const {updates, unresolved} = makeUpdates(details);
+      // Preserve the full roster, even when only a subset has equipment-detail rows.
+      const ownedNames = Array.from(new Set(chars
+        .map(char => {
+          const code = String(char?.name_code ?? '');
+          return String(BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || '').trim();
+        })
+        .filter(Boolean)));
 
       if(sourceWindow && sourceWindow.postMessage){
         sourceWindow.postMessage({
@@ -416,8 +431,9 @@
             ok:true,
             nickname:state.nickname,
             areaId:state.areaId,
-            characterCount:codes.length,
+            characterCount:ownedNames.length,
             detailCount:details.length,
+            ownedNames,
             updates,
             unresolved
           }
