@@ -1704,7 +1704,7 @@
       const isBonusRecruit = slot.classList.contains('is-bonus-recruit');
       const isRoadToVillain = slot.classList.contains('is-road-to-villain');
       if(isBonusRecruit){
-        nameLabel.textContent = '보너스 리크루트에 포함된 캐릭터입니다.\n본인의 보유 포인트에 따라 제외캐릭터로 추가하는 추천합니다.';
+        nameLabel.textContent = '보너스 리크루트에 포함된 캐릭터입니다.\n본인의 보유 포인트 상황에 따라 제외캐릭터로 추가하는 추천합니다.';
       }else if(isRoadToVillain){
         nameLabel.textContent = '로드 투 빌런으로 2돌파까지 가능한 캐릭터입니다.\n1회라도 직접 획득했다면 제외캐릭터로 추가하는걸 추천합니다.';
       }else{
