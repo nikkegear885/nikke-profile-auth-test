@@ -1601,7 +1601,7 @@
               '<input id="wlRandomThreeChance" type="range" min="0" max="65" step="5" value="5" data-wl-random-rule="breakthroughThreeChance">' +
             '</div>' +
             '<div class="wl-random-derived-chance"><span>남는 확률은 0돌에 자동 배정</span><strong data-wl-random-zero-chance>60%</strong></div>' +
-            '<div class="wl-random-setting-hint">돌파 확률은 보유 니케에만 적용돼. 확률 설정은 브라우저에 저장되고, 무작위 계정을 다시 생성할 때 적용돼.</div>' +
+            '
           '</div>' +
         '</details>' +
         '<div class="wl-auto-toolbar">' +
