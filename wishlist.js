@@ -862,7 +862,7 @@
     try{ localStorage.setItem(activeCopyPriorityKey(), String(copyPriority)); }catch(_){}
   }
 
-  const COPY_PRIORITY_LABELS = ['필수캐','균형','도감작'];
+  const COPY_PRIORITY_LABELS = ['성능캐 돌파우선','균형','도감작 우선'];
   const PVP_PRIORITY_DESCRIPTIONS = {
     pvp: '일반적으로 추천하는 설정입니다',
     solo: 'PVP캐릭터보다 솔레 캐릭터를\n우선으로 추천합니다.\n아레나를 포기한 유저가\n아니라면 추천하지 않습니다.',
@@ -1465,13 +1465,13 @@
        '<div class="wl-priority-info wl-pvp-priority-info" data-wl-pvp-info></div>' +
       
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-copy-priority-heading"><span>명함작 선호도</span><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
+      '<div class="wl-copy-priority-heading"><span>돌파 선호도</span><span class="wl-copy-priority-value" data-wl-copy-priority-value>성능캐 돌파우선</span></div>' +
       '<div class="wl-priority-slider-wrap wl-copy-slider-wrap">' +
-         '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="명함작 선호도" />' +
+         '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="돌파 선호도" />' +
          '<span class="wl-priority-star" data-wl-copy-star aria-hidden="true" style="left:94.5%">★</span>' +
           '<span class="wl-priority-prohibit" data-wl-copy-prohibit aria-hidden="true" hidden></span>' +
        '</div>' +
-      '<div class="wl-copy-priority-ends"><span>필수캐</span><span>균형</span><span>도감작</span></div>' +
+      '<div class="wl-copy-priority-ends"><span>성능캐<br>돌파우선</span><span>균형</span><span>도감작<br>우선</span></div>' +
       
        '<div class="wl-copy-priority-warning" data-wl-copy-warning hidden>160벽 돌파여부가 X인 상태에서는\n추천하지 않는 설정입니다.</div>' +
         '<div class="wl-priority-info wl-copy-priority-info" data-wl-copy-info hidden></div>';
@@ -1565,7 +1565,7 @@
        copyInfo.hidden = !copyInfoText || (wallStatus === 'X' && copyPriority === 0);
      }
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
-    if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '필수캐 우선';
+    if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '성능캐 돌파우선';
     const help = control.querySelector('[data-wl-copy-priority-help]');
     if(help){
       const description = copyInfoText || '160벽 돌파 못한 상태에선 추천하지 않는 설정입니다';
@@ -2249,29 +2249,41 @@
       while(picks[company].length < 5) picks[company].push('');
     });
 
-    // Pilgrim uses its own fixed priority list and only targets missing first copies.
-    // Existing copies (including 0-breakthrough units) are skipped so the next unowned Pilgrim advances.
-    const pilgrimPriorityIndex = getPilgrimWishlistPriorityIndex();
-    const pilgrimCandidates = getCharactersForCompany(PILGRIM_COMPANY)
+    // Pilgrim follows the same independent rule for 160-wall O and X.
+    // PVP preference stage 1 uses the priority sequence only through the standard Snow White entry;
+    // stages 2 and 3 use the complete Pilgrim priority sequence.
+    const pilgrimPriorityNames = getPilgrimWishlistPriorityNames();
+    const snowWhiteIndex = pvpPriority === 'pvp'
+      ? pilgrimPriorityNames.findIndex(name => norm(name) === norm('스노우 화이트'))
+      : -1;
+    const pilgrimTargetNames = pvpPriority === 'pvp' && snowWhiteIndex >= 0
+      ? pilgrimPriorityNames.slice(0, snowWhiteIndex + 1)
+      : pilgrimPriorityNames.slice();
+    const pilgrimPriorityIndex = new Map(pilgrimTargetNames.map((name,index) => [norm(name),index]));
+
+    // Keep manually excluded Pilgrim characters out of both the normal list and its restart cycle.
+    const pilgrimPriorityRows = getCharactersForCompany(PILGRIM_COMPANY)
       .filter(row => {
         const name = String(row['이름'] || '').trim();
-        if(!pilgrimPriorityIndex.has(norm(name))) return false;
-        // Pilgrim is intentionally identical for 160-wall O and X:
-        // only characters marked as unowned can be recommended, regardless of breakthrough.
-        if(!isMarkedUnowned(name)) return false;
-        if(getCoreEnhancement(name) >= 7) return false;
-        if(isManuallyExcludedCharacter(name)) return false;
-        return true;
+        return pilgrimPriorityIndex.has(norm(name)) && !isManuallyExcludedCharacter(name);
       })
       .sort((a,b) => {
         const aName = String(a['이름'] || '').trim();
         const bName = String(b['이름'] || '').trim();
-        // Pilgrim always keeps the same explicit priority order as 160-wall O.
-        // Rule 4's higher-breakthrough sorting applies only to standard companies, not Pilgrim.
-        const aIndex = pilgrimPriorityIndex.get(norm(aName));
-        const bIndex = pilgrimPriorityIndex.get(norm(bName));
-        return aIndex - bIndex;
+        return pilgrimPriorityIndex.get(norm(aName)) - pilgrimPriorityIndex.get(norm(bName));
       });
+
+    // Restart at priority #1 only when every character in the active priority pool is owned.
+    // For PVP stage 1, that pool ends at Snow White; stages 2 and 3 require the full list to be owned.
+    const allPilgrimTargetsOwned = pilgrimPriorityRows.length > 0 &&
+      pilgrimPriorityRows.every(row => !isMarkedUnowned(String(row['이름'] || '').trim()));
+    const pilgrimCandidates = allPilgrimTargetsOwned
+      ? pilgrimPriorityRows
+      : pilgrimPriorityRows.filter(row => {
+          const name = String(row['이름'] || '').trim();
+          return isMarkedUnowned(name) && getCoreEnhancement(name) < 7;
+        });
+
     picks[PILGRIM_COMPANY] = pilgrimCandidates.slice(0,5).map(row => String(row['이름'] || '').trim());
     while(picks[PILGRIM_COMPANY].length < 5) picks[PILGRIM_COMPANY].push('');
 
