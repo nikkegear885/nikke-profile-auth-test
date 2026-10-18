@@ -1135,6 +1135,7 @@
       '#wishlistPanel .wl-select{position:absolute;inset:0;z-index:8;width:100%;height:100%;opacity:0;cursor:pointer}',
       '#wishlistPanel .wl-select-trigger{position:absolute;inset:0;z-index:8;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}',
       '#wishlistPanel .wl-tile.wl-photo-only{padding:0;border-color:#8a8a8a;background:#fff}',
+      '#wishlistPanel .wl-slot.is-bonus-recruit .wl-tile{border-color:#168fe5;box-shadow:0 0 0 2px rgba(22,143,229,.16),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(100,100,100,.16),0 3px 5px rgba(0,0,0,.32)}',
       '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
       '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
       '#wishlistPanel .wl-character-name-label{display:none;box-sizing:border-box;width:100%;margin-top:3px;padding:0 1px;color:#4a5565;font-size:9px;font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere;word-break:keep-all}',
@@ -1433,6 +1434,7 @@
       wallStatus = value;
       saveWallStatus();
       render160WallControl();
+      if(typeof renderWishlist === 'function') renderWishlist();
     });
     const main = document.querySelector('main.main') || document.querySelector('main');
     if(main){
@@ -1595,6 +1597,7 @@
 
   function buildSlot(company, slot, characters){
     const name = picks[company][slot] || '';
+    const isBonusRecruit = !!name && wallStatus === 'X' && WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(name));
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
     let tile;
@@ -1616,7 +1619,7 @@
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
     const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '빈 슬롯';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
       (name ? ' data-wl-hover-text="' + esc(name) + '"' : '') +
       ' aria-label="' + esc(accessibleName) + '">' +
       tile +
@@ -1688,7 +1691,7 @@
     if(slot){
       const name = String(slot.getAttribute('data-wl-hover-text') || '').trim();
       if(!name) return hideWishlistHoverCard();
-      nameLabel.textContent = name;
+      nameLabel.textContent = slot.classList.contains('is-bonus-recruit') ? '보너스 리크루트 포함된 캐릭터입니다.' : name;
       companyLabel.textContent = '';
     }else{
       const text = String(target.getAttribute('data-wl-hover-text') || '').trim();
