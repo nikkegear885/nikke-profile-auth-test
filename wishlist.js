@@ -1030,6 +1030,9 @@
       '#wishlist160WallControl .wl-copy-priority-slider{position:absolute;left:0;right:0;top:3px;display:block;width:100%;height:23px;margin:0;accent-color:#668fda;cursor:pointer}',
       '#wishlist160WallControl .wl-priority-star{position:absolute;top:14px;z-index:4;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:1px solid #e5bb50;border-radius:50%;background:linear-gradient(180deg,#fffdf3,#ffefb9);color:#bd8611;font-family:Arial,sans-serif;font-size:11px;font-weight:900;line-height:1;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,65,18,.18)}',
       '#wishlist160WallControl .wl-priority-star:after{display:none!important;pointer-events:none}',
+'#wishlist160WallControl .wl-priority-prohibit[hidden],#wishlist160WallControl .wl-copy-priority-warning[hidden]{display:none!important}',
+'#wishlist160WallControl .wl-priority-prohibit{position:absolute;left:5.5%;top:14px;z-index:4;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:2px solid #d92d37;border-radius:50%;background:linear-gradient(45deg,#fff 43%,#d92d37 44%,#d92d37 56%,#fff 57%);transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,20,20,.2)}',
+'#wishlist160WallControl .wl-copy-priority-warning{margin-top:6px;padding:7px 8px;border:1px solid #f0b8bd;border-radius:7px;background:#fff0f1;color:#c52632;font-size:11px;font-weight:900;line-height:1.45;text-align:center}',
       '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:nth-child(2){text-align:center}',
@@ -1400,9 +1403,11 @@
       '<div class="wl-priority-slider-wrap wl-copy-slider-wrap">' +
          '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="명함작 선호도" />' +
          '<span class="wl-priority-star" data-wl-copy-star aria-hidden="true" style="left:94.5%">★</span>' +
+          '<span class="wl-priority-prohibit" data-wl-copy-prohibit aria-hidden="true" hidden></span>' +
        '</div>' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
-      '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
+      '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>' +
+       '<div class="wl-copy-priority-warning" data-wl-copy-warning hidden>160벽 돌파 못한 상태에선 추천하지 않는 설정입니다</div>';
     control.addEventListener('input', event => {
       const pvpSlider = event.target.closest && event.target.closest('[data-wl-pvp-priority]');
       if(pvpSlider){
@@ -1480,6 +1485,10 @@
     if(slider) slider.value = String(copyPriority);
     const copyStar = control.querySelector('[data-wl-copy-star]');
     if(copyStar) copyStar.style.left = wallStatus === 'X' ? '94.5%' : '50%';
+    const copyProhibit = control.querySelector('[data-wl-copy-prohibit]');
+    if(copyProhibit) copyProhibit.hidden = wallStatus !== 'X';
+    const copyWarning = control.querySelector('[data-wl-copy-warning]');
+    if(copyWarning) copyWarning.hidden = !(wallStatus === 'X' && copyPriority === 0);
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
     if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '필수캐 우선';
     const help = control.querySelector('[data-wl-copy-priority-help]');
@@ -2077,6 +2086,10 @@
           const isUnownedRequired160WallX = unowned && (isRequired || isTreasureRequired);
           const forceInclude160WallX = wallStatus === 'X' &&
             (is160WallXPriorityTarget || isUnownedRequired160WallX);
+          // In 160-wall X + namecard preference step 2, 2-breakthrough silver-mileage
+          // characters remain eligible even if their ordinary category is collection-only.
+          const is160WallXSilverMileageTwoBreakthrough =
+            wallStatus === 'X' && copyPriority === 1 && SILVER_MILEAGE_NAMES.has(key) && breakthrough === 2;
 
           // 160-wall X always excludes 3-breakthrough characters.
           if(wallStatus === 'X' && breakthrough >= 3) return false;
@@ -2087,8 +2100,8 @@
           if(wallStatus !== 'X' && copyPriority !== 0 && isRequired && !unowned) return false;
           // 2★+ treasure characters stay eligible; their priority is moved behind first-copy targets.
           // Collection-only candidates are stage 3 only, except X's forced mandatory targets.
-          if(isCollection && copyPriority !== 2 && !forceInclude160WallX) return false;
-          if(shouldExcludeFromAutoWishlist(name) && !forceInclude160WallX) return false;
+          if(isCollection && copyPriority !== 2 && !forceInclude160WallX && !is160WallXSilverMileageTwoBreakthrough) return false;
+          if(shouldExcludeFromAutoWishlist(name) && !forceInclude160WallX && !is160WallXSilverMileageTwoBreakthrough) return false;
           return true;
         });
 
