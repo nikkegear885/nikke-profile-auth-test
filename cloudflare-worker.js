@@ -412,7 +412,7 @@ async function getServiceSession(env){
 }
 
 function splitSetCookieHeader(value){
-  return String(value || '').split(/,\\s*(?=game_[a-z0-9_]+=)/i).filter(Boolean);
+  return String(value || '').split(/,\s*(?=game_[a-z0-9_]+=)/i).filter(Boolean);
 }
 
 function readUpdatedGameCookies(headers){
