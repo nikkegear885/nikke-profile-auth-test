@@ -164,9 +164,9 @@
   const PVP_INCLUDED_KEY = 'nikke_wishlist_pvp_included_v1';
 
   const WISHLIST_PERFORMANCE_TIERS = [
-    {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','앵커 : 이노센트 메이드','민트','프리카']},
+    {rank:1, label:'필수캐', names:['마스트 : 로망틱 메이드','앵커 : 이노센트 메이드','민트']},
     {rank:2, label:'애장품 필수', names:['헬름','플로라','토브','목단']},
-    {rank:3, label:'범용캐', names:['드레이크','아인','라플라스 : 얼티밋 히어로']},
+    {rank:3, label:'범용캐', names:['드레이크','아인','라플라스 : 얼티밋 히어로','프리카']},
     {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이']},
     {rank:5, label:'애장품 솔레캐', names:['프리바티','팬텀','미란다','슈가','로산나']},
     {rank:6, label:'솔레', names:[
