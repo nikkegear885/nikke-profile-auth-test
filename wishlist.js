@@ -274,7 +274,7 @@
       // 아니스 : 스타 미보유 시에는 범용캐 맨 뒤, 보유 시에는 에이드 : 에이전트 바니 바로 뒤의 솔레 순위.
       return isMarkedUnowned('아니스 : 스타')
         ? {rank:3,tierOrder:2,index:999}
-        : {rank:6,tierOrder:5,index:3};
+        : {rank:6,tierOrder:5,index:2.5};
     }
     if(isMarkedUnowned(name) && key === norm('볼륨')){
       return {rank:6,tierOrder:5,index:-1};
