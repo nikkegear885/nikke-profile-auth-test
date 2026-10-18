@@ -1077,10 +1077,10 @@
       '#wishlist160WallControl .wl-priority-star:after{display:none!important;pointer-events:none}',
 '#wishlist160WallControl .wl-priority-prohibit[hidden],#wishlist160WallControl .wl-copy-priority-warning[hidden],#wishlist160WallControl .wl-priority-info[hidden]{display:none!important}',
 '#wishlist160WallControl .wl-priority-prohibit{position:absolute;left:calc(5.5% - 6px);top:14.5px;z-index:5;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:2px solid #d92d37;border-radius:50%;background:linear-gradient(45deg,#fff 43%,#d92d37 44%,#d92d37 56%,#fff 57%);transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 1px 3px rgba(90,20,20,.2)}',
-'#wishlist160WallControl .wl-copy-priority-warning{margin-top:6px;padding:7px 8px;border:1px solid #f0b8bd;border-radius:7px;background:#fff0f1;color:#c52632;font-size:8.3px;font-weight:900;line-height:1.45;text-align:center}',
+'#wishlist160WallControl .wl-copy-priority-warning{margin-top:6px;padding:7px 8px;border:1px solid #f0b8bd;border-radius:7px;background:#fff0f1;color:#c52632;font-size:8.3px;font-weight:900;line-height:1.45;text-align:center;white-space:pre-line}',
        '#wishlist160WallControl .wl-priority-info{margin-top:6px;padding:7px 8px;border:1px solid #b9d7f4;border-radius:7px;background:#eff7ff;color:#245b8f;font-size:8.3px;font-weight:850;line-height:1.45;text-align:center;white-space:pre-line}',
        'html.dark-theme #wishlist160WallControl .wl-priority-info{border-color:#345c85;background:#172d47;color:#c6e3ff}',
-      '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
+      '#wishlist160WallControl .wl-copy-priority-ends{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900;text-align:center}#wishlist160WallControl .wl-copy-priority-ends span:first-child{text-align:left}#wishlist160WallControl .wl-copy-priority-ends span:last-child{text-align:right}',
       '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:nth-child(2){text-align:center}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:last-child{text-align:right}',
@@ -1452,15 +1452,15 @@
        '<div class="wl-priority-info wl-pvp-priority-info" data-wl-pvp-info></div>' +
       
       '<div class="wl-copy-priority-divider"></div>' +
-      '<div class="wl-copy-priority-heading"><span>명함작 선호도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 명함작 선호도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
+      '<div class="wl-copy-priority-heading"><span>명함작 선호도</span><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
       '<div class="wl-priority-slider-wrap wl-copy-slider-wrap">' +
          '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="명함작 선호도" />' +
          '<span class="wl-priority-star" data-wl-copy-star aria-hidden="true" style="left:94.5%">★</span>' +
           '<span class="wl-priority-prohibit" data-wl-copy-prohibit aria-hidden="true" hidden></span>' +
        '</div>' +
-      '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
+      '<div class="wl-copy-priority-ends"><span>필수캐</span><span>균형</span><span>도감작</span></div>' +
       
-       '<div class="wl-copy-priority-warning" data-wl-copy-warning hidden>160벽 돌파 못한 상태에선 추천하지 않는 설정입니다</div>' +
+       '<div class="wl-copy-priority-warning" data-wl-copy-warning hidden>160벽 돌파여부가 X인 상태에서는\n추천하지 않는 설정입니다.</div>' +
         '<div class="wl-priority-info wl-copy-priority-info" data-wl-copy-info hidden></div>';
     control.addEventListener('input', event => {
       const pvpSlider = event.target.closest && event.target.closest('[data-wl-pvp-priority]');
