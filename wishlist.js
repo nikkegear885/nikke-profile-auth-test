@@ -524,7 +524,7 @@
     {title:'리스트 6', names:['프리바티','크로우','솔린','브리드']},
     {title:'리스트 7', names:['드레이크','슈가','율리아','에피넬']},
     {title:'리스트 8', names:['율하','맥스웰','메이든','베스티','길로틴']},
-    {title:'리스트 9', names:['팬텀','센티','플로라','로산나','슈가']}
+    {title:'애장품 시즌 6', names:['팬텀','센티','플로라','로산나','슈가']}
   ];
 
   // The displayed "실마 리스트" is also the authoritative silver-mileage priority set for 160-wall X.
@@ -535,7 +535,13 @@
     if(existing) return;
     const columns = CLUE_LISTS.map(list =>
       '<section class="wl-clue-modal-column"><h2>' + esc(list.title) + '</h2><ol>' +
-      list.names.map(name => '<li>' + esc(name) + '</li>').join('') +
+      list.names.map(name => {
+        const image = findImage(name);
+        const photo = image
+          ? '<img src="' + esc(image) + '" alt="' + esc(name) + '" loading="lazy" draggable="false">'
+          : '<span class="wl-clue-nikke-placeholder">' + esc(name.slice(0,1)) + '</span>';
+        return '<li><div class="wl-clue-nikke-row"><span class="wl-clue-nikke-photo" data-wl-clue-photo="' + esc(name) + '">' + photo + '</span><span class="wl-clue-nikke-name">' + esc(name) + '</span></div></li>';
+      }).join('') +
       '</ol></section>'
     ).join('');
     const overlay = document.createElement('div');
@@ -556,7 +562,12 @@
       '#wlClueModal .wl-clue-modal-column{min-height:150px;padding:9px 8px 10px;border:1px solid #dce4ef;border-radius:8px;background:#fff}' +
       '#wlClueModal .wl-clue-modal-column h2{margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #dce5f0;color:#24658e;font-size:11px;font-weight:900;text-align:center}' +
       '#wlClueModal .wl-clue-modal-column ol{margin:0;padding-left:19px;color:#344256;font-size:10px;font-weight:750;line-height:1.7}' +
-      '#wlClueModal .wl-clue-modal-column li{padding-left:1px;overflow-wrap:anywhere}' +
+      '#wlClueModal .wl-clue-modal-column li{padding-left:1px;margin:0 0 5px;overflow-wrap:anywhere}' +
+      '#wlClueModal .wl-clue-nikke-row{display:flex;align-items:center;gap:5px;min-width:0}' +
+      '#wlClueModal .wl-clue-nikke-photo{display:flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;overflow:hidden;border-radius:5px;background:#e4ebf4}' +
+      '#wlClueModal .wl-clue-nikke-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}' +
+      '#wlClueModal .wl-clue-nikke-placeholder{display:grid;place-items:center;width:100%;height:100%;color:#66788e;font-size:12px;font-weight:900}' +
+      '#wlClueModal .wl-clue-nikke-name{min-width:0;overflow-wrap:anywhere;font-size:9px;line-height:1.25}' +
       'html.dark-theme #wlClueModal .wl-clue-modal-dialog{border-color:#354761;background:#121d2d;color:#e7eefb}' +
       'html.dark-theme #wlClueModal .wl-clue-modal-head{border-color:#354761;background:#1b2a40}' +
       'html.dark-theme #wlClueModal .wl-clue-modal-note{color:#9aacc4}' +
@@ -568,12 +579,22 @@
       '@media(max-width:560px){#wlClueModal{padding:8px}#wlClueModal .wl-clue-modal-dialog{width:calc(100vw - 16px);max-height:calc(100vh - 16px)}#wlClueModal .wl-clue-modal-head{padding:10px}#wlClueModal .wl-clue-modal-title{font-size:14px}#wlClueModal .wl-clue-modal-scroll{padding:8px}}' +
       '</style>' +
       '<section class="wl-clue-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="wlClueModalTitle">' +
-        '<header class="wl-clue-modal-head"><div><h2 class="wl-clue-modal-title" id="wlClueModalTitle">실마 리스트</h2>' +
-        '<div class="wl-clue-modal-note">리스트 1~8 · 바깥을 누르거나 Esc를 누르면 닫혀</div></div>' +
+        '<header class="wl-clue-modal-head"><div><h2 class="wl-clue-modal-title" id="wlClueModalTitle">실마 상점 니케 목록</h2>' +
+        '<div class="wl-clue-modal-note">리스트별 니케 사진과 이름 · 바깥을 누르거나 Esc를 누르면 닫혀</div></div>' +
         '<button type="button" class="wl-clue-modal-close" data-wl-clue-close>닫기 ×</button></header>' +
         '<div class="wl-clue-modal-scroll"><div class="wl-clue-modal-grid">' + columns + '</div></div>' +
       '</section>';
     document.body.appendChild(overlay);
+    loadImageMap().then(() => {
+      if(!overlay.isConnected) return;
+      overlay.querySelectorAll('[data-wl-clue-photo]').forEach(photoNode => {
+        const name = photoNode.getAttribute('data-wl-clue-photo') || '';
+        const image = findImage(name);
+        photoNode.innerHTML = image
+          ? '<img src="' + esc(image) + '" alt="' + esc(name) + '" loading="lazy" draggable="false">'
+          : '<span class="wl-clue-nikke-placeholder">' + esc(name.slice(0,1)) + '</span>';
+      });
+    });
     const closeButton = overlay.querySelector('[data-wl-clue-close]');
     const closeModal = () => {
       document.removeEventListener('keydown', onKeydown);
@@ -1239,7 +1260,7 @@
       '#wishlistPanel .wl-excluded-panel{position:absolute;left:calc(100% + 16px);top:0;z-index:1;box-sizing:border-box;width:290px;max-width:calc(100vw - 500px);max-height:calc(100vh - 155px);display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;border:1px solid #e7aab5;border-radius:12px;background:linear-gradient(180deg,#fff4f5,#ffe9ed);color:#5a2631;box-shadow:0 5px 20px rgba(151,43,66,.12)}',
       '#wishlistPanel .wl-clue-window-button{display:flex;flex:none;flex-direction:column;align-items:flex-start;gap:4px;width:calc(100% - 16px);margin:8px 8px 10px;padding:11px 12px;border:1px solid #d8c7a3;border-radius:9px;background:linear-gradient(180deg,#fffaf0,#f9efdc);text-align:left;cursor:pointer}',
       '#wishlistPanel .wl-clue-window-button:hover{border-color:#c5a76b;background:#fff4d7}',
-      '#wishlistPanel .wl-clue-window-title{color:#51452d;font-size:12px;font-weight:1000}',
+      '#wishlistPanel .wl-clue-window-title{display:block;max-width:100%;color:#51452d;font-size:15px;font-weight:1000;line-height:1.3;overflow-wrap:anywhere}',
       '#wishlistPanel .wl-clue-window-subtitle{color:#89754d;font-size:10px;font-weight:800}',
       'html.dark-theme #wishlistPanel .wl-clue-window-button{border-color:#67563b;background:linear-gradient(180deg,#2b251b,#211c15)}',
       'html.dark-theme #wishlistPanel .wl-clue-window-button:hover{background:#3a3020}',
@@ -1590,7 +1611,7 @@
         '</div>' +
       '</div>' +
       '<aside class="wl-excluded-panel" id="wishlistExcludedPanel" aria-label="제외 캐릭터">' +
-        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 상점 니케 목록</span><span class="wl-clue-window-subtitle">리스트 1~8 · 작은 팝업으로 보기 ↗</span></button>' +
+        '<button type="button" class="wl-clue-window-button" data-wl-clue-open><span class="wl-clue-window-title">실마 상점 니케 목록</span></button>' +
         '<div class="wl-excluded-head"><div class="wl-excluded-title">제외 캐릭터</div><span class="wl-excluded-count" data-wl-excluded-count>0명</span></div>' +
         '<div class="wl-excluded-note">캐릭터 사진을 눌러 제외 캐릭터로 지정가능합니다</div>' +
         '<div class="wl-excluded-list" data-wl-excluded-list><div class="wl-excluded-empty">제외된 니케가 없어.</div></div>' +
