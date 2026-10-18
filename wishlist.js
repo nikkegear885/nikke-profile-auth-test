@@ -1123,7 +1123,7 @@
       '#wishlistHoverCard.is-compact .wl-hover-card-name{font-size:11px;line-height:1.45;max-width:230px}',
       '#wishlistHoverCard.is-guidance{box-sizing:border-box;width:260px;max-width:min(260px,calc(100vw - 20px));min-height:84px;justify-content:center;padding:9px 12px;border:1px solid #cbd9e5;border-left:3px solid #59a3bb;border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(237,244,249,.99));color:#34465a;box-shadow:0 8px 24px rgba(37,56,79,.20),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(10px)}',
       '#wishlistHoverCard.is-guidance .wl-hover-card-content{width:100%;min-width:0}',
-      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:9px!important;font-weight:750;line-height:1.55;letter-spacing:0;overflow-wrap:anywhere;text-shadow:none}',
+      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:8px!important;font-weight:750;line-height:1.5;letter-spacing:0;overflow-wrap:anywhere;text-shadow:none}',
       'html.dark-theme #wishlistHoverCard.is-guidance{border-color:#3c526b;border-left-color:#58b8c5;background:linear-gradient(145deg,rgba(28,42,62,.99),rgba(15,24,39,.99));color:#e5eff9;box-shadow:0 10px 26px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.05)}',
       'html.dark-theme #wishlistHoverCard.is-guidance .wl-hover-card-name{color:#e5eff9!important}',
       '@media(prefers-reduced-motion:reduce){#wishlistHoverCard{transition:none}}',
