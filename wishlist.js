@@ -386,7 +386,7 @@
   function shouldExcludeFromAutoWishlist(name){
     const key = norm(name);
     return (WISHLIST_EXCLUDE_AT_TWO_BREAKTHROUGHS.has(key) && getBreakthrough(name) >= 2) ||
-      (WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES.has(key) && getBreakthrough(name) >= 2);
+      (wallStatus === 'O' && WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES.has(key) && getBreakthrough(name) >= 2);
   }
 
   function isTreasurePerformanceBelowTwo(name, breakthrough){
@@ -682,7 +682,7 @@
     if(getCoreEnhancement(name) >= 7){
       return '코어 강화 7 자동 제외';
     }
-    if(WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES.has(norm(name)) && getBreakthrough(name) >= 2){
+    if(wallStatus === 'O' && WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES.has(norm(name)) && getBreakthrough(name) >= 2){
       return '미란다 2돌파 이상 자동 제외';
     }
     return '';
