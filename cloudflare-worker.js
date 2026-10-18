@@ -380,6 +380,12 @@ function makeServiceSessionFromSecrets(env){
   return session;
 }
 
+async function getSeedSecretFingerprint(env){
+  const values = SERVICE_SESSION_FIELDS.map(([,secret]) => String(env?.[secret] || '').trim()).join('\\u001f');
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(values));
+  return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2,'0')).join('');
+}
+
 async function getServiceSession(env){
   if(!env?.SERVICE_SESSION_KV){
     const err = new Error('자동 세션 갱신용 KV 저장소가 설정되지 않았습니다.');
@@ -396,18 +402,27 @@ async function getServiceSession(env){
     err.status = 503;
     throw err;
   }
-  if(saved && typeof saved === 'object' && !Array.isArray(saved)){
-    const missing = SERVICE_SESSION_FIELDS.filter(([field]) => !String(saved[field] || '').trim()).map(([,secret]) => secret);
-    if(!missing.length) return saved;
-    const err = new Error('저장된 서비스 세션 정보가 부족합니다: ' + missing.join(', ') + '. 초기 Secret과 KV 저장소를 확인해 주세요.');
-    err.sync_type = 'service_session_storage_invalid';
+
+  const fingerprint = await getSeedSecretFingerprint(env);
+  const savedMissing = saved && typeof saved === 'object' && !Array.isArray(saved)
+    ? SERVICE_SESSION_FIELDS.filter(([field]) => !String(saved[field] || '').trim()).length > 0
+    : true;
+  if(saved && typeof saved === 'object' && !Array.isArray(saved) &&
+     !savedMissing && saved.seedFingerprint === fingerprint){
+    return saved;
+  }
+
+  // First use, invalid KV state, or manually updated Secrets after re-login: re-seed safely.
+  const initial = makeServiceSessionFromSecrets(env);
+  initial.seedFingerprint = fingerprint;
+  try{
+    await env.SERVICE_SESSION_KV.put(SERVICE_SESSION_KV_KEY, JSON.stringify(initial));
+  }catch(e){
+    const err = new Error('초기 서비스 세션을 저장하지 못했습니다.');
+    err.sync_type = 'service_session_storage_error';
     err.status = 503;
     throw err;
   }
-
-  // 최초 1회만 Secret에서 시작 정보를 읽어 KV에 저장합니다.
-  const initial = makeServiceSessionFromSecrets(env);
-  await env.SERVICE_SESSION_KV.put(SERVICE_SESSION_KV_KEY, JSON.stringify(initial));
   return initial;
 }
 
