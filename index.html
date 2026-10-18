@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.399';
+  var EMBEDDED_VERSION='1.400';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -4628,7 +4628,7 @@ html.dark-theme #sidebarTopToggle{border-color:#40536a!important;background:rgba
 html.dark-theme #sidebarTopToggle:hover,html.dark-theme #sidebarTopToggle[aria-expanded="true"]{border-color:#668bb5!important;background:#20334b!important;color:#dcedff!important}
 </style>
 </head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.399</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div><button type="button" id="sidebarTopToggle" aria-label="메뉴 열기" title="메뉴 열기" aria-expanded="false"><span aria-hidden="true">☰</span></button>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.400</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div><button type="button" id="sidebarTopToggle" aria-label="메뉴 열기" title="메뉴 열기" aria-expanded="false"><span aria-hidden="true">☰</span></button>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" onclick="openBlablalinkSyncGuide()"><svg class="sync-button-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"></path></svg><span>계정 동기화</span><svg class="sync-button-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><a href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5496829" id="siteHelpTopButton" class="bl-direct-site-help" target="_blank" rel="noopener noreferrer" aria-label="사이트 이용법 (새 탭에서 열기)" title="사이트 이용법 링크 열기">사이트 이용법</a><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -4694,6 +4694,7 @@ const ACCOUNT_SELECTION_PREFIX='nikke_character_selection_v2_';
 const LEGACY_ACCOUNT_SELECTION_PREFIX='nikke_character_selection_v1_';
 const ACCOUNT_UNUSED_PREFIX='nikke_unused_characters_v3_';
 const ACCOUNT_UNOWNED_PREFIX='nikke_unowned_characters_v1_';
+const ACCOUNT_SYNCED_OWNED_PREFIX='nikke_synced_owned_characters_v1_';
 const ACCOUNT_STATE_STORAGE='nikke_active_account_v1';
 const ACCOUNT_NAMES_STORAGE='nikke_account_names_v1';
 /* TEST-SITE-ONLY TOOL: keep this isolated and do not port to production. */
@@ -4934,11 +4935,12 @@ function applyBlablalinkSyncPayload(p,targetAccount){
           .filter(Boolean)
       : []
   );
-  const byName=new Map(targetData.map((r,i)=>[String(r?.['이름']??'').trim(),i]));
+  const normalizeRosterName=name=>String(name??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g,'');
+  const byName=new Map(targetData.map((r,i)=>[normalizeRosterName(r?.['이름']),i]));
   let matched=0,changed=0;
   const syncedIndices=new Set();
   for(const u of Array.isArray(p.updates)?p.updates:[]){
-    const idx=byName.get(String(u?.name??'').trim());
+    const idx=byName.get(normalizeRosterName(u?.name));
     if(idx==null)continue;
     matched++;
     syncedIndices.add(idx);
@@ -4961,13 +4963,56 @@ function applyBlablalinkSyncPayload(p,targetAccount){
         if(num(r[key])!==level){r[key]=level;changed++}
       }
     }
+
+    // 상세 API가 반환한 돌파(grade)와 코어 강화(core)를 계정 데이터에 반영합니다.
+    const gradeRaw=u?.grade;
+    const grade=(gradeRaw===undefined || gradeRaw===null || gradeRaw==='')?null:normalizeSyncNumber(gradeRaw);
+    if(grade!==null){
+      const value=Math.max(0,Math.min(3,Math.floor(grade)));
+      if(num(r['돌파'])!==value){r['돌파']=value;changed++}
+    }
+    const coreRaw=u?.core;
+    const core=(coreRaw===undefined || coreRaw===null || coreRaw==='')?null:normalizeSyncNumber(coreRaw);
+    if(core!==null){
+      const value=Math.max(0,Math.min(7,Math.floor(core)));
+      if(num(r['코강'])!==value){r['코강']=value;changed++}
+    }
   }
-  // BlablaLink가 반환한 니케 목록을 해당 계정의 보유 니케 목록으로 간주합니다.
+  // The full roster is authoritative; details-only rows are not a substitute when ownedNames exists.
+  const rosterNames = Array.isArray(p.ownedNames)
+    ? p.ownedNames
+    : (Array.isArray(p.updates) ? p.updates.map(u=>u?.name) : []);
   const syncedNames=new Set(
-    (Array.isArray(p.updates)?p.updates:[])
-      .map(u=>String(u?.name??'').trim())
-      .filter(Boolean)
+    rosterNames.map(name=>String(name??'').trim()).filter(Boolean)
   );
+  const syncedNameKeys=new Set([...syncedNames].map(normalizeRosterName));
+  const isSyncedOwnedName=name=>syncedNames.has(String(name??'').trim())||syncedNameKeys.has(normalizeRosterName(name));
+
+  targetData.forEach(row=>{
+    const name=String(row?.['이름']??'').trim();
+    const owned=!!name&&isSyncedOwnedName(name);
+    row.__nikkeSyncedOwned=owned;
+    if(!owned){
+      if(num(row['돌파'])!==0){row['돌파']=0;changed++}
+      if(num(row['코강'])!==0){row['코강']=0;changed++}
+      // Remove the previous account's equipment state from every unowned character.
+      for(const part of gearParts){
+        const tierKey=part+'_티어', levelKey=part+'_레벨', corpKey=part+'_기업장비';
+        if(num(row[tierKey])!==9){row[tierKey]=9;changed++}
+        if(num(row[levelKey])!==0){row[levelKey]=0;changed++}
+        if(String(row[corpKey]??'')!==''){row[corpKey]='';changed++}
+        for(const key of [part+'_옵1',part+'_옵1값',part+'_옵2',part+'_옵2값',part+'_옵3',part+'_옵3값']){
+          if(row[key]!==null && row[key]!==''){row[key]=null;changed++}
+        }
+      }
+      for(const key of ['우코(%)','공증(%)','장탄(%)','크확(%)','크댐(%)','명중(%)','차댐(%)','차속(%)','방어(%)']){
+        if(num(row[key])!==0){row[key]=0;changed++}
+      }
+      if(row['큐브']!==null && row['큐브']!==''){row['큐브']=null;changed++}
+      if(num(row['큐브_레벨'])!==0){row['큐브_레벨']=0;changed++}
+      if(row['소장품']!==null && row['소장품']!==''){row['소장품']=null;changed++}
+    }
+  });
 
   // 동기화에서는 사용자가 직접 지정한 "미사용" 상태를 절대 변경하지 않습니다.
   // 따라서 동기화 결과에 없는 니케라고 해서 미사용으로 자동 변경하지 않습니다.
@@ -4985,22 +5030,19 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   // Keep a saved character marked as owned if account data shows power, breakthroughs, skills, or gear,
   // even when the profile-sync payload temporarily omits that character.
   const nextUnowned=new Set(
-    [...preservedUnownedNames].filter(name=>
-      !syncedNames.has(name) && !preservedUnusedNames.has(name) && !hasSavedOwnershipEvidence(rowForName(name))
-    )
+    [...preservedUnownedNames].filter(name=>!isSyncedOwnedName(name) && !preservedUnusedNames.has(name))
   );
   targetData
     .map(r=>String(r?.['이름']??'').trim())
     .filter(Boolean)
-    .filter(name=>!syncedNames.has(name))
+    .filter(name=>!isSyncedOwnedName(name))
     .filter(name=>!preservedUnusedNames.has(name))
-    .filter(name=>!hasSavedOwnershipEvidence(rowForName(name)))
     .forEach(name=>nextUnowned.add(name));
   // 미사용 상태는 유지하되, 이번 동기화에서 실제 장비 응답을 받은 니케의 결과는 다시 초기화하지 않습니다.
   // 응답이 없는 미사용 니케에 한해서만 기존 동작대로 장비/육성 수치를 최저 상태로 초기화합니다.
   for(const name of nextUnused){
-    if(syncedNames.has(name)) continue;
-    const idx=byName.get(name);
+    if(isSyncedOwnedName(name)) continue;
+    const idx=byName.get(normalizeRosterName(name));
     if(idx==null)continue;
     const row=targetData[idx];
 
@@ -5026,6 +5068,7 @@ function applyBlablalinkSyncPayload(p,targetAccount){
     localStorage.setItem(accountStorageKey(ACCOUNT_STORAGE_PREFIX,syncAccount),JSON.stringify(targetData));
     localStorage.setItem(accountStorageKey(ACCOUNT_UNUSED_PREFIX,syncAccount),JSON.stringify([...nextUnused]));
     localStorage.setItem(accountStorageKey(ACCOUNT_UNOWNED_PREFIX,syncAccount),JSON.stringify([...nextUnowned]));
+    localStorage.setItem(accountStorageKey(ACCOUNT_SYNCED_OWNED_PREFIX,syncAccount),JSON.stringify([...syncedNames]));
   }catch(e){console.warn('계정별 동기화 저장 실패',e)}
   if(syncAccount===activeAccount){
     data=targetData;
@@ -7146,7 +7189,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.023"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=2.94"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.024"></script><script src="pedia.js?v=1053"></script><script src="wishlist.js?v=3.08"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
