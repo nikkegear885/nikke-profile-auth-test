@@ -1025,9 +1025,10 @@
       '#wishlist160WallControl .wl-copy-priority-divider{height:1px;margin:16px 1px 13px;background:#e3e8ef}',
       '#wishlist160WallControl .wl-copy-priority-heading{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;color:#38465a;font-size:14px;font-weight:1000}',
       '#wishlist160WallControl .wl-copy-priority-value{padding:4px 8px;border:1px solid #cbd8e8;border-radius:999px;background:#edf4fc;color:#3e6797;font-size:11.5px;font-weight:900;white-space:nowrap}',
-      '#wishlist160WallControl .wl-priority-slider-wrap{position:relative;width:100%;height:23px;margin:3px 0 0}',
-      '#wishlist160WallControl .wl-copy-priority-slider{position:absolute;inset:0;display:block;width:100%;height:23px;margin:0;accent-color:#668fda;cursor:pointer}',
-      '#wishlist160WallControl .wl-priority-star{position:absolute;top:50%;z-index:2;transform:translate(-50%,-50%);pointer-events:none;color:#f0182b;font-family:Arial,sans-serif;font-size:31px;font-weight:1000;line-height:1;-webkit-text-stroke:.75px #f0182b;text-shadow:-1px 0 #fff,0 1px #fff,1px 0 #fff,0 -1px #fff}',
+      '#wishlist160WallControl .wl-priority-slider-wrap{position:relative;width:100%;height:26px;margin:7px 0 0}',
+      '#wishlist160WallControl .wl-copy-priority-slider{position:absolute;left:0;right:0;top:3px;display:block;width:100%;height:23px;margin:0;accent-color:#668fda;cursor:pointer}',
+      '#wishlist160WallControl .wl-priority-star{position:absolute;top:3px;z-index:3;display:flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border:1px solid #e5bb50;border-radius:50%;background:linear-gradient(180deg,#fffdf3,#ffefb9);color:#bd8611;font-family:Arial,sans-serif;font-size:11px;font-weight:900;line-height:1;transform:translate(-50%,-90%);pointer-events:none;box-shadow:0 1px 3px rgba(90,65,18,.18)}',
+      '#wishlist160WallControl .wl-priority-star:after{content:"";position:absolute;left:50%;top:100%;width:1px;height:9px;background:#d5a53b;transform:translateX(-50%)}',
       '#wishlist160WallControl .wl-copy-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends{display:flex;justify-content:space-between;align-items:center;margin-top:4px;color:#728096;font-size:13px;font-weight:900}',
       '#wishlist160WallControl .wl-pvp-priority-ends span:nth-child(2){text-align:center}',
@@ -1051,7 +1052,7 @@
       'html.dark-theme #wishlist160WallControl .wl-160-button{border-color:#354761;background:#0d1525;color:#adbacd}',
       'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="O"].active{border-color:#3b9f7d;background:#173d33;color:#a5f0d0}',
       'html.dark-theme #wishlist160WallControl .wl-160-button[data-wl-160-wall="X"].active{border-color:#72819b;background:#273449;color:#e1e9f5}',
-      '@media(max-width:1000px){#wishlist160WallControl{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:600px;margin:10px auto;padding:10px 16px}#wishlist160WallControl .wl-160-title{margin-bottom:8px}#wishlist160WallControl .wl-160-note{margin-top:7px}#wishlist160WallControl .wl-copy-priority-help{width:19px;height:19px;font-size:12px}#wishlist160WallControl .wl-priority-star{font-size:32px}}',
+      '@media(max-width:1000px){#wishlist160WallControl{position:relative;left:auto;top:auto;width:calc(100% - 24px);max-width:600px;margin:10px auto;padding:10px 16px}#wishlist160WallControl .wl-160-title{margin-bottom:8px}#wishlist160WallControl .wl-160-note{margin-top:7px}#wishlist160WallControl .wl-copy-priority-help{width:19px;height:19px;font-size:12px}#wishlist160WallControl .wl-priority-star{width:18px;height:18px;font-size:11px}}',
       '#wishlistPanel[hidden]{display:none!important}',
       '#wishlistPanel{position:relative!important;z-index:auto;display:block!important;box-sizing:border-box!important;width:calc(100% - 24px)!important;max-width:462px!important;min-width:0!important;padding:0!important;margin:0 auto 16px!important;overflow:visible;background:transparent;color:#25282d}',
       '#wishlistPanel .wl-dialog{position:relative;display:flex;flex-direction:column;width:100%;height:auto;min-height:0;overflow:visible;border:1px solid #dedfe1;border-radius:12px;background:#f8f8f8;box-shadow:0 2px 12px rgba(0,0,0,.10)}',
@@ -1382,7 +1383,7 @@
       '<div class="wl-copy-priority-heading"><span>PVP 캐릭터 선호도</span><span class="wl-copy-priority-value" data-wl-pvp-priority-value>솔레 우선</span></div>' +
       '<div class="wl-priority-slider-wrap wl-pvp-slider-wrap">' +
          '<input class="wl-copy-priority-slider" data-wl-pvp-priority type="range" min="0" max="2" step="1" value="1" aria-label="PVP 캐릭터 선호도" />' +
-         '<span class="wl-priority-star" data-wl-pvp-star aria-hidden="true" style="left:5%">☆</span>' +
+         '<span class="wl-priority-star" data-wl-pvp-star aria-hidden="true" style="left:5.5%">★</span>' +
        '</div>' +
       '<div class="wl-copy-priority-ends wl-pvp-priority-ends"><span>PVP 우선</span><span>솔레 우선</span><span>PVP 제외</span></div>' +
       '<div class="wl-copy-priority-note">PVP의 추천 순위를 슬라이더로 선택</div>' +
@@ -1390,7 +1391,7 @@
       '<div class="wl-copy-priority-heading"><span>명함작 선호도</span><button type="button" class="wl-copy-priority-help" data-wl-copy-priority-help data-tooltip="성능캐 돌파를 최우선으로 합니다" aria-label="현재 명함작 선호도 설명">!</button><span class="wl-copy-priority-value" data-wl-copy-priority-value>필수캐 우선</span></div>' +
       '<div class="wl-priority-slider-wrap wl-copy-slider-wrap">' +
          '<input class="wl-copy-priority-slider" data-wl-copy-priority type="range" min="0" max="2" step="1" value="0" aria-label="명함작 선호도" />' +
-         '<span class="wl-priority-star" data-wl-copy-star aria-hidden="true" style="left:95%">☆</span>' +
+         '<span class="wl-priority-star" data-wl-copy-star aria-hidden="true" style="left:94.5%">★</span>' +
        '</div>' +
       '<div class="wl-copy-priority-ends"><span>필수캐</span><span>도감작</span></div>' +
       '<div class="wl-copy-priority-note">자동 편성 추천 순서에 적용</div>';
@@ -1463,13 +1464,13 @@
     const pvpSlider = control.querySelector('[data-wl-pvp-priority]');
     if(pvpSlider) pvpSlider.value = String(Math.max(0,pvpModes.indexOf(pvpPriority)));
     const pvpStar = control.querySelector('[data-wl-pvp-star]');
-    if(pvpStar) pvpStar.style.left = '5%';
+    if(pvpStar) pvpStar.style.left = '5.5%';
     const pvpValueLabel = control.querySelector('[data-wl-pvp-priority-value]');
     if(pvpValueLabel) pvpValueLabel.textContent = ({pvp:'PVP 우선',solo:'솔레 우선',exclude:'PVP 제외'})[pvpPriority] || '솔레 우선';
     const slider = control.querySelector('[data-wl-copy-priority]');
     if(slider) slider.value = String(copyPriority);
     const copyStar = control.querySelector('[data-wl-copy-star]');
-    if(copyStar) copyStar.style.left = wallStatus === 'X' ? '95%' : '50%';
+    if(copyStar) copyStar.style.left = wallStatus === 'X' ? '94.5%' : '50%';
     const valueLabel = control.querySelector('[data-wl-copy-priority-value]');
     if(valueLabel) valueLabel.textContent = COPY_PRIORITY_LABELS[copyPriority] || '필수캐 우선';
     const help = control.querySelector('[data-wl-copy-priority-help]');
