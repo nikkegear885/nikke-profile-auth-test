@@ -1121,6 +1121,11 @@
       '#wishlistHoverCard.is-compact .wl-hover-card-image,#wishlistHoverCard.is-compact .wl-hover-card-company,#wishlistHoverCard.is-compact .wl-hover-card-meta{display:none}',
       '#wishlistHoverCard.is-compact .wl-hover-card-content{gap:0}',
       '#wishlistHoverCard.is-compact .wl-hover-card-name{font-size:11px;line-height:1.45;max-width:230px}',
+      '#wishlistHoverCard.is-guidance{box-sizing:border-box;width:260px;max-width:min(260px,calc(100vw - 20px));min-height:84px;justify-content:center;padding:9px 12px;border:1px solid #cbd9e5;border-left:3px solid #59a3bb;border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(237,244,249,.99));color:#34465a;box-shadow:0 8px 24px rgba(37,56,79,.20),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(10px)}',
+      '#wishlistHoverCard.is-guidance .wl-hover-card-content{width:100%;min-width:0}',
+      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:9px!important;font-weight:750;line-height:1.55;letter-spacing:0;overflow-wrap:anywhere;text-shadow:none}',
+      'html.dark-theme #wishlistHoverCard.is-guidance{border-color:#3c526b;border-left-color:#58b8c5;background:linear-gradient(145deg,rgba(28,42,62,.99),rgba(15,24,39,.99));color:#e5eff9;box-shadow:0 10px 26px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.05)}',
+      'html.dark-theme #wishlistHoverCard.is-guidance .wl-hover-card-name{color:#e5eff9!important}',
       '@media(prefers-reduced-motion:reduce){#wishlistHoverCard{transition:none}}',
       '#wishlistPanel .wl-tile{position:absolute;inset:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px solid #8a8a8a;border-radius:9px;background:repeating-linear-gradient(0deg,rgba(90,90,90,.045) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 3px),linear-gradient(135deg,#f5f5f5 0%,#dedede 64%,#d0d0d0 100%);box-shadow:inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(100,100,100,.16),0 3px 5px rgba(0,0,0,.32);}',
       '#wishlistPanel .wl-tile:before{content:"";position:absolute;left:0;top:21%;width:34%;height:35%;background:linear-gradient(180deg,rgba(255,255,255,.85) 0 31%,rgba(200,200,200,.56) 31% 38%,rgba(255,255,255,.62) 38% 68%,rgba(190,190,190,.4) 68% 75%,rgba(240,240,240,.38) 75%);border-right:1px solid rgba(255,255,255,.45);pointer-events:none}', '#wishlistPanel .wl-tile:after{content:"";position:absolute;inset:0;pointer-events:none}',
@@ -1685,8 +1690,10 @@
     const companyLabel = card.querySelector('.wl-hover-card-company');
     const meta = card.querySelector('.wl-hover-card-meta');
 
-    // Keep slot hover hints minimal: only the selected character's name is shown.
+    // Keep slot hover hints minimal; the two guidance types get a smaller, UI-matched tooltip.
     card.classList.add('is-compact');
+    const isGuidance = !!slot && (slot.classList.contains('is-bonus-recruit') || slot.classList.contains('is-road-to-villain'));
+    card.classList.toggle('is-guidance', isGuidance);
     imageBox.replaceChildren();
     meta.replaceChildren();
     imageBox.style.display = 'none';
@@ -1720,7 +1727,7 @@
 
   function hideWishlistHoverCard(){
     if(!hoverCard) return;
-    hoverCard.classList.remove('is-visible','is-compact');
+    hoverCard.classList.remove('is-visible','is-compact','is-guidance');
     hoverCard.setAttribute('aria-hidden','true');
     hoverCardAnchor = null;
   }
