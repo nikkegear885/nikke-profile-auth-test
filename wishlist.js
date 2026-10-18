@@ -1137,6 +1137,7 @@
       '#wishlistPanel .wl-select-trigger{position:absolute;inset:0;z-index:8;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}',
       '#wishlistPanel .wl-tile.wl-photo-only{padding:0;border-color:#8a8a8a;background:#fff}',
       '#wishlistPanel .wl-slot.is-bonus-recruit .wl-tile{border:3px solid #00b84a;box-shadow:0 0 0 2px #e6ffed,0 0 0 5px rgba(0,184,74,.48),0 4px 11px rgba(0,120,45,.42),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(0,100,35,.14)}',
+      '#wishlistPanel .wl-slot.is-road-to-villain .wl-tile{border:3px solid #e53935;box-shadow:0 0 0 2px #fff0f0,0 0 0 5px rgba(229,57,53,.5),0 4px 11px rgba(150,0,0,.38),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(130,0,0,.14)}',
       '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
       '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
       '#wishlistPanel .wl-character-name-label{display:none;box-sizing:border-box;width:100%;margin-top:3px;padding:0 1px;color:#4a5565;font-size:9px;font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere;word-break:keep-all}',
@@ -1599,6 +1600,7 @@
   function buildSlot(company, slot, characters){
     const name = picks[company][slot] || '';
     const isBonusRecruit = !!name && wallStatus === 'X' && WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(name));
+    const isRoadToVillain = !!name && wallStatus === 'X' && norm(name) === norm('드레이크');
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
     let tile;
@@ -1620,7 +1622,7 @@
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
     const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '빈 슬롯';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (isRoadToVillain ? ' is-road-to-villain' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
       (name ? ' data-wl-hover-text="' + esc(name) + '"' : '') +
       ' aria-label="' + esc(accessibleName) + '">' +
       tile +
@@ -1692,7 +1694,16 @@
     if(slot){
       const name = String(slot.getAttribute('data-wl-hover-text') || '').trim();
       if(!name) return hideWishlistHoverCard();
-      nameLabel.textContent = slot.classList.contains('is-bonus-recruit') ? '보너스 리크루트 포함된 캐릭터입니다.' : name;
+      const isBonusRecruit = slot.classList.contains('is-bonus-recruit');
+      const isRoadToVillain = slot.classList.contains('is-road-to-villain');
+      if(isBonusRecruit){
+        nameLabel.textContent = '보너스 리크루트에 포함된 캐릭터입니다.\n본인의 보유 포인트에 따라 제외캐릭터로 추가하는 추천합니다.';
+      }else if(isRoadToVillain){
+        nameLabel.textContent = '로드 투 빌런으로 2돌파까지 가능한 캐릭터입니다.\n1회라도 직접 획득했다면 제외캐릭터로 추가하는걸 추천합니다.';
+      }else{
+        nameLabel.textContent = name;
+      }
+      nameLabel.style.whiteSpace = (isBonusRecruit || isRoadToVillain) ? 'pre-line' : '';
       companyLabel.textContent = '';
     }else{
       const text = String(target.getAttribute('data-wl-hover-text') || '').trim();
