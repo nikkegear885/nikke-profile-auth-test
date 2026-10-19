@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 const SOURCE_URL='https://www.blablalink.com/shiftyspad/nikke-list';
-const DATA_URL='assets/nikke-pedia-master.json?v=1047';
+const DATA_URL='assets/nikke-pedia-master.json?v=1048';
 const esc=(v)=>String(v??'').replace(/[&<>'"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 function injectStyle(){
@@ -92,7 +92,7 @@ function injectStyle(){
   document.head.appendChild(infoStyle);
 }
 
-const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1046';
+const PEDIA_SKILL_DATA_URL='assets/nikke-skills.json?v=1047';
 let pediaSkillCache=null;
 
 function escText(v){return esc(v);}
@@ -356,7 +356,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let cache=null;
   async function data(){
     if(cache) return cache;
-    try{const r=await fetch('assets/nikke-skills.json?v=1046',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
+    try{const r=await fetch('assets/nikke-skills.json?v=1047',{cache:'no-store'}); if(!r.ok) return null; cache=await r.json(); return cache;}catch(_){return null;}
   }
   function find(all,name,id){
     if(!all||typeof all!=='object') return null;
