@@ -1028,17 +1028,15 @@
     if (title) title.textContent = '스테이지 덱 티어표';
     try { if (typeof window.closeSidebar === 'function') window.closeSidebar(); } catch (_) {}
     if (!pedia.length) {
-      const grid = document.getElementById('stageDeckGrid');
+      const grid = document.getElementById('stageTierBoard');
       if (grid) grid.innerHTML = '<div class="stage-deck-empty">도감 데이터를 불러오는 중…</div>';
       try {
         await loadCharacterData();
-        renderSlots();
         renderGrid();
       } catch (error) {
         if (grid) grid.innerHTML = '<div class="stage-deck-empty">'+esc(error && error.message || '도감 데이터를 불러오지 못했습니다.')+'</div>';
       }
     } else {
-      renderSlots();
       renderGrid();
     }
   }
