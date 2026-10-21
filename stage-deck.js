@@ -264,6 +264,11 @@
       html.dark-theme .stage-deck-unowned-toggle.active{background:#183b32;border-color:#327b68;color:#a4f0d4}
       .stage-deck-sort{height:38px;max-width:190px;min-width:135px;border:1px solid #c9d8e4;border-radius:9px;background:#fff;color:#405a73;padding:0 9px;font-size:11px;font-weight:800}
       .stage-deck-clear{height:38px;padding:0 12px;border:1px solid #d9caca;border-radius:9px;background:#fff;color:#925453;font-size:11px;font-weight:900;cursor:pointer}
+      .stage-deck-auto-recommend{height:38px;padding:0 13px;border:1px solid #168bce;border-radius:9px;background:#168bce;color:#fff;font-size:11px;font-weight:1000;cursor:pointer;white-space:nowrap;box-shadow:0 3px 8px rgba(22,139,206,.16)}
+      .stage-deck-auto-recommend:hover{background:#0878b8;border-color:#0878b8}
+      html.dark-theme .stage-deck-auto-recommend{background:#176e9f;border-color:#4ba9de;color:#fff}
+      html.dark-theme .stage-deck-auto-recommend:hover{background:#2184ba}
+
       .stage-deck-clear:hover{background:#fff4f3;border-color:#c99896}
       .stage-deck-random-account{height:38px;padding:0 12px;border:1px solid #78b3df;border-radius:9px;background:#eaf6ff;color:#24699a;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
       .stage-deck-random-account:hover{background:#dff0ff;border-color:#4c9ed8}
@@ -373,7 +378,7 @@
         <p>아래 도감에서 니케를 누르면 위쪽 5인 덱에 배치됩니다. 위 슬롯을 먼저 누르면 원하는 위치에 넣거나 교체할 수 있습니다.</p>
       </div>
       <section class="stage-deck-top" aria-label="스테이지 덱 슬롯">
-        <div class="stage-deck-top-head"><span class="stage-deck-top-title">선택한 니케 <span id="stageDeckSelectedCount">0 / 5</span></span><span class="stage-deck-top-actions"><span class="stage-deck-top-note">슬롯을 눌러 배치 위치 선택</span><button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button></span></div>
+        <div class="stage-deck-top-head"><span class="stage-deck-top-title">선택한 니케 <span id="stageDeckSelectedCount">0 / 5</span></span><span class="stage-deck-top-actions"><span class="stage-deck-top-note">슬롯을 눌러 배치 위치 선택</span><button type="button" class="stage-deck-auto-recommend" id="stageDeckAutoRecommend" title="보유한 니케 중 무작위로 5명을 추천합니다">자동추천</button><button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button></span></div>
         <div class="stage-deck-slots" id="stageDeckSlots"></div>
       </section>
       <details class="stage-deck-account-disclosure" id="stageDeckAccountDisclosure">
@@ -848,6 +853,32 @@
     });
   }
 
+  function autoRecommendDeck() {
+    const ownedRoster = getSyncedOwnedRoster();
+    if (!ownedRoster) {
+      showNotice('보유 니케 정보를 확인할 수 없습니다. 계정을 동기화하거나 뽑기 시뮬레이터를 이용해 주세요.');
+      return;
+    }
+    const candidates = pedia.filter(item => item && item.name && ownedRoster.has(normalizeRosterName(item.name)));
+    if (!candidates.length) {
+      showNotice('현재 보유 목록에 추천할 니케가 없습니다.');
+      return;
+    }
+    // Fisher-Yates shuffle ensures a random, non-duplicated selection from owned characters.
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+    slots = Array(SLOT_COUNT).fill('');
+    candidates.slice(0, SLOT_COUNT).forEach((item, index) => { slots[index] = item.name; });
+    activeSlot = 0;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch (_) {}
+    renderSlots();
+    renderGrid();
+    const selectedCount = candidates.length < SLOT_COUNT ? candidates.length : SLOT_COUNT;
+    showNotice('보유 니케 중 무작위 ' + selectedCount + '명을 덱에 배치했습니다.');
+  }
+
   function removeCharacterFromDeck(index) {
     if (!Number.isInteger(index) || index < 0 || index >= SLOT_COUNT || !slots[index]) return;
     slots[index] = '';
@@ -974,6 +1005,7 @@
       });
       renderGrid();
     }));
+    document.getElementById('stageDeckAutoRecommend')?.addEventListener('click', autoRecommendDeck);
     document.getElementById('stageDeckClear')?.addEventListener('click', () => {
       slots = Array(SLOT_COUNT).fill('');
       activeSlot = 0;
