@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.423 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
+<html lang="ko"><head><!-- GitHub Pages deployment refresh 1.424 --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/webp" href="assets/nikke-manager-icon.webp?v=0439">
 <title>니케 장비관리</title>
 <style>
 :root{--bg:#080d19;--panel:#0f1729;--panel2:#111c32;--line:#26324b;--text:#edf2ff;--muted:#8490aa;--accent:#927dff;--good:#47d7c7;--danger:#ff6c86}
@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.423';
+  var EMBEDDED_VERSION='1.424';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -4628,7 +4628,7 @@ html.dark-theme #sidebarTopToggle{border-color:#40536a!important;background:rgba
 html.dark-theme #sidebarTopToggle:hover,html.dark-theme #sidebarTopToggle[aria-expanded="true"]{border-color:#668bb5!important;background:#20334b!important;color:#dcedff!important}
 </style>
 </head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.423</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div><button type="button" id="sidebarTopToggle" aria-label="메뉴 열기" title="메뉴 열기" aria-expanded="false"><span aria-hidden="true">☰</span></button>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.424</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div><button type="button" id="sidebarTopToggle" aria-label="메뉴 열기" title="메뉴 열기" aria-expanded="false"><span aria-hidden="true">☰</span></button>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button><button type="button" class="main-view-nav" data-view="stageDeck" onclick="switchMainView('stageDeck')">스테이지 덱 티어표</button><button type="button" class="main-view-nav" data-view="skillStatus" onclick="switchMainView('skillStatus')">스킬 현황 확인</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" onclick="openBlablalinkSyncGuide()"><svg class="sync-button-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"></path></svg><span>계정 동기화</span><svg class="sync-button-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><a href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5496829" id="siteHelpTopButton" class="bl-direct-site-help" target="_blank" rel="noopener noreferrer" aria-label="사이트 이용법 (새 탭에서 열기)" title="사이트 이용법 링크 열기">사이트 이용법</a><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -5728,32 +5728,38 @@ function renderTable(){
 const COLUMN_DEFS={
   선택:{label:'유효',filter:true}, 사진:{label:'사진'}, 이름:{label:'니케',filter:true}, 미사용:{label:'미사용'}, 머리:{label:'머리',filter:true}, 몸통:{label:'몸통',filter:true}, 장갑:{label:'장갑',filter:true}, 다리:{label:'다리',filter:true},
   전투력:{label:'전투력',filter:true}, 기업:{label:'기업',filter:true}, 속성:{label:'속성',filter:true}, 버스트:{label:'버스트',filter:true}, 클래스:{label:'클래스',filter:true},
-  돌파:{label:'돌파'}, 코강:{label:'코강'}, 스킬:{label:'스킬'}
+  돌파:{label:'돌파'}, 코강:{label:'코강'}, 스킬:{label:'스킬 레벨'}
 };
 const DEFAULT_COLUMN_ORDER=['선택','사진','이름','기업','클래스','머리','몸통','장갑','다리','전투력','속성','버스트','돌파','코강','스킬','미사용'];
 const COLUMN_ORDER_STORAGE='nikke_column_order_v2';
 const COLUMN_VISIBILITY_STORAGE='nikke_column_visibility_v1';
 const DETAIL_COLUMNS=['전투력','버스트','속성','돌파','코강','스킬'];
-let hiddenColumns=(()=>{try{
-  const v=JSON.parse(localStorage.getItem(COLUMN_VISIBILITY_STORAGE)||'null');
-  if(Array.isArray(v)) return new Set([...v,'스킬'].filter(k=>DETAIL_COLUMNS.includes(k)));
-}catch(e){}
-return new Set(DETAIL_COLUMNS);
+// The detail toggle is intentionally limited to skill levels.
+// Keep the other detail columns hidden so they cannot push the skill column off-screen.
+const ALWAYS_HIDDEN_DETAIL_COLUMNS=['전투력','버스트','속성','돌파','코강'];
+let hiddenColumns=(()=>{
+  let showSkill=false;
+  try{
+    const v=JSON.parse(localStorage.getItem(COLUMN_VISIBILITY_STORAGE)||'null');
+    if(Array.isArray(v)) showSkill=!v.includes('스킬');
+  }catch(e){}
+  return new Set([...ALWAYS_HIDDEN_DETAIL_COLUMNS,...(showSkill?[]:['스킬'])]);
 })();
 function saveColumnVisibility(){try{localStorage.setItem(COLUMN_VISIBILITY_STORAGE,JSON.stringify([...hiddenColumns]));}catch(e){}}
 function visibleColumnOrder(){return columnOrder.filter(k=>!hiddenColumns.has(k));}
 function updateDetailColumnButton(){
   const b=document.getElementById('detailColumnBtn');
   if(!b)return;
-  const hidden=hiddenColumns.size>0;
+  const hidden=hiddenColumns.has('스킬');
   b.classList.toggle('active',!hidden);
   b.textContent=hidden?'상세 항목 표시':'상세 항목 숨기기';
   b.setAttribute('aria-pressed',hidden?'false':'true');
-  b.title='전투력 · 버스트 · 속성 · 돌파 · 코강 · 스킬 항목을 표시/숨김';
+  b.title='스킬 레벨 항목만 표시/숨김';
 }
 function toggleDetailColumns(){
-  if(hiddenColumns.size) hiddenColumns.clear();
-  else DETAIL_COLUMNS.forEach(k=>hiddenColumns.add(k));
+  if(hiddenColumns.has('스킬')) hiddenColumns.delete('스킬');
+  else hiddenColumns.add('스킬');
+  ALWAYS_HIDDEN_DETAIL_COLUMNS.forEach(k=>hiddenColumns.add(k));
   saveColumnVisibility();
   updateDetailColumnButton();
   closeHeaderFilter();
