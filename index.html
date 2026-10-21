@@ -4628,7 +4628,7 @@ html.dark-theme #sidebarTopToggle{border-color:#40536a!important;background:rgba
 html.dark-theme #sidebarTopToggle:hover,html.dark-theme #sidebarTopToggle[aria-expanded="true"]{border-color:#668bb5!important;background:#20334b!important;color:#dcedff!important}
 </style>
 </head><body>
-<div class="site-version-corner" id="siteVersionCorner">VERSION 1.405</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div><button type="button" id="sidebarTopToggle" aria-label="메뉴 열기" title="메뉴 열기" aria-expanded="false"><span aria-hidden="true">☰</span></button>
+<div class="site-version-corner" id="siteVersionCorner">VERSION 1.406</div><div class="sidebar-hitarea" id="sidebarHitarea" aria-label="메뉴 열기" title="왼쪽 메뉴 열기"></div><button type="button" id="sidebarTopToggle" aria-label="메뉴 열기" title="메뉴 열기" aria-expanded="false"><span aria-hidden="true">☰</span></button>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="logo"><img src="assets/nikke-manager-icon.webp?v=0438" alt="니케 장비관리 아이콘"></div><div><h1>니케 장비관리</h1></div></div><div class="nav"><button type="button" class="active main-view-nav" data-view="characters" onclick="switchMainView('characters')">니케 장비 현황</button><button type="button" class="main-view-nav" data-view="outpost" onclick="switchMainView('outpost')">전초기지 생산량</button><button type="button" class="main-view-nav" data-view="sole" onclick="switchMainView('sole')">솔레점수기록</button><button type="button" class="main-view-nav" data-view="stageDeck" onclick="switchMainView('stageDeck')">스테이지 덱 티어표</button><button type="button" class="main-view-nav" data-view="skillStatus" onclick="switchMainView('skillStatus')">스킬 현황 확인</button></div><div class="section" style="font-size:11px;color:#6f7b96;line-height:1.6">현재는 니케 관리 기능을 제공합니다.<br>다른 관리 기능은 설정 메뉴에서 사용할 수 있습니다.</div></aside>
 <main class="main"><div class="topbar"><div><div class="eyebrow">NIKKE / INVENTORY</div><h2 id="pageTitle">니케 장비현황</h2></div><div class="actions account-switcher"><button type="button" class="btn blsync-top-btn" onclick="openBlablalinkSyncGuide()"><svg class="sync-button-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"></path></svg><span>계정 동기화</span><svg class="sync-button-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><a href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5496829" id="siteHelpTopButton" class="bl-direct-site-help" target="_blank" rel="noopener noreferrer" aria-label="사이트 이용법 (새 탭에서 열기)" title="사이트 이용법 링크 열기">사이트 이용법</a><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="어두운 화면으로 보기" title="어두운 화면으로 보기" onclick="toggleDarkTheme()">☀️</button><button type="button" class="btn account-switch-btn active" data-account="계정1" onclick="switchAccount(ACCOUNTS[0])">계정1</button><button type="button" class="btn account-switch-btn" data-account="계정2" onclick="switchAccount(ACCOUNTS[1])">계정2</button><div class="settings-wrap"><button type="button" class="settings-btn" id="settingsBtn" aria-label="설정" title="설정" onclick="toggleSettingsMenu(event)">⚙</button></div></div></div><div class="settings-popover" id="settingsPopover" hidden>
@@ -4945,6 +4945,16 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   const byName=new Map(targetData.map((r,i)=>[normalizeRosterName(r?.['이름']),i]));
   let matched=0,changed=0,skillDataCount=0;
   const syncedIndices=new Set();
+  // When the current sync provider has attempted skill retrieval, clear all prior skill
+  // values for this account before applying the new payload. Characters omitted by the API
+  // must display as unknown instead of silently retaining sample or stale saved values.
+  if(p.skillsQueried===true){
+    for(const row of targetData){
+      for(const key of ['스킬1','스킬2','버스트스킬']){
+        if(row[key]!==null && row[key]!==undefined){row[key]=null;changed++}
+      }
+    }
+  }
   for(const u of Array.isArray(p.updates)?p.updates:[]){
     const idx=byName.get(normalizeRosterName(u?.name));
     if(idx==null)continue;
@@ -5144,7 +5154,14 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   });
   closeBlablalinkSyncGuide();
   const unresolved=Array.isArray(p.unresolved)?p.unresolved.length:0;
-  toast('BlablaLink 동기화 완료 · 대상 '+syncAccount+' / 출처 '+(p.nickname||'닉네임 확인 불가')+' · '+matched+'명 반영 · 스킬 데이터 '+skillDataCount+'명 · '+changed+'개 변경'+(unresolved?' · 미매칭 '+unresolved+'명':''));
+  const skillMissingCount=targetData.filter(row=>row&&row.__nikkeSyncedOwned===true&&['스킬1','스킬2','버스트스킬'].some(key=>row[key]===null||row[key]===undefined||row[key]==='')).length;
+  console.info('[NIKKE GM] Skill status after apply', {
+    targetAccount:syncAccount,
+    ownedCount:targetData.filter(row=>row&&row.__nikkeSyncedOwned===true).length,
+    skillDataCount,
+    skillMissingCount
+  });
+  toast('BlablaLink 동기화 완료 · 대상 '+syncAccount+' / 출처 '+(p.nickname||'닉네임 확인 불가')+' · '+matched+'명 반영 · 스킬 데이터 '+skillDataCount+'명 · 스킬 미수신 '+skillMissingCount+'명 · '+changed+'개 변경'+(unresolved?' · 미매칭 '+unresolved+'명':''));
 }
 window.__NIKKE_GM_APPLY_SYNC__=applyBlablalinkSyncPayload;
 
