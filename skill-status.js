@@ -6,6 +6,7 @@
   const PEDIA_URL = 'assets/nikke-pedia-master.json?v=1055';
   const OWNED_PREFIX = 'nikke_synced_owned_characters_v1_';
   const UNOWNED_PREFIX = 'nikke_unowned_characters_v1_';
+  const ACCOUNT_DATA_PREFIX = 'nikkeGearManagerV6_account_';
   const HIDDEN_CHARACTERS_PREFIX = 'nikke_skill_status_hidden_characters_v1_';
   let initialized = false;
   let imageMap = {};
@@ -30,6 +31,19 @@
   }
 
   function currentRows() {
+    // Read the selected account's own saved rows first instead of trusting a stale
+    // in-memory array left over from another account/view.
+    const account = activeAccountName();
+    if (account) {
+      try {
+        const raw = localStorage.getItem(ACCOUNT_DATA_PREFIX + encodeURIComponent(account));
+        if (raw !== null) {
+          const savedRows = JSON.parse(raw);
+          if (Array.isArray(savedRows)) return savedRows;
+        }
+      } catch (_) {}
+    }
+    // Compatibility fallback for a not-yet-saved active account.
     try {
       if (typeof data !== 'undefined' && Array.isArray(data)) return data;
     } catch (_) {}
