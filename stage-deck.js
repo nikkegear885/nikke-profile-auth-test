@@ -8,8 +8,9 @@
   const SKILLS_URL = 'assets/nikke-skills.json?v=1048';
   const STORAGE_KEY = 'nikke_stage_deck_v1';
   const SHOW_UNOWNED_STORAGE_KEY = 'nikke_stage_deck_show_unowned_v1';
-  const RANDOM_ACCOUNT_RULES_STORAGE_KEY = 'nikke_random_test_account_rules_v1';
   const RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY = 'nikke_stage_deck_random_account_options_v1';
+  const RANDOM_ACCOUNT_ROSTER_STORAGE_KEY = 'nikke_stage_deck_random_owned_roster_v1';
+  const RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY = 'nikke_stage_deck_random_roster_active_v1';
   const SLOT_COUNT = 5;
   let showUnownedCharacters = (() => {
     try { return localStorage.getItem(SHOW_UNOWNED_STORAGE_KEY) === '1'; }
@@ -47,6 +48,71 @@
     .toLowerCase()
     .replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g, '');
 
+  // Stage-deck-only categories copied from the site's established limited/distribution roster.
+  const LIMITED_RANDOM_NAMES = new Set([
+  "2B",
+  "A2",
+  "렘",
+  "마키마",
+  "파워",
+  "레이",
+  "레이 (가칭)",
+  "아스카",
+  "아스카 : WILLE",
+  "마리",
+  "미사토",
+  "로산나 : 시크 오션",
+  "루드밀라 : 윈터 오너",
+  "루피 : 윈터 쇼퍼",
+  "디젤 : 윈터 스위츠",
+  "길로틴 : 윈터 슬레이어",
+  "네온 : 블루 오션",
+  "도로시 : 세렌디피티",
+  "메어리 : 베이 갓데스",
+  "메이든 : 아이스 로즈",
+  "미카 : 스노우 버디",
+  "브리드 : 사일런트 트랙",
+  "사쿠라 : 블룸 인 서머",
+  "아니스 : 스파클링 서머",
+  "헬름 : 아쿠아마린",
+  "마르차나 : 마린 스터디",
+  "신데렐라 : 크리스탈 웨이브",
+  "에밀리아",
+  "에이다",
+  "유키코",
+  "이브",
+  "일레그 : 붐 앤 쇼크",
+  "질",
+  "치사토",
+  "퀸(마코토)",
+  "타키나",
+  "레이븐",
+  "클레어",
+  "쿠루미",
+  "히메노",
+  "사쿠라 스즈하라"
+].map(normalizeRosterName));
+  const DISTRIBUTION_RANDOM_NAMES = new Set([
+  "앵커",
+  "네베",
+  "차임",
+  "킬로",
+  "파스칼",
+  "앤 : 미라클 페어리",
+  "아이기스",
+  "길티",
+  "신",
+  "퀀시",
+  "라푼젤:퓨어그레이스",
+  "람",
+  "릴리",
+  "모리",
+  "아비스타",
+  "니힐리스타",
+  "스노우 화이트 : 이노센트 데이즈",
+  "라이"
+].map(normalizeRosterName));
+
   function getActiveAccountName() {
     try {
       let accounts = ['계정1', '계정2'];
@@ -64,6 +130,17 @@
   }
 
   function getSyncedOwnedRoster() {
+    // The stage-deck random roster is isolated from the site-wide active account.
+    try {
+      if (localStorage.getItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY) === '1') {
+        const rawRandomRoster = localStorage.getItem(RANDOM_ACCOUNT_ROSTER_STORAGE_KEY);
+        const savedRandomRoster = JSON.parse(rawRandomRoster || '[]');
+        if (Array.isArray(savedRandomRoster)) {
+          return new Set(savedRandomRoster.map(normalizeRosterName).filter(Boolean));
+        }
+        return new Set();
+      }
+    } catch (_) {}
     const account = getActiveAccountName();
     if (!account) return null;
     try {
@@ -151,9 +228,17 @@
       .stage-deck-random-owned label{font-size:11px;font-weight:900;white-space:nowrap}
       .stage-deck-random-owned input{width:100%;min-width:90px;accent-color:#168bce}
       .stage-deck-random-owned output{min-width:38px;text-align:right;font-size:12px;font-weight:900;color:#24699a}
-      .stage-deck-random-includes{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:12px}
-      .stage-deck-random-includes label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;cursor:pointer}
-      .stage-deck-random-includes input{accent-color:#168bce}
+      .stage-deck-random-includes{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px}
+      .stage-deck-random-switch{display:inline-flex;align-items:center;gap:7px;border:1px solid #ccdae5;border-radius:8px;background:#fff;padding:6px 9px;font-size:11px;font-weight:800;cursor:pointer}
+      .stage-deck-random-switch input{accent-color:#168bce}
+      .stage-deck-random-switch strong{min-width:30px;padding:3px 5px;border-radius:5px;background:#e9faf3;color:#187b59;text-align:center;font-size:10px}
+      .stage-deck-random-switch:has(input:not(:checked)) strong{background:#fbeaea;color:#a04444}
+      .stage-deck-use-actual-roster{height:38px;padding:0 12px;border:1px solid #c9d8e4;border-radius:9px;background:#fff;color:#4e6780;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+      .stage-deck-use-actual-roster[hidden]{display:none!important}
+      html.dark-theme .stage-deck-random-switch{background:#172437;border-color:#354a62;color:#dce6f1}
+      html.dark-theme .stage-deck-random-switch strong{background:#183b32;color:#a4f0d4}
+      html.dark-theme .stage-deck-random-switch:has(input:not(:checked)) strong{background:#48272e;color:#ffb8bc}
+      html.dark-theme .stage-deck-use-actual-roster{background:#172437;border-color:#354a62;color:#c4d5e6}
       .stage-deck-random-note{flex-basis:100%;margin-top:-3px;color:#8195a8;font-size:10px;line-height:1.45}
       html.dark-theme .stage-deck-random-settings{background:#101b2b;border-color:#304359;color:#dce6f1}
       html.dark-theme .stage-deck-random-settings-body{border-color:#304359}
@@ -231,7 +316,8 @@
           <option value="pedia">도감 순</option>
           <option value="burst">버스트 순</option>
         </select>
-        <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="위시리스트와 같은 무작위 테스트 계정을 생성합니다">무작위 계정 생성</button>
+        <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="스테이지 추천에서만 사용하는 무작위 보유 목록을 생성합니다">무작위 계정 생성</button>
+        <button type="button" class="stage-deck-use-actual-roster" id="stageDeckUseActualRoster" hidden>실제 보유 목록</button>
         <button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button>
         <span class="stage-deck-count" id="stageDeckVisibleCount"></span>
       </div>
@@ -244,10 +330,10 @@
             <output id="stageDeckRandomOwnedChanceValue" for="stageDeckRandomOwnedChance">60%</output>
           </div>
           <div class="stage-deck-random-includes">
-            <label><input type="checkbox" id="stageDeckIncludeLimited" checked> 한정 캐 포함</label>
-            <label><input type="checkbox" id="stageDeckIncludeDistribution" checked> 배포 캐 포함</label>
+            <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeLimited" checked><span>한정 캐</span><strong data-stage-random-status="limited">ON</strong></label>
+            <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeDistribution" checked><span>배포 캐</span><strong data-stage-random-status="distribution">ON</strong></label>
           </div>
-          <div class="stage-deck-random-note">보유 확률과 돌파 확률은 위시리스트의 무작위 계정 설정과 공유됩니다. 한정·배포 설정을 끄면 해당 분류의 니케는 무작위 계정에서 미보유 처리됩니다.</div>
+          <div class="stage-deck-random-note">스테이지 추천 전용 설정입니다. 생성된 무작위 보유 목록은 위시리스트·장비 현황의 실제 계정 데이터에 영향을 주지 않습니다.</div>
         </div>
       </details>
       <div class="stage-deck-grid" id="stageDeckGrid" aria-label="캐릭터 도감 목록"></div>
@@ -346,21 +432,14 @@
   }
 
   function loadStageDeckRandomSettings() {
-    let rules = {};
-    let options = {};
-    try { rules = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_RULES_STORAGE_KEY) || '{}') || {}; } catch (_) {}
-    try { options = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY) || '{}') || {}; } catch (_) {}
-    const clamp = (value, fallback, max=100) => Math.max(0, Math.min(max, Number.isFinite(Number(value)) ? Number(value) : fallback));
-    const one = clamp(rules.breakthroughOneChance, 25);
-    const two = clamp(rules.breakthroughTwoChance, 10, 100-one);
-    const three = clamp(rules.breakthroughThreeChance, 5, 100-one-two);
+    let saved = {};
+    try {
+      saved = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY) || '{}') || {};
+    } catch (_) {}
     return {
-      ownedChance: clamp(rules.ownedChance, 60),
-      breakthroughOneChance: one,
-      breakthroughTwoChance: two,
-      breakthroughThreeChance: three,
-      includeLimited: options.includeLimited !== false,
-      includeDistribution: options.includeDistribution !== false
+      ownedChance: Math.max(0, Math.min(100, Number.isFinite(Number(saved.ownedChance)) ? Number(saved.ownedChance) : 60)),
+      includeLimited: saved.includeLimited !== false,
+      includeDistribution: saved.includeDistribution !== false
     };
   }
 
@@ -368,29 +447,64 @@
     const chanceInput = document.getElementById('stageDeckRandomOwnedChance');
     const limitedInput = document.getElementById('stageDeckIncludeLimited');
     const distributionInput = document.getElementById('stageDeckIncludeDistribution');
-    const settings = loadStageDeckRandomSettings();
-    const ownedChance = Math.max(0, Math.min(100, Number(chanceInput?.value ?? settings.ownedChance) || 0));
-    const rules = {
-      ownedChance,
-      breakthroughOneChance: settings.breakthroughOneChance,
-      breakthroughTwoChance: settings.breakthroughTwoChance,
-      breakthroughThreeChance: settings.breakthroughThreeChance
+    const old = loadStageDeckRandomSettings();
+    const settings = {
+      ownedChance: Math.max(0, Math.min(100, Number.isFinite(Number(chanceInput?.value)) ? Number(chanceInput.value) : old.ownedChance)),
+      includeLimited: limitedInput ? limitedInput.checked : old.includeLimited,
+      includeDistribution: distributionInput ? distributionInput.checked : old.includeDistribution
     };
-    try { localStorage.setItem(RANDOM_ACCOUNT_RULES_STORAGE_KEY, JSON.stringify(rules)); } catch (_) {}
-    const one = rules.breakthroughOneChance;
-    const two = rules.breakthroughTwoChance;
-    const three = rules.breakthroughThreeChance;
-    window.NIKKE_RANDOM_ACCOUNT_RULES = {
-      ownedChance,
-      breakthroughWeights: {zero: Math.max(0,100-one-two-three), one, two, three}
-    };
-    const options = {
-      includeLimited: limitedInput ? limitedInput.checked : settings.includeLimited,
-      includeDistribution: distributionInput ? distributionInput.checked : settings.includeDistribution
-    };
-    try { localStorage.setItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY, JSON.stringify(options)); } catch (_) {}
+    try { localStorage.setItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY, JSON.stringify(settings)); } catch (_) {}
     const output = document.getElementById('stageDeckRandomOwnedChanceValue');
-    if (output) output.textContent = ownedChance + '%';
+    if (output) output.textContent = settings.ownedChance + '%';
+    updateRandomInclusionStatus(settings);
+  }
+
+  function updateRandomInclusionStatus(settings = loadStageDeckRandomSettings()) {
+    const limitedStatus = document.querySelector('[data-stage-random-status="limited"]');
+    const distributionStatus = document.querySelector('[data-stage-random-status="distribution"]');
+    if (limitedStatus) limitedStatus.textContent = settings.includeLimited ? 'ON' : 'OFF';
+    if (distributionStatus) distributionStatus.textContent = settings.includeDistribution ? 'ON' : 'OFF';
+    const randomButton = document.getElementById('stageDeckRandomAccount');
+    if (randomButton) randomButton.textContent = '무작위 계정 생성';
+    const actualButton = document.getElementById('stageDeckUseActualRoster');
+    if (actualButton) actualButton.hidden = localStorage.getItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY) !== '1';
+  }
+
+  function createStageDeckRandomRoster() {
+    if (!pedia.length) {
+      showNotice('캐릭터 도감을 불러온 뒤 다시 시도해 주세요.');
+      return;
+    }
+    const settings = loadStageDeckRandomSettings();
+    const ownedNames = [];
+    let excludedByType = 0;
+    pedia.forEach(item => {
+      const name = String(item && item.name || '').trim();
+      if (!name) return;
+      const normalized = normalizeRosterName(name);
+      const blockedByLimited = !settings.includeLimited && LIMITED_RANDOM_NAMES.has(normalized);
+      const blockedByDistribution = !settings.includeDistribution && DISTRIBUTION_RANDOM_NAMES.has(normalized);
+      const owned = !blockedByLimited && !blockedByDistribution && Math.random() * 100 < settings.ownedChance;
+      if (blockedByLimited || blockedByDistribution) excludedByType++;
+      if (owned) ownedNames.push(name);
+    });
+    try {
+      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_STORAGE_KEY, JSON.stringify(ownedNames));
+      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY, '1');
+    } catch (_) {
+      showNotice('스테이지 추천용 무작위 보유 목록을 저장하지 못했습니다.');
+      return;
+    }
+    updateRandomInclusionStatus(settings);
+    renderGrid();
+    showNotice('스테이지 추천 전용 무작위 목록 생성 완료 · 보유 ' + ownedNames.length + '명 · 한정/배포 제외 ' + excludedByType + '명');
+  }
+
+  function useActualOwnedRoster() {
+    try { localStorage.removeItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY); } catch (_) {}
+    updateRandomInclusionStatus();
+    renderGrid();
+    showNotice('실제 계정의 보유 니케 목록으로 돌아왔습니다.');
   }
 
   function initStageDeckRandomSettings() {
@@ -406,8 +520,7 @@
     chanceInput?.addEventListener('input', saveStageDeckRandomSettings);
     limitedInput?.addEventListener('change', saveStageDeckRandomSettings);
     distributionInput?.addEventListener('change', saveStageDeckRandomSettings);
-    // Expose the exact saved rates so the shared generator can use the same rules immediately.
-    saveStageDeckRandomSettings();
+    updateRandomInclusionStatus(settings);
   }
 
   function updateUnownedToggleButton() {
@@ -625,15 +738,12 @@
       renderGrid();
     });
     initStageDeckRandomSettings();
+    initStageDeckRandomSettings();
     document.getElementById('stageDeckRandomAccount')?.addEventListener('click', () => {
       saveStageDeckRandomSettings();
-      if (typeof window.createRandomTestAccount !== 'function') {
-        showNotice('무작위 계정 기능을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
-        return;
-      }
-      window.createRandomTestAccount();
-      if (typeof window.switchMainView === 'function') window.switchMainView('stageDeck');
+      createStageDeckRandomRoster();
     });
+    document.getElementById('stageDeckUseActualRoster')?.addEventListener('click', useActualOwnedRoster);
     patchNavigation();
   }
 
