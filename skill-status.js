@@ -9,6 +9,8 @@
   let initialized = false;
   let imageMap = {};
   let imageLoadPromise = null;
+  let skillFilterEnabled = false;
+  let skillFilterLevel = 10;
 
   function normalizeName(value) {
     return String(value == null ? '' : value)
@@ -117,7 +119,14 @@
     const style = document.createElement('style');
     style.id = 'skillStatusStyle';
     style.textContent =
+      'body.skill-status-view #kpis{display:none!important}' +
       '#skillStatusPanel{margin:0 0 24px;padding:0 14px 24px;color:var(--text,#263449);min-width:0}' +
+      '.skill-status-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:12px 14px;border:1px solid #d8e3ed;border-radius:12px;background:#fff}' +
+      '.skill-status-filter-toggle{min-height:38px;padding:0 14px;border:1px solid #bed0df;border-radius:9px;background:#f3f7fb;color:#37556e;font-size:12px;font-weight:900;cursor:pointer;transition:background .15s,border-color .15s,color .15s}' +
+      '.skill-status-filter-toggle.active{background:#176e9f;border-color:#176e9f;color:#fff;box-shadow:0 3px 8px rgba(23,110,159,.16)}' +
+      '.skill-status-filter-level-wrap{display:flex;align-items:center;gap:7px;color:#526b80;font-size:12px;font-weight:800}' +
+      '.skill-status-filter-level{height:36px;min-width:76px;padding:0 9px;border:1px solid #cbd9e5;border-radius:8px;background:#fff;color:#2e4356;font-size:12px;font-weight:900}' +
+      '.skill-status-filter-state{margin-left:auto;color:#718397;font-size:11px;font-weight:800}' +
       '.skill-status-wrap{border:1px solid #d8e3ed;border-radius:14px;background:#fff;overflow:hidden}' +
       '.skill-status-table{width:100%;border-collapse:collapse;table-layout:fixed}' +
       '.skill-status-table th{padding:12px 10px;background:#f2f6fa;color:#526b80;text-align:center;font-size:12px;font-weight:900;border-bottom:1px solid #d8e3ed}' +
@@ -128,6 +137,12 @@
       '.skill-status-character-name{overflow-wrap:anywhere;line-height:1.35}' +
       '.skill-status-level{font-size:15px!important;font-weight:900;font-variant-numeric:tabular-nums}' +
       '.skill-status-empty{padding:24px 14px;text-align:center;color:#718397;font-size:13px;line-height:1.6}' +
+      'html.dark-theme .skill-status-toolbar{background:#111e2c;border-color:#304356}' +
+      'html.dark-theme .skill-status-filter-toggle{background:#1b2b3c;border-color:#405469;color:#d5e2ef}' +
+      'html.dark-theme .skill-status-filter-toggle.active{background:#176e9f;border-color:#4ba9de;color:#fff}' +
+      'html.dark-theme .skill-status-filter-level-wrap{color:#b8cadb}' +
+      'html.dark-theme .skill-status-filter-level{background:#152537;border-color:#405469;color:#e0eaf5}' +
+      'html.dark-theme .skill-status-filter-state{color:#95a9bd}' +
       'html.dark-theme .skill-status-wrap{background:#111e2c;border-color:#304356}' +
       'html.dark-theme .skill-status-table th{background:#1b2b3c;color:#b8cadb;border-color:#304356}' +
       'html.dark-theme .skill-status-table td{color:#dbe6f1;border-color:#2b3c4e}' +
@@ -146,6 +161,15 @@
     panel.hidden = true;
     panel.setAttribute('aria-label', '스킬 현황 확인');
     panel.innerHTML =
+      '<div class="skill-status-toolbar">' +
+        '<button type="button" id="skillStatusFilterToggle" class="skill-status-filter-toggle" aria-pressed="false">스킬레벨 필터</button>' +
+        '<label class="skill-status-filter-level-wrap" for="skillStatusFilterLevel"><span>기준 레벨</span>' +
+          '<select id="skillStatusFilterLevel" class="skill-status-filter-level" aria-label="스킬레벨 필터 기준 레벨">' +
+            Array.from({length:10}, function (_, index) { return '<option value="' + (index + 1) + '"' + (index === 9 ? ' selected' : '') + '>' + (index + 1) + '레벨</option>'; }).join('') +
+          '</select>' +
+        '</label>' +
+        '<span id="skillStatusFilterState" class="skill-status-filter-state">전체 보유 캐릭터 표시</span>' +
+      '</div>' +
       '<div class="skill-status-wrap">' +
         '<table class="skill-status-table">' +
           '<thead><tr><th style="width:52%">캐릭터</th><th>1스킬 레벨</th><th>2스킬 레벨</th><th>버스트 레벨</th></tr></thead>' +
@@ -157,19 +181,51 @@
     else main.appendChild(panel);
   }
 
+  function syncSkillFilterControls() {
+    const button = document.getElementById('skillStatusFilterToggle');
+    const level = document.getElementById('skillStatusFilterLevel');
+    const state = document.getElementById('skillStatusFilterState');
+    if (button) {
+      button.classList.toggle('active', skillFilterEnabled);
+      button.setAttribute('aria-pressed', String(skillFilterEnabled));
+      button.title = skillFilterEnabled
+        ? '스킬레벨 필터가 적용 중입니다. 눌러서 해제할 수 있습니다.'
+        : '1스킬, 2스킬, 버스트 중 하나라도 선택한 레벨 이상인 캐릭터만 표시합니다.';
+    }
+    if (level && String(level.value) !== String(skillFilterLevel)) level.value = String(skillFilterLevel);
+    if (state) state.textContent = skillFilterEnabled
+      ? skillFilterLevel + '레벨 이상 · 필터 적용 중'
+      : '전체 보유 캐릭터 표시';
+  }
+
+  function rowMeetsSkillThreshold(row) {
+    if (!skillFilterEnabled) return true;
+    const threshold = Number(skillFilterLevel) || 1;
+    return ['스킬1', '스킬2', '버스트스킬'].some(function (key) {
+      const value = Number(String(row && row[key] == null ? '' : row[key]).replace(/,/g, ''));
+      return Number.isFinite(value) && value >= threshold;
+    });
+  }
+
   function renderSkillStatus() {
     const body = document.getElementById('skillStatusBody');
     if (!body) return;
+    syncSkillFilterControls();
     const ownedRows = getOwnedRows();
     if (ownedRows === null) {
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">보유 목록을 확인할 수 없습니다. 먼저 현재 계정을 동기화한 뒤 확인해 주세요.</td></tr>';
       return;
     }
-    if (!ownedRows.length) {
-      body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">보유 캐릭터가 없습니다.</td></tr>';
+    const filteredRows = ownedRows.filter(rowMeetsSkillThreshold);
+    if (!filteredRows.length) {
+      body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">' +
+        (skillFilterEnabled
+          ? skillFilterLevel + '레벨 이상인 스킬이 있는 보유 캐릭터가 없습니다.'
+          : '보유 캐릭터가 없습니다.') +
+        '</td></tr>';
       return;
     }
-    body.innerHTML = ownedRows.map(function (row) {
+    body.innerHTML = filteredRows.map(function (row) {
       const name = String(row && row['이름'] || '').trim();
       const image = getImage(name);
       return '<tr>' +
@@ -286,6 +342,14 @@
     ensurePanel();
     ensureNavFallback();
     installNavigation();
+    document.getElementById('skillStatusFilterToggle')?.addEventListener('click', function () {
+      skillFilterEnabled = !skillFilterEnabled;
+      renderSkillStatus();
+    });
+    document.getElementById('skillStatusFilterLevel')?.addEventListener('change', function (event) {
+      skillFilterLevel = Math.max(1, Math.min(10, Number(event.target.value) || 10));
+      renderSkillStatus();
+    });
     installAccountRefresh();
   }
 
