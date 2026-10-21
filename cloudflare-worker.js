@@ -1069,6 +1069,19 @@ export default {
 
     const action = new URL(request.url).pathname.replace(/\/+$/,'') || '/';
 
+    // Read-only diagnostic endpoint to verify which Worker build is actually deployed.
+    if(action === '/version'){
+      if(request.method !== 'GET'){
+        return json({ok:false,message:'GET 요청만 사용할 수 있습니다.'}, 405);
+      }
+      return json({
+        ok:true,
+        worker_version:'skills-1.0.0',
+        skill_fields:['skill1','skill2','burstSkill'],
+        deployed_check:true
+      }, 200);
+    }
+
     // 캐릭터 아이콘은 GET으로 Worker가 BlaBlaLink CDN 이미지를 프록시합니다.
     if(action === '/character-icon'){
       if(request.method !== 'GET'){
