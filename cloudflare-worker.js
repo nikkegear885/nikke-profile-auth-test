@@ -973,6 +973,7 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
 
   return {
     ok:true,
+    worker_version:'skills-1.0.0',
     intl_open_id:intlOpenId,
     area_id:selected.area_id,
     nickname:profile.username || '',
