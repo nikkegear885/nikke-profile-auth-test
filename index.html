@@ -6657,21 +6657,11 @@ function createRandomTestAccount(){
 
   const mock=structuredClone(RAW);
   const unownedNames=[];
-  const ownedNames=[];
-  // Reuse the wishlist's saved random-account settings even when generation starts outside the wishlist dialog.
+  // TEST-SITE-ONLY generation settings are controlled by the sliders in the wishlist panel.
+  // The percentages remain independent from wishlist recommendation rules.
+  const randomRules=window.NIKKE_RANDOM_ACCOUNT_RULES || {};
   const clampRandomPercent=(value,fallback)=>Math.max(0,Math.min(100,Number.isFinite(Number(value))?Number(value):fallback));
-  const randomRules=window.NIKKE_RANDOM_ACCOUNT_RULES || (()=>{
-    let saved={};
-    try{saved=JSON.parse(localStorage.getItem('nikke_random_test_account_rules_v1')||'{}')||{};}catch(e){}
-    const one=clampRandomPercent(saved.breakthroughOneChance,25);
-    const two=Math.min(100-one,clampRandomPercent(saved.breakthroughTwoChance,10));
-    const three=Math.min(100-one-two,clampRandomPercent(saved.breakthroughThreeChance,5));
-    return {
-      ownedChance:clampRandomPercent(saved.ownedChance,60),
-      breakthroughWeights:{zero:Math.max(0,100-one-two-three),one,two,three}
-    };
-  })();
-  const ownedChance=clampRandomPercent(randomRules.ownedChance,60)/100;
+  const ownedChance=clampRandomPercent(randomRules.ownedChance,50)/100;
   const configuredWeights=randomRules.breakthroughWeights || {zero:60,one:25,two:10,three:5};
   const breakthroughOptions=[
     {value:0,weight:Math.max(0,Number(configuredWeights.zero)||0)},
@@ -6681,35 +6671,6 @@ function createRandomTestAccount(){
   ];
   if(!breakthroughOptions.some(item=>item.weight>0)) breakthroughOptions[0].weight=100;
   const parts=['머리','몸통','장갑','다리'];
-  const normalizeRandomName=value=>String(value==null?'':value)
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[\\s:：·•._'’“”"\\-–—()\\[\\]{}]/g,'');
-  const limitedRandomNames=new Set([
-    '2B','A2','렘','마키마','파워','레이','레이 (가칭)','아스카','아스카 : WILLE','마리','미사토',
-    '로산나 : 시크 오션','루드밀라 : 윈터 오너','루피 : 윈터 쇼퍼','디젤 : 윈터 스위츠',
-    '길로틴 : 윈터 슬레이어','네온 : 블루 오션','도로시 : 세렌디피티','메어리 : 베이 갓데스',
-    '메이든 : 아이스 로즈','미카 : 스노우 버디','브리드 : 사일런트 트랙','사쿠라 : 블룸 인 서머',
-    '아니스 : 스파클링 서머','헬름 : 아쿠아마린','마르차나 : 마린 스터디','신데렐라 : 크리스탈 웨이브',
-    '에밀리아','에이다','유키코','이브','일레그 : 붐 앤 쇼크','질','치사토','퀸(마코토)','타키나',
-    '레이븐','클레어','쿠루미','히메노','사쿠라 스즈하라'
-  ].map(normalizeRandomName));
-  const distributionRandomNames=new Set([
-    '앵커','네베','차임','킬로','파스칼','앤 : 미라클 페어리','아이기스','길티','신','퀀시',
-    '라푼젤:퓨어그레이스','람','릴리','모리','아비스타','니힐리스타',
-    '스노우 화이트 : 이노센트 데이즈','라이'
-  ].map(normalizeRandomName));
-  let randomIncludeOptions={includeLimited:true,includeDistribution:true};
-  try{
-    const savedOptions=JSON.parse(localStorage.getItem('nikke_stage_deck_random_account_options_v1')||'{}')||{};
-    randomIncludeOptions={
-      includeLimited:savedOptions.includeLimited!==false,
-      includeDistribution:savedOptions.includeDistribution!==false
-    };
-  }catch(e){}
-  const randomTypeExcluded=name=>
-    (!randomIncludeOptions.includeLimited&&limitedRandomNames.has(normalizeRandomName(name)))||
-    (!randomIncludeOptions.includeDistribution&&distributionRandomNames.has(normalizeRandomName(name)));
   let ownedCount=0;
   mock.forEach(row=>{
     const name=String(row&&row['이름']||'').trim();
@@ -6722,14 +6683,10 @@ function createRandomTestAccount(){
     if(name==='프리바티'||name==='앨리스'){
       owned=true;
     }
-    // The stage-deck options override random ownership for the selected character categories.
-    if(randomTypeExcluded(name)) owned=false;
 
     // Update ownership tracking only after character-specific overrides are applied.
     if(!owned)unownedNames.push(name);
-    else {ownedCount++;ownedNames.push(name);}
-    // Explicit ownership markers let stage-deck use the same roster as the wishlist.
-    row.__nikkeSyncedOwned=owned;
+    else ownedCount++;
 
     // All non-overridden breakthrough values follow the configured probability distribution.
     // The remaining probability is assigned to 0돌.
@@ -6760,7 +6717,6 @@ function createRandomTestAccount(){
     localStorage.setItem(ACCOUNT_SELECTION_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify([]));
     localStorage.setItem(ACCOUNT_UNUSED_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify([]));
     localStorage.setItem(ACCOUNT_UNOWNED_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify(unownedNames));
-    localStorage.setItem(ACCOUNT_SYNCED_OWNED_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify(ownedNames));
   }catch(e){
     alert('테스트 계정을 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
     return;
@@ -7233,7 +7189,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.024"></script><script src="pedia.js?v=1054"></script><script src="wishlist.js?v=3.08"></script><script src="stage-deck.js?v=1.413"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.024"></script><script src="pedia.js?v=1054"></script><script src="wishlist.js?v=3.08"></script><script src="stage-deck.js?v=1.414"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
