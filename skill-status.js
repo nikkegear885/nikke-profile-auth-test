@@ -11,7 +11,6 @@
   let initialized = false;
   let imageMap = {};
   let imageLoadPromise = null;
-  let skillFilterEnabled = false;
   let skillFilterLevel = 10;
   let skillSortKey = '';
   let skillSortDirection = 'desc';
@@ -144,11 +143,8 @@
       'body.skill-status-view #kpis{display:none!important}' +
       '#skillStatusPanel{margin:0 0 24px;padding:0 14px 24px;color:var(--text,#263449);min-width:0}' +
       '.skill-status-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:12px 14px;border:1px solid #d8e3ed;border-radius:12px;background:#fff}' +
-      '.skill-status-filter-toggle{min-height:38px;padding:0 14px;border:1px solid #bed0df;border-radius:9px;background:#f3f7fb;color:#37556e;font-size:12px;font-weight:900;cursor:pointer;transition:background .15s,border-color .15s,color .15s}' +
-      '.skill-status-filter-toggle.active{background:#176e9f;border-color:#176e9f;color:#fff;box-shadow:0 3px 8px rgba(23,110,159,.16)}' +
-      '.skill-status-filter-level-wrap{display:flex;align-items:center;gap:7px;color:#526b80;font-size:12px;font-weight:800}' +
-      '.skill-status-filter-level{height:36px;min-width:76px;padding:0 9px;border:1px solid #cbd9e5;border-radius:8px;background:#fff;color:#2e4356;font-size:12px;font-weight:900}' +
-      '.skill-status-filter-state{margin-left:auto;color:#718397;font-size:11px;font-weight:800}' +
+      '.skill-status-filter-description{display:inline-flex;align-items:center;gap:7px;color:#37556e;font-size:13px;font-weight:900;white-space:nowrap}' +
+      '.skill-status-filter-level{height:36px;min-width:78px;padding:0 9px;border:1px solid #b9d0e3;border-radius:8px;background:#f3f8fc;color:#2e5f82;font-size:13px;font-weight:900;cursor:pointer}' +
       '.skill-status-hide-manage-toggle{min-height:38px;padding:0 13px;border:1px solid #d4c4ed;border-radius:9px;background:#f8f3ff;color:#7654a7;font-size:12px;font-weight:900;cursor:pointer}' +
       '.skill-status-hide-manage-toggle.active{background:#7654a7;border-color:#7654a7;color:#fff}' +
       '.skill-status-restore-all-button{min-height:38px;padding:0 13px;border:1px solid #b8ddc5;border-radius:9px;background:#f2fbf5;color:#267344;font-size:12px;font-weight:900;cursor:pointer}' +
@@ -181,11 +177,8 @@
       'html.dark-theme .skill-status-sort-button:hover{color:#77c8f2}' +
       '.skill-status-empty{padding:24px 14px;text-align:center;color:#718397;font-size:13px;line-height:1.6}' +
       'html.dark-theme .skill-status-toolbar{background:#111e2c;border-color:#304356}' +
-      'html.dark-theme .skill-status-filter-toggle{background:#1b2b3c;border-color:#405469;color:#d5e2ef}' +
-      'html.dark-theme .skill-status-filter-toggle.active{background:#176e9f;border-color:#4ba9de;color:#fff}' +
-      'html.dark-theme .skill-status-filter-level-wrap{color:#b8cadb}' +
+      'html.dark-theme .skill-status-filter-description{color:#d5e2ef}' +
       'html.dark-theme .skill-status-filter-level{background:#152537;border-color:#405469;color:#e0eaf5}' +
-      'html.dark-theme .skill-status-filter-state{color:#95a9bd}' +
       'html.dark-theme .skill-status-wrap{background:#111e2c;border-color:#304356}' +
       'html.dark-theme .skill-status-table th{background:#1b2b3c;color:#b8cadb;border-color:#304356}' +
       'html.dark-theme .skill-status-table td{color:#dbe6f1;border-color:#2b3c4e}' +
@@ -202,18 +195,17 @@
     const panel = document.createElement('section');
     panel.id = PANEL_ID;
     panel.hidden = true;
-    panel.setAttribute('aria-label', '스킬 현황 확인');
+    panel.setAttribute('aria-label', '니케 스킬현황');
     panel.innerHTML =
       '<div class="skill-status-toolbar">' +
-        '<button type="button" id="skillStatusFilterToggle" class="skill-status-filter-toggle" aria-pressed="false">스킬레벨 필터</button>' +
-        '<label class="skill-status-filter-level-wrap" for="skillStatusFilterLevel"><span>기준 레벨</span>' +
-          '<select id="skillStatusFilterLevel" class="skill-status-filter-level" aria-label="스킬레벨 필터 기준 레벨">' +
+        '<label class="skill-status-filter-description" for="skillStatusFilterLevel">' +
+          '<select id="skillStatusFilterLevel" class="skill-status-filter-level" aria-label="필터 기준 스킬 레벨">' +
             Array.from({length:10}, function (_, index) { return '<option value="' + (index + 1) + '"' + (index === 9 ? ' selected' : '') + '>' + (index + 1) + '레벨</option>'; }).join('') +
           '</select>' +
+          '<span>이상 스킬인 니케만 보기</span>' +
         '</label>' +
         '<button type="button" id="skillStatusHideManageToggle" class="skill-status-hide-manage-toggle" aria-pressed="false">원하는 캐릭터 숨기기</button>' +
         '<button type="button" id="skillStatusRestoreAllButton" class="skill-status-restore-all-button">숨긴 캐릭터 취소하기</button>' +
-        '<span id="skillStatusFilterState" class="skill-status-filter-state">전체 보유 캐릭터 표시</span>' +
         '<span id="skillStatusHideState" class="skill-status-hide-state" aria-live="polite"></span>' +
       '</div>' +
       '<div class="skill-status-wrap">' +
@@ -289,20 +281,10 @@
   }
 
   function syncSkillFilterControls() {
-    const button = document.getElementById('skillStatusFilterToggle');
     const level = document.getElementById('skillStatusFilterLevel');
-    const state = document.getElementById('skillStatusFilterState');
-    if (button) {
-      button.classList.toggle('active', skillFilterEnabled);
-      button.setAttribute('aria-pressed', String(skillFilterEnabled));
-      button.title = skillFilterEnabled
-        ? '스킬레벨 필터가 적용 중입니다. 눌러서 해제할 수 있습니다.'
-        : '1스킬, 2스킬, 버스트 중 하나라도 선택한 레벨 이상인 캐릭터만 표시합니다.';
+    if (level && String(level.value) !== String(skillFilterLevel)) {
+      level.value = String(skillFilterLevel);
     }
-    if (level && String(level.value) !== String(skillFilterLevel)) level.value = String(skillFilterLevel);
-    if (state) state.textContent = skillFilterEnabled
-      ? skillFilterLevel + '레벨 이상 · 필터 적용 중'
-      : '전체 보유 캐릭터 표시';
   }
 
   function numericSkillLevel(row, key) {
@@ -344,7 +326,6 @@
   }
 
   function rowMeetsSkillThreshold(row) {
-    if (!skillFilterEnabled) return true;
     const threshold = Number(skillFilterLevel) || 1;
     return ['스킬1', '스킬2', '버스트스킬'].some(function (key) {
       const value = Number(String(row && row[key] == null ? '' : row[key]).replace(/,/g, ''));
@@ -394,11 +375,9 @@
 
     if (!filteredRows.length) {
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">' +
-        (skillFilterEnabled
-          ? skillFilterLevel + '레벨 이상인 스킬이 있는 보유 캐릭터가 없습니다.'
-          : (hiddenNames.size && !showHiddenCharacters
-            ? '표시할 캐릭터가 없습니다. 상단의 ‘원하는 캐릭터 숨기기’ 버튼을 눌러 숨긴 캐릭터를 표시할 수 있습니다.'
-            : '보유 캐릭터가 없습니다.')) +
+        (hiddenNames.size && !showHiddenCharacters
+          ? skillFilterLevel + '레벨 이상인 스킬이 있는 니케가 없습니다. 숨긴 캐릭터를 확인하려면 상단의 ‘원하는 캐릭터 숨기기’ 버튼을 눌러 주세요.'
+          : skillFilterLevel + '레벨 이상인 스킬을 가진 보유 니케가 없습니다.') +
         '</td></tr>';
       return;
     }
@@ -457,7 +436,7 @@
       button.classList.toggle('active', button.dataset.view === 'skillStatus');
     });
     const title = document.getElementById('pageTitle');
-    if (title) title.textContent = '스킬 현황 확인';
+    if (title) title.textContent = '니케 스킬현황';
     renderSkillStatus();
     loadImages().then(renderSkillStatus);
     try { if (typeof closeSidebar === 'function') closeSidebar(); } catch (_) {}
@@ -476,7 +455,7 @@
     button.type = 'button';
     button.className = 'main-view-nav';
     button.dataset.view = 'skillStatus';
-    button.textContent = '스킬 현황 확인';
+    button.textContent = '니케 스킬현황';
     button.addEventListener('click', function () {
       if (typeof window.switchMainView === 'function') window.switchMainView('skillStatus');
     });
@@ -541,10 +520,6 @@
     ensurePanel();
     ensureNavFallback();
     installNavigation();
-    document.getElementById('skillStatusFilterToggle')?.addEventListener('click', function () {
-      skillFilterEnabled = !skillFilterEnabled;
-      renderSkillStatus();
-    });
     document.getElementById('skillStatusFilterLevel')?.addEventListener('change', function (event) {
       skillFilterLevel = Math.max(1, Math.min(10, Number(event.target.value) || 10));
       renderSkillStatus();
