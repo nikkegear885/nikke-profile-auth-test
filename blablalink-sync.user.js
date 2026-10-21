@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.41
+// @version      1.0.42
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.41
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.41
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -512,11 +512,25 @@
           const j = await postJson(API.details, {
             intl_open_id: state.intlOpenId,
             nikke_area_id: Number(state.areaId),
-            name_codes: [code]
+            name_codes: [Number(code)]
           });
           if (String(j?.code ?? '') === '0' && Array.isArray(j?.data?.character_details)) {
             exact = j.data.character_details.find(item => String(item?.name_code ?? '').trim() === code) || null;
-            if (exact) break;
+            if (exact) {
+              console.info('[NIKKE GM] Single detail response skill fields', {
+                requestedCode: code,
+                requestedCodeType: typeof Number(code),
+                returnedCode: exact.name_code,
+                returnedCodeType: typeof exact.name_code,
+                directSkillFields: {
+                  skill1_lv: exact.skill1_lv,
+                  skill2_lv: exact.skill2_lv,
+                  ulti_skill_lv: exact.ulti_skill_lv
+                },
+                skillLikeKeys: Object.keys(exact).filter(key => /skill|ulti|burst/i.test(key)).slice(0, 30)
+              });
+              break;
+            }
             if (attempt === 1) {
               console.warn('[NIKKE GM] Single-character response did not contain requested code:', {
                 requestedCode: code,
@@ -546,7 +560,7 @@
           const j = await postJson(API.details, {
             intl_open_id: state.intlOpenId,
             nikke_area_id: Number(state.areaId),
-            name_codes: [code]
+            name_codes: [Number(code)]
           });
           if (String(j?.code ?? '') === '0' && Array.isArray(j?.data?.character_details)) {
             const exact = j.data.character_details.find(item => String(item?.name_code ?? '').trim() === code) || null;
