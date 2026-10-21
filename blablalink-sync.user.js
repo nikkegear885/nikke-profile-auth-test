@@ -2,9 +2,9 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.45
-// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.45
-// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.45
+// @version      1.0.46
+// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.46
+// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.46
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
 // @author       NIKKE Gear Manager
 // @match        https://*.blablalink.com/*
@@ -16,7 +16,7 @@
 (function(){
   'use strict';
 
-  const NIKKE_GM_SCRIPT_VERSION = '1.0.45';
+  const NIKKE_GM_SCRIPT_VERSION = '1.0.46';
   console.info('[NIKKE GM] Userscript loaded', {
     version: NIKKE_GM_SCRIPT_VERSION,
     host: location.hostname,
@@ -755,26 +755,20 @@
       const singleComplete = hasCompleteSkillData(single);
       const singleAllOnes = singleComplete && allSkillsAreOne(single);
       const singleAllTens = singleComplete && allSkillsAreTen(single);
-      if (suspiciousAllOnes && (!singleComplete || singleAllOnes)) {
+      if (!singleComplete) {
         detail.__nikkeSkillLevelsUnverified = true;
-        console.warn('[NIKKE GM] Skill levels remain 1/1/1 after independent retries; setting skills unknown instead of trusting a possible default:', {
-          name_code: code, batchSkills, singleSkills, singleComplete, singleAllOnes
+        console.warn('[NIKKE GM] Per-character detail response did not contain all three skill levels; setting skills unknown:', {
+          name_code: code, batchSkills, singleSkills, batchComplete: complete
         });
         continue;
       }
-      // A repeated 10/10/10 response is indistinguishable from a bad/default payload here.
-      // Prefer an unknown marker over displaying a likely false maxed-out value.
-      if (singleAllTens || (suspiciousAllTens && !singleComplete)) {
-        detail.__nikkeSkillLevelsUnverified = true;
-        console.warn('[NIKKE GM] Skill levels remain unverified after individual lookup; setting skills unknown:', {
-          name_code: code, batchSkills, singleSkills, singleComplete, singleAllTens
-        });
-        continue;
+      // The exact name_code single-character endpoint is authoritative. Do not discard
+      // complete 1/1/1 or 10/10/10 values merely because those values look unusual.
+      const trustSingleValues = true;
+      for (let i=0;i<SKILL_FIELD_GROUPS.length;i++) {
+        detail[SKILL_FIELD_GROUPS[i].target] = singleSkills[i];
       }
-      // If the batch response was incomplete, trust the exact-code single response for all
-      // fields it actually contains, not just the fields missing from the batch.
-      const trustSingleValues = !complete || suspiciousAllOnes || suspiciousAllTens;
-      mergeMissingSkillData(detail, single, trustSingleValues);
+      delete detail.__nikkeSkillLevelsUnverified;
 
       if (['5148','5007','5101','5011'].includes(code) || suspiciousAllOnes || suspiciousAllTens || !complete) {
         console.info('[NIKKE GM] Individual skill verification', {
@@ -785,6 +779,7 @@
           suspiciousAllOnes,
           suspiciousAllTens,
           singleAllOnes,
+          singleAllTens,
           trustSingleValues,
           mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
         });
@@ -932,6 +927,7 @@
           token,
           payload:{
             ok:true,
+            scriptVersion:NIKKE_GM_SCRIPT_VERSION,
             nickname:state.nickname,
             areaId:state.areaId,
             characterCount:actualCharacterCount,
