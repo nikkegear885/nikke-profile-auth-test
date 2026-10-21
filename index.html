@@ -4904,6 +4904,38 @@ function normalizeSyncNumber(v){
 function openBlablalinkSyncGuide(){const m=document.getElementById('blsyncModal');if(m)m.hidden=false}
 function closeBlablalinkSyncGuide(){const m=document.getElementById('blsyncModal');if(m)m.hidden=true}
 function setBlSyncStatus(t){const el=document.getElementById('blsyncStatus');if(el)el.textContent=t||''}
+function clearAccountSkillsBeforeSync(targetAccount){
+  const account=ACCOUNTS.includes(targetAccount)?targetAccount:activeAccount;
+  const targetData=account===activeAccount?data:readAccountData(account);
+  if(!Array.isArray(targetData))throw new Error('계정 데이터를 읽지 못했습니다.');
+  let cleared=0;
+  for(const row of targetData){
+    if(!row||typeof row!=='object')continue;
+    for(const key of ['스킬1','스킬2','버스트스킬']){
+      if(row[key]!==null&&row[key]!==undefined&&row[key]!==''){
+        row[key]=null;
+        cleared++;
+      }
+    }
+  }
+  try{
+    localStorage.setItem(accountStorageKey(ACCOUNT_STORAGE_PREFIX,account),JSON.stringify(targetData));
+  }catch(error){
+    console.warn('[NIKKE GM] Could not clear account skills before sync',account,error);
+    throw new Error('기존 스킬 정보를 초기화하지 못했습니다. 브라우저 저장 공간을 확인해주세요.');
+  }
+  if(account===activeAccount){
+    data=targetData;
+    renderTable();
+    renderKpis();
+    if(typeof window.__NIKKE_GM_REFRESH_SKILL_STATUS__==='function'){
+      window.__NIKKE_GM_REFRESH_SKILL_STATUS__(account);
+    }
+  }
+  console.info('[NIKKE GM] Skill values cleared before sync',{targetAccount:account,cleared});
+  return cleared;
+}
+
 function startBlablalinkSync(targetAccount){
   // 버튼으로 지정한 계정을 동기화 대상으로 고정합니다. 현재 화면에서 선택한 계정과 무관합니다.
   blSyncAccount=ACCOUNTS.includes(targetAccount)?targetAccount:activeAccount;
@@ -4911,7 +4943,16 @@ function startBlablalinkSync(targetAccount){
   blSyncToken=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(36).slice(2));
   blSyncPopup=window.open('https://www.blablalink.com/','nikkeBlablalinkSync','width=520,height=760,resizable=yes,scrollbars=yes');
   if(!blSyncPopup){setBlSyncStatus('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 시도하세요.');return}
-  setBlSyncStatus('BlablaLink 창이 열렸습니다. 로그인 상태를 확인한 뒤 자동 동기화를 기다리세요.');
+  let clearedSkillCount=0;
+  try{
+    clearedSkillCount=clearAccountSkillsBeforeSync(blSyncAccount);
+  }catch(error){
+    setBlSyncStatus(String(error&&error.message||'기존 스킬 정보를 초기화하지 못했습니다.'));
+    try{blSyncPopup.close()}catch(_){}
+    blSyncPopup=null;
+    return;
+  }
+  setBlSyncStatus('기존 스킬 정보 '+clearedSkillCount+'개 초기화 완료 · 새 스킬 데이터를 불러오는 중…');
   if(blSyncTimer)clearInterval(blSyncTimer);
   blSyncTimer=setInterval(()=>{
     try{
