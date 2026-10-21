@@ -6657,11 +6657,21 @@ function createRandomTestAccount(){
 
   const mock=structuredClone(RAW);
   const unownedNames=[];
-  // TEST-SITE-ONLY generation settings are controlled by the sliders in the wishlist panel.
-  // The percentages remain independent from wishlist recommendation rules.
-  const randomRules=window.NIKKE_RANDOM_ACCOUNT_RULES || {};
+  const ownedNames=[];
+  // Reuse the wishlist's saved random-account settings even when generation starts outside the wishlist dialog.
   const clampRandomPercent=(value,fallback)=>Math.max(0,Math.min(100,Number.isFinite(Number(value))?Number(value):fallback));
-  const ownedChance=clampRandomPercent(randomRules.ownedChance,50)/100;
+  const randomRules=window.NIKKE_RANDOM_ACCOUNT_RULES || (()=>{
+    let saved={};
+    try{saved=JSON.parse(localStorage.getItem('nikke_random_test_account_rules_v1')||'{}')||{};}catch(e){}
+    const one=clampRandomPercent(saved.breakthroughOneChance,25);
+    const two=Math.min(100-one,clampRandomPercent(saved.breakthroughTwoChance,10));
+    const three=Math.min(100-one-two,clampRandomPercent(saved.breakthroughThreeChance,5));
+    return {
+      ownedChance:clampRandomPercent(saved.ownedChance,60),
+      breakthroughWeights:{zero:Math.max(0,100-one-two-three),one,two,three}
+    };
+  })();
+  const ownedChance=clampRandomPercent(randomRules.ownedChance,60)/100;
   const configuredWeights=randomRules.breakthroughWeights || {zero:60,one:25,two:10,three:5};
   const breakthroughOptions=[
     {value:0,weight:Math.max(0,Number(configuredWeights.zero)||0)},
@@ -6686,7 +6696,9 @@ function createRandomTestAccount(){
 
     // Update ownership tracking only after character-specific overrides are applied.
     if(!owned)unownedNames.push(name);
-    else ownedCount++;
+    else {ownedCount++;ownedNames.push(name);}
+    // Explicit ownership markers let stage-deck use the same roster as the wishlist.
+    row.__nikkeSyncedOwned=owned;
 
     // All non-overridden breakthrough values follow the configured probability distribution.
     // The remaining probability is assigned to 0돌.
@@ -6717,6 +6729,7 @@ function createRandomTestAccount(){
     localStorage.setItem(ACCOUNT_SELECTION_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify([]));
     localStorage.setItem(ACCOUNT_UNUSED_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify([]));
     localStorage.setItem(ACCOUNT_UNOWNED_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify(unownedNames));
+    localStorage.setItem(ACCOUNT_SYNCED_OWNED_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME),JSON.stringify(ownedNames));
   }catch(e){
     alert('테스트 계정을 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
     return;
