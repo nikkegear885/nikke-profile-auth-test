@@ -2,9 +2,9 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.43
-// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.43
-// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.43
+// @version      1.0.44
+// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.44
+// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.44
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
 // @author       NIKKE Gear Manager
 // @match        https://*.blablalink.com/*
@@ -16,7 +16,7 @@
 (function(){
   'use strict';
 
-  const NIKKE_GM_SCRIPT_VERSION = '1.0.43';
+  const NIKKE_GM_SCRIPT_VERSION = '1.0.44';
   console.info('[NIKKE GM] Userscript loaded', {
     version: NIKKE_GM_SCRIPT_VERSION,
     host: location.hostname,
@@ -426,20 +426,49 @@
     for (const key of keys) {
       if (numeric(char[key])) return char[key];
     }
-    // Some BlablaLink responses expose skill levels as top-level skill1/skill2/burstSkill.
-    // Accept these aliases only at the character object's top level to avoid matching
-    // unrelated nested metadata with the same generic key.
+    const normalizeKey = key => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+    // Some responses put the three levels in an array or numbered dictionary instead
+    // of skill1_lv / skill2_lv / ulti_skill_lv fields.
+    const normalizedKeys = keys.map(normalizeKey);
+    let skillIndex = null;
+    if (normalizedKeys.some(key => /^(skill1|skill1lv|skill1level|skilllevel1|skilllv1|s1|s1lv|normalskill1lv)$/.test(key))) skillIndex = 0;
+    else if (normalizedKeys.some(key => /^(skill2|skill2lv|skill2level|skilllevel2|skilllv2|s2|s2lv|normalskill2lv)$/.test(key))) skillIndex = 1;
+    else if (normalizedKeys.some(key => /^(skill3|skill3lv|skill3level|skilllevel3|skilllv3|s3|s3lv|ultiskilllv|ultimateskilllv|burstskill|burstskilllv|burstskilllevel|burstlv)$/.test(key))) skillIndex = 2;
+    if (skillIndex !== null) {
+      const containers = ['skill_levels','skillLevels','skill_level_list','skillLevelList','skillLevelsList','skills','skill_info','skillInfo'];
+      for (const containerKey of containers) {
+        const container = char[containerKey];
+        if (Array.isArray(container)) {
+          const entry = container[skillIndex];
+          if (numeric(entry)) return entry;
+          if (entry && typeof entry === 'object') {
+            for (const levelKey of ['level','skill_level','skillLevel','skill_lv','skillLv','lv','value']) {
+              if (numeric(entry[levelKey])) return entry[levelKey];
+            }
+          }
+        } else if (container && typeof container === 'object') {
+          const n = skillIndex + 1;
+          for (const candidate of [String(skillIndex), String(n), 'skill'+n, 'skill_'+n, 'skill'+n+'_lv', 'skill_'+n+'_lv']) {
+            if (numeric(container[candidate])) return container[candidate];
+            const entry = container[candidate];
+            if (entry && typeof entry === 'object') {
+              for (const levelKey of ['level','skill_level','skillLevel','skill_lv','skillLv','lv','value']) {
+                if (numeric(entry[levelKey])) return entry[levelKey];
+              }
+            }
+          }
+        }
+      }
+    }
+    // Generic aliases are accepted only at the character object's top level, avoiding
+    // unrelated nested metadata with the same names.
     const genericAliases = new Set(['skill1', 'skill2', 'skill3', 'burstskill']);
-    const wantedDirect = new Set(keys
-      .map(key => String(key).toLowerCase().replace(/[^a-z0-9]/g, ''))
-      .filter(key => genericAliases.has(key)));
+    const wantedDirect = new Set(normalizedKeys.filter(key => genericAliases.has(key)));
     for (const [key, value] of Object.entries(char)) {
-      const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const normalizedKey = normalizeKey(key);
       if (wantedDirect.has(normalizedKey) && numeric(value)) return value;
     }
-    const wanted = new Set(keys
-      .map(key => String(key).toLowerCase().replace(/[^a-z0-9]/g, ''))
-      .filter(key => !genericAliases.has(key)));
+    const wanted = new Set(normalizedKeys.filter(key => !genericAliases.has(key)));
     const seen = new Set();
     function visit(value, depth) {
       if (!value || typeof value !== 'object' || depth > 5 || seen.has(value)) return null;
@@ -460,10 +489,50 @@
   }
 
   const SKILL_FIELD_GROUPS = [
-    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level','skill1']},
-    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level','skill2']},
-    {target:'ulti_skill_lv', keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','ultiSkillLv','burstSkill']}
+    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level','skill1','skill_1','s1_lv','s1']},
+    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level','skill2','skill_2','s2_lv','s2']},
+    {target:'ulti_skill_lv', keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','burstSkillLevel','ultiSkillLv','burstSkill','burst_skill','skill3','skill_3','s3_lv','s3','ultimate_level','burst_level']}
   ];
+
+  function mergeSkillLevelsFromRoster(details, roster) {
+    const rosterByCode = new Map(
+      (Array.isArray(roster) ? roster : [])
+        .map(row => [String(row?.name_code ?? '').trim(), row])
+        .filter(([code]) => Boolean(code))
+    );
+    let mergedRows = 0;
+    for (const detail of Array.isArray(details) ? details : []) {
+      const code = String(detail?.name_code ?? '').trim();
+      const source = rosterByCode.get(code);
+      if (!source) continue;
+      const incoming = SKILL_FIELD_GROUPS.map(group => skillFieldValue(source, group.keys));
+      const available = incoming.filter(value => value !== null);
+      if (!available.length) continue;
+      // Roster-level values can fill missing data, but a repeated 1/1/1 or 10/10/10
+      // placeholder is not treated as proof that the levels were actually returned.
+      const complete = available.length === SKILL_FIELD_GROUPS.length;
+      const allOnes = complete && incoming.every(value => Number(value) === 1);
+      const allTens = complete && incoming.every(value => Number(value) === 10);
+      if (allOnes || allTens) continue;
+      let changed = false;
+      for (let i = 0; i < SKILL_FIELD_GROUPS.length; i++) {
+        const value = incoming[i];
+        if (value === null) continue;
+        const current = skillFieldValue(detail, SKILL_FIELD_GROUPS[i].keys);
+        if (current === null || detail.__nikkeSkillLevelsUnverified === true) {
+          detail[SKILL_FIELD_GROUPS[i].target] = value;
+          changed = true;
+        }
+      }
+      if (changed) {
+        if (hasCompleteSkillData(detail) && !allSkillsAreOne(detail) && !allSkillsAreTen(detail)) {
+          delete detail.__nikkeSkillLevelsUnverified;
+        }
+        mergedRows++;
+      }
+    }
+    return mergedRows;
+  }
 
   function hasCompleteSkillData(char) {
     return SKILL_FIELD_GROUPS.every(group => skillFieldValue(char, group.keys) !== null);
@@ -827,6 +896,8 @@
         ? 'NIKKE Gear Manager: 선택 지역의 보유 니케 상세 정보를 조회 중…'
         : 'NIKKE Gear Manager: 장비 기업 정보를 조회 중… ('+codes.length+'명)');
       const details = await fetchDetails(codes);
+      const rosterSkillRowsMerged = mergeSkillLevelsFromRoster(details, chars);
+      console.info('[NIKKE GM] Skill levels recovered from roster endpoint', {rosterSkillRowsMerged});
       const {updates, unresolved} = makeUpdates(details);
       console.info('[NIKKE GM] Skill extraction summary', {
         rosterCodes: codes.length,
