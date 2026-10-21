@@ -533,9 +533,9 @@
       }
       const gradeRaw = char?.grade;
       const coreRaw = char?.core;
-      const skill1Raw = char?.skill1_lv ?? char?.skill_1_lv ?? char?.skill1_level;
-      const skill2Raw = char?.skill2_lv ?? char?.skill_2_lv ?? char?.skill2_level;
-      const burstSkillRaw = char?.ulti_skill_lv ?? char?.skill3_lv ?? char?.skill_3_lv ?? char?.burst_lv ?? char?.skill_burst_level;
+      const skill1Raw = skillFieldValue(char, SKILL_FIELD_GROUPS[0].keys);
+      const skill2Raw = skillFieldValue(char, SKILL_FIELD_GROUPS[1].keys);
+      const burstSkillRaw = skillFieldValue(char, SKILL_FIELD_GROUPS[2].keys);
       const asOptionalNumber = value => {
         if (value===undefined || value===null || value==='') return null;
         const number = Number(value);
