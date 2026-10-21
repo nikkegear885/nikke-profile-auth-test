@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.31
+// @version      1.0.32
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -411,10 +411,40 @@
     return fallbackCharacters;
   }
 
+    function skillFieldValue(char, keys) {
+    if (!char || typeof char !== 'object') return null;
+    for (const key of keys) {
+      const value = char[key];
+      if (value !== undefined && value !== null && String(value).trim() !== '' && Number.isFinite(Number(value))) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  const SKILL_FIELD_GROUPS = [
+    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill1Level','skill1']},
+    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill2Level','skill2']},
+    {target:'ulti_skill_lv', keys:['ulti_skill_lv','skill3_lv','skill_3_lv','burst_lv','skill_burst_level','burstSkill','ultiSkillLv']}
+  ];
+
+  function hasCompleteSkillData(char) {
+    return SKILL_FIELD_GROUPS.every(group => skillFieldValue(char, group.keys) !== null);
+  }
+
+  function mergeMissingSkillData(target, source) {
+    if (!target || !source) return;
+    for (const group of SKILL_FIELD_GROUPS) {
+      if (skillFieldValue(target, group.keys) !== null) continue;
+      const value = skillFieldValue(source, group.keys);
+      if (value !== null) target[group.target] = value;
+    }
+  }
+
   async function fetchDetails(codes){
     const clean = Array.from(new Set(codes.map(v => String(v)).filter(Boolean)));
     const chunks = [];
-    // API가 한 번에 거부하는 경우를 대비해 40개씩 나눕니다.
+    // 상세 API는 여러 name_code를 묶었을 때 스킬 필드가 누락되는 경우가 있어 40개씩 조회 후 검증합니다.
     for(let i=0;i<clean.length;i+=40) chunks.push(clean.slice(i,i+40));
     const out = [];
     for(const chunk of chunks){
@@ -429,7 +459,6 @@
           if (String(j?.code ?? '') === '0'){
             if (Array.isArray(j?.data?.character_details)) {
               out.push(...j.data.character_details);
-              // 실제 BlablaLink 응답 구조 확인을 위해 첫 상세 응답을 콘솔에 남깁니다.
               if (out.length <= 2) console.log('[NIKKE GM] GetUserCharacterDetails sample:', j.data.character_details[0]);
             }
             ok = true;
@@ -443,6 +472,36 @@
       }
       await delay(120);
     }
+
+    // 묶음 조회 결과에 스킬 레벨이 빠진 캐릭터만 단일 name_code로 재조회합니다.
+    // 정상 응답은 그대로 사용하므로 API 호출량을 불필요하게 늘리지 않습니다.
+    for (const detail of out) {
+      if (hasCompleteSkillData(detail)) continue;
+      const code = String(detail?.name_code ?? '').trim();
+      if (!code) continue;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const j = await postJson(API.details, {
+            intl_open_id: state.intlOpenId,
+            nikke_area_id: Number(state.areaId),
+            name_codes: [code]
+          });
+          if (String(j?.code ?? '') === '0' && Array.isArray(j?.data?.character_details)) {
+            const single = j.data.character_details.find(item => String(item?.name_code ?? '') === code)
+              || j.data.character_details[0];
+            if (single) mergeMissingSkillData(detail, single);
+            break;
+          }
+          if (attempt === 1) console.warn('[NIKKE GM] Single-character skill retry returned no data:', code, j?.message || j?.msg || j?.code);
+        } catch (error) {
+          if (attempt === 1) console.warn('[NIKKE GM] Single-character skill retry failed:', code, error);
+          else await delay(250);
+        }
+      }
+      await delay(100);
+    }
+    const completeSkills = out.filter(hasCompleteSkillData).length;
+    console.log('[NIKKE GM] Skill fields verified:', completeSkills + '/' + out.length);
     return out;
   }
 
