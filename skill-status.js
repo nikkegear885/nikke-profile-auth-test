@@ -330,6 +330,61 @@
     }
   }
 
+  function rowMatchesMetadataFilters(row) {
+    const categories = [['element','속성'],['burst','버스트'],['company','기업'],['weapon','무기']];
+    return categories.every(function (pair) {
+      const selected = skillMetadataFilters[pair[0]];
+      if (!selected || selected.size === 0) return true;
+      const value = String(row && row[pair[1]] != null ? row[pair[1]] : '').trim();
+      return selected.has(value);
+    });
+  }
+  function hasActiveMetadataFilters() {
+    return Object.keys(skillMetadataFilters).some(function (key) { return skillMetadataFilters[key].size > 0; });
+  }
+  function renderSkillFilterOptions(rows) {
+    Object.keys(SKILL_FILTER_DEFINITIONS).forEach(function (group) {
+      const def = SKILL_FILTER_DEFINITIONS[group];
+      const hostId = group === 'burst' ? 'skillStatusBurstOptions' : group === 'company' ? 'skillStatusCompanyOptions' : 'skillStatusWeaponOptions';
+      const host = document.getElementById(hostId);
+      const details = document.querySelector('[data-skill-filter-dropdown="' + group + '"]');
+      if (!host || !details) return;
+      const selected = skillMetadataFilters[group];
+      const present = new Set((rows || []).map(function (row) { return String(row && row[def.key] != null ? row[def.key] : '').trim(); }).filter(Boolean));
+      const values = def.order.filter(function (value) { return present.has(value); }).concat([...present].filter(function (value) { return !def.order.includes(value); }).sort(function (a,b) { return a.localeCompare(b,'ko'); }));
+      const summary = details.querySelector('summary');
+      if (summary) summary.innerHTML = escapeHtml(def.label) + (selected.size ? ' (' + selected.size + ')' : '') + ' <span aria-hidden="true">▾</span>';
+      host.innerHTML = values.map(function (value) { return '<label class="skill-status-filter-option"><input type="checkbox" data-skill-filter-group="' + escapeHtml(group) + '" value="' + escapeHtml(value) + '"' + (selected.has(value) ? ' checked' : '') + '> <span>' + escapeHtml(value) + '</span></label>'; }).join('') || '<span class="skill-status-filter-option">선택 가능한 항목 없음</span>';
+    });
+    document.querySelectorAll('[data-skill-element-filter]').forEach(function (button) {
+      const value = String(button.dataset.skillElementFilter || '').trim();
+      const selected = skillMetadataFilters.element;
+      button.classList.toggle('active', value ? selected.has(value) : selected.size === 0);
+      button.setAttribute('aria-pressed', String(value ? selected.has(value) : selected.size === 0));
+    });
+  }
+  function handleSkillFilterBarClick(event) {
+    const elementButton = event.target.closest('[data-skill-element-filter]');
+    if (elementButton) {
+      const value = String(elementButton.dataset.skillElementFilter || '').trim();
+      const selected = skillMetadataFilters.element;
+      if (!value) selected.clear(); else if (selected.has(value)) selected.delete(value); else selected.add(value);
+      renderSkillStatus(); return;
+    }
+    if (event.target.closest('#skillStatusClearFilters')) {
+      Object.keys(skillMetadataFilters).forEach(function (key) { skillMetadataFilters[key].clear(); });
+      renderSkillStatus();
+    }
+  }
+  function handleSkillFilterBarChange(event) {
+    const checkbox = event.target.closest('input[data-skill-filter-group]');
+    if (!checkbox) return;
+    const selected = skillMetadataFilters[checkbox.dataset.skillFilterGroup];
+    if (!selected) return;
+    if (checkbox.checked) selected.add(checkbox.value); else selected.delete(checkbox.value);
+    renderSkillStatus();
+  }
+
   function numericSkillLevel(row, key) {
     const raw = row && row[key] != null ? String(row[key]).replace(/,/g, '').trim() : '';
     if (!raw) return -1;
@@ -384,17 +439,20 @@
     syncSkillFilterControls();
     const ownedRows = hasExplicitAccount ? getOwnedRows(account) : getOwnedRows();
     if (ownedRows === null) {
+      renderSkillFilterOptions([]);
       syncHideManagementControls(getHiddenCharacters().size);
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">보유 목록을 확인할 수 없습니다. 먼저 현재 계정을 동기화한 뒤 확인해 주세요.</td></tr>';
       return;
     }
 
+    renderSkillFilterOptions(ownedRows);
     const hiddenNames = getHiddenCharacters();
     syncHideManagementControls(hiddenNames.size);
     // Each row can be hidden or restored at any time. The toolbar button only controls
     // whether rows marked as hidden are included in the visible list.
     const filteredRows = ownedRows.filter(function (row) {
       return rowMeetsSkillThreshold(row) &&
+        rowMatchesMetadataFilters(row) &&
         (showHiddenCharacters || !hiddenNames.has(normalizeName(row && row['이름'])));
     });
 
@@ -418,9 +476,11 @@
 
     if (!filteredRows.length) {
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">' +
-        (hiddenNames.size && !showHiddenCharacters
-          ? skillFilterLevel + '레벨 이상인 스킬이 있는 니케가 없습니다. 숨긴 캐릭터를 확인하려면 상단의 ‘원하는 캐릭터 숨기기’ 버튼을 눌러 주세요.'
-          : skillFilterLevel + '레벨 이상인 스킬을 가진 보유 니케가 없습니다.') +
+        (hasActiveMetadataFilters()
+          ? '선택한 필터와 스킬 레벨 조건에 맞는 보유 니케가 없습니다.'
+          : (hiddenNames.size && !showHiddenCharacters
+            ? skillFilterLevel + '레벨 이상인 스킬이 있는 니케가 없습니다. 숨긴 캐릭터를 확인하려면 상단의 ‘원하는 캐릭터 숨기기’ 버튼을 눌러 주세요.'
+            : skillFilterLevel + '레벨 이상인 스킬을 가진 보유 니케가 없습니다.')) +
         '</td></tr>';
       return;
     }
@@ -567,6 +627,8 @@
       skillFilterLevel = Math.max(1, Math.min(10, Number(event.target.value) || 10));
       renderSkillStatus();
     });
+    document.getElementById('skillStatusFilterBar')?.addEventListener('click', handleSkillFilterBarClick);
+    document.getElementById('skillStatusFilterBar')?.addEventListener('change', handleSkillFilterBarChange);
     document.getElementById('skillStatusHideManageToggle')?.addEventListener('click', function () {
       showHiddenCharacters = !showHiddenCharacters;
       renderSkillStatus();
