@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.36
+// @version      1.0.37
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -566,12 +566,26 @@
       const single = await fetchSingleExact(code);
       if (!single) {
         if (suspiciousAllOnes) console.warn('[NIKKE GM] 1/1/1 skill row could not be independently verified:', code);
-        if (suspiciousAllTens) console.warn('[NIKKE GM] 10/10/10 skill row could not be independently verified:', code);
+        if (suspiciousAllTens) {
+          detail.__nikkeSkillLevelsUnverified = true;
+          console.warn('[NIKKE GM] 10/10/10 skill row has no independent response; setting skills unknown:', code);
+        }
         continue;
       }
 
       const batchSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys));
       const singleSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys));
+      const singleComplete = hasCompleteSkillData(single);
+      const singleAllTens = singleComplete && allSkillsAreTen(single);
+      // A repeated 10/10/10 response is indistinguishable from a bad/default payload here.
+      // Prefer an unknown marker over displaying a likely false maxed-out value.
+      if (singleAllTens || (suspiciousAllTens && !singleComplete)) {
+        detail.__nikkeSkillLevelsUnverified = true;
+        console.warn('[NIKKE GM] Skill levels remain unverified after individual lookup; setting skills unknown:', {
+          name_code: code, batchSkills, singleSkills, singleComplete, singleAllTens
+        });
+        continue;
+      }
       // If the batch response was incomplete, trust the exact-code single response for all
       // fields it actually contains, not just the fields missing from the batch.
       const trustSingleValues = !complete || suspiciousAllOnes || suspiciousAllTens;
@@ -595,6 +609,7 @@
     const completeSkills = out.filter(hasCompleteSkillData).length;
     const allOnes = out.filter(allSkillsAreOne).length;
     const allTens = out.filter(allSkillsAreTen).length;
+    const unverifiedSkillRows = out.filter(char => char?.__nikkeSkillLevelsUnverified === true).length;
     const missingCodes = clean.filter(code => !byCode.has(code));
     console.log('[NIKKE GM] Skill/detail verification summary:', {
       requested: clean.length,
@@ -602,6 +617,7 @@
       completeSkills,
       stillAllOnes: allOnes,
       stillAllTens: allTens,
+      unverifiedSkillRows,
       missingCodes: missingCodes.map(code => ({code, name: BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || ''}))
     });
     return out;
@@ -635,9 +651,10 @@
       }
       const gradeRaw = char?.grade;
       const coreRaw = char?.core;
-      const skill1Raw = skillFieldValue(char, SKILL_FIELD_GROUPS[0].keys);
-      const skill2Raw = skillFieldValue(char, SKILL_FIELD_GROUPS[1].keys);
-      const burstSkillRaw = skillFieldValue(char, SKILL_FIELD_GROUPS[2].keys);
+      const skillLevelsVerified = char?.__nikkeSkillLevelsUnverified !== true;
+      const skill1Raw = skillLevelsVerified ? skillFieldValue(char, SKILL_FIELD_GROUPS[0].keys) : null;
+      const skill2Raw = skillLevelsVerified ? skillFieldValue(char, SKILL_FIELD_GROUPS[1].keys) : null;
+      const burstSkillRaw = skillLevelsVerified ? skillFieldValue(char, SKILL_FIELD_GROUPS[2].keys) : null;
       const asOptionalNumber = value => {
         if (value===undefined || value===null || value==='') return null;
         const number = Number(value);
