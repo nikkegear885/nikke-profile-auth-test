@@ -4937,7 +4937,7 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   );
   const normalizeRosterName=name=>String(name??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g,'');
   const byName=new Map(targetData.map((r,i)=>[normalizeRosterName(r?.['이름']),i]));
-  let matched=0,changed=0;
+  let matched=0,changed=0,skillDataCount=0;
   const syncedIndices=new Set();
   for(const u of Array.isArray(p.updates)?p.updates:[]){
     const idx=byName.get(normalizeRosterName(u?.name));
@@ -4977,6 +4977,24 @@ function applyBlablalinkSyncPayload(p,targetAccount){
       const value=Math.max(0,Math.min(7,Math.floor(core)));
       if(num(r['코강'])!==value){r['코강']=value;changed++}
     }
+
+    // Skill levels are supplied by GetUserCharacterDetails. Accept both the sync script's
+    // normalized keys and the raw API field names used by other sync providers.
+    const skillValues=[
+      ['스킬1',u?.skill1 ?? u?.skill1_lv ?? u?.skill_1_lv ?? u?.skill1_level ?? u?.skill1Level ?? u?.skill_levels?.['1'] ?? u?.skill_levels?.[0]],
+      ['스킬2',u?.skill2 ?? u?.skill2_lv ?? u?.skill_2_lv ?? u?.skill2_level ?? u?.skill2Level ?? u?.skill_levels?.['2'] ?? u?.skill_levels?.[1]],
+      ['버스트스킬',u?.burstSkill ?? u?.burst_skill ?? u?.ulti_skill_lv ?? u?.skill3_lv ?? u?.skill_3_lv ?? u?.skill_burst_level ?? u?.burst_lv ?? u?.skill_levels?.['3'] ?? u?.skill_levels?.[2]]
+    ];
+    let hasSkillData=false;
+    for(const [key,rawSkill] of skillValues){
+      if(rawSkill===undefined || rawSkill===null || rawSkill==='')continue;
+      const skill=normalizeSyncNumber(rawSkill);
+      if(skill===null)continue;
+      const value=Math.max(0,Math.min(10,Math.floor(skill)));
+      hasSkillData=true;
+      if(num(r[key])!==value){r[key]=value;changed++}
+    }
+    if(hasSkillData)skillDataCount++;
   }
   // The full roster is authoritative; details-only rows are not a substitute when ownedNames exists.
   const rosterNames = Array.isArray(p.ownedNames)
@@ -5084,7 +5102,7 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   try{
     localStorage.setItem('nikkeBlSyncMeta_'+encodeURIComponent(syncAccount),JSON.stringify({
       at:new Date().toISOString(),account:syncAccount,nickname:p.nickname||'',areaId:p.areaId||null,
-      detailCount:p.detailCount||0,matched,changed,unresolved:(p.unresolved||[]).length
+      detailCount:p.detailCount||0,matched,changed,skillDataCount,unresolved:(p.unresolved||[]).length
     }));
   }catch(_){}
   // 동기화한 계정을 즉시 화면에도 표시합니다.
@@ -5097,7 +5115,7 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   }
   closeBlablalinkSyncGuide();
   const unresolved=Array.isArray(p.unresolved)?p.unresolved.length:0;
-  toast('BlablaLink 동기화 완료 · '+matched+'명 반영 · '+changed+'개 부위 변경'+(unresolved?' · 미매칭 '+unresolved+'명':''));
+  toast('BlablaLink 동기화 완료 · '+matched+'명 반영 · 스킬 데이터 '+skillDataCount+'명 · '+changed+'개 변경'+(unresolved?' · 미매칭 '+unresolved+'명':''));
 }
 window.__NIKKE_GM_APPLY_SYNC__=applyBlablalinkSyncPayload;
 
@@ -6936,7 +6954,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSoleRew
       <ol class="blsync-steps">
         <li><a class="blsync-link" href="https://www.tampermonkey.net/" target="_blank" rel="noopener"><b>Tampermonkey 확장프로그램을 추가합니다</b></a> (링크에서 초록색 Get from Store 클릭 후 추가)</li>
         <li>브라우저 오른쪽 위 Tampermonkey를 우클릭 &gt; [확장 관리] &gt; [사용자 스크립트 허용] 체크</li>
-        <li><a class="blsync-link" href="https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync-v1.0.27.user.js" target="_blank" rel="noopener"><b>NIKKE Gear Manager 동기화 스크립트 설치</b></a></li>
+        <li><a class="blsync-link" href="https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync-v1.0.31.user.js" target="_blank" rel="noopener"><b>NIKKE Gear Manager 동기화 스크립트 설치</b></a></li>
         <li>원하는 계정 번호 계정 동기화 버튼 클릭(BlablaLink 로그인 후 다시 동기화 버튼 클릭)</li>
         <li>해당 계정의 장비가 반영되었는지 확인</li>
         <li>실제 인게임에서 기업장비를 아무 니케에게 장착 (미 장착된 기업장비는 확인 불가)</li>
