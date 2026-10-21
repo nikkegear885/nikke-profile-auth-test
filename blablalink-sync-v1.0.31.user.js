@@ -622,7 +622,8 @@
             detailCount:details.length,
             ownedNames,
             updates,
-            unresolved
+            unresolved,
+            skillsQueried:true
           }
         }, TARGET_ORIGIN);
       }
