@@ -155,9 +155,7 @@
       .stage-deck-card-img img{width:100%;height:100%;object-fit:cover;display:block}
       .stage-deck-card-burst{position:absolute;left:7px;top:7px;min-width:23px;height:23px;padding:0 5px;border-radius:6px;background:rgba(17,30,44,.86);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:900}
       .stage-deck-card-picked{position:absolute;right:7px;top:7px;width:24px;height:24px;border-radius:50%;background:#168bce;color:white;display:grid;place-items:center;font-weight:900;font-size:13px;box-shadow:0 2px 7px rgba(0,0,0,.2)}
-      .stage-deck-card-name{min-height:38px;padding:7px 8px 3px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;line-height:1.35;font-weight:900;color:#30475e;overflow-wrap:anywhere}
-      .stage-deck-card-meta{min-height:25px;padding:0 7px 8px;display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;color:#7a8da0;font-size:9px;font-weight:800}
-      .stage-deck-chip{border:1px solid #e0e8ef;border-radius:4px;padding:2px 5px;background:#f7fafc}
+      .stage-deck-card-name{min-height:30px;padding:5px 7px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;line-height:1.25;font-weight:900;color:#30475e;overflow-wrap:anywhere}
       .stage-deck-empty{grid-column:1/-1;padding:44px 16px;text-align:center;border:1px dashed #cad9e5;border-radius:12px;color:#8195a8;font-size:12px}
       #stageDeckNotice{position:sticky;bottom:10px;z-index:5;margin:12px auto 0;width:max-content;max-width:100%;border-radius:9px;background:#1d3348;color:#fff;padding:9px 14px;font-size:11px;font-weight:800;box-shadow:0 8px 22px rgba(0,0,0,.16)}
       #stageDeckPanel[hidden]{display:none!important}
@@ -384,7 +382,7 @@
       const burst = String(meta.burst || '').match(/[123]/)?.[0] || '';
       const pickedIndex = slots.indexOf(name);
       const owned = isOwnedName(name);
-      return '<article class="stage-deck-card '+(owned?'owned ':'')+(pickedIndex>=0?'selected':'')+'" data-character="'+esc(name)+'" tabindex="0" role="button" aria-label="'+esc(name)+(owned?', 보유 니케':'')+' 선택"><div class="stage-deck-card-img">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(name)+'" onerror="this.style.display=\'none\'">':'')+(burst?'<span class="stage-deck-card-burst">'+burst+'</span>':'')+(pickedIndex>=0?'<span class="stage-deck-card-picked">'+(pickedIndex+1)+'</span>':'')+'</div><div class="stage-deck-card-name">'+esc(name)+'</div><div class="stage-deck-card-meta">'+(owned?'<span class="stage-deck-owned-chip">보유</span>':'')+(meta.company?'<span class="stage-deck-chip">'+esc(meta.company)+'</span>':'')+(meta.className?'<span class="stage-deck-chip">'+esc(meta.className)+'</span>':'')+'</div></article>';
+      return '<article class="stage-deck-card '+(owned?'owned ':'')+(pickedIndex>=0?'selected':'')+'" data-character="'+esc(name)+'" tabindex="0" role="button" aria-label="'+esc(name)+(owned?', 보유 니케':'')+' 선택"><div class="stage-deck-card-img">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(name)+'" onerror="this.style.display=\'none\'">':'')+(burst?'<span class="stage-deck-card-burst">'+burst+'</span>':'')+(pickedIndex>=0?'<span class="stage-deck-card-picked">'+(pickedIndex+1)+'</span>':'')+'</div><div class="stage-deck-card-name">'+esc(name)+'</div></article>';
     }).join('');
     grid.querySelectorAll('[data-character]').forEach(card => {
       const pick = () => addCharacter(card.dataset.character || '');
