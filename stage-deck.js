@@ -49,6 +49,7 @@
     const style = document.createElement('style');
     style.id = 'stageDeckStyle';
     style.textContent = `
+      body.stage-deck-view #kpis{display:none!important;}
       #stageDeckPanel{margin:0 0 24px;padding:0 14px 24px;color:var(--text,#263449);min-width:0}
       .stage-deck-head{padding:16px 18px;margin:0 0 16px;border:1px solid #d8e4ee;border-radius:14px;background:linear-gradient(135deg,#f7fbff,#eef6fc)}
       .stage-deck-head h3{font-size:20px;line-height:1.25;margin:0 0 6px;font-weight:900;color:#253b55}
