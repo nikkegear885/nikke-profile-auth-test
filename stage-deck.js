@@ -738,7 +738,6 @@
       renderGrid();
     });
     initStageDeckRandomSettings();
-    initStageDeckRandomSettings();
     document.getElementById('stageDeckRandomAccount')?.addEventListener('click', () => {
       saveStageDeckRandomSettings();
       createStageDeckRandomRoster();
