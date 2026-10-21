@@ -30,10 +30,9 @@
     });
   }
 
-  function currentRows() {
-    // Read the selected account's own saved rows first instead of trusting a stale
-    // in-memory array left over from another account/view.
-    const account = activeAccountName();
+  function currentRows(accountOverride) {
+    const hasExplicitAccount = accountOverride !== undefined && accountOverride !== null && String(accountOverride).trim() !== '';
+    const account = hasExplicitAccount ? String(accountOverride).trim() : activeAccountName();
     if (account) {
       try {
         const raw = localStorage.getItem(ACCOUNT_DATA_PREFIX + encodeURIComponent(account));
@@ -43,7 +42,8 @@
         }
       } catch (_) {}
     }
-    // Compatibility fallback for a not-yet-saved active account.
+    // An explicit account lookup must never fall back to another account's in-memory rows.
+    if (hasExplicitAccount) return [];
     try {
       if (typeof data !== 'undefined' && Array.isArray(data)) return data;
     } catch (_) {}
@@ -57,9 +57,10 @@
     return '';
   }
 
-  function getOwnedRows() {
-    const rows = currentRows();
-    const account = activeAccountName();
+  function getOwnedRows(accountOverride) {
+    const hasExplicitAccount = accountOverride !== undefined && accountOverride !== null && String(accountOverride).trim() !== '';
+    const account = hasExplicitAccount ? String(accountOverride).trim() : activeAccountName();
+    const rows = hasExplicitAccount ? currentRows(account) : currentRows();
     if (!rows.length || !account) return null;
 
     try {
@@ -351,11 +352,13 @@
     });
   }
 
-  function renderSkillStatus() {
+  function renderSkillStatus(accountOverride) {
     const body = document.getElementById('skillStatusBody');
     if (!body) return;
+    const hasExplicitAccount = accountOverride !== undefined && accountOverride !== null && String(accountOverride).trim() !== '';
+    const account = hasExplicitAccount ? String(accountOverride).trim() : activeAccountName();
     syncSkillFilterControls();
-    const ownedRows = getOwnedRows();
+    const ownedRows = hasExplicitAccount ? getOwnedRows(account) : getOwnedRows();
     if (ownedRows === null) {
       syncHideManagementControls(getHiddenCharacters().size);
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">보유 목록을 확인할 수 없습니다. 먼저 현재 계정을 동기화한 뒤 확인해 주세요.</td></tr>';
@@ -430,6 +433,11 @@
       });
     });
   }
+
+  window.__NIKKE_GM_REFRESH_SKILL_STATUS__ = function (account) {
+    const name = account == null ? '' : String(account).trim();
+    renderSkillStatus(name || undefined);
+  };
 
   function showSkillStatus() {
     const panel = document.getElementById(PANEL_ID);
