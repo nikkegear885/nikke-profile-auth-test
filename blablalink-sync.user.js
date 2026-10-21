@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.37
+// @version      1.0.38
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -523,6 +523,34 @@
       return exact;
     }
 
+    // A batch response may use 1/1/1 as a placeholder. When a per-character response
+    // also returns 1/1/1, bypass the cache and retry twice to see if the API yields actual levels.
+    async function fetchSingleSkillVerification(code) {
+      let latest = await fetchSingleExact(code);
+      if (latest && hasCompleteSkillData(latest) && !allSkillsAreOne(latest)) return latest;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const j = await postJson(API.details, {
+            intl_open_id: state.intlOpenId,
+            nikke_area_id: Number(state.areaId),
+            name_codes: [code]
+          });
+          if (String(j?.code ?? '') === '0' && Array.isArray(j?.data?.character_details)) {
+            const exact = j.data.character_details.find(item => String(item?.name_code ?? '').trim() === code) || null;
+            if (exact) {
+              latest = exact;
+              const complete = hasCompleteSkillData(exact);
+              if (complete && !allSkillsAreOne(exact) && !allSkillsAreTen(exact)) return exact;
+            }
+          }
+        } catch (error) {
+          console.warn('[NIKKE GM] Extra skill verification request failed:', code, error);
+        }
+        await delay(220);
+      }
+      return latest;
+    }
+
     // First load the usual batch response, but accept only records whose name_code was requested.
     for(const chunk of chunks){
       let ok = false;
@@ -563,9 +591,14 @@
       const suspiciousAllOnes = complete && allSkillsAreOne(detail);
       const suspiciousAllTens = complete && allSkillsAreTen(detail);
       if (complete && !suspiciousAllOnes && !suspiciousAllTens) continue;
-      const single = await fetchSingleExact(code);
+      const single = suspiciousAllOnes
+        ? await fetchSingleSkillVerification(code)
+        : await fetchSingleExact(code);
       if (!single) {
-        if (suspiciousAllOnes) console.warn('[NIKKE GM] 1/1/1 skill row could not be independently verified:', code);
+        if (suspiciousAllOnes) {
+          detail.__nikkeSkillLevelsUnverified = true;
+          console.warn('[NIKKE GM] 1/1/1 skill row could not be verified after individual retries; setting skills unknown:', code);
+        }
         if (suspiciousAllTens) {
           detail.__nikkeSkillLevelsUnverified = true;
           console.warn('[NIKKE GM] 10/10/10 skill row has no independent response; setting skills unknown:', code);
@@ -576,7 +609,15 @@
       const batchSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys));
       const singleSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys));
       const singleComplete = hasCompleteSkillData(single);
+      const singleAllOnes = singleComplete && allSkillsAreOne(single);
       const singleAllTens = singleComplete && allSkillsAreTen(single);
+      if (suspiciousAllOnes && (!singleComplete || singleAllOnes)) {
+        detail.__nikkeSkillLevelsUnverified = true;
+        console.warn('[NIKKE GM] Skill levels remain 1/1/1 after independent retries; setting skills unknown instead of trusting a possible default:', {
+          name_code: code, batchSkills, singleSkills, singleComplete, singleAllOnes
+        });
+        continue;
+      }
       // A repeated 10/10/10 response is indistinguishable from a bad/default payload here.
       // Prefer an unknown marker over displaying a likely false maxed-out value.
       if (singleAllTens || (suspiciousAllTens && !singleComplete)) {
@@ -591,7 +632,7 @@
       const trustSingleValues = !complete || suspiciousAllOnes || suspiciousAllTens;
       mergeMissingSkillData(detail, single, trustSingleValues);
 
-      if (['5148','5007','5101','5011'].includes(code) || suspiciousAllOnes || !complete) {
+      if (['5148','5007','5101','5011'].includes(code) || suspiciousAllOnes || suspiciousAllTens || !complete) {
         console.info('[NIKKE GM] Individual skill verification', {
           name_code: code,
           name: BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || '',
@@ -599,6 +640,7 @@
           singleSkills,
           suspiciousAllOnes,
           suspiciousAllTens,
+          singleAllOnes,
           trustSingleValues,
           mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
         });
