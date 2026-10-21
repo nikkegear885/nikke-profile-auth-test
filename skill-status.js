@@ -230,7 +230,7 @@
           '</select>' +
           '<span>이상 스킬인 니케만 보기</span>' +
         '</label>' +
-        '<button type="button" id="skillStatusHideManageToggle" class="skill-status-hide-manage-toggle" aria-pressed="false">원하는 캐릭터 숨기기</button>' +
+        '<button type="button" id="skillStatusHideManageToggle" class="skill-status-hide-manage-toggle" aria-pressed="false">숨긴 캐릭터 보기</button>' +
         '<button type="button" id="skillStatusRestoreAllButton" class="skill-status-restore-all-button">숨긴 캐릭터 취소하기</button>' +
         '<span id="skillStatusHideState" class="skill-status-hide-state" aria-live="polite"></span>' +
       '</div>' +
@@ -288,7 +288,7 @@
     if (button) {
       button.classList.toggle('active', showHiddenCharacters);
       button.setAttribute('aria-pressed', String(showHiddenCharacters));
-      button.textContent = '원하는 캐릭터 숨기기';
+      button.textContent = '숨긴 캐릭터 보기';
       button.title = showHiddenCharacters
         ? '숨김으로 지정한 캐릭터를 표시 중입니다. 눌러서 다시 숨깁니다.'
         : '숨김으로 지정한 캐릭터는 숨겨져 있습니다. 눌러서 표시하거나, 각 캐릭터 옆 숨기기 버튼으로 지정할 수 있습니다.';
@@ -479,7 +479,7 @@
         (hasActiveMetadataFilters()
           ? '선택한 필터와 스킬 레벨 조건에 맞는 보유 니케가 없습니다.'
           : (hiddenNames.size && !showHiddenCharacters
-            ? skillFilterLevel + '레벨 이상인 스킬이 있는 니케가 없습니다. 숨긴 캐릭터를 확인하려면 상단의 ‘원하는 캐릭터 숨기기’ 버튼을 눌러 주세요.'
+            ? skillFilterLevel + '레벨 이상인 스킬이 있는 니케가 없습니다. 숨긴 캐릭터를 확인하려면 상단의 ‘숨긴 캐릭터 보기’ 버튼을 눌러 주세요.'
             : skillFilterLevel + '레벨 이상인 스킬을 가진 보유 니케가 없습니다.')) +
         '</td></tr>';
       return;
