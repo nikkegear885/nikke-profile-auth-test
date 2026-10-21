@@ -633,6 +633,103 @@ function extractIntlOpenId(decodedOpenId){
   return intlOpenId;
 }
 
+// Skill-level aliases used by BlaBlaLink's GetUserCharacterDetails response.
+// Return null when a field is genuinely absent; the frontend must not invent 1/1/1.
+const NIKKE_SKILL_FIELD_GROUPS = Object.freeze([
+  {
+    target:'skill1',
+    index:0,
+    keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level','skill1','skill_1','s1_lv','s1']
+  },
+  {
+    target:'skill2',
+    index:1,
+    keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level','skill2','skill_2','s2_lv','s2']
+  },
+  {
+    target:'burstSkill',
+    index:2,
+    keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','burstSkillLevel','ultiSkillLv','burstSkill','burst_skill','skill3','skill_3','s3_lv','s3','ultimate_level','burst_level']
+  }
+]);
+
+function readSkillNumber(value){
+  if(value===undefined || value===null || value==='') return null;
+  if(typeof value==='object'){
+    for(const key of ['level','skill_level','skillLevel','skill_lv','skillLv','lv','value']){
+      const found=readSkillNumber(value[key]);
+      if(found!==null) return found;
+    }
+    return null;
+  }
+  const number=Number(value);
+  return Number.isFinite(number) && number>=0 && number<=10 ? Math.floor(number) : null;
+}
+
+function getNikkeSkillLevel(char, group){
+  if(!char || typeof char!=='object') return null;
+  for(const key of group.keys){
+    const value=readSkillNumber(char[key]);
+    if(value!==null) return value;
+  }
+
+  // Some API variants return three levels as an array or numbered object.
+  const containers=['skill_levels','skillLevels','skill_level_list','skillLevelList','skillLevelsList','skills','skill_info','skillInfo'];
+  for(const containerKey of containers){
+    const container=char[containerKey];
+    if(Array.isArray(container)){
+      const value=readSkillNumber(container[group.index]);
+      if(value!==null) return value;
+      // Object rows sometimes identify their own slot; only use explicit matching IDs.
+      for(const entry of container){
+        if(!entry || typeof entry!=='object') continue;
+        const id=Number(entry.skill_id ?? entry.skillId ?? entry.skill_no ?? entry.skillNo ?? entry.type ?? entry.index);
+        if(Number.isFinite(id) && (id===group.index || id===group.index+1)){
+          const level=readSkillNumber(entry);
+          if(level!==null) return level;
+        }
+      }
+    }else if(container && typeof container==='object'){
+      const n=group.index+1;
+      for(const key of [String(group.index),String(n),'skill'+n,'skill_'+n,'skill'+n+'_lv','skill_'+n+'_lv']){
+        const value=readSkillNumber(container[key]);
+        if(value!==null) return value;
+      }
+    }
+  }
+
+  // Generic aliases are only accepted as top-level fields to avoid confusing metadata.
+  const normalizeKey=key=>String(key).toLowerCase().replace(/[^a-z0-9]/g,'');
+  const normalizedKeys=new Set(group.keys.map(normalizeKey));
+  for(const [key,value] of Object.entries(char)){
+    if(normalizedKeys.has(normalizeKey(key))){
+      const parsed=readSkillNumber(value);
+      if(parsed!==null) return parsed;
+    }
+  }
+
+  // Search nested API objects for exact skill-field names only (never partial key matches).
+  const seen=new Set();
+  function visit(value,depth){
+    if(!value || typeof value!=='object' || depth>5 || seen.has(value)) return null;
+    seen.add(value);
+    for(const [key,item] of Object.entries(value)){
+      if(normalizedKeys.has(normalizeKey(key))){
+        const parsed=readSkillNumber(item);
+        if(parsed!==null) return parsed;
+      }
+    }
+    for(const item of Object.values(value)){
+      if(item && typeof item==='object'){
+        const found=visit(item,depth+1);
+        if(found!==null) return found;
+      }
+    }
+    return null;
+  }
+  return visit(char,0);
+}
+
 async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
   const decoded = decodeOpenIdFromProfileUrl(profileUrl);
   const intlOpenId = extractIntlOpenId(decoded);
@@ -827,11 +924,17 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
       }
       const gradeRaw = char?.grade;
       const coreRaw = char?.core;
+      const skill1 = getNikkeSkillLevel(char,NIKKE_SKILL_FIELD_GROUPS[0]);
+      const skill2 = getNikkeSkillLevel(char,NIKKE_SKILL_FIELD_GROUPS[1]);
+      const burstSkill = getNikkeSkillLevel(char,NIKKE_SKILL_FIELD_GROUPS[2]);
       updates.push({
         name,
         name_code:code,
         grade:(gradeRaw===undefined || gradeRaw===null || gradeRaw==='') ? null : Number(gradeRaw),
         core:(coreRaw===undefined || coreRaw===null || coreRaw==='') ? null : Number(coreRaw),
+        skill1,
+        skill2,
+        burstSkill,
         parts
       });
     }
@@ -882,6 +985,8 @@ async function syncPublicNikkeProfile(profileUrl, env, requestedAreaInput){
     ownedNames,
     owned_name_count:ownedNames.length,
     detail_count:detailCount,
+    skill_data_count:updates.filter(item=>[item.skill1,item.skill2,item.burstSkill].some(value=>value!==null)).length,
+    skill_missing_count:updates.filter(item=>[item.skill1,item.skill2,item.burstSkill].some(value=>value===null)).length,
     updates,
     unresolved
   };
