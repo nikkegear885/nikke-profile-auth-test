@@ -458,7 +458,7 @@
         <div class="stage-deck-account-head">
           <div class="stage-deck-account-title">
             <h4>계정 생성 · 뽑기 시뮬레이터</h4>
-            <p>뽑은 니케만 스테이지 추천 전용 보유 목록에 반영됩니다. 실제 계정 보유 데이터와는 분리됩니다.</p>
+            <p>뽑은 니케는 테스트용 보유 목록에 저장됩니다. 티어표의 분류·티어 기록과는 별도로 관리됩니다.</p>
           </div>
           <div class="stage-deck-account-actions">
             <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="확률에 따라 캐릭터 1명을 뽑습니다">1회 뽑기</button>
@@ -479,7 +479,7 @@
               <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeLimited" checked><span>한정 캐</span><strong data-stage-random-status="limited">ON</strong></label>
               <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeDistribution" checked><span>배포 캐</span><strong data-stage-random-status="distribution">ON</strong></label>
             </div>
-            <div class="stage-deck-random-note">1회 뽑기는 1명, 10회 뽑기는 10명을 각각 독립 확률로 획득합니다. 전체 뽑기 기준 필그림 SSR은 0.5%, 그 외 SSR은 3.5%입니다. OFF로 끈 유형은 등장 대상에서 제외됩니다. 결과는 스테이지 추천 전용으로 저장됩니다.</div>
+            <div class="stage-deck-random-note">1회 뽑기는 1명, 10회 뽑기는 10명을 각각 독립 확률로 획득합니다. 전체 뽑기 기준 필그림 SSR은 0.5%, 그 외 SSR은 3.5%입니다. OFF로 끈 유형은 등장 대상에서 제외됩니다. 결과는 테스트용 보유 목록에 저장됩니다.</div>
           </div>
         </details>
         <section class="stage-deck-gacha-panel" id="stageDeckGachaPanel" aria-label="뽑기 결과">
@@ -777,7 +777,7 @@
   }
 
   function clearStageDeckGacha() {
-    if (!confirm('스테이지 추천 전용 뽑기 기록과 보유 목록을 초기화할까요?')) return;
+    if (!confirm('테스트용 뽑기 기록과 보유 목록을 초기화할까요?')) return;
     const empty = {pulls:0, counts:{}, history:[], rarityCounts:{SSR:0,SR:0,R:0}, pilgrimSSR:0};
     try {
       localStorage.setItem(STAGE_GACHA_STATE_KEY, JSON.stringify(empty));
@@ -787,7 +787,7 @@
     renderStageDeckGachaStatus();
     renderGrid();
     updateRandomInclusionStatus();
-    showNotice('스테이지 추천 전용 뽑기를 초기화했습니다.');
+    showNotice('테스트용 뽑기를 초기화했습니다.');
   }
 
   function updateRandomInclusionStatus(settings = loadStageDeckRandomSettings()) {
@@ -1025,7 +1025,7 @@
     document.body.classList.add('stage-deck-view');
     document.querySelectorAll('.main-view-nav').forEach(btn => btn.classList.toggle('active', btn.dataset.view === 'stageDeck'));
     const title = document.getElementById('pageTitle');
-    if (title) title.textContent = '스테이지 덱 추천';
+    if (title) title.textContent = '스테이지 덱 티어표';
     try { if (typeof window.closeSidebar === 'function') window.closeSidebar(); } catch (_) {}
     if (!pedia.length) {
       const grid = document.getElementById('stageDeckGrid');
