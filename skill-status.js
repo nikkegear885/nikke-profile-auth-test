@@ -276,6 +276,13 @@
     return Number.isFinite(value) ? value : -1;
   }
 
+  function numericCombatPower(row) {
+    const raw = row && row['전투력'] != null ? String(row['전투력']).replace(/,/g, '').trim() : '';
+    if (!raw) return -1;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : -1;
+  }
+
   function updateSkillSortIndicators() {
     document.querySelectorAll('[data-skill-sort]').forEach(function (button) {
       const key = button.dataset.skillSort || '';
@@ -333,6 +340,15 @@
       filteredRows.sort(function (a, b) {
         const difference = numericSkillLevel(a, skillSortKey) - numericSkillLevel(b, skillSortKey);
         if (difference !== 0) return skillSortDirection === 'desc' ? -difference : difference;
+        const powerDifference = numericCombatPower(b) - numericCombatPower(a);
+        if (powerDifference !== 0) return powerDifference;
+        return String(a && a['이름'] || '').localeCompare(String(b && b['이름'] || ''), 'ko');
+      });
+    } else {
+      // Default ordering is highest combat power first until a skill column is chosen.
+      filteredRows.sort(function (a, b) {
+        const difference = numericCombatPower(b) - numericCombatPower(a);
+        if (difference !== 0) return difference;
         return String(a && a['이름'] || '').localeCompare(String(b && b['이름'] || ''), 'ko');
       });
     }
