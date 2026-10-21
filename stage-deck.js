@@ -143,14 +143,9 @@
       .stage-deck-count{margin-left:auto;color:#6e8598;font-size:11px;font-weight:800;white-space:nowrap}
       .stage-deck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:12px}
       .stage-deck-card{position:relative;min-width:0;border:1px solid #d9e4ed;border-radius:12px;background:#fff;overflow:hidden;cursor:pointer;box-shadow:0 3px 12px rgba(40,78,110,.05);transition:transform .12s,border-color .12s,box-shadow .12s}
-      .stage-deck-card.owned{border-color:#a9dcca;box-shadow:0 3px 12px rgba(35,151,112,.08)}
-      .stage-deck-card.owned:hover{border-color:#54b995;box-shadow:0 8px 18px rgba(35,151,112,.14)}
-      .stage-deck-owned-chip{border:1px solid #a9dcca;border-radius:4px;padding:2px 5px;background:#e9faf3;color:#187b59;font-size:9px;font-weight:900}
-      html.dark-theme .stage-deck-card.owned{border-color:#327b68}
-      html.dark-theme .stage-deck-card.owned:hover{border-color:#56bd9b}
-      html.dark-theme .stage-deck-owned-chip{border-color:#327b68;background:#183b32;color:#a4f0d4}
+      .stage-deck-card.unowned .stage-deck-card-img img{filter:grayscale(1)!important}
       .stage-deck-card:hover{transform:translateY(-2px);border-color:#81b2d8;box-shadow:0 8px 18px rgba(40,91,133,.13)}
-      .stage-deck-card.selected{border:2px solid #168bce;box-shadow:0 0 0 2px rgba(22,139,206,.12)}
+      .stage-deck-card.selected{border:2px solid #168bce;box-shadow:none}
       .stage-deck-card-img{position:relative;width:100%;aspect-ratio:3/4;background:#edf3f7;overflow:hidden}
       .stage-deck-card-img img{width:100%;height:100%;object-fit:cover;display:block}
       .stage-deck-card-burst{position:absolute;left:7px;top:7px;min-width:23px;height:23px;padding:0 5px;border-radius:6px;background:rgba(17,30,44,.86);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:900}
@@ -382,7 +377,7 @@
       const burst = String(meta.burst || '').match(/[123]/)?.[0] || '';
       const pickedIndex = slots.indexOf(name);
       const owned = isOwnedName(name);
-      return '<article class="stage-deck-card '+(owned?'owned ':'')+(pickedIndex>=0?'selected':'')+'" data-character="'+esc(name)+'" tabindex="0" role="button" aria-label="'+esc(name)+(owned?', 보유 니케':'')+' 선택"><div class="stage-deck-card-img">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(name)+'" onerror="this.style.display=\'none\'">':'')+(burst?'<span class="stage-deck-card-burst">'+burst+'</span>':'')+(pickedIndex>=0?'<span class="stage-deck-card-picked">'+(pickedIndex+1)+'</span>':'')+'</div><div class="stage-deck-card-name">'+esc(name)+'</div></article>';
+      return '<article class="stage-deck-card '+(!owned?'unowned ':'')+(pickedIndex>=0?'selected':'')+'" data-character="'+esc(name)+'" tabindex="0" role="button" aria-label="'+esc(name)+(owned?', 보유 니케':', 미보유 니케')+' 선택"><div class="stage-deck-card-img">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(name)+'" onerror="this.style.display=\'none\'">':'')+(burst?'<span class="stage-deck-card-burst">'+burst+'</span>':'')+(pickedIndex>=0?'<span class="stage-deck-card-picked">'+(pickedIndex+1)+'</span>':'')+'</div><div class="stage-deck-card-name">'+esc(name)+'</div></article>';
     }).join('');
     grid.querySelectorAll('[data-character]').forEach(card => {
       const pick = () => addCharacter(card.dataset.character || '');
