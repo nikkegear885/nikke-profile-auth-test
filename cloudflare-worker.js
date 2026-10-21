@@ -680,11 +680,16 @@ function getNikkeSkillLevel(char, group){
     if(Array.isArray(container)){
       const value=readSkillNumber(container[group.index]);
       if(value!==null) return value;
-      // Object rows sometimes identify their own slot; only use explicit matching IDs.
+      // Object rows sometimes identify their own slot. Distinguish one-based skill IDs
+      // (1/2/3) from zero-based array indexes (0/1/2) to avoid mixing skill values.
       for(const entry of container){
         if(!entry || typeof entry!=='object') continue;
-        const id=Number(entry.skill_id ?? entry.skillId ?? entry.skill_no ?? entry.skillNo ?? entry.type ?? entry.index);
-        if(Number.isFinite(id) && (id===group.index || id===group.index+1)){
+        const skillId=entry.skill_id ?? entry.skillId ?? entry.skill_no ?? entry.skillNo ?? entry.type;
+        const rowIndex=entry.index;
+        const matches = skillId!==undefined && skillId!==null
+          ? Number(skillId)===group.index+1
+          : rowIndex!==undefined && rowIndex!==null && Number(rowIndex)===group.index;
+        if(matches){
           const level=readSkillNumber(entry);
           if(level!==null) return level;
         }
