@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.38
+// @version      1.0.39
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -419,7 +419,20 @@
     for (const key of keys) {
       if (numeric(char[key])) return char[key];
     }
-    const wanted = new Set(keys.map(key => String(key).toLowerCase().replace(/[^a-z0-9]/g, '')));
+    // Some BlablaLink responses expose skill levels as top-level skill1/skill2/burstSkill.
+    // Accept these aliases only at the character object's top level to avoid matching
+    // unrelated nested metadata with the same generic key.
+    const genericAliases = new Set(['skill1', 'skill2', 'skill3', 'burstskill']);
+    const wantedDirect = new Set(keys
+      .map(key => String(key).toLowerCase().replace(/[^a-z0-9]/g, ''))
+      .filter(key => genericAliases.has(key)));
+    for (const [key, value] of Object.entries(char)) {
+      const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (wantedDirect.has(normalizedKey) && numeric(value)) return value;
+    }
+    const wanted = new Set(keys
+      .map(key => String(key).toLowerCase().replace(/[^a-z0-9]/g, ''))
+      .filter(key => !genericAliases.has(key)));
     const seen = new Set();
     function visit(value, depth) {
       if (!value || typeof value !== 'object' || depth > 5 || seen.has(value)) return null;
@@ -440,9 +453,9 @@
   }
 
   const SKILL_FIELD_GROUPS = [
-    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level']},
-    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level']},
-    {target:'ulti_skill_lv', keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','ultiSkillLv']}
+    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level','skill1']},
+    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level','skill2']},
+    {target:'ulti_skill_lv', keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','ultiSkillLv','burstSkill']}
   ];
 
   function hasCompleteSkillData(char) {
