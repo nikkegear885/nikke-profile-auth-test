@@ -29,6 +29,59 @@
     return [];
   }
 
+  // Match wishlist.js: the account's synced owned roster is the source of truth.
+  const OWNED_ROSTER_STORAGE_PREFIX = 'nikke_synced_owned_characters_v1_';
+  const ACCOUNT_DATA_STORAGE_PREFIX = 'nikkeGearManagerV6_account_';
+  const ACTIVE_ACCOUNT_STORAGE_KEY = 'nikke_active_account_v1';
+  const ACCOUNT_NAMES_STORAGE_KEY = 'nikke_account_names_v1';
+  const TEST_ACCOUNT_NAME = '랜덤 테스트 계정';
+  const normalizeRosterName = value => String(value == null ? '' : value)
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g, '');
+
+  function getActiveAccountName() {
+    try {
+      let accounts = ['계정1', '계정2'];
+      const savedNames = JSON.parse(localStorage.getItem(ACCOUNT_NAMES_STORAGE_KEY) || 'null');
+      if (Array.isArray(savedNames) && savedNames.length === 2 && savedNames.every(value => String(value).trim())) {
+        accounts = savedNames.map(value => String(value).trim());
+      }
+      const savedAccount = localStorage.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+      const hasSavedTestAccount = !!localStorage.getItem(ACCOUNT_DATA_STORAGE_PREFIX + encodeURIComponent(TEST_ACCOUNT_NAME));
+      if (accounts.includes(savedAccount) || (savedAccount === TEST_ACCOUNT_NAME && hasSavedTestAccount)) return savedAccount;
+      return accounts[0];
+    } catch (_) {
+      return '계정1';
+    }
+  }
+
+  function getSyncedOwnedRoster() {
+    const account = getActiveAccountName();
+    if (!account) return null;
+    try {
+      const raw = localStorage.getItem(OWNED_ROSTER_STORAGE_PREFIX + encodeURIComponent(account));
+      if (raw !== null) {
+        const saved = JSON.parse(raw);
+        if (Array.isArray(saved)) return new Set(saved.map(normalizeRosterName).filter(Boolean));
+      }
+    } catch (_) {}
+    // Compatibility fallback: some older synced accounts saved the ownership marker with account rows.
+    try {
+      const raw = localStorage.getItem(ACCOUNT_DATA_STORAGE_PREFIX + encodeURIComponent(account));
+      if (raw !== null) {
+        const rows = JSON.parse(raw);
+        if (Array.isArray(rows) && rows.some(row => row && typeof row.__nikkeSyncedOwned === 'boolean')) {
+          return new Set(rows
+            .filter(row => row && row.__nikkeSyncedOwned === true)
+            .map(row => normalizeRosterName(row['이름'] || row.name))
+            .filter(Boolean));
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   function showNotice(message) {
     try {
       if (typeof window.toast === 'function') window.toast(message);
@@ -80,6 +133,12 @@
       .stage-deck-count{margin-left:auto;color:#6e8598;font-size:11px;font-weight:800;white-space:nowrap}
       .stage-deck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:12px}
       .stage-deck-card{position:relative;min-width:0;border:1px solid #d9e4ed;border-radius:12px;background:#fff;overflow:hidden;cursor:pointer;box-shadow:0 3px 12px rgba(40,78,110,.05);transition:transform .12s,border-color .12s,box-shadow .12s}
+      .stage-deck-card.owned{border-color:#a9dcca;box-shadow:0 3px 12px rgba(35,151,112,.08)}
+      .stage-deck-card.owned:hover{border-color:#54b995;box-shadow:0 8px 18px rgba(35,151,112,.14)}
+      .stage-deck-owned-chip{border:1px solid #a9dcca;border-radius:4px;padding:2px 5px;background:#e9faf3;color:#187b59;font-size:9px;font-weight:900}
+      html.dark-theme .stage-deck-card.owned{border-color:#327b68}
+      html.dark-theme .stage-deck-card.owned:hover{border-color:#56bd9b}
+      html.dark-theme .stage-deck-owned-chip{border-color:#327b68;background:#183b32;color:#a4f0d4}
       .stage-deck-card:hover{transform:translateY(-2px);border-color:#81b2d8;box-shadow:0 8px 18px rgba(40,91,133,.13)}
       .stage-deck-card.selected{border:2px solid #168bce;box-shadow:0 0 0 2px rgba(22,139,206,.12)}
       .stage-deck-card-img{position:relative;width:100%;aspect-ratio:3/4;background:#edf3f7;overflow:hidden}
@@ -254,10 +313,28 @@
       if (burstFilter && String(getMeta(item.name).burst || '') !== burstFilter) return false;
       return true;
     });
-    if (sortMode === 'name_asc') list = list.slice().sort((a,b) => a.name.localeCompare(b.name, 'ko'));
-    else if (sortMode === 'burst') list = list.slice().sort((a,b) => String(getMeta(a.name).burst||'9').localeCompare(String(getMeta(b.name).burst||'9')) || a.name.localeCompare(b.name,'ko'));
-    else if (sortMode === 'power_desc') list = list.slice().sort((a,b) => getPower(b.name)-getPower(a.name) || a.name.localeCompare(b.name,'ko'));
-    if (visibleCount) visibleCount.textContent = list.length + ' / ' + pedia.length + '명';
+    const ownedRoster = getSyncedOwnedRoster();
+    const isOwnedName = name => !!ownedRoster && ownedRoster.has(normalizeRosterName(name));
+    const compareBySelectedSort = (a,b) => {
+      if (sortMode === 'name_asc') return a.name.localeCompare(b.name, 'ko');
+      if (sortMode === 'burst') return String(getMeta(a.name).burst||'9').localeCompare(String(getMeta(b.name).burst||'9')) || a.name.localeCompare(b.name,'ko');
+      if (sortMode === 'power_desc') return getPower(b.name)-getPower(a.name) || a.name.localeCompare(b.name,'ko');
+      return 0;
+    };
+    // Owned characters always form the first group; the selected sort remains in effect within each group.
+    list = list.slice().sort((a,b) => {
+      if (ownedRoster) {
+        const ownershipDiff = Number(isOwnedName(b.name)) - Number(isOwnedName(a.name));
+        if (ownershipDiff) return ownershipDiff;
+      }
+      return compareBySelectedSort(a,b);
+    });
+    const ownedVisibleCount = ownedRoster ? list.filter(item => isOwnedName(item.name)).length : null;
+    if (visibleCount) {
+      visibleCount.textContent = ownedRoster
+        ? '보유 ' + ownedVisibleCount + '명 · 전체 ' + list.length + ' / ' + pedia.length + '명'
+        : list.length + ' / ' + pedia.length + '명 · 보유 정보 확인을 위해 계정 동기화 필요';
+    }
     if (!list.length) {
       grid.innerHTML = '<div class="stage-deck-empty">조건에 맞는 니케가 없습니다.</div>';
       return;
@@ -268,7 +345,8 @@
       const meta = getMeta(name);
       const burst = String(meta.burst || '').match(/[123]/)?.[0] || '';
       const pickedIndex = slots.indexOf(name);
-      return '<article class="stage-deck-card '+(pickedIndex>=0?'selected':'')+'" data-character="'+esc(name)+'" tabindex="0" role="button" aria-label="'+esc(name)+' 선택"><div class="stage-deck-card-img">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(name)+'" onerror="this.style.display=\'none\'">':'')+(burst?'<span class="stage-deck-card-burst">'+burst+'</span>':'')+(pickedIndex>=0?'<span class="stage-deck-card-picked">'+(pickedIndex+1)+'</span>':'')+'</div><div class="stage-deck-card-name">'+esc(name)+'</div><div class="stage-deck-card-meta">'+(meta.company?'<span class="stage-deck-chip">'+esc(meta.company)+'</span>':'')+(meta.className?'<span class="stage-deck-chip">'+esc(meta.className)+'</span>':'')+'</div></article>';
+      const owned = isOwnedName(name);
+      return '<article class="stage-deck-card '+(owned?'owned ':'')+(pickedIndex>=0?'selected':'')+'" data-character="'+esc(name)+'" tabindex="0" role="button" aria-label="'+esc(name)+(owned?', 보유 니케':'')+' 선택"><div class="stage-deck-card-img">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(name)+'" onerror="this.style.display=\\'none\\'">':'')+(burst?'<span class="stage-deck-card-burst">'+burst+'</span>':'')+(pickedIndex>=0?'<span class="stage-deck-card-picked">'+(pickedIndex+1)+'</span>':'')+'</div><div class="stage-deck-card-name">'+esc(name)+'</div><div class="stage-deck-card-meta">'+(owned?'<span class="stage-deck-owned-chip">보유</span>':'')+(meta.company?'<span class="stage-deck-chip">'+esc(meta.company)+'</span>':'')+(meta.className?'<span class="stage-deck-chip">'+esc(meta.className)+'</span>':'')+'</div></article>';
     }).join('');
     grid.querySelectorAll('[data-character]').forEach(card => {
       const pick = () => addCharacter(card.dataset.character || '');
