@@ -2,9 +2,9 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.44
-// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.44
-// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.44
+// @version      1.0.45
+// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.45
+// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.45
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
 // @author       NIKKE Gear Manager
 // @match        https://*.blablalink.com/*
@@ -16,7 +16,7 @@
 (function(){
   'use strict';
 
-  const NIKKE_GM_SCRIPT_VERSION = '1.0.44';
+  const NIKKE_GM_SCRIPT_VERSION = '1.0.45';
   console.info('[NIKKE GM] Userscript loaded', {
     version: NIKKE_GM_SCRIPT_VERSION,
     host: location.hostname,
@@ -515,21 +515,27 @@
       const allTens = complete && incoming.every(value => Number(value) === 10);
       if (allOnes || allTens) continue;
       let changed = false;
-      for (let i = 0; i < SKILL_FIELD_GROUPS.length; i++) {
-        const value = incoming[i];
-        if (value === null) continue;
-        const current = skillFieldValue(detail, SKILL_FIELD_GROUPS[i].keys);
-        if (current === null || detail.__nikkeSkillLevelsUnverified === true) {
-          detail[SKILL_FIELD_GROUPS[i].target] = value;
-          changed = true;
+      if (detail.__nikkeSkillLevelsUnverified === true) {
+        // Do not construct a false mixed set such as 8/1/1 from one roster value and
+        // two unverified detail placeholders. Replace only with a complete trusted set.
+        if (!complete) continue;
+        for (let i = 0; i < SKILL_FIELD_GROUPS.length; i++) {
+          detail[SKILL_FIELD_GROUPS[i].target] = incoming[i];
+        }
+        delete detail.__nikkeSkillLevelsUnverified;
+        changed = true;
+      } else {
+        for (let i = 0; i < SKILL_FIELD_GROUPS.length; i++) {
+          const value = incoming[i];
+          if (value === null) continue;
+          const current = skillFieldValue(detail, SKILL_FIELD_GROUPS[i].keys);
+          if (current === null) {
+            detail[SKILL_FIELD_GROUPS[i].target] = value;
+            changed = true;
+          }
         }
       }
-      if (changed) {
-        if (hasCompleteSkillData(detail) && !allSkillsAreOne(detail) && !allSkillsAreTen(detail)) {
-          delete detail.__nikkeSkillLevelsUnverified;
-        }
-        mergedRows++;
-      }
+      if (changed) mergedRows++;
     }
     return mergedRows;
   }
