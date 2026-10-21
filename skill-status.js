@@ -150,6 +150,8 @@
       '.skill-status-filter-state{margin-left:auto;color:#718397;font-size:11px;font-weight:800}' +
       '.skill-status-hide-manage-toggle{min-height:38px;padding:0 13px;border:1px solid #d4c4ed;border-radius:9px;background:#f8f3ff;color:#7654a7;font-size:12px;font-weight:900;cursor:pointer}' +
       '.skill-status-hide-manage-toggle.active{background:#7654a7;border-color:#7654a7;color:#fff}' +
+      '.skill-status-restore-all-button{min-height:38px;padding:0 13px;border:1px solid #b8ddc5;border-radius:9px;background:#f2fbf5;color:#267344;font-size:12px;font-weight:900;cursor:pointer}' +
+      '.skill-status-restore-all-button:disabled{opacity:.45;cursor:not-allowed}' +
       '.skill-status-hide-state{width:100%;color:#7654a7;font-size:11px;font-weight:800}' +
       '.skill-status-row-hidden td{opacity:.58;background:rgba(130,105,165,.06)}' +
       '.skill-status-row-hidden .skill-status-character-name{text-decoration:line-through}' +
@@ -158,6 +160,7 @@
       '.skill-status-hide-row-button.restore{border-color:#b8ddc5;color:#267344;background:#f2fbf5}' +
       'html.dark-theme .skill-status-hide-manage-toggle{background:#2a203a;border-color:#594675;color:#d9c6f6}' +
       'html.dark-theme .skill-status-hide-manage-toggle.active{background:#7654a7;border-color:#a98bd2;color:#fff}' +
+      'html.dark-theme .skill-status-restore-all-button{background:#17291f;border-color:#315f43;color:#a6e3ba}' +
       'html.dark-theme .skill-status-hide-state{color:#c7a9f2}' +
       'html.dark-theme .skill-status-row-hidden td{background:rgba(130,105,165,.1)}' +
       'html.dark-theme .skill-status-hide-row-button{background:#211a2d;border-color:#594675;color:#d9c6f6}' +
@@ -208,6 +211,7 @@
           '</select>' +
         '</label>' +
         '<button type="button" id="skillStatusHideManageToggle" class="skill-status-hide-manage-toggle" aria-pressed="false">원하는 캐릭터 숨기기</button>' +
+        '<button type="button" id="skillStatusRestoreAllButton" class="skill-status-restore-all-button">숨긴 캐릭터 취소하기</button>' +
         '<span id="skillStatusFilterState" class="skill-status-filter-state">전체 보유 캐릭터 표시</span>' +
         '<span id="skillStatusHideState" class="skill-status-hide-state" aria-live="polite"></span>' +
       '</div>' +
@@ -243,6 +247,7 @@
 
   function syncHideManagementControls(hiddenCount) {
     const button = document.getElementById('skillStatusHideManageToggle');
+    const restoreAllButton = document.getElementById('skillStatusRestoreAllButton');
     const state = document.getElementById('skillStatusHideState');
     if (button) {
       button.classList.toggle('active', showHiddenCharacters);
@@ -251,6 +256,12 @@
       button.title = showHiddenCharacters
         ? '숨김으로 지정한 캐릭터를 표시 중입니다. 눌러서 다시 숨깁니다.'
         : '숨김으로 지정한 캐릭터는 숨겨져 있습니다. 눌러서 표시하거나, 각 캐릭터 옆 숨기기 버튼으로 지정할 수 있습니다.';
+    }
+    if (restoreAllButton) {
+      restoreAllButton.disabled = hiddenCount === 0;
+      restoreAllButton.title = hiddenCount
+        ? '숨김 처리한 캐릭터 ' + hiddenCount + '명을 모두 숨김 해제합니다.'
+        : '숨김 처리한 캐릭터가 없습니다.';
     }
     if (state) {
       state.textContent = hiddenCount
@@ -266,6 +277,13 @@
     if (hiddenNames.has(normalized)) hiddenNames.delete(normalized);
     else hiddenNames.add(normalized);
     saveHiddenCharacters(hiddenNames);
+    renderSkillStatus();
+  }
+
+  function restoreAllHiddenCharacters() {
+    if (!activeAccountName()) return;
+    saveHiddenCharacters(new Set());
+    showHiddenCharacters = false;
     renderSkillStatus();
   }
 
@@ -339,7 +357,7 @@
     syncSkillFilterControls();
     const ownedRows = getOwnedRows();
     if (ownedRows === null) {
-      syncHideManagementControls(0);
+      syncHideManagementControls(getHiddenCharacters().size);
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">보유 목록을 확인할 수 없습니다. 먼저 현재 계정을 동기화한 뒤 확인해 주세요.</td></tr>';
       return;
     }
@@ -527,6 +545,7 @@
       showHiddenCharacters = !showHiddenCharacters;
       renderSkillStatus();
     });
+    document.getElementById('skillStatusRestoreAllButton')?.addEventListener('click', restoreAllHiddenCharacters);
     document.querySelectorAll('[data-skill-sort]').forEach(function (button) {
       button.addEventListener('click', function () {
         handleSkillSortClick(button.dataset.skillSort || '');
