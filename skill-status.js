@@ -6,6 +6,7 @@
   const PEDIA_URL = 'assets/nikke-pedia-master.json?v=1055';
   const OWNED_PREFIX = 'nikke_synced_owned_characters_v1_';
   const UNOWNED_PREFIX = 'nikke_unowned_characters_v1_';
+  const HIDDEN_CHARACTERS_PREFIX = 'nikke_skill_status_hidden_characters_v1_';
   let initialized = false;
   let imageMap = {};
   let imageLoadPromise = null;
@@ -13,6 +14,7 @@
   let skillFilterLevel = 10;
   let skillSortKey = '';
   let skillSortDirection = 'desc';
+  let hideManagementMode = false;
 
   function normalizeName(value) {
     return String(value == null ? '' : value)
@@ -129,6 +131,20 @@
       '.skill-status-filter-level-wrap{display:flex;align-items:center;gap:7px;color:#526b80;font-size:12px;font-weight:800}' +
       '.skill-status-filter-level{height:36px;min-width:76px;padding:0 9px;border:1px solid #cbd9e5;border-radius:8px;background:#fff;color:#2e4356;font-size:12px;font-weight:900}' +
       '.skill-status-filter-state{margin-left:auto;color:#718397;font-size:11px;font-weight:800}' +
+      '.skill-status-hide-manage-toggle{min-height:38px;padding:0 13px;border:1px solid #d4c4ed;border-radius:9px;background:#f8f3ff;color:#7654a7;font-size:12px;font-weight:900;cursor:pointer}' +
+      '.skill-status-hide-manage-toggle.active{background:#7654a7;border-color:#7654a7;color:#fff}' +
+      '.skill-status-hide-state{width:100%;color:#7654a7;font-size:11px;font-weight:800}' +
+      '.skill-status-row-hidden td{opacity:.58;background:rgba(130,105,165,.06)}' +
+      '.skill-status-row-hidden .skill-status-character-name{text-decoration:line-through}' +
+      '.skill-status-character-tools{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}' +
+      '.skill-status-hide-row-button{min-height:25px;padding:2px 8px;border:1px solid #d6c4e9;border-radius:6px;background:#fff;color:#7654a7;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap}' +
+      '.skill-status-hide-row-button.restore{border-color:#b8ddc5;color:#267344;background:#f2fbf5}' +
+      'html.dark-theme .skill-status-hide-manage-toggle{background:#2a203a;border-color:#594675;color:#d9c6f6}' +
+      'html.dark-theme .skill-status-hide-manage-toggle.active{background:#7654a7;border-color:#a98bd2;color:#fff}' +
+      'html.dark-theme .skill-status-hide-state{color:#c7a9f2}' +
+      'html.dark-theme .skill-status-row-hidden td{background:rgba(130,105,165,.1)}' +
+      'html.dark-theme .skill-status-hide-row-button{background:#211a2d;border-color:#594675;color:#d9c6f6}' +
+      'html.dark-theme .skill-status-hide-row-button.restore{background:#17291f;border-color:#315f43;color:#a6e3ba}' +
       '.skill-status-wrap{border:1px solid #d8e3ed;border-radius:14px;background:#fff;overflow:hidden}' +
       '.skill-status-table{width:100%;border-collapse:collapse;table-layout:fixed}' +
       '.skill-status-table th{padding:12px 10px;background:#f2f6fa;color:#526b80;text-align:center;font-size:12px;font-weight:900;border-bottom:1px solid #d8e3ed}' +
@@ -174,7 +190,9 @@
             Array.from({length:10}, function (_, index) { return '<option value="' + (index + 1) + '"' + (index === 9 ? ' selected' : '') + '>' + (index + 1) + '레벨</option>'; }).join('') +
           '</select>' +
         '</label>' +
+        '<button type="button" id="skillStatusHideManageToggle" class="skill-status-hide-manage-toggle" aria-pressed="false">원하는 캐릭터 숨기기</button>' +
         '<span id="skillStatusFilterState" class="skill-status-filter-state">전체 보유 캐릭터 표시</span>' +
+        '<span id="skillStatusHideState" class="skill-status-hide-state" aria-live="polite"></span>' +
       '</div>' +
       '<div class="skill-status-wrap">' +
         '<table class="skill-status-table">' +
@@ -185,6 +203,53 @@
     const insertBefore = main.querySelector('#characterPanel,#outpostPanel');
     if (insertBefore) main.insertBefore(panel, insertBefore);
     else main.appendChild(panel);
+  }
+
+  function getHiddenCharacters() {
+    const account = activeAccountName();
+    if (!account) return new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(HIDDEN_CHARACTERS_PREFIX + encodeURIComponent(account)) || '[]');
+      return new Set(Array.isArray(saved) ? saved.map(normalizeName).filter(Boolean) : []);
+    } catch (_) {
+      return new Set();
+    }
+  }
+
+  function saveHiddenCharacters(hiddenNames) {
+    const account = activeAccountName();
+    if (!account) return;
+    try {
+      localStorage.setItem(HIDDEN_CHARACTERS_PREFIX + encodeURIComponent(account), JSON.stringify(Array.from(hiddenNames)));
+    } catch (_) {}
+  }
+
+  function syncHideManagementControls(hiddenCount) {
+    const button = document.getElementById('skillStatusHideManageToggle');
+    const state = document.getElementById('skillStatusHideState');
+    if (button) {
+      button.classList.toggle('active', hideManagementMode);
+      button.setAttribute('aria-pressed', String(hideManagementMode));
+      button.textContent = hideManagementMode ? '숨김 관리 완료' : '원하는 캐릭터 숨기기';
+      button.title = hideManagementMode
+        ? '숨김 설정을 마치고 일반 목록으로 돌아갑니다.'
+        : '숨길 캐릭터를 선택하거나 이미 숨긴 캐릭터를 다시 표시합니다.';
+    }
+    if (state) {
+      state.textContent = hideManagementMode
+        ? '숨김 관리 중 · 각 캐릭터의 숨기기/다시 표시 버튼을 사용하세요.'
+        : (hiddenCount ? '숨긴 캐릭터 ' + hiddenCount + '명' : '');
+    }
+  }
+
+  function toggleCharacterHidden(name) {
+    const normalized = normalizeName(name);
+    if (!normalized) return;
+    const hiddenNames = getHiddenCharacters();
+    if (hiddenNames.has(normalized)) hiddenNames.delete(normalized);
+    else hiddenNames.add(normalized);
+    saveHiddenCharacters(hiddenNames);
+    renderSkillStatus();
   }
 
   function syncSkillFilterControls() {
@@ -250,10 +315,21 @@
     syncSkillFilterControls();
     const ownedRows = getOwnedRows();
     if (ownedRows === null) {
+      syncHideManagementControls(0);
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">보유 목록을 확인할 수 없습니다. 먼저 현재 계정을 동기화한 뒤 확인해 주세요.</td></tr>';
       return;
     }
-    const filteredRows = ownedRows.filter(rowMeetsSkillThreshold);
+
+    const hiddenNames = getHiddenCharacters();
+    syncHideManagementControls(hiddenNames.size);
+    // While managing hidden characters, show the complete owned list so hidden entries can be restored,
+    // even when the skill-level filter would otherwise hide them.
+    let filteredRows = hideManagementMode
+      ? ownedRows.slice()
+      : ownedRows.filter(function (row) {
+          return rowMeetsSkillThreshold(row) && !hiddenNames.has(normalizeName(row && row['이름']));
+        });
+
     if (skillSortKey) {
       filteredRows.sort(function (a, b) {
         const difference = numericSkillLevel(a, skillSortKey) - numericSkillLevel(b, skillSortKey);
@@ -262,27 +338,49 @@
       });
     }
     updateSkillSortIndicators();
+
     if (!filteredRows.length) {
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">' +
-        (skillFilterEnabled
-          ? skillFilterLevel + '레벨 이상인 스킬이 있는 보유 캐릭터가 없습니다.'
-          : '보유 캐릭터가 없습니다.') +
+        (hideManagementMode
+          ? '표시할 보유 캐릭터가 없습니다.'
+          : (skillFilterEnabled
+            ? skillFilterLevel + '레벨 이상인 스킬이 있는 보유 캐릭터가 없습니다. 숨긴 캐릭터는 ‘원하는 캐릭터 숨기기’에서 다시 표시할 수 있습니다.'
+            : '표시할 보유 캐릭터가 없습니다. 숨긴 캐릭터는 ‘원하는 캐릭터 숨기기’에서 다시 표시할 수 있습니다.')) +
         '</td></tr>';
       return;
     }
+
     body.innerHTML = filteredRows.map(function (row) {
       const name = String(row && row['이름'] || '').trim();
+      const normalizedName = normalizeName(name);
+      const isHidden = hiddenNames.has(normalizedName);
       const image = getImage(name);
-      return '<tr>' +
+      const rowClass = hideManagementMode && isHidden ? ' class="skill-status-row-hidden"' : '';
+      const characterTools = hideManagementMode
+        ? '<div class="skill-status-character-tools">' +
+            '<span class="skill-status-character-name">' + escapeHtml(name) + '</span>' +
+            '<button type="button" class="skill-status-hide-row-button ' + (isHidden ? 'restore' : '') + '" data-skill-hide-character="' + escapeHtml(name) + '" aria-label="' + escapeHtml(isHidden ? '다시 표시 ' + name : '숨기기 ' + name) + '">' +
+              (isHidden ? '다시 표시' : '숨기기') +
+            '</button>' +
+          '</div>'
+        : '<span class="skill-status-character-name">' + escapeHtml(name) + '</span>';
+
+      return '<tr' + rowClass + '>' +
         '<td><div class="skill-character-cell">' +
           (image ? '<img class="skill-status-character-image" loading="lazy" src="' + escapeHtml(image) + '" alt="" onerror="this.style.display=\'none\'">' : '<span class="skill-status-character-image" aria-hidden="true"></span>') +
-          '<span class="skill-status-character-name">' + escapeHtml(name) + '</span>' +
+          characterTools +
         '</div></td>' +
         '<td class="skill-status-level">' + escapeHtml(formatLevel(row['스킬1'])) + '</td>' +
         '<td class="skill-status-level">' + escapeHtml(formatLevel(row['스킬2'])) + '</td>' +
         '<td class="skill-status-level">' + escapeHtml(formatLevel(row['버스트스킬'])) + '</td>' +
       '</tr>';
     }).join('');
+
+    body.querySelectorAll('[data-skill-hide-character]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        toggleCharacterHidden(button.dataset.skillHideCharacter || '');
+      });
+    });
   }
 
   function showSkillStatus() {
@@ -393,6 +491,10 @@
     });
     document.getElementById('skillStatusFilterLevel')?.addEventListener('change', function (event) {
       skillFilterLevel = Math.max(1, Math.min(10, Number(event.target.value) || 10));
+      renderSkillStatus();
+    });
+    document.getElementById('skillStatusHideManageToggle')?.addEventListener('click', function () {
+      hideManagementMode = !hideManagementMode;
       renderSkillStatus();
     });
     document.querySelectorAll('[data-skill-sort]').forEach(function (button) {
