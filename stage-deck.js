@@ -287,23 +287,26 @@
       return '<div class="stage-deck-slot '+(current?'active':'')+'" data-slot="'+index+'" role="button" tabindex="0" aria-label="'+(index+1)+'번 슬롯 선택: '+esc(name)+'"><span class="stage-slot-num">'+(index+1)+'</span>'+(image?'<img src="'+esc(image)+'" alt="'+esc(name)+'">':'<span class="stage-slot-plus">＋</span>')+'<button type="button" class="stage-slot-remove" data-remove-slot="'+index+'" aria-label="'+(index+1)+'번 슬롯 비우기">×</button></div>';
     }).join('');
     container.querySelectorAll('[data-slot]').forEach(el => {
-      const chooseSlot = () => { activeSlot = Number(el.dataset.slot); renderSlots(); };
+      const index = Number(el.dataset.slot);
+      const handleSlot = () => {
+        if (slots[index]) {
+          removeCharacterFromDeck(index);
+        } else {
+          activeSlot = index;
+          renderSlots();
+        }
+      };
       el.addEventListener('click', event => {
         if (event.target.closest('[data-remove-slot]')) return;
-        chooseSlot();
+        handleSlot();
       });
       el.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseSlot(); }
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleSlot(); }
       });
     });
     container.querySelectorAll('[data-remove-slot]').forEach(button => button.addEventListener('click', event => {
       event.stopPropagation();
-      const index = Number(button.dataset.removeSlot);
-      slots[index] = '';
-      activeSlot = index;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch (_) {}
-      renderSlots();
-      renderGrid();
+      removeCharacterFromDeck(Number(button.dataset.removeSlot));
     }));
   }
 
@@ -388,13 +391,20 @@
     });
   }
 
+  function removeCharacterFromDeck(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= SLOT_COUNT || !slots[index]) return;
+    slots[index] = '';
+    activeSlot = index;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch (_) {}
+    renderSlots();
+    renderGrid();
+  }
+
   function addCharacter(name) {
     if (!name) return;
     const existing = slots.indexOf(name);
-    if (existing >= 0 && existing !== activeSlot) {
-      activeSlot = existing;
-      renderSlots();
-      showNotice('이미 덱에 있는 니케입니다. 해당 슬롯을 선택했어요.');
+    if (existing >= 0) {
+      removeCharacterFromDeck(existing);
       return;
     }
     slots[activeSlot] = name;
