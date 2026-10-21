@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.34
+// @version      1.0.35
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -566,15 +566,19 @@
 
       const batchSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys));
       const singleSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys));
-      mergeMissingSkillData(detail, single, suspiciousAllOnes);
+      // If the batch response was incomplete, trust the exact-code single response for all
+      // fields it actually contains, not just the fields missing from the batch.
+      const trustSingleValues = !complete || suspiciousAllOnes;
+      mergeMissingSkillData(detail, single, trustSingleValues);
 
-      if (['5148','5007','5101','5011'].includes(code) || suspiciousAllOnes) {
+      if (['5148','5007','5101','5011'].includes(code) || suspiciousAllOnes || !complete) {
         console.info('[NIKKE GM] Individual skill verification', {
           name_code: code,
           name: BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || '',
           batchSkills,
           singleSkills,
           suspiciousAllOnes,
+          trustSingleValues,
           mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
         });
       }
