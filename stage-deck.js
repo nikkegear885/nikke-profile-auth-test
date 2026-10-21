@@ -207,6 +207,22 @@
       .stage-deck-slot .stage-slot-remove{position:absolute;right:4px;top:4px;width:20px;height:20px;border:0;border-radius:50%;background:rgba(17,35,52,.82);color:#fff;display:grid;place-items:center;font-size:14px;line-height:1;z-index:3;cursor:pointer;padding:0}
       .stage-deck-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid #d8e4ee;border-radius:12px;background:#f7fafc}
       .stage-deck-account-creation{margin:0 0 14px;padding:15px;border:1px solid #c7ddeb;border-radius:14px;background:linear-gradient(135deg,#f8fcff,#edf7ff);box-shadow:0 5px 18px rgba(47,87,119,.06)}
+      .stage-deck-account-disclosure{margin:0 0 14px;border:1px solid #b8d2e6;border-radius:13px;background:#fff;overflow:hidden}
+      .stage-deck-account-disclosure>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;padding:13px 15px;cursor:pointer;font-size:13px;font-weight:1000;color:#2e5270;background:#eff7fd;user-select:none}
+      .stage-deck-account-disclosure>summary::-webkit-details-marker{display:none}
+      .stage-deck-account-disclosure>summary:before{content:'＋';display:inline-grid;place-items:center;flex:0 0 22px;width:22px;height:22px;border-radius:7px;background:#dceefa;color:#236f9d;font-size:15px}
+      .stage-deck-account-disclosure>summary span:first-of-type{flex:1}
+      .stage-deck-account-disclosure[open]>summary:before{content:'−'}
+      .stage-deck-account-disclosure .stage-deck-disclosure-hint{font-size:10px;font-weight:800;color:#7190a8}
+      .stage-deck-account-disclosure .stage-deck-account-creation{margin:0;border:0;border-top:1px solid #d4e4f0;border-radius:0;box-shadow:none}
+      html.dark-theme .stage-deck-account-disclosure{background:#101b2b;border-color:#304359}
+      html.dark-theme .stage-deck-account-disclosure>summary{background:#17283a;color:#dceafa}
+      html.dark-theme .stage-deck-account-disclosure>summary:before{background:#203d56;color:#b9e5ff}
+      html.dark-theme .stage-deck-account-disclosure .stage-deck-account-creation{border-top-color:#304359}
+      html.dark-theme .stage-deck-account-disclosure .stage-deck-disclosure-hint{color:#8ea3b8}
+      .stage-deck-account-disclosure[open]>summary .stage-deck-disclosure-hint{font-size:0}
+      .stage-deck-account-disclosure[open]>summary .stage-deck-disclosure-hint:after{content:'눌러서 닫기';font-size:10px}
+
       .stage-deck-account-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
       .stage-deck-account-title h4{margin:0 0 5px;color:#253f59;font-size:15px;font-weight:1000}
       .stage-deck-account-title p{margin:0;color:#6e8498;font-size:11px;line-height:1.5}
@@ -360,6 +376,8 @@
         <div class="stage-deck-top-head"><span class="stage-deck-top-title">선택한 니케 <span id="stageDeckSelectedCount">0 / 5</span></span><span class="stage-deck-top-actions"><span class="stage-deck-top-note">슬롯을 눌러 배치 위치 선택</span><button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button></span></div>
         <div class="stage-deck-slots" id="stageDeckSlots"></div>
       </section>
+      <details class="stage-deck-account-disclosure" id="stageDeckAccountDisclosure">
+        <summary><span>계정 생성 · 뽑기</span><span class="stage-deck-disclosure-hint">눌러서 열기</span></summary>
       <section class="stage-deck-account-creation" id="stageDeckAccountCreation" aria-label="계정 생성 및 뽑기">
         <div class="stage-deck-account-head">
           <div class="stage-deck-account-title">
@@ -394,6 +412,7 @@
           <div id="stageDeckGachaHistory" class="stage-deck-gacha-history"></div>
         </section>
       </section>
+      </details>
       <div class="stage-deck-toolbar">
         <label class="stage-deck-search-wrap"><input id="stageDeckSearch" class="stage-deck-search" type="search" placeholder="니케 이름 검색…" autocomplete="off" aria-label="니케 이름 검색"></label>
         <button type="button" class="stage-deck-filter-btn" data-burst="1" aria-pressed="false">Ⅰ</button>
