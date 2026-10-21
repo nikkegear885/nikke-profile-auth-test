@@ -7,7 +7,12 @@
   const PEDIA_URL = 'assets/nikke-pedia-master.json?v=1049';
   const SKILLS_URL = 'assets/nikke-skills.json?v=1048';
   const STORAGE_KEY = 'nikke_stage_deck_v1';
+  const SHOW_UNOWNED_STORAGE_KEY = 'nikke_stage_deck_show_unowned_v1';
   const SLOT_COUNT = 5;
+  let showUnownedCharacters = (() => {
+    try { return localStorage.getItem(SHOW_UNOWNED_STORAGE_KEY) === '1'; }
+    catch (_) { return false; }
+  })();
   let pedia = [];
   let metaByName = {};
   let slots = Array(SLOT_COUNT).fill('');
@@ -127,6 +132,11 @@
       .stage-deck-filter-btn{height:38px;min-width:40px;padding:0 13px;border:1px solid #c9d8e4;border-radius:9px;background:#fff;color:#4e6780;font-size:12px;font-weight:900;cursor:pointer}
       .stage-deck-filter-btn:hover{border-color:#7da9d3}
       .stage-deck-filter-btn.active{background:#168bce;border-color:#168bce;color:#fff;box-shadow:0 3px 8px rgba(22,139,206,.18)}
+      .stage-deck-unowned-toggle{height:38px;padding:0 12px;border:1px solid #c9d8e4;border-radius:9px;background:#fff;color:#4e6780;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+      .stage-deck-unowned-toggle:hover{border-color:#7da9d3}
+      .stage-deck-unowned-toggle.active{background:#e9faf3;border-color:#8bcfb6;color:#187b59}
+      html.dark-theme .stage-deck-unowned-toggle{background:#172437;border-color:#354a62;color:#b6cce0}
+      html.dark-theme .stage-deck-unowned-toggle.active{background:#183b32;border-color:#327b68;color:#a4f0d4}
       .stage-deck-sort{height:38px;max-width:190px;min-width:135px;border:1px solid #c9d8e4;border-radius:9px;background:#fff;color:#405a73;padding:0 9px;font-size:11px;font-weight:800}
       .stage-deck-clear{height:38px;padding:0 12px;border:1px solid #d9caca;border-radius:9px;background:#fff;color:#925453;font-size:11px;font-weight:900;cursor:pointer}
       .stage-deck-clear:hover{background:#fff4f3;border-color:#c99896}
@@ -202,6 +212,7 @@
         <button type="button" class="stage-deck-filter-btn" data-burst="1" aria-pressed="false">Ⅰ</button>
         <button type="button" class="stage-deck-filter-btn" data-burst="2" aria-pressed="false">Ⅱ</button>
         <button type="button" class="stage-deck-filter-btn" data-burst="3" aria-pressed="false">Ⅲ</button>
+        <button type="button" class="stage-deck-unowned-toggle" id="stageDeckUnownedToggle" aria-pressed="false">미보유 캐릭터 보이기</button>
         <select id="stageDeckSort" class="stage-deck-sort" aria-label="캐릭터 정렬">
           <option value="power_desc">전투력 높은 순</option>
           <option value="name_asc">이름순</option>
@@ -303,6 +314,24 @@
     }));
   }
 
+  function updateUnownedToggleButton() {
+    const button = document.getElementById('stageDeckUnownedToggle');
+    if (!button) return;
+    button.classList.toggle('active', showUnownedCharacters);
+    button.textContent = showUnownedCharacters ? '미보유 캐릭터 숨기기' : '미보유 캐릭터 보이기';
+    button.setAttribute('aria-pressed', String(showUnownedCharacters));
+  }
+
+  function toggleUnownedCharacters() {
+    showUnownedCharacters = !showUnownedCharacters;
+    try {
+      if (showUnownedCharacters) localStorage.setItem(SHOW_UNOWNED_STORAGE_KEY, '1');
+      else localStorage.removeItem(SHOW_UNOWNED_STORAGE_KEY);
+    } catch (_) {}
+    updateUnownedToggleButton();
+    renderGrid();
+  }
+
   function renderGrid() {
     const grid = document.getElementById('stageDeckGrid');
     const visibleCount = document.getElementById('stageDeckVisibleCount');
@@ -315,6 +344,8 @@
     });
     const ownedRoster = getSyncedOwnedRoster();
     const isOwnedName = name => !!ownedRoster && ownedRoster.has(normalizeRosterName(name));
+    // By default, show only characters confirmed as owned by the active synced account.
+    if (!showUnownedCharacters) list = list.filter(item => isOwnedName(item.name));
     const compareBySelectedSort = (a,b) => {
       if (sortMode === 'name_asc') return a.name.localeCompare(b.name, 'ko');
       if (sortMode === 'burst') return String(getMeta(a.name).burst||'9').localeCompare(String(getMeta(b.name).burst||'9')) || a.name.localeCompare(b.name,'ko');
@@ -329,14 +360,21 @@
       }
       return compareBySelectedSort(a,b);
     });
-    const ownedVisibleCount = ownedRoster ? list.filter(item => isOwnedName(item.name)).length : null;
+    const ownedVisibleCount = ownedRoster ? list.filter(item => isOwnedName(item.name)).length : 0;
     if (visibleCount) {
       visibleCount.textContent = ownedRoster
-        ? '보유 ' + ownedVisibleCount + '명 · 전체 ' + list.length + ' / ' + pedia.length + '명'
-        : list.length + ' / ' + pedia.length + '명 · 보유 정보 확인을 위해 계정 동기화 필요';
+        ? '보유 ' + ownedVisibleCount + '명 · 표시 ' + list.length + ' / ' + pedia.length + '명'
+        : (showUnownedCharacters
+          ? '보유 정보 미확인 · 전체 목록 ' + list.length + ' / ' + pedia.length + '명'
+          : '보유 정보 미확인 · 계정 동기화 필요 · 0 / ' + pedia.length + '명');
     }
+    updateUnownedToggleButton();
     if (!list.length) {
-      grid.innerHTML = '<div class="stage-deck-empty">조건에 맞는 니케가 없습니다.</div>';
+      grid.innerHTML = !showUnownedCharacters && !ownedRoster
+        ? '<div class="stage-deck-empty">보유 니케 정보를 확인할 수 없습니다. 계정을 동기화하거나 ‘미보유 캐릭터 보이기’를 눌러 전체 도감을 확인하세요.</div>'
+        : (!showUnownedCharacters && ownedRoster
+          ? '<div class="stage-deck-empty">조건에 맞는 보유 니케가 없습니다. ‘미보유 캐릭터 보이기’를 눌러 전체 도감을 확인할 수 있습니다.</div>'
+          : '<div class="stage-deck-empty">조건에 맞는 니케가 없습니다.</div>');
       return;
     }
     grid.innerHTML = list.map(item => {
@@ -456,6 +494,8 @@
     ensureNav();
     loadSavedDeck();
     renderSlots();
+    document.getElementById('stageDeckUnownedToggle')?.addEventListener('click', toggleUnownedCharacters);
+    updateUnownedToggleButton();
     document.getElementById('stageDeckSearch')?.addEventListener('input', event => {
       query = event.target.value || '';
       renderGrid();
