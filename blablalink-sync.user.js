@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.33
+// @version      1.0.34
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -465,11 +465,61 @@
   }
 
   async function fetchDetails(codes){
-    const clean = Array.from(new Set(codes.map(v => String(v)).filter(Boolean)));
+    const clean = Array.from(new Set(codes.map(v => String(v).trim()).filter(Boolean)));
     const chunks = [];
-    // 상세 API는 여러 name_code를 묶었을 때 스킬 필드가 누락되는 경우가 있어 40개씩 조회 후 검증합니다.
     for(let i=0;i<clean.length;i+=40) chunks.push(clean.slice(i,i+40));
-    const out = [];
+    const byCode = new Map();
+    const singleLookupCache = new Map();
+
+    function addExactDetails(list, requestedCodes, source) {
+      const allowed = new Set(requestedCodes.map(String));
+      if (!Array.isArray(list)) return;
+      for (const item of list) {
+        const code = String(item?.name_code ?? '').trim();
+        if (!code || !allowed.has(code)) {
+          console.warn('[NIKKE GM] Ignored mismatched detail row', {source, requested:[...allowed], returnedCode:code});
+          continue;
+        }
+        // Keep the first returned row for each exact character code. Never assign another
+        // character's first response as a fallback for a missing name_code.
+        if (!byCode.has(code)) byCode.set(code, item);
+        else mergeMissingSkillData(byCode.get(code), item);
+      }
+    }
+
+    async function fetchSingleExact(code) {
+      if (singleLookupCache.has(code)) return singleLookupCache.get(code);
+      let exact = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const j = await postJson(API.details, {
+            intl_open_id: state.intlOpenId,
+            nikke_area_id: Number(state.areaId),
+            name_codes: [code]
+          });
+          if (String(j?.code ?? '') === '0' && Array.isArray(j?.data?.character_details)) {
+            exact = j.data.character_details.find(item => String(item?.name_code ?? '').trim() === code) || null;
+            if (exact) break;
+            if (attempt === 1) {
+              console.warn('[NIKKE GM] Single-character response did not contain requested code:', {
+                requestedCode: code,
+                returnedCodes: j.data.character_details.map(item => String(item?.name_code ?? ''))
+              });
+            }
+          } else if (attempt === 1) {
+            console.warn('[NIKKE GM] Single-character lookup returned no data:', code, j?.message || j?.msg || j?.code);
+          }
+        } catch (error) {
+          if (attempt === 1) console.warn('[NIKKE GM] Single-character lookup failed:', code, error);
+          else await delay(250);
+        }
+      }
+      singleLookupCache.set(code, exact);
+      await delay(100);
+      return exact;
+    }
+
+    // First load the usual batch response, but accept only records whose name_code was requested.
     for(const chunk of chunks){
       let ok = false;
       for(let attempt=0;attempt<2 && !ok;attempt++){
@@ -480,10 +530,7 @@
             name_codes: chunk
           });
           if (String(j?.code ?? '') === '0'){
-            if (Array.isArray(j?.data?.character_details)) {
-              out.push(...j.data.character_details);
-              if (out.length <= 2) console.log('[NIKKE GM] GetUserCharacterDetails sample:', j.data.character_details[0]);
-            }
+            addExactDetails(j?.data?.character_details, chunk, 'batch');
             ok = true;
           } else if (attempt === 1) {
             throw new Error(j?.message || j?.msg || '장비 상세 조회 실패');
@@ -496,58 +543,54 @@
       await delay(120);
     }
 
-    // 묶음 조회 결과에 스킬 레벨이 빠진 캐릭터만 단일 name_code로 재조회합니다.
-    // 정상 응답은 그대로 사용하므로 API 호출량을 불필요하게 늘리지 않습니다.
-    for (const detail of out) {
+    // A batch response can omit certain characters entirely. Retry every requested code
+    // that was not returned, not just the rows which did come back.
+    for (const code of clean) {
+      if (byCode.has(code)) continue;
+      const single = await fetchSingleExact(code);
+      if (single) byCode.set(code, single);
+      else console.warn('[NIKKE GM] Character detail missing after individual retry:', code, BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || '(unmapped)');
+    }
+
+    // Retry rows with missing skill fields and suspicious batch defaults (1/1/1).
+    // Use only an exact name_code match from the single-character response.
+    for (const [code, detail] of byCode) {
       const complete = hasCompleteSkillData(detail);
       const suspiciousAllOnes = complete && allSkillsAreOne(detail);
-      // Recheck incomplete rows and rows whose batch response says 1/1/1.
-      // Some profiles' batch response can return default-looking values even when their true levels differ.
       if (complete && !suspiciousAllOnes) continue;
-      const code = String(detail?.name_code ?? '').trim();
-      if (!code) continue;
-      let singleChecked = false;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const j = await postJson(API.details, {
-            intl_open_id: state.intlOpenId,
-            nikke_area_id: Number(state.areaId),
-            name_codes: [code]
-          });
-          if (String(j?.code ?? '') === '0' && Array.isArray(j?.data?.character_details)) {
-            const single = j.data.character_details.find(item => String(item?.name_code ?? '') === code)
-              || j.data.character_details[0];
-            if (single) {
-              const batchSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys));
-              const singleSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys));
-              mergeMissingSkillData(detail, single, suspiciousAllOnes);
-              singleChecked = true;
-              if (code === '5148') {
-                console.info('[NIKKE GM] Vesti: Tactical Up skill diagnostic', {
-                  name_code: code,
-                  batchSkills,
-                  singleSkills,
-                  suspiciousAllOnes,
-                  mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
-                });
-              }
-            }
-            break;
-          }
-          if (attempt === 1) console.warn('[NIKKE GM] Single-character skill retry returned no data:', code, j?.message || j?.msg || j?.code);
-        } catch (error) {
-          if (attempt === 1) console.warn('[NIKKE GM] Single-character skill retry failed:', code, error);
-          else await delay(250);
-        }
+      const single = await fetchSingleExact(code);
+      if (!single) {
+        if (suspiciousAllOnes) console.warn('[NIKKE GM] 1/1/1 skill row could not be independently verified:', code);
+        continue;
       }
-      if (suspiciousAllOnes && !singleChecked) {
-        console.warn('[NIKKE GM] 1/1/1 skill row could not be rechecked:', code);
+
+      const batchSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys));
+      const singleSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys));
+      mergeMissingSkillData(detail, single, suspiciousAllOnes);
+
+      if (['5148','5007','5101','5011'].includes(code) || suspiciousAllOnes) {
+        console.info('[NIKKE GM] Individual skill verification', {
+          name_code: code,
+          name: BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || '',
+          batchSkills,
+          singleSkills,
+          suspiciousAllOnes,
+          mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
+        });
       }
-      await delay(100);
     }
+
+    const out = clean.map(code => byCode.get(code)).filter(Boolean);
     const completeSkills = out.filter(hasCompleteSkillData).length;
     const allOnes = out.filter(allSkillsAreOne).length;
-    console.log('[NIKKE GM] Skill fields verified:', completeSkills + '/' + out.length, '· still 1/1/1:', allOnes);
+    const missingCodes = clean.filter(code => !byCode.has(code));
+    console.log('[NIKKE GM] Skill/detail verification summary:', {
+      requested: clean.length,
+      returned: out.length,
+      completeSkills,
+      stillAllOnes: allOnes,
+      missingCodes: missingCodes.map(code => ({code, name: BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || ''}))
+    });
     return out;
   }
 
