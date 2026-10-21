@@ -140,6 +140,8 @@
       .stage-deck-sort{height:38px;max-width:190px;min-width:135px;border:1px solid #c9d8e4;border-radius:9px;background:#fff;color:#405a73;padding:0 9px;font-size:11px;font-weight:800}
       .stage-deck-clear{height:38px;padding:0 12px;border:1px solid #d9caca;border-radius:9px;background:#fff;color:#925453;font-size:11px;font-weight:900;cursor:pointer}
       .stage-deck-clear:hover{background:#fff4f3;border-color:#c99896}
+      .stage-deck-random-account{height:38px;padding:0 12px;border:1px solid #78b3df;border-radius:9px;background:#eaf6ff;color:#24699a;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+      .stage-deck-random-account:hover{background:#dff0ff;border-color:#4c9ed8}
       .stage-deck-count{margin-left:auto;color:#6e8598;font-size:11px;font-weight:800;white-space:nowrap}
       .stage-deck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:12px}
       .stage-deck-card{position:relative;min-width:0;border:1px solid #d9e4ed;border-radius:12px;background:#fff;overflow:hidden;cursor:pointer;box-shadow:0 3px 12px rgba(40,78,110,.05);transition:transform .12s,border-color .12s,box-shadow .12s}
@@ -212,6 +214,7 @@
           <option value="pedia">도감 순</option>
           <option value="burst">버스트 순</option>
         </select>
+        <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="위시리스트와 같은 무작위 테스트 계정을 생성합니다">무작위 계정 생성</button>
         <button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button>
         <span class="stage-deck-count" id="stageDeckVisibleCount"></span>
       </div>
@@ -523,6 +526,14 @@
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch (_) {}
       renderSlots();
       renderGrid();
+    });
+    document.getElementById('stageDeckRandomAccount')?.addEventListener('click', () => {
+      if (typeof window.createRandomTestAccount !== 'function') {
+        showNotice('무작위 계정 기능을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+        return;
+      }
+      window.createRandomTestAccount();
+      if (typeof window.switchMainView === 'function') window.switchMainView('stageDeck');
     });
     patchNavigation();
   }
