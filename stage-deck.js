@@ -122,8 +122,8 @@
       .stage-deck-slot.active{border-color:#168bce;box-shadow:0 0 0 3px rgba(22,139,206,.14)}
       .stage-deck-slot .stage-slot-plus{font-size:42px;font-weight:300;line-height:1}
       .stage-deck-slot .stage-slot-num{position:absolute;left:6px;top:5px;font-size:10px;font-weight:900;color:#8295a8;z-index:2}
-      .stage-deck-slot img{width:100%;height:calc(100% - 25px);object-fit:cover;object-position:center top;display:block}
-      .stage-deck-slot .stage-slot-name{width:100%;height:25px;display:flex;align-items:center;justify-content:center;padding:0 4px;background:#eaf2f8;color:#2d4c68;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .stage-deck-slot img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+      
       .stage-deck-slot .stage-slot-remove{position:absolute;right:4px;top:4px;width:20px;height:20px;border:0;border-radius:50%;background:rgba(17,35,52,.82);color:#fff;display:grid;place-items:center;font-size:14px;line-height:1;z-index:3;cursor:pointer;padding:0}
       .stage-deck-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid #d8e4ee;border-radius:12px;background:#f7fafc}
       .stage-deck-search-wrap{position:relative;display:flex;align-items:center;flex:1 1 240px;min-width:170px}
@@ -284,7 +284,7 @@
       if (!item) {
         return '<div class="stage-deck-slot '+(current?'active':'')+'" data-slot="'+index+'" role="button" tabindex="0" aria-label="'+(index+1)+'번 슬롯 선택, 비어 있음"><span class="stage-slot-num">'+(index+1)+'</span><span class="stage-slot-plus">+</span></div>';
       }
-      return '<div class="stage-deck-slot '+(current?'active':'')+'" data-slot="'+index+'" role="button" tabindex="0" aria-label="'+(index+1)+'번 슬롯 선택: '+esc(name)+'"><span class="stage-slot-num">'+(index+1)+'</span>'+(image?'<img src="'+esc(image)+'" alt="'+esc(name)+'">':'<span class="stage-slot-plus">＋</span>')+'<span class="stage-slot-name" title="'+esc(name)+'">'+esc(name)+'</span><button type="button" class="stage-slot-remove" data-remove-slot="'+index+'" aria-label="'+(index+1)+'번 슬롯 비우기">×</button></div>';
+      return '<div class="stage-deck-slot '+(current?'active':'')+'" data-slot="'+index+'" role="button" tabindex="0" aria-label="'+(index+1)+'번 슬롯 선택: '+esc(name)+'"><span class="stage-slot-num">'+(index+1)+'</span>'+(image?'<img src="'+esc(image)+'" alt="'+esc(name)+'">':'<span class="stage-slot-plus">＋</span>')+'<button type="button" class="stage-slot-remove" data-remove-slot="'+index+'" aria-label="'+(index+1)+'번 슬롯 비우기">×</button></div>';
     }).join('');
     container.querySelectorAll('[data-slot]').forEach(el => {
       const chooseSlot = () => { activeSlot = Number(el.dataset.slot); renderSlots(); };
