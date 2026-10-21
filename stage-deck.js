@@ -1068,6 +1068,7 @@
     injectStyle();
     ensurePanel();
     ensureNav();
+    patchNavigation();
     loadTierAssignments();
     document.getElementById('stageDeckSearch')?.addEventListener('input', event => {
       query = event.target.value || '';
