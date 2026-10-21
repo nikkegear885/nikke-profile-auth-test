@@ -8,6 +8,8 @@
   const SKILLS_URL = 'assets/nikke-skills.json?v=1048';
   const STORAGE_KEY = 'nikke_stage_deck_v1';
   const SHOW_UNOWNED_STORAGE_KEY = 'nikke_stage_deck_show_unowned_v1';
+  const RANDOM_ACCOUNT_RULES_STORAGE_KEY = 'nikke_random_test_account_rules_v1';
+  const RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY = 'nikke_stage_deck_random_account_options_v1';
   const SLOT_COUNT = 5;
   let showUnownedCharacters = (() => {
     try { return localStorage.getItem(SHOW_UNOWNED_STORAGE_KEY) === '1'; }
@@ -142,6 +144,21 @@
       .stage-deck-clear:hover{background:#fff4f3;border-color:#c99896}
       .stage-deck-random-account{height:38px;padding:0 12px;border:1px solid #78b3df;border-radius:9px;background:#eaf6ff;color:#24699a;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
       .stage-deck-random-account:hover{background:#dff0ff;border-color:#4c9ed8}
+      .stage-deck-random-settings{margin:0 0 12px;border:1px solid #d8e4ee;border-radius:10px;background:#f7fafc;color:#405a73}
+      .stage-deck-random-settings summary{padding:10px 12px;font-size:12px;font-weight:900;cursor:pointer;user-select:none}
+      .stage-deck-random-settings-body{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:0 12px 12px;border-top:1px solid #d8e4ee}
+      .stage-deck-random-owned{display:flex;align-items:center;gap:10px;flex:1 1 250px;min-width:220px;padding-top:12px}
+      .stage-deck-random-owned label{font-size:11px;font-weight:900;white-space:nowrap}
+      .stage-deck-random-owned input{width:100%;min-width:90px;accent-color:#168bce}
+      .stage-deck-random-owned output{min-width:38px;text-align:right;font-size:12px;font-weight:900;color:#24699a}
+      .stage-deck-random-includes{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:12px}
+      .stage-deck-random-includes label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;cursor:pointer}
+      .stage-deck-random-includes input{accent-color:#168bce}
+      .stage-deck-random-note{flex-basis:100%;margin-top:-3px;color:#8195a8;font-size:10px;line-height:1.45}
+      html.dark-theme .stage-deck-random-settings{background:#101b2b;border-color:#304359;color:#dce6f1}
+      html.dark-theme .stage-deck-random-settings-body{border-color:#304359}
+      html.dark-theme .stage-deck-random-owned output{color:#9ecfff}
+      @media(max-width:650px){.stage-deck-random-settings-body{gap:4px}.stage-deck-random-owned{flex-basis:100%;min-width:0}.stage-deck-random-includes{gap:10px}}
       .stage-deck-count{margin-left:auto;color:#6e8598;font-size:11px;font-weight:800;white-space:nowrap}
       .stage-deck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:12px}
       .stage-deck-card{position:relative;min-width:0;border:1px solid #d9e4ed;border-radius:12px;background:#fff;overflow:hidden;cursor:pointer;box-shadow:0 3px 12px rgba(40,78,110,.05);transition:transform .12s,border-color .12s,box-shadow .12s}
@@ -218,6 +235,21 @@
         <button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button>
         <span class="stage-deck-count" id="stageDeckVisibleCount"></span>
       </div>
+      <details class="stage-deck-random-settings" id="stageDeckRandomSettings">
+        <summary>무작위 계정 생성 설정</summary>
+        <div class="stage-deck-random-settings-body">
+          <div class="stage-deck-random-owned">
+            <label for="stageDeckRandomOwnedChance">니케 보유 확률</label>
+            <input id="stageDeckRandomOwnedChance" type="range" min="0" max="100" step="5" value="60">
+            <output id="stageDeckRandomOwnedChanceValue" for="stageDeckRandomOwnedChance">60%</output>
+          </div>
+          <div class="stage-deck-random-includes">
+            <label><input type="checkbox" id="stageDeckIncludeLimited" checked> 한정 캐 포함</label>
+            <label><input type="checkbox" id="stageDeckIncludeDistribution" checked> 배포 캐 포함</label>
+          </div>
+          <div class="stage-deck-random-note">보유 확률과 돌파 확률은 위시리스트의 무작위 계정 설정과 공유됩니다. 한정·배포 설정을 끄면 해당 분류의 니케는 무작위 계정에서 미보유 처리됩니다.</div>
+        </div>
+      </details>
       <div class="stage-deck-grid" id="stageDeckGrid" aria-label="캐릭터 도감 목록"></div>
       <div id="stageDeckNotice" hidden aria-live="polite"></div>
     `;
@@ -311,6 +343,71 @@
       event.stopPropagation();
       removeCharacterFromDeck(Number(button.dataset.removeSlot));
     }));
+  }
+
+  function loadStageDeckRandomSettings() {
+    let rules = {};
+    let options = {};
+    try { rules = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_RULES_STORAGE_KEY) || '{}') || {}; } catch (_) {}
+    try { options = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY) || '{}') || {}; } catch (_) {}
+    const clamp = (value, fallback, max=100) => Math.max(0, Math.min(max, Number.isFinite(Number(value)) ? Number(value) : fallback));
+    const one = clamp(rules.breakthroughOneChance, 25);
+    const two = clamp(rules.breakthroughTwoChance, 10, 100-one);
+    const three = clamp(rules.breakthroughThreeChance, 5, 100-one-two);
+    return {
+      ownedChance: clamp(rules.ownedChance, 60),
+      breakthroughOneChance: one,
+      breakthroughTwoChance: two,
+      breakthroughThreeChance: three,
+      includeLimited: options.includeLimited !== false,
+      includeDistribution: options.includeDistribution !== false
+    };
+  }
+
+  function saveStageDeckRandomSettings() {
+    const chanceInput = document.getElementById('stageDeckRandomOwnedChance');
+    const limitedInput = document.getElementById('stageDeckIncludeLimited');
+    const distributionInput = document.getElementById('stageDeckIncludeDistribution');
+    const settings = loadStageDeckRandomSettings();
+    const ownedChance = Math.max(0, Math.min(100, Number(chanceInput?.value ?? settings.ownedChance) || 0));
+    const rules = {
+      ownedChance,
+      breakthroughOneChance: settings.breakthroughOneChance,
+      breakthroughTwoChance: settings.breakthroughTwoChance,
+      breakthroughThreeChance: settings.breakthroughThreeChance
+    };
+    try { localStorage.setItem(RANDOM_ACCOUNT_RULES_STORAGE_KEY, JSON.stringify(rules)); } catch (_) {}
+    const one = rules.breakthroughOneChance;
+    const two = rules.breakthroughTwoChance;
+    const three = rules.breakthroughThreeChance;
+    window.NIKKE_RANDOM_ACCOUNT_RULES = {
+      ownedChance,
+      breakthroughWeights: {zero: Math.max(0,100-one-two-three), one, two, three}
+    };
+    const options = {
+      includeLimited: limitedInput ? limitedInput.checked : settings.includeLimited,
+      includeDistribution: distributionInput ? distributionInput.checked : settings.includeDistribution
+    };
+    try { localStorage.setItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY, JSON.stringify(options)); } catch (_) {}
+    const output = document.getElementById('stageDeckRandomOwnedChanceValue');
+    if (output) output.textContent = ownedChance + '%';
+  }
+
+  function initStageDeckRandomSettings() {
+    const settings = loadStageDeckRandomSettings();
+    const chanceInput = document.getElementById('stageDeckRandomOwnedChance');
+    const limitedInput = document.getElementById('stageDeckIncludeLimited');
+    const distributionInput = document.getElementById('stageDeckIncludeDistribution');
+    if (chanceInput) chanceInput.value = String(settings.ownedChance);
+    if (limitedInput) limitedInput.checked = settings.includeLimited;
+    if (distributionInput) distributionInput.checked = settings.includeDistribution;
+    const output = document.getElementById('stageDeckRandomOwnedChanceValue');
+    if (output) output.textContent = settings.ownedChance + '%';
+    chanceInput?.addEventListener('input', saveStageDeckRandomSettings);
+    limitedInput?.addEventListener('change', saveStageDeckRandomSettings);
+    distributionInput?.addEventListener('change', saveStageDeckRandomSettings);
+    // Expose the exact saved rates so the shared generator can use the same rules immediately.
+    saveStageDeckRandomSettings();
   }
 
   function updateUnownedToggleButton() {
@@ -527,7 +624,9 @@
       renderSlots();
       renderGrid();
     });
+    initStageDeckRandomSettings();
     document.getElementById('stageDeckRandomAccount')?.addEventListener('click', () => {
+      saveStageDeckRandomSettings();
       if (typeof window.createRandomTestAccount !== 'function') {
         showNotice('무작위 계정 기능을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
         return;
