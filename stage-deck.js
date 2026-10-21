@@ -874,7 +874,7 @@
 
   function renderTierCard(item, ownedRoster) {
     const name = String(item.name || '');
-    const image = /^https?:\\/\\/i.test(String(item.image || '')) ? String(item.image) : '';
+    const image = /^https?:\/\//i.test(String(item.image || '')) ? String(item.image) : '';
     const meta = getMeta(name);
     const burst = String(meta.burst || '').match(/[123]/)?.[0] || '';
     const rarity = String(meta.rarity || '');
