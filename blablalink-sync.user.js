@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.35
+// @version      1.0.36
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -440,9 +440,9 @@
   }
 
   const SKILL_FIELD_GROUPS = [
-    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level','skill1']},
-    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level','skill2']},
-    {target:'ulti_skill_lv', keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','burstSkill','ultiSkillLv']}
+    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level']},
+    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level']},
+    {target:'ulti_skill_lv', keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','ultiSkillLv']}
   ];
 
   function hasCompleteSkillData(char) {
@@ -451,6 +451,10 @@
 
   function allSkillsAreOne(char) {
     return SKILL_FIELD_GROUPS.every(group => Number(skillFieldValue(char, group.keys)) === 1);
+  }
+
+  function allSkillsAreTen(char) {
+    return SKILL_FIELD_GROUPS.every(group => Number(skillFieldValue(char, group.keys)) === 10);
   }
 
   function mergeMissingSkillData(target, source, overwriteExisting=false) {
@@ -557,10 +561,12 @@
     for (const [code, detail] of byCode) {
       const complete = hasCompleteSkillData(detail);
       const suspiciousAllOnes = complete && allSkillsAreOne(detail);
-      if (complete && !suspiciousAllOnes) continue;
+      const suspiciousAllTens = complete && allSkillsAreTen(detail);
+      if (complete && !suspiciousAllOnes && !suspiciousAllTens) continue;
       const single = await fetchSingleExact(code);
       if (!single) {
         if (suspiciousAllOnes) console.warn('[NIKKE GM] 1/1/1 skill row could not be independently verified:', code);
+        if (suspiciousAllTens) console.warn('[NIKKE GM] 10/10/10 skill row could not be independently verified:', code);
         continue;
       }
 
@@ -568,7 +574,7 @@
       const singleSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys));
       // If the batch response was incomplete, trust the exact-code single response for all
       // fields it actually contains, not just the fields missing from the batch.
-      const trustSingleValues = !complete || suspiciousAllOnes;
+      const trustSingleValues = !complete || suspiciousAllOnes || suspiciousAllTens;
       mergeMissingSkillData(detail, single, trustSingleValues);
 
       if (['5148','5007','5101','5011'].includes(code) || suspiciousAllOnes || !complete) {
@@ -578,6 +584,7 @@
           batchSkills,
           singleSkills,
           suspiciousAllOnes,
+          suspiciousAllTens,
           trustSingleValues,
           mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
         });
@@ -587,12 +594,14 @@
     const out = clean.map(code => byCode.get(code)).filter(Boolean);
     const completeSkills = out.filter(hasCompleteSkillData).length;
     const allOnes = out.filter(allSkillsAreOne).length;
+    const allTens = out.filter(allSkillsAreTen).length;
     const missingCodes = clean.filter(code => !byCode.has(code));
     console.log('[NIKKE GM] Skill/detail verification summary:', {
       requested: clean.length,
       returned: out.length,
       completeSkills,
       stillAllOnes: allOnes,
+      stillAllTens: allTens,
       missingCodes: missingCodes.map(code => ({code, name: BUILTIN_NAME_CODES[code] || state.codeToName.get(code) || ''}))
     });
     return out;
