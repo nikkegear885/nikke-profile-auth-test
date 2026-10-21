@@ -12,6 +12,9 @@
   const RANDOM_ACCOUNT_ROSTER_STORAGE_KEY = 'nikke_stage_deck_random_owned_roster_v1';
   const RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY = 'nikke_stage_deck_random_roster_active_v1';
   const STAGE_GACHA_STATE_KEY = 'nikke_stage_deck_gacha_state_v1';
+  const TIER_ASSIGNMENTS_STORAGE_KEY = 'nikke_stage_tier_assignments_v1';
+  const TIER_CATEGORIES = [{id:'1',label:'1버스트'},{id:'2',label:'2버스트'},{id:'3',label:'3버스트'},{id:'totem',label:'토템'}];
+  const TIER_LEVELS = ['S','A','B','C','D','미평가'];
   const SLOT_COUNT = 5;
   let showUnownedCharacters = (() => {
     try { return localStorage.getItem(SHOW_UNOWNED_STORAGE_KEY) === '1'; }
@@ -22,9 +25,10 @@
   let slots = Array(SLOT_COUNT).fill('');
   let activeSlot = 0;
   let query = '';
-  let burstFilter = '';
   let sortMode = 'power_desc';
   let initialized = false;
+  let activeTierCategory = '1';
+  let tierAssignments = {};
 
   const esc = value => String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
@@ -361,6 +365,59 @@
         .stage-deck-sort{flex:1;max-width:none}
         .stage-deck-count{margin-left:0}
       }
+
+      .stage-tier-list{display:flex;flex-direction:column;gap:12px;margin:0 0 16px;min-width:0}
+      .stage-tier-category-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+      .stage-tier-tab{min-height:42px;border:1px solid #d4e0eb;border-radius:10px;background:#f5f8fb;color:#526a80;font-size:14px;font-weight:900;cursor:pointer}
+      .stage-tier-tab.active{background:#176e9f;border-color:#176e9f;color:#fff;box-shadow:0 3px 9px rgba(23,110,159,.18)}
+      .stage-tier-toolbar{margin:0}
+      .stage-tier-board{display:flex;flex-direction:column;gap:9px;min-width:0}
+      .stage-tier-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;border:1px solid #d8e3ed;border-radius:12px;background:#fff;padding:10px;min-width:0}
+      .stage-tier-lane-label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:9px;background:#eaf2f9;color:#34516c;min-height:82px}
+      .stage-tier-lane-label strong{font-size:20px;font-weight:1000;line-height:1.1}
+      .stage-tier-lane-label span{font-size:10px;font-weight:800;opacity:.8}
+      .stage-tier-lane-label.tier-label-s{background:#f8e8ad;color:#725416}
+      .stage-tier-lane-label.tier-label-a{background:#dcefe0;color:#2f6b42}
+      .stage-tier-lane-label.tier-label-b{background:#dcebf6;color:#245d82}
+      .stage-tier-lane-label.tier-label-c{background:#eae4f5;color:#66528e}
+      .stage-tier-lane-label.tier-label-d{background:#f3e1de;color:#92534b}
+      .stage-tier-lane-label.tier-label-unrated{background:#edf0f3;color:#6d7b88}
+      .stage-tier-lane-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;align-content:start;min-width:0}
+      .stage-tier-card{border:1px solid #dce5ec;border-radius:10px;background:#fbfdff;padding:8px;min-width:0}
+      .stage-tier-card-main{display:flex;align-items:center;gap:8px;min-width:0}
+      .stage-tier-card-img{flex:0 0 48px;width:48px;height:58px;border-radius:6px;overflow:hidden;background:#e9eef3;display:flex;align-items:center;justify-content:center}
+      .stage-tier-card-img img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+      .stage-tier-card-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+      .stage-tier-card-name{font-size:12px;font-weight:900;line-height:1.3;color:#2b4053;overflow-wrap:anywhere}
+      .stage-tier-card-meta{font-size:10px;line-height:1.35;color:#73869a}
+      .stage-tier-card-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+      .stage-tier-card-controls label{display:flex;flex-direction:column;gap:3px;min-width:0}
+      .stage-tier-card-controls label span{font-size:10px;font-weight:800;color:#718397}
+      .stage-tier-card-controls select{width:100%;min-width:0;height:29px;border:1px solid #d3dfe9;border-radius:6px;background:#fff;color:#344c61;padding:0 5px;font-size:11px;font-weight:800}
+      .stage-tier-lane-empty{align-self:center;padding:12px;color:#98a6b4;font-size:11px}
+      html.dark-theme .stage-tier-tab{background:#172638;border-color:#34495d;color:#bed0e0}
+      html.dark-theme .stage-tier-tab.active{background:#176e9f;border-color:#4ba9de;color:#fff}
+      html.dark-theme .stage-tier-row,html.dark-theme .stage-tier-card{background:#111e2c;border-color:#304356}
+      html.dark-theme .stage-tier-card-img{background:#1b2c3e}
+      html.dark-theme .stage-tier-card-name{color:#e0eaf5}
+      html.dark-theme .stage-tier-card-meta,html.dark-theme .stage-tier-card-controls label span{color:#95a9bd}
+      html.dark-theme .stage-tier-card-controls select{background:#152537;border-color:#405469;color:#e0eaf5}
+      html.dark-theme .stage-tier-lane-label.tier-label-s{background:#5c4a1c;color:#ffdf83}
+      html.dark-theme .stage-tier-lane-label.tier-label-a{background:#1c432b;color:#a6e0b4}
+      html.dark-theme .stage-tier-lane-label.tier-label-b{background:#1e3b52;color:#abd9f8}
+      html.dark-theme .stage-tier-lane-label.tier-label-c{background:#332947;color:#d2bdf6}
+      html.dark-theme .stage-tier-lane-label.tier-label-d{background:#4d2b29;color:#f4b8b1}
+      html.dark-theme .stage-tier-lane-label.tier-label-unrated{background:#243140;color:#c4d0dc}
+      @media(max-width:640px){
+        .stage-tier-category-tabs{gap:5px}
+        .stage-tier-tab{font-size:12px;min-height:40px}
+        .stage-tier-row{grid-template-columns:52px minmax(0,1fr);gap:7px;padding:7px}
+        .stage-tier-lane-label strong{font-size:17px}
+        .stage-tier-lane-items{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:6px}
+        .stage-tier-card{padding:6px}
+        .stage-tier-card-img{flex-basis:40px;width:40px;height:49px}
+        .stage-tier-card-name{font-size:11px}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -374,12 +431,26 @@
     panel.hidden = true;
     panel.innerHTML = `
       <div class="stage-deck-head">
-        <h3>스테이지 덱 추천</h3>
-        <p>기본 편성은 Ⅰ버스트 1명, Ⅱ버스트 1~2명, Ⅲ버스트 2명입니다. 자동추천은 이 구성을 우선해 보유 니케 중 무작위로 편성합니다. 아래 도감에서 직접 선택하거나 위 슬롯을 눌러 원하는 위치에 넣고 교체할 수도 있습니다.</p>
+        <h3>스테이지 덱 티어표</h3>
+        <p>니케를 1버스트, 2버스트, 3버스트, 토템으로 나눠 티어를 기록합니다. 캐릭터의 티어와 분류는 직접 수정할 수 있으며, 아직 정하지 않은 캐릭터는 ‘미평가’로 표시됩니다.</p>
       </div>
-      <section class="stage-deck-top" aria-label="스테이지 덱 슬롯">
-        <div class="stage-deck-top-head"><span class="stage-deck-top-title">선택한 니케 <span id="stageDeckSelectedCount">0 / 5</span></span><span class="stage-deck-top-actions"><span class="stage-deck-top-note">슬롯을 눌러 배치 위치 선택</span><button type="button" class="stage-deck-auto-recommend" id="stageDeckAutoRecommend" title="보유한 니케 중 무작위로 5명을 추천합니다">자동추천</button><button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button></span></div>
-        <div class="stage-deck-slots" id="stageDeckSlots"></div>
+      <section class="stage-tier-list" aria-label="스테이지 덱 티어표">
+        <div class="stage-tier-category-tabs" role="tablist" aria-label="티어표 분류">
+          <button type="button" class="stage-tier-tab active" data-tier-category="1" role="tab" aria-selected="true">1버스트</button>
+          <button type="button" class="stage-tier-tab" data-tier-category="2" role="tab" aria-selected="false">2버스트</button>
+          <button type="button" class="stage-tier-tab" data-tier-category="3" role="tab" aria-selected="false">3버스트</button>
+          <button type="button" class="stage-tier-tab" data-tier-category="totem" role="tab" aria-selected="false">토템</button>
+        </div>
+        <div class="stage-deck-toolbar stage-tier-toolbar">
+          <label class="stage-deck-search-wrap"><input id="stageDeckSearch" class="stage-deck-search" type="search" placeholder="니케 이름 검색…" autocomplete="off" aria-label="니케 이름 검색"></label>
+          <select id="stageDeckSort" class="stage-deck-sort" aria-label="캐릭터 정렬">
+            <option value="name_asc">이름순</option>
+            <option value="pedia">도감 순</option>
+            <option value="power_desc">전투력 높은 순</option>
+          </select>
+          <span class="stage-deck-count" id="stageDeckVisibleCount"></span>
+        </div>
+        <div class="stage-tier-board" id="stageTierBoard" aria-label="티어별 캐릭터 목록"></div>
       </section>
       <details class="stage-deck-account-disclosure" id="stageDeckAccountDisclosure">
         <summary><span>계정 생성 · 뽑기</span><span class="stage-deck-disclosure-hint">눌러서 열기</span></summary>
@@ -418,21 +489,6 @@
         </section>
       </section>
       </details>
-      <div class="stage-deck-toolbar">
-        <label class="stage-deck-search-wrap"><input id="stageDeckSearch" class="stage-deck-search" type="search" placeholder="니케 이름 검색…" autocomplete="off" aria-label="니케 이름 검색"></label>
-        <button type="button" class="stage-deck-filter-btn" data-burst="1" aria-pressed="false">Ⅰ</button>
-        <button type="button" class="stage-deck-filter-btn" data-burst="2" aria-pressed="false">Ⅱ</button>
-        <button type="button" class="stage-deck-filter-btn" data-burst="3" aria-pressed="false">Ⅲ</button>
-        <button type="button" class="stage-deck-unowned-toggle" id="stageDeckUnownedToggle" aria-pressed="false">미보유 캐릭터 보이기</button>
-        <select id="stageDeckSort" class="stage-deck-sort" aria-label="캐릭터 정렬">
-          <option value="power_desc">전투력 높은 순</option>
-          <option value="name_asc">이름순</option>
-          <option value="pedia">도감 순</option>
-          <option value="burst">버스트 순</option>
-        </select>
-        <span class="stage-deck-count" id="stageDeckVisibleCount"></span>
-      </div>
-      <div class="stage-deck-grid" id="stageDeckGrid" aria-label="캐릭터 도감 목록"></div>
       <div id="stageDeckNotice" hidden aria-live="polite"></div>
     `;
     const insertBefore = main.querySelector('#soleScorePanel,#outpostPanel,#characterPanel');
@@ -447,7 +503,7 @@
     btn.type = 'button';
     btn.className = 'main-view-nav';
     btn.dataset.view = 'stageDeck';
-    btn.textContent = '스테이지 덱 추천';
+    btn.textContent = '스테이지 덱 티어표';
     btn.addEventListener('click', () => window.switchMainView && window.switchMainView('stageDeck'));
     nav.appendChild(btn);
   }
@@ -790,120 +846,124 @@
     renderGrid();
   }
 
-  function renderGrid() {
-    const grid = document.getElementById('stageDeckGrid');
-    const visibleCount = document.getElementById('stageDeckVisibleCount');
-    if (!grid) return;
-    const q = query.trim().toLocaleLowerCase();
-    let list = pedia.filter(item => {
-      if (q && !item.name.toLocaleLowerCase().includes(q)) return false;
-      if (burstFilter && String(getMeta(item.name).burst || '') !== burstFilter) return false;
-      return true;
-    });
-    const ownedRoster = getSyncedOwnedRoster();
-    const isOwnedName = name => !!ownedRoster && ownedRoster.has(normalizeRosterName(name));
-    // By default, show only characters confirmed as owned by the active synced account.
-    if (!showUnownedCharacters) list = list.filter(item => isOwnedName(item.name));
-    const compareBySelectedSort = (a,b) => {
-      if (sortMode === 'name_asc') return a.name.localeCompare(b.name, 'ko');
-      if (sortMode === 'burst') return String(getMeta(a.name).burst||'9').localeCompare(String(getMeta(b.name).burst||'9')) || a.name.localeCompare(b.name,'ko');
-      if (sortMode === 'power_desc') return getPower(b.name)-getPower(a.name) || a.name.localeCompare(b.name,'ko');
-      return 0;
-    };
-    // Owned characters always form the first group; the selected sort remains in effect within each group.
-    list = list.slice().sort((a,b) => {
-      if (ownedRoster) {
-        const ownershipDiff = Number(isOwnedName(b.name)) - Number(isOwnedName(a.name));
-        if (ownershipDiff) return ownershipDiff;
-      }
-      return compareBySelectedSort(a,b);
-    });
-    const ownedVisibleCount = ownedRoster ? list.filter(item => isOwnedName(item.name)).length : 0;
-    if (visibleCount) {
-      visibleCount.textContent = ownedRoster
-        ? '보유 ' + ownedVisibleCount + '명 · 표시 ' + list.length + ' / ' + pedia.length + '명'
-        : (showUnownedCharacters
-          ? '보유 정보 미확인 · 전체 목록 ' + list.length + ' / ' + pedia.length + '명'
-          : '보유 정보 미확인 · 계정 동기화 필요 · 0 / ' + pedia.length + '명');
+  function loadTierAssignments() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(TIER_ASSIGNMENTS_STORAGE_KEY) || '{}');
+      tierAssignments = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+    } catch (_) {
+      tierAssignments = {};
     }
-    updateUnownedToggleButton();
-    if (!list.length) {
-      grid.innerHTML = !showUnownedCharacters && !ownedRoster
-        ? '<div class="stage-deck-empty">보유 니케 정보를 확인할 수 없습니다. 계정을 동기화하거나 ‘미보유 캐릭터 보이기’를 눌러 전체 도감을 확인하세요.</div>'
-        : (!showUnownedCharacters && ownedRoster
-          ? '<div class="stage-deck-empty">조건에 맞는 보유 니케가 없습니다. ‘미보유 캐릭터 보이기’를 눌러 전체 도감을 확인할 수 있습니다.</div>'
-          : '<div class="stage-deck-empty">조건에 맞는 니케가 없습니다.</div>');
-      return;
-    }
-    grid.innerHTML = list.map(item => {
-      const name = String(item.name || '');
-      const image = /^https?:\/\//i.test(String(item.image || '')) ? String(item.image) : '';
-      const meta = getMeta(name);
-      const burst = String(meta.burst || '').match(/[123]/)?.[0] || '';
-      const pickedIndex = slots.indexOf(name);
-      const owned = isOwnedName(name);
-      return '<article class="stage-deck-card '+(!owned?'unowned ':'')+(pickedIndex>=0?'selected':'')+'" data-character="'+esc(name)+'" tabindex="0" role="button" aria-label="'+esc(name)+(owned?', 보유 니케':', 미보유 니케')+' 선택"><div class="stage-deck-card-img">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(name)+'" onerror="this.style.display=\'none\'">':'')+(burst?'<span class="stage-deck-card-burst">'+burst+'</span>':'')+(pickedIndex>=0?'<span class="stage-deck-card-picked">'+(pickedIndex+1)+'</span>':'')+'</div><div class="stage-deck-card-name">'+esc(name)+'</div></article>';
-    }).join('');
-    grid.querySelectorAll('[data-character]').forEach(card => {
-      const pick = () => addCharacter(card.dataset.character || '');
-      card.addEventListener('click', pick);
-      card.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); pick(); }
-      });
-    });
   }
 
-  function autoRecommendDeck() {
-    const ownedRoster = getSyncedOwnedRoster();
-    if (!ownedRoster) {
-      showNotice('보유 니케 정보를 확인할 수 없습니다. 계정을 동기화하거나 뽑기 시뮬레이터를 이용해 주세요.');
-      return;
+  function getTierAssignment(name) {
+    const saved = tierAssignments[name];
+    if (saved && TIER_CATEGORIES.some(item => item.id === saved.category) && TIER_LEVELS.includes(saved.tier)) {
+      return {category:saved.category, tier:saved.tier};
     }
-    const candidates = pedia.filter(item => item && item.name && ownedRoster.has(normalizeRosterName(item.name)));
-    if (!candidates.length) {
-      showNotice('현재 보유 목록에 추천할 니케가 없습니다.');
-      return;
-    }
-
-    // Build a random team around the foundational Burst composition:
-    // Burst I x1, Burst II x1-2, Burst III x2. No character can be selected twice.
-    const shuffleCopy = items => {
-      const copy = items.slice();
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
+    const burst = String(getMeta(name).burst || '');
+    return {
+      category:['1','2','3'].includes(burst) ? burst : 'totem',
+      tier:'미평가'
     };
-    const burstPools = {'1': [], '2': [], '3': []};
-    candidates.forEach(item => {
-      const burst = String(getMeta(item.name).burst || '');
-      if (Object.prototype.hasOwnProperty.call(burstPools, burst)) burstPools[burst].push(item);
+  }
+
+  function saveTierAssignments() {
+    try { localStorage.setItem(TIER_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(tierAssignments)); }
+    catch (_) { showNotice('티어표를 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.'); }
+  }
+
+  function renderTierCard(item, ownedRoster) {
+    const name = String(item.name || '');
+    const image = /^https?:\\/\\/i.test(String(item.image || '')) ? String(item.image) : '';
+    const meta = getMeta(name);
+    const burst = String(meta.burst || '').match(/[123]/)?.[0] || '';
+    const rarity = String(meta.rarity || '');
+    const assignment = getTierAssignment(name);
+    const categoryOptions = TIER_CATEGORIES.map(category =>
+      '<option value="' + esc(category.id) + '"' + (assignment.category === category.id ? ' selected' : '') + '>' + esc(category.label) + '</option>'
+    ).join('');
+    const tierOptions = TIER_LEVELS.map(tier =>
+      '<option value="' + esc(tier) + '"' + (assignment.tier === tier ? ' selected' : '') + '>' + esc(tier) + '</option>'
+    ).join('');
+    const owned = ownedRoster ? ownedRoster.has(normalizeRosterName(name)) : false;
+    return '<article class="stage-tier-card" data-tier-card="' + esc(name) + '">' +
+      '<div class="stage-tier-card-main">' +
+        '<div class="stage-tier-card-img">' + (image ? '<img loading="lazy" src="' + esc(image) + '" alt="' + esc(name) + '" onerror="this.style.display=\'none\'">' : '') + '</div>' +
+        '<div class="stage-tier-card-copy"><div class="stage-tier-card-name">' + esc(name) + '</div>' +
+        '<div class="stage-tier-card-meta">' + (burst ? burst + '버스트' : '버스트 정보 없음') + (rarity ? ' · ' + esc(rarity) : '') + (ownedRoster ? (owned ? ' · 보유' : ' · 미보유') : '') + '</div></div>' +
+      '</div>' +
+      '<div class="stage-tier-card-controls">' +
+        '<label><span>티어</span><select data-tier-character="' + esc(name) + '" aria-label="' + esc(name) + ' 티어">' + tierOptions + '</select></label>' +
+        '<label><span>분류</span><select data-category-character="' + esc(name) + '" aria-label="' + esc(name) + ' 분류">' + categoryOptions + '</select></label>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function renderGrid() {
+    const board = document.getElementById('stageTierBoard');
+    const visibleCount = document.getElementById('stageDeckVisibleCount');
+    if (!board) return;
+
+    const q = query.trim().toLocaleLowerCase();
+    const ownedRoster = getSyncedOwnedRoster();
+    const compareBySelectedSort = (a,b) => {
+      if (sortMode === 'power_desc') return getPower(b.name)-getPower(a.name) || a.name.localeCompare(b.name,'ko');
+      if (sortMode === 'pedia') return pedia.indexOf(a)-pedia.indexOf(b);
+      return a.name.localeCompare(b.name,'ko');
+    };
+    const list = pedia.filter(item => {
+      if (!item || !item.name) return false;
+      if (q && !item.name.toLocaleLowerCase().includes(q)) return false;
+      return getTierAssignment(item.name).category === activeTierCategory;
+    }).slice().sort(compareBySelectedSort);
+
+    const categoryLabel = (TIER_CATEGORIES.find(item => item.id === activeTierCategory) || TIER_CATEGORIES[0]).label;
+    const unrankedCount = list.filter(item => getTierAssignment(item.name).tier === '미평가').length;
+    if (visibleCount) visibleCount.textContent = categoryLabel + ' ' + list.length + '명 · 미평가 ' + unrankedCount + '명';
+
+    board.innerHTML = TIER_LEVELS.map(tier => {
+      const members = list.filter(item => getTierAssignment(item.name).tier === tier);
+      return '<section class="stage-tier-row" data-tier-lane="' + esc(tier) + '">' +
+        '<div class="stage-tier-lane-label tier-label-' + (tier === '미평가' ? 'unrated' : tier.toLowerCase()) + '">' +
+          '<strong>' + esc(tier) + '</strong><span>' + members.length + '명</span>' +
+        '</div>' +
+        '<div class="stage-tier-lane-items">' +
+          (members.length ? members.map(item => renderTierCard(item, ownedRoster)).join('') : '<div class="stage-tier-lane-empty">아직 배치된 캐릭터가 없습니다.</div>') +
+        '</div>' +
+      '</section>';
+    }).join('');
+
+    board.querySelectorAll('[data-tier-character]').forEach(select => {
+      select.addEventListener('change', event => {
+        const target = event.currentTarget;
+        const name = target.dataset.tierCharacter || '';
+        if (!name) return;
+        const current = getTierAssignment(name);
+        tierAssignments[name] = {category:current.category, tier:target.value};
+        saveTierAssignments();
+        renderGrid();
+        showNotice(name + ' 티어를 ' + target.value + '(으)로 변경했습니다.');
+      });
     });
-    Object.keys(burstPools).forEach(burst => { burstPools[burst] = shuffleCopy(burstPools[burst]); });
-
-    const burstI = burstPools['1'].slice(0, 1);
-    // Prefer two Burst II characters to fill all five slots, but one is valid under the base rule.
-    const burstII = burstPools['2'].slice(0, Math.min(2, burstPools['2'].length));
-    const burstIII = burstPools['3'].slice(0, 2);
-
-    // Keep the team slots in a practical Burst I / Burst II / Burst III sequence.
-    const selected = [burstI[0], burstII[0], burstIII[0], burstII[1], burstIII[1]]
-      .filter(Boolean);
-    slots = Array(SLOT_COUNT).fill('');
-    selected.slice(0, SLOT_COUNT).forEach((item, index) => { slots[index] = item.name; });
-    activeSlot = 0;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch (_) {}
-    renderSlots();
-    renderGrid();
-
-    const selectedCount = selected.length;
-    const coreRuleMet = burstI.length === 1 && burstII.length >= 1 && burstIII.length === 2;
-    if (coreRuleMet) {
-      showNotice('기본 버스트 구성(Ⅰ 1명 · Ⅱ 1~2명 · Ⅲ 2명)에 맞춰 무작위 ' + selectedCount + '명을 배치했습니다.');
-    } else {
-      showNotice('보유 니케의 버스트 구성이 부족해 기본 규칙을 완전히 맞추지 못했습니다. 가능한 범위에서 ' + selectedCount + '명을 배치했습니다.');
-    }
+    board.querySelectorAll('[data-category-character]').forEach(select => {
+      select.addEventListener('change', event => {
+        const target = event.currentTarget;
+        const name = target.dataset.categoryCharacter || '';
+        if (!name) return;
+        const current = getTierAssignment(name);
+        const nextCategory = TIER_CATEGORIES.some(item => item.id === target.value) ? target.value : current.category;
+        tierAssignments[name] = {category:nextCategory, tier:current.tier};
+        saveTierAssignments();
+        activeTierCategory = nextCategory;
+        document.querySelectorAll('[data-tier-category]').forEach(button => {
+          const active = button.dataset.tierCategory === activeTierCategory;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-selected', String(active));
+        });
+        renderGrid();
+        showNotice(name + ' 분류를 ' + (TIER_CATEGORIES.find(item => item.id === nextCategory)?.label || nextCategory) + '(으)로 변경했습니다.');
+      });
+    });
   }
 
   function removeCharacterFromDeck(index) {
@@ -1010,10 +1070,7 @@
     injectStyle();
     ensurePanel();
     ensureNav();
-    loadSavedDeck();
-    renderSlots();
-    document.getElementById('stageDeckUnownedToggle')?.addEventListener('click', toggleUnownedCharacters);
-    updateUnownedToggleButton();
+    loadTierAssignments();
     document.getElementById('stageDeckSearch')?.addEventListener('input', event => {
       query = event.target.value || '';
       renderGrid();
@@ -1022,24 +1079,15 @@
       sortMode = event.target.value || 'power_desc';
       renderGrid();
     });
-    document.querySelectorAll('.stage-deck-filter-btn[data-burst]').forEach(button => button.addEventListener('click', () => {
-      const value = button.dataset.burst || '';
-      burstFilter = burstFilter === value ? '' : value;
-      document.querySelectorAll('.stage-deck-filter-btn[data-burst]').forEach(other => {
-        const isActive = other.dataset.burst === burstFilter;
-        other.classList.toggle('active', isActive);
-        other.setAttribute('aria-pressed', String(isActive));
+    document.querySelectorAll('[data-tier-category]').forEach(button => button.addEventListener('click', () => {
+      activeTierCategory = button.dataset.tierCategory || '1';
+      document.querySelectorAll('[data-tier-category]').forEach(other => {
+        const active = other.dataset.tierCategory === activeTierCategory;
+        other.classList.toggle('active', active);
+        other.setAttribute('aria-selected', String(active));
       });
       renderGrid();
     }));
-    document.getElementById('stageDeckAutoRecommend')?.addEventListener('click', autoRecommendDeck);
-    document.getElementById('stageDeckClear')?.addEventListener('click', () => {
-      slots = Array(SLOT_COUNT).fill('');
-      activeSlot = 0;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch (_) {}
-      renderSlots();
-      renderGrid();
-    });
     initStageDeckRandomSettings();
     document.getElementById('stageDeckRandomAccount')?.addEventListener('click', () => drawStageDeckGacha(1));
     document.getElementById('stageDeckTenPull')?.addEventListener('click', () => drawStageDeckGacha(10));
