@@ -14,7 +14,7 @@
   let skillFilterLevel = 10;
   let skillSortKey = '';
   let skillSortDirection = 'desc';
-  let hideManagementMode = false;
+  let showHiddenCharacters = false;
 
   function normalizeName(value) {
     return String(value == null ? '' : value)
@@ -228,17 +228,17 @@
     const button = document.getElementById('skillStatusHideManageToggle');
     const state = document.getElementById('skillStatusHideState');
     if (button) {
-      button.classList.toggle('active', hideManagementMode);
-      button.setAttribute('aria-pressed', String(hideManagementMode));
-      button.textContent = hideManagementMode ? '숨김 관리 완료' : '원하는 캐릭터 숨기기';
-      button.title = hideManagementMode
-        ? '숨김 설정을 마치고 일반 목록으로 돌아갑니다.'
-        : '숨길 캐릭터를 선택하거나 이미 숨긴 캐릭터를 다시 표시합니다.';
+      button.classList.toggle('active', showHiddenCharacters);
+      button.setAttribute('aria-pressed', String(showHiddenCharacters));
+      button.textContent = '원하는 캐릭터 숨기기';
+      button.title = showHiddenCharacters
+        ? '숨김으로 지정한 캐릭터를 표시 중입니다. 눌러서 다시 숨깁니다.'
+        : '숨김으로 지정한 캐릭터는 숨겨져 있습니다. 눌러서 표시하거나, 각 캐릭터 옆 숨기기 버튼으로 지정할 수 있습니다.';
     }
     if (state) {
-      state.textContent = hideManagementMode
-        ? '숨김 관리 중 · 각 캐릭터의 숨기기/다시 표시 버튼을 사용하세요.'
-        : (hiddenCount ? '숨긴 캐릭터 ' + hiddenCount + '명' : '');
+      state.textContent = hiddenCount
+        ? '숨김 지정 ' + hiddenCount + '명 · ' + (showHiddenCharacters ? '표시 중' : '숨김 중')
+        : '숨긴 캐릭터 없음';
     }
   }
 
@@ -322,13 +322,12 @@
 
     const hiddenNames = getHiddenCharacters();
     syncHideManagementControls(hiddenNames.size);
-    // While managing hidden characters, show the complete owned list so hidden entries can be restored,
-    // even when the skill-level filter would otherwise hide them.
-    let filteredRows = hideManagementMode
-      ? ownedRows.slice()
-      : ownedRows.filter(function (row) {
-          return rowMeetsSkillThreshold(row) && !hiddenNames.has(normalizeName(row && row['이름']));
-        });
+    // Each row can be hidden or restored at any time. The toolbar button only controls
+    // whether rows marked as hidden are included in the visible list.
+    const filteredRows = ownedRows.filter(function (row) {
+      return rowMeetsSkillThreshold(row) &&
+        (showHiddenCharacters || !hiddenNames.has(normalizeName(row && row['이름'])));
+    });
 
     if (skillSortKey) {
       filteredRows.sort(function (a, b) {
@@ -341,11 +340,11 @@
 
     if (!filteredRows.length) {
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">' +
-        (hideManagementMode
-          ? '표시할 보유 캐릭터가 없습니다.'
-          : (skillFilterEnabled
-            ? skillFilterLevel + '레벨 이상인 스킬이 있는 보유 캐릭터가 없습니다. 숨긴 캐릭터는 ‘원하는 캐릭터 숨기기’에서 다시 표시할 수 있습니다.'
-            : '표시할 보유 캐릭터가 없습니다. 숨긴 캐릭터는 ‘원하는 캐릭터 숨기기’에서 다시 표시할 수 있습니다.')) +
+        (skillFilterEnabled
+          ? skillFilterLevel + '레벨 이상인 스킬이 있는 보유 캐릭터가 없습니다.'
+          : (hiddenNames.size && !showHiddenCharacters
+            ? '표시할 캐릭터가 없습니다. 상단의 ‘원하는 캐릭터 숨기기’ 버튼을 눌러 숨긴 캐릭터를 표시할 수 있습니다.'
+            : '보유 캐릭터가 없습니다.')) +
         '</td></tr>';
       return;
     }
@@ -355,15 +354,13 @@
       const normalizedName = normalizeName(name);
       const isHidden = hiddenNames.has(normalizedName);
       const image = getImage(name);
-      const rowClass = hideManagementMode && isHidden ? ' class="skill-status-row-hidden"' : '';
-      const characterTools = hideManagementMode
-        ? '<div class="skill-status-character-tools">' +
-            '<span class="skill-status-character-name">' + escapeHtml(name) + '</span>' +
-            '<button type="button" class="skill-status-hide-row-button ' + (isHidden ? 'restore' : '') + '" data-skill-hide-character="' + escapeHtml(name) + '" aria-label="' + escapeHtml(isHidden ? '다시 표시 ' + name : '숨기기 ' + name) + '">' +
-              (isHidden ? '다시 표시' : '숨기기') +
-            '</button>' +
-          '</div>'
-        : '<span class="skill-status-character-name">' + escapeHtml(name) + '</span>';
+      const rowClass = isHidden ? ' class="skill-status-row-hidden"' : '';
+      const characterTools = '<div class="skill-status-character-tools">' +
+        '<span class="skill-status-character-name">' + escapeHtml(name) + '</span>' +
+        '<button type="button" class="skill-status-hide-row-button ' + (isHidden ? 'restore' : '') + '" data-skill-hide-character="' + escapeHtml(name) + '" aria-label="' + escapeHtml(isHidden ? '다시 표시 ' + name : '숨기기 ' + name) + '">' +
+          (isHidden ? '다시 표시' : '숨기기') +
+        '</button>' +
+      '</div>';
 
       return '<tr' + rowClass + '>' +
         '<td><div class="skill-character-cell">' +
@@ -494,7 +491,7 @@
       renderSkillStatus();
     });
     document.getElementById('skillStatusHideManageToggle')?.addEventListener('click', function () {
-      hideManagementMode = !hideManagementMode;
+      showHiddenCharacters = !showHiddenCharacters;
       renderSkillStatus();
     });
     document.querySelectorAll('[data-skill-sort]').forEach(function (button) {
