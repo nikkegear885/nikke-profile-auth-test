@@ -11,6 +11,8 @@
   let imageLoadPromise = null;
   let skillFilterEnabled = false;
   let skillFilterLevel = 10;
+  let skillSortKey = '';
+  let skillSortDirection = 'desc';
 
   function normalizeName(value) {
     return String(value == null ? '' : value)
@@ -136,6 +138,10 @@
       '.skill-status-character-image{flex:0 0 48px;width:48px;height:56px;object-fit:cover;object-position:center top;border-radius:7px;background:#edf2f6}' +
       '.skill-status-character-name{overflow-wrap:anywhere;line-height:1.35}' +
       '.skill-status-level{font-size:15px!important;font-weight:900;font-variant-numeric:tabular-nums}' +
+      '.skill-status-sort-button{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:3px 0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;cursor:pointer;white-space:nowrap}' +
+      '.skill-status-sort-button:hover{color:#1685bd}' +
+      '.skill-status-sort-indicator{font-size:11px;opacity:.7}' +
+      'html.dark-theme .skill-status-sort-button:hover{color:#77c8f2}' +
       '.skill-status-empty{padding:24px 14px;text-align:center;color:#718397;font-size:13px;line-height:1.6}' +
       'html.dark-theme .skill-status-toolbar{background:#111e2c;border-color:#304356}' +
       'html.dark-theme .skill-status-filter-toggle{background:#1b2b3c;border-color:#405469;color:#d5e2ef}' +
@@ -172,7 +178,7 @@
       '</div>' +
       '<div class="skill-status-wrap">' +
         '<table class="skill-status-table">' +
-          '<thead><tr><th style="width:52%">캐릭터</th><th>1스킬 레벨</th><th>2스킬 레벨</th><th>버스트 레벨</th></tr></thead>' +
+          '<thead><tr><th style="width:52%">캐릭터</th><th><button type="button" class="skill-status-sort-button" data-skill-sort="스킬1" aria-label="1스킬 레벨순 정렬"><span>1스킬 레벨</span><span class="skill-status-sort-indicator" aria-hidden="true">↕</span></button></th><th><button type="button" class="skill-status-sort-button" data-skill-sort="스킬2" aria-label="2스킬 레벨순 정렬"><span>2스킬 레벨</span><span class="skill-status-sort-indicator" aria-hidden="true">↕</span></button></th><th><button type="button" class="skill-status-sort-button" data-skill-sort="버스트스킬" aria-label="버스트 레벨순 정렬"><span>버스트 레벨</span><span class="skill-status-sort-indicator" aria-hidden="true">↕</span></button></th></tr></thead>' +
           '<tbody id="skillStatusBody"><tr><td colspan="4" class="skill-status-empty">보유 캐릭터를 확인하고 있습니다.</td></tr></tbody>' +
         '</table>' +
       '</div>';
@@ -198,6 +204,37 @@
       : '전체 보유 캐릭터 표시';
   }
 
+  function numericSkillLevel(row, key) {
+    const raw = row && row[key] != null ? String(row[key]).replace(/,/g, '').trim() : '';
+    if (!raw) return -1;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : -1;
+  }
+
+  function updateSkillSortIndicators() {
+    document.querySelectorAll('[data-skill-sort]').forEach(function (button) {
+      const key = button.dataset.skillSort || '';
+      const indicator = button.querySelector('.skill-status-sort-indicator');
+      const active = key === skillSortKey;
+      if (indicator) indicator.textContent = active ? (skillSortDirection === 'desc' ? '↓' : '↑') : '↕';
+      button.setAttribute('aria-sort', active ? (skillSortDirection === 'desc' ? 'descending' : 'ascending') : 'none');
+      button.setAttribute('aria-label', button.querySelector('span')?.textContent + (active
+        ? (skillSortDirection === 'desc' ? ' 내림차순 정렬 중' : ' 오름차순 정렬 중')
+        : ' 정렬'));
+    });
+  }
+
+  function handleSkillSortClick(key) {
+    if (!key) return;
+    if (skillSortKey === key) {
+      skillSortDirection = skillSortDirection === 'desc' ? 'asc' : 'desc';
+    } else {
+      skillSortKey = key;
+      skillSortDirection = 'desc';
+    }
+    renderSkillStatus();
+  }
+
   function rowMeetsSkillThreshold(row) {
     if (!skillFilterEnabled) return true;
     const threshold = Number(skillFilterLevel) || 1;
@@ -217,6 +254,14 @@
       return;
     }
     const filteredRows = ownedRows.filter(rowMeetsSkillThreshold);
+    if (skillSortKey) {
+      filteredRows.sort(function (a, b) {
+        const difference = numericSkillLevel(a, skillSortKey) - numericSkillLevel(b, skillSortKey);
+        if (difference !== 0) return skillSortDirection === 'desc' ? -difference : difference;
+        return String(a && a['이름'] || '').localeCompare(String(b && b['이름'] || ''), 'ko');
+      });
+    }
+    updateSkillSortIndicators();
     if (!filteredRows.length) {
       body.innerHTML = '<tr><td colspan="4" class="skill-status-empty">' +
         (skillFilterEnabled
@@ -350,6 +395,12 @@
       skillFilterLevel = Math.max(1, Math.min(10, Number(event.target.value) || 10));
       renderSkillStatus();
     });
+    document.querySelectorAll('[data-skill-sort]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        handleSkillSortClick(button.dataset.skillSort || '');
+      });
+    });
+    updateSkillSortIndicators();
     installAccountRefresh();
   }
 
