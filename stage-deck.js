@@ -11,6 +11,7 @@
   const RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY = 'nikke_stage_deck_random_account_options_v1';
   const RANDOM_ACCOUNT_ROSTER_STORAGE_KEY = 'nikke_stage_deck_random_owned_roster_v1';
   const RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY = 'nikke_stage_deck_random_roster_active_v1';
+  const STAGE_GACHA_STATE_KEY = 'nikke_stage_deck_gacha_state_v1';
   const SLOT_COUNT = 5;
   let showUnownedCharacters = (() => {
     try { return localStorage.getItem(SHOW_UNOWNED_STORAGE_KEY) === '1'; }
@@ -221,6 +222,32 @@
       .stage-deck-clear:hover{background:#fff4f3;border-color:#c99896}
       .stage-deck-random-account{height:38px;padding:0 12px;border:1px solid #78b3df;border-radius:9px;background:#eaf6ff;color:#24699a;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
       .stage-deck-random-account:hover{background:#dff0ff;border-color:#4c9ed8}
+      .stage-deck-gacha-reset{height:38px;padding:0 12px;border:1px solid #c9d8e4;border-radius:9px;background:#fff;color:#596f82;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+      .stage-deck-gacha-reset:hover{border-color:#92a9bc;background:#f6f9fc}
+      .stage-deck-gacha-rates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex-basis:100%;padding-top:12px}
+      .stage-deck-gacha-rates>div{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid #d9e4ed;border-radius:9px;background:#fff}
+      .stage-deck-gacha-rates strong{font-size:13px;color:#30475e}
+      .stage-deck-gacha-rates span{font-size:10px;line-height:1.4;color:#7a8da0}
+      .stage-deck-gacha-panel{margin:0 0 14px;padding:14px;border:1px solid #d8e4ee;border-radius:12px;background:#f7fafc}
+      .stage-deck-gacha-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+      .stage-deck-gacha-panel-head strong{font-size:13px;color:#30475e}
+      .stage-deck-gacha-panel-head span{font-size:11px;color:#7890a5}
+      .stage-deck-gacha-result{min-height:68px;display:flex;align-items:center;gap:12px;padding:10px;border:1px dashed #cbd9e4;border-radius:10px;background:#fff;color:#7890a5;font-size:12px}
+      .stage-deck-gacha-result img{width:58px;height:72px;object-fit:cover;border-radius:7px}
+      .stage-deck-gacha-result-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+      .stage-deck-gacha-result-name{font-size:14px;font-weight:900;color:#30475e}
+      .stage-deck-gacha-rarity{font-size:11px;font-weight:900}
+      .stage-deck-gacha-rarity.ssr{color:#bf8b18}
+      .stage-deck-gacha-rarity.sr{color:#8460d1}
+      .stage-deck-gacha-rarity.r{color:#427ab0}
+      .stage-deck-gacha-duplicate{font-size:10px;color:#ad6a35;font-weight:800}
+      .stage-deck-gacha-history{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+      .stage-deck-gacha-history span{padding:4px 7px;border:1px solid #d8e4ee;border-radius:6px;background:#fff;color:#6e8598;font-size:10px}
+      html.dark-theme .stage-deck-gacha-reset{background:#172437;border-color:#354a62;color:#c4d5e6}
+      html.dark-theme .stage-deck-gacha-rates>div,html.dark-theme .stage-deck-gacha-result,html.dark-theme .stage-deck-gacha-history span{background:#101b2b;border-color:#304359}
+      html.dark-theme .stage-deck-gacha-rates strong,html.dark-theme .stage-deck-gacha-result-name,html.dark-theme .stage-deck-gacha-panel-head strong{color:#dce6f1}
+      html.dark-theme .stage-deck-gacha-rates span,html.dark-theme .stage-deck-gacha-panel-head span,html.dark-theme .stage-deck-gacha-result{color:#8ea3b8}
+      @media(max-width:650px){.stage-deck-gacha-rates{grid-template-columns:1fr}.stage-deck-gacha-result img{width:50px;height:62px}}
       .stage-deck-random-settings{margin:0 0 12px;border:1px solid #d8e4ee;border-radius:10px;background:#f7fafc;color:#405a73}
       .stage-deck-random-settings summary{padding:10px 12px;font-size:12px;font-weight:900;cursor:pointer;user-select:none}
       .stage-deck-random-settings-body{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:0 12px 12px;border-top:1px solid #d8e4ee}
@@ -316,26 +343,32 @@
           <option value="pedia">도감 순</option>
           <option value="burst">버스트 순</option>
         </select>
-        <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="스테이지 추천에서만 사용하는 무작위 보유 목록을 생성합니다">무작위 계정 생성</button>
+        <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="확률에 따라 캐릭터 1명을 뽑습니다">1회 뽑기</button>
+        <button type="button" class="stage-deck-gacha-reset" id="stageDeckGachaReset">뽑기 초기화</button>
         <button type="button" class="stage-deck-use-actual-roster" id="stageDeckUseActualRoster" hidden>실제 보유 목록</button>
         <button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button>
         <span class="stage-deck-count" id="stageDeckVisibleCount"></span>
       </div>
       <details class="stage-deck-random-settings" id="stageDeckRandomSettings">
-        <summary>무작위 계정 생성 설정</summary>
+        <summary>뽑기 확률 및 캐릭터 설정</summary>
         <div class="stage-deck-random-settings-body">
-          <div class="stage-deck-random-owned">
-            <label for="stageDeckRandomOwnedChance">니케 보유 확률</label>
-            <input id="stageDeckRandomOwnedChance" type="range" min="0" max="100" step="5" value="60">
-            <output id="stageDeckRandomOwnedChanceValue" for="stageDeckRandomOwnedChance">60%</output>
+          <div class="stage-deck-gacha-rates" aria-label="뽑기 확률">
+            <div><strong>SSR 4%</strong><span>필그림 0.5% · 기타 SSR 3.5%</span></div>
+            <div><strong>SR 43%</strong><span>SR 캐릭터</span></div>
+            <div><strong>R 53%</strong><span>R 캐릭터</span></div>
           </div>
           <div class="stage-deck-random-includes">
             <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeLimited" checked><span>한정 캐</span><strong data-stage-random-status="limited">ON</strong></label>
             <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeDistribution" checked><span>배포 캐</span><strong data-stage-random-status="distribution">ON</strong></label>
           </div>
-          <div class="stage-deck-random-note">스테이지 추천 전용 설정입니다. 생성된 무작위 보유 목록은 위시리스트·장비 현황의 실제 계정 데이터에 영향을 주지 않습니다.</div>
+          <div class="stage-deck-random-note">뽑기 1회마다 캐릭터 1명을 획득합니다. 확률은 전체 뽑기 기준이며, 필그림 SSR은 0.5%, 그 외 SSR은 3.5%입니다. OFF로 끈 유형은 등장 대상에서 제외됩니다. 결과는 스테이지 추천 전용으로 저장됩니다.</div>
         </div>
       </details>
+      <section class="stage-deck-gacha-panel" id="stageDeckGachaPanel" aria-label="뽑기 결과">
+        <div class="stage-deck-gacha-panel-head"><strong>뽑기 결과</strong><span id="stageDeckGachaStats">누적 0회 · 보유 0명</span></div>
+        <div id="stageDeckGachaResult" class="stage-deck-gacha-result">‘1회 뽑기’를 눌러 시작하세요.</div>
+        <div id="stageDeckGachaHistory" class="stage-deck-gacha-history"></div>
+      </section>
       <div class="stage-deck-grid" id="stageDeckGrid" aria-label="캐릭터 도감 목록"></div>
       <div id="stageDeckNotice" hidden aria-live="polite"></div>
     `;
@@ -433,30 +466,178 @@
 
   function loadStageDeckRandomSettings() {
     let saved = {};
-    try {
-      saved = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY) || '{}') || {};
-    } catch (_) {}
+    try { saved = JSON.parse(localStorage.getItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY) || '{}') || {}; } catch (_) {}
     return {
-      ownedChance: Math.max(0, Math.min(100, Number.isFinite(Number(saved.ownedChance)) ? Number(saved.ownedChance) : 60)),
       includeLimited: saved.includeLimited !== false,
       includeDistribution: saved.includeDistribution !== false
     };
   }
 
   function saveStageDeckRandomSettings() {
-    const chanceInput = document.getElementById('stageDeckRandomOwnedChance');
     const limitedInput = document.getElementById('stageDeckIncludeLimited');
     const distributionInput = document.getElementById('stageDeckIncludeDistribution');
     const old = loadStageDeckRandomSettings();
     const settings = {
-      ownedChance: Math.max(0, Math.min(100, Number.isFinite(Number(chanceInput?.value)) ? Number(chanceInput.value) : old.ownedChance)),
       includeLimited: limitedInput ? limitedInput.checked : old.includeLimited,
       includeDistribution: distributionInput ? distributionInput.checked : old.includeDistribution
     };
     try { localStorage.setItem(RANDOM_ACCOUNT_OPTIONS_STORAGE_KEY, JSON.stringify(settings)); } catch (_) {}
-    const output = document.getElementById('stageDeckRandomOwnedChanceValue');
-    if (output) output.textContent = settings.ownedChance + '%';
     updateRandomInclusionStatus(settings);
+  }
+
+  function loadStageDeckGachaState() {
+    const empty = {pulls:0, counts:{}, history:[], rarityCounts:{SSR:0,SR:0,R:0}, pilgrimSSR:0};
+    try {
+      const saved = JSON.parse(localStorage.getItem(STAGE_GACHA_STATE_KEY) || 'null');
+      if (!saved || typeof saved !== 'object') return empty;
+      return {
+        pulls: Math.max(0, Number(saved.pulls) || 0),
+        counts: saved.counts && typeof saved.counts === 'object' ? saved.counts : {},
+        history: Array.isArray(saved.history) ? saved.history.slice(-20) : [],
+        rarityCounts: {
+          SSR: Math.max(0, Number(saved.rarityCounts && saved.rarityCounts.SSR) || 0),
+          SR: Math.max(0, Number(saved.rarityCounts && saved.rarityCounts.SR) || 0),
+          R: Math.max(0, Number(saved.rarityCounts && saved.rarityCounts.R) || 0)
+        },
+        pilgrimSSR: Math.max(0, Number(saved.pilgrimSSR) || 0)
+      };
+    } catch (_) { return empty; }
+  }
+
+  function saveStageDeckGachaState(state) {
+    const ownedNames = Object.keys(state.counts).filter(name => Number(state.counts[name]) > 0);
+    try {
+      localStorage.setItem(STAGE_GACHA_STATE_KEY, JSON.stringify(state));
+      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_STORAGE_KEY, JSON.stringify(ownedNames));
+      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY, '1');
+      return true;
+    } catch (_) {
+      showNotice('뽑기 결과를 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
+      return false;
+    }
+  }
+
+  function getAvailableGachaPool(settings) {
+    return pedia.map(item => ({item, name:String(item && item.name || '').trim(), meta:getMeta(String(item && item.name || '').trim())}))
+      .filter(entry => {
+        if (!entry.name) return false;
+        const rarity = String(entry.meta.rarity || '').toUpperCase();
+        if (!['SSR','SR','R'].includes(rarity)) return false;
+        const normalized = normalizeRosterName(entry.name);
+        if (!settings.includeLimited && LIMITED_RANDOM_NAMES.has(normalized)) return false;
+        if (!settings.includeDistribution && DISTRIBUTION_RANDOM_NAMES.has(normalized)) return false;
+        return true;
+      });
+  }
+
+  function chooseRandom(items) {
+    return items.length ? items[Math.floor(Math.random() * items.length)] : null;
+  }
+
+  function renderStageDeckGachaStatus(latest = null) {
+    const state = loadStageDeckGachaState();
+    const stats = document.getElementById('stageDeckGachaStats');
+    const result = document.getElementById('stageDeckGachaResult');
+    const history = document.getElementById('stageDeckGachaHistory');
+    if (stats) stats.textContent = '누적 ' + state.pulls + '회 · 보유 ' + Object.keys(state.counts).filter(name => Number(state.counts[name]) > 0).length + '명 · 필그림 SSR ' + state.pilgrimSSR + '회';
+    const outcome = latest || state.history[state.history.length - 1] || null;
+    if (result) {
+      if (!outcome) {
+        result.textContent = '‘1회 뽑기’를 눌러 시작하세요.';
+      } else {
+        const item = getCharacter(outcome.name);
+        const image = item && /^https?:\/\//i.test(String(item.image || '')) ? String(item.image) : '';
+        const rarity = String(outcome.rarity || '').toLowerCase();
+        result.innerHTML = (image ? '<img src="' + esc(image) + '" alt="' + esc(outcome.name) + '">' : '') +
+          '<div class="stage-deck-gacha-result-copy"><span class="stage-deck-gacha-rarity ' + esc(rarity) + '">' + esc(outcome.rarity) + (outcome.pilgrim ? ' · 필그림' : '') + '</span>' +
+          '<strong class="stage-deck-gacha-result-name">' + esc(outcome.name) + '</strong>' +
+          '<span>' + esc(outcome.company || '') + (outcome.duplicate ? ' · 중복 획득 (' + esc(outcome.characterCount) + '번째)' : ' · 신규 획득') + '</span></div>';
+      }
+    }
+    if (history) {
+      history.innerHTML = state.history.slice(-10).reverse().map(entry =>
+        '<span title="' + esc(entry.name) + '">' + esc(entry.pull) + '. ' + esc(entry.rarity) + ' ' + esc(entry.name) + '</span>'
+      ).join('');
+    }
+    const actualButton = document.getElementById('stageDeckUseActualRoster');
+    if (actualButton) actualButton.hidden = localStorage.getItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY) !== '1';
+    const resetButton = document.getElementById('stageDeckGachaReset');
+    if (resetButton) resetButton.hidden = state.pulls === 0 && localStorage.getItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY) !== '1';
+  }
+
+  function drawStageDeckGacha() {
+    const settings = loadStageDeckRandomSettings();
+    const eligible = getAvailableGachaPool(settings);
+    if (!eligible.length) {
+      showNotice('선택한 한정·배포 설정에 해당하는 뽑기 대상이 없습니다.');
+      return;
+    }
+    const ssr = eligible.filter(entry => String(entry.meta.rarity || '').toUpperCase() === 'SSR');
+    const pilgrimSSR = ssr.filter(entry => String(entry.meta.company || '').trim() === '필그림');
+    const otherSSR = ssr.filter(entry => String(entry.meta.company || '').trim() !== '필그림');
+    const sr = eligible.filter(entry => String(entry.meta.rarity || '').toUpperCase() === 'SR');
+    const r = eligible.filter(entry => String(entry.meta.rarity || '').toUpperCase() === 'R');
+    const state = loadStageDeckGachaState();
+
+    // Rates are per pull: SSR 4%, SR 43%, R 53%. Of all pulls, Pilgrim SSR is 0.5% (12.5% of SSR draws).
+    const roll = Math.random();
+    let rarity = roll < 0.04 ? 'SSR' : (roll < 0.47 ? 'SR' : 'R');
+    let selected = null;
+    let isPilgrim = false;
+    if (rarity === 'SSR') {
+      if (pilgrimSSR.length && otherSSR.length) {
+        isPilgrim = Math.random() < 0.125;
+        selected = chooseRandom(isPilgrim ? pilgrimSSR : otherSSR);
+      } else {
+        selected = chooseRandom(pilgrimSSR.length ? pilgrimSSR : otherSSR);
+        isPilgrim = !!selected && String(selected.meta.company || '').trim() === '필그림';
+      }
+    } else if (rarity === 'SR') {
+      selected = chooseRandom(sr);
+    } else {
+      selected = chooseRandom(r);
+    }
+    if (!selected) {
+      showNotice(rarity + ' 등급의 대상 캐릭터가 없습니다. 한정·배포 포함 설정을 확인해 주세요.');
+      return;
+    }
+
+    const name = selected.name;
+    const oldCount = Math.max(0, Number(state.counts[name]) || 0);
+    state.pulls += 1;
+    state.counts[name] = oldCount + 1;
+    state.rarityCounts[rarity] = (state.rarityCounts[rarity] || 0) + 1;
+    if (rarity === 'SSR' && isPilgrim) state.pilgrimSSR += 1;
+    const outcome = {
+      pull: state.pulls,
+      name,
+      rarity,
+      company: String(selected.meta.company || ''),
+      pilgrim: rarity === 'SSR' && isPilgrim,
+      duplicate: oldCount > 0,
+      characterCount: oldCount + 1
+    };
+    state.history.push(outcome);
+    state.history = state.history.slice(-20);
+    if (!saveStageDeckGachaState(state)) return;
+    updateRandomInclusionStatus(settings);
+    renderStageDeckGachaStatus(outcome);
+    renderGrid();
+    showNotice(outcome.duplicate ? '중복 획득: ' + name : '신규 획득: ' + name + ' (' + rarity + ')');
+  }
+
+  function clearStageDeckGacha() {
+    if (!confirm('스테이지 추천 전용 뽑기 기록과 보유 목록을 초기화할까요?')) return;
+    const empty = {pulls:0, counts:{}, history:[], rarityCounts:{SSR:0,SR:0,R:0}, pilgrimSSR:0};
+    try {
+      localStorage.setItem(STAGE_GACHA_STATE_KEY, JSON.stringify(empty));
+      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_STORAGE_KEY, JSON.stringify([]));
+      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY, '1');
+    } catch (_) {}
+    renderStageDeckGachaStatus();
+    renderGrid();
+    updateRandomInclusionStatus();
+    showNotice('스테이지 추천 전용 뽑기를 초기화했습니다.');
   }
 
   function updateRandomInclusionStatus(settings = loadStageDeckRandomSettings()) {
@@ -464,62 +645,36 @@
     const distributionStatus = document.querySelector('[data-stage-random-status="distribution"]');
     if (limitedStatus) limitedStatus.textContent = settings.includeLimited ? 'ON' : 'OFF';
     if (distributionStatus) distributionStatus.textContent = settings.includeDistribution ? 'ON' : 'OFF';
-    const randomButton = document.getElementById('stageDeckRandomAccount');
-    if (randomButton) randomButton.textContent = '무작위 계정 생성';
     const actualButton = document.getElementById('stageDeckUseActualRoster');
     if (actualButton) actualButton.hidden = localStorage.getItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY) !== '1';
-  }
-
-  function createStageDeckRandomRoster() {
-    if (!pedia.length) {
-      showNotice('캐릭터 도감을 불러온 뒤 다시 시도해 주세요.');
-      return;
-    }
-    const settings = loadStageDeckRandomSettings();
-    const ownedNames = [];
-    let excludedByType = 0;
-    pedia.forEach(item => {
-      const name = String(item && item.name || '').trim();
-      if (!name) return;
-      const normalized = normalizeRosterName(name);
-      const blockedByLimited = !settings.includeLimited && LIMITED_RANDOM_NAMES.has(normalized);
-      const blockedByDistribution = !settings.includeDistribution && DISTRIBUTION_RANDOM_NAMES.has(normalized);
-      const owned = !blockedByLimited && !blockedByDistribution && Math.random() * 100 < settings.ownedChance;
-      if (blockedByLimited || blockedByDistribution) excludedByType++;
-      if (owned) ownedNames.push(name);
-    });
-    try {
-      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_STORAGE_KEY, JSON.stringify(ownedNames));
-      localStorage.setItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY, '1');
-    } catch (_) {
-      showNotice('스테이지 추천용 무작위 보유 목록을 저장하지 못했습니다.');
-      return;
-    }
-    updateRandomInclusionStatus(settings);
-    renderGrid();
-    showNotice('스테이지 추천 전용 무작위 목록 생성 완료 · 보유 ' + ownedNames.length + '명 · 한정/배포 제외 ' + excludedByType + '명');
   }
 
   function useActualOwnedRoster() {
     try { localStorage.removeItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY); } catch (_) {}
     updateRandomInclusionStatus();
+    renderStageDeckGachaStatus();
     renderGrid();
     showNotice('실제 계정의 보유 니케 목록으로 돌아왔습니다.');
   }
 
   function initStageDeckRandomSettings() {
     const settings = loadStageDeckRandomSettings();
-    const chanceInput = document.getElementById('stageDeckRandomOwnedChance');
     const limitedInput = document.getElementById('stageDeckIncludeLimited');
     const distributionInput = document.getElementById('stageDeckIncludeDistribution');
-    if (chanceInput) chanceInput.value = String(settings.ownedChance);
     if (limitedInput) limitedInput.checked = settings.includeLimited;
     if (distributionInput) distributionInput.checked = settings.includeDistribution;
-    const output = document.getElementById('stageDeckRandomOwnedChanceValue');
-    if (output) output.textContent = settings.ownedChance + '%';
-    chanceInput?.addEventListener('input', saveStageDeckRandomSettings);
     limitedInput?.addEventListener('change', saveStageDeckRandomSettings);
     distributionInput?.addEventListener('change', saveStageDeckRandomSettings);
+
+    // Retire a previous bulk-random roster only if it came from the old stage-deck-only feature.
+    try {
+      if (localStorage.getItem(STAGE_GACHA_STATE_KEY) === null && localStorage.getItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY) === '1') {
+        const empty = {pulls:0, counts:{}, history:[], rarityCounts:{SSR:0,SR:0,R:0}, pilgrimSSR:0};
+        localStorage.setItem(STAGE_GACHA_STATE_KEY, JSON.stringify(empty));
+        localStorage.setItem(RANDOM_ACCOUNT_ROSTER_STORAGE_KEY, JSON.stringify([]));
+      }
+    } catch (_) {}
+    renderStageDeckGachaStatus();
     updateRandomInclusionStatus(settings);
   }
 
@@ -738,10 +893,8 @@
       renderGrid();
     });
     initStageDeckRandomSettings();
-    document.getElementById('stageDeckRandomAccount')?.addEventListener('click', () => {
-      saveStageDeckRandomSettings();
-      createStageDeckRandomRoster();
-    });
+    document.getElementById('stageDeckRandomAccount')?.addEventListener('click', drawStageDeckGacha);
+    document.getElementById('stageDeckGachaReset')?.addEventListener('click', clearStageDeckGacha);
     document.getElementById('stageDeckUseActualRoster')?.addEventListener('click', useActualOwnedRoster);
     patchNavigation();
   }
