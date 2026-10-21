@@ -84,6 +84,9 @@
       if (rawUnowned !== null) {
         const names = JSON.parse(rawUnowned);
         if (Array.isArray(names)) {
+          // An empty unowned list is not proof that every character is owned.
+          // Without a synced roster or explicit row markers, keep ownership unknown.
+          if (!names.length) return null;
           const unowned = new Set(names.map(normalizeName).filter(Boolean));
           return rows.filter(function (row) {
             const name = normalizeName(row && row['이름']);
