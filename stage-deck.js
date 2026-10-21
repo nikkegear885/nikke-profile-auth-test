@@ -206,6 +206,35 @@
       
       .stage-deck-slot .stage-slot-remove{position:absolute;right:4px;top:4px;width:20px;height:20px;border:0;border-radius:50%;background:rgba(17,35,52,.82);color:#fff;display:grid;place-items:center;font-size:14px;line-height:1;z-index:3;cursor:pointer;padding:0}
       .stage-deck-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid #d8e4ee;border-radius:12px;background:#f7fafc}
+      .stage-deck-account-creation{margin:0 0 14px;padding:15px;border:1px solid #c7ddeb;border-radius:14px;background:linear-gradient(135deg,#f8fcff,#edf7ff);box-shadow:0 5px 18px rgba(47,87,119,.06)}
+      .stage-deck-account-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+      .stage-deck-account-title h4{margin:0 0 5px;color:#253f59;font-size:15px;font-weight:1000}
+      .stage-deck-account-title p{margin:0;color:#6e8498;font-size:11px;line-height:1.5}
+      .stage-deck-account-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;flex:0 0 auto}
+      .stage-deck-account-actions .stage-deck-random-account,.stage-deck-account-actions .stage-deck-ten-pull{height:40px;padding:0 15px;border-radius:9px;font-size:12px;font-weight:1000}
+      .stage-deck-account-actions .stage-deck-ten-pull{border:1px solid #168bce;background:#168bce;color:#fff;cursor:pointer;box-shadow:0 3px 8px rgba(22,139,206,.18)}
+      .stage-deck-account-actions .stage-deck-ten-pull:hover{background:#0878b8}
+      .stage-deck-top-actions{display:flex;align-items:center;gap:8px}
+      .stage-deck-gacha-result.batch{display:block;padding:8px}
+      .stage-deck-gacha-batch-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:100%}
+      .stage-deck-gacha-batch-item{min-width:0;overflow:hidden;border:1px solid #d8e4ed;border-radius:8px;background:#fff}
+      .stage-deck-gacha-batch-item img{display:block;width:100%;height:88px;object-fit:cover;object-position:center top;border-radius:0}
+      .stage-deck-gacha-batch-copy{display:flex;flex-direction:column;gap:3px;padding:6px;min-width:0}
+      .stage-deck-gacha-batch-copy .stage-deck-gacha-result-name{font-size:11px;line-height:1.25;overflow-wrap:anywhere}
+      .stage-deck-gacha-batch-copy>span:last-child{font-size:9px;color:#8a6b4b;line-height:1.3}
+      html.dark-theme .stage-deck-account-creation{background:linear-gradient(135deg,#111d2c,#17283a);border-color:#304359}
+      html.dark-theme .stage-deck-account-title h4{color:#e1edf8}
+      html.dark-theme .stage-deck-account-title p{color:#8ea3b8}
+      html.dark-theme .stage-deck-gacha-batch-item{background:#101b2b;border-color:#304359}
+      @media(max-width:650px){
+        .stage-deck-account-head{flex-direction:column}
+        .stage-deck-account-actions{justify-content:flex-start;width:100%}
+        .stage-deck-account-actions .stage-deck-random-account,.stage-deck-account-actions .stage-deck-ten-pull{flex:1}
+        .stage-deck-top-head{align-items:flex-start}
+        .stage-deck-top-actions{align-items:flex-end;flex-direction:column;gap:5px}
+        .stage-deck-gacha-batch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .stage-deck-gacha-batch-item img{height:115px}
+      }
       .stage-deck-search-wrap{position:relative;display:flex;align-items:center;flex:1 1 240px;min-width:170px}
       .stage-deck-search{width:100%;min-width:0;height:38px;border:1px solid #ccdae5;border-radius:9px;background:#fff;color:#263b50;padding:0 12px;font-size:12px;outline:none}
       .stage-deck-search:focus{border-color:#2a91d2;box-shadow:0 0 0 3px rgba(42,145,210,.13)}
@@ -328,8 +357,42 @@
         <p>아래 도감에서 니케를 누르면 위쪽 5인 덱에 배치됩니다. 위 슬롯을 먼저 누르면 원하는 위치에 넣거나 교체할 수 있습니다.</p>
       </div>
       <section class="stage-deck-top" aria-label="스테이지 덱 슬롯">
-        <div class="stage-deck-top-head"><span class="stage-deck-top-title">선택한 니케 <span id="stageDeckSelectedCount">0 / 5</span></span><span class="stage-deck-top-note">슬롯을 눌러 배치 위치 선택</span></div>
+        <div class="stage-deck-top-head"><span class="stage-deck-top-title">선택한 니케 <span id="stageDeckSelectedCount">0 / 5</span></span><span class="stage-deck-top-actions"><span class="stage-deck-top-note">슬롯을 눌러 배치 위치 선택</span><button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button></span></div>
         <div class="stage-deck-slots" id="stageDeckSlots"></div>
+      </section>
+      <section class="stage-deck-account-creation" id="stageDeckAccountCreation" aria-label="계정 생성 및 뽑기">
+        <div class="stage-deck-account-head">
+          <div class="stage-deck-account-title">
+            <h4>계정 생성 · 뽑기 시뮬레이터</h4>
+            <p>뽑은 니케만 스테이지 추천 전용 보유 목록에 반영됩니다. 실제 계정 보유 데이터와는 분리됩니다.</p>
+          </div>
+          <div class="stage-deck-account-actions">
+            <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="확률에 따라 캐릭터 1명을 뽑습니다">1회 뽑기</button>
+            <button type="button" class="stage-deck-ten-pull" id="stageDeckTenPull" title="확률에 따라 캐릭터 10명을 뽑습니다">10회 뽑기</button>
+            <button type="button" class="stage-deck-gacha-reset" id="stageDeckGachaReset">뽑기 초기화</button>
+            <button type="button" class="stage-deck-use-actual-roster" id="stageDeckUseActualRoster" hidden>실제 보유 목록</button>
+          </div>
+        </div>
+        <details class="stage-deck-random-settings" id="stageDeckRandomSettings">
+          <summary>뽑기 확률 및 캐릭터 설정</summary>
+          <div class="stage-deck-random-settings-body">
+            <div class="stage-deck-gacha-rates" aria-label="뽑기 확률">
+              <div><strong>SSR 4%</strong><span>필그림 0.5% · 기타 SSR 3.5%</span></div>
+              <div><strong>SR 43%</strong><span>SR 캐릭터</span></div>
+              <div><strong>R 53%</strong><span>R 캐릭터</span></div>
+            </div>
+            <div class="stage-deck-random-includes">
+              <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeLimited" checked><span>한정 캐</span><strong data-stage-random-status="limited">ON</strong></label>
+              <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeDistribution" checked><span>배포 캐</span><strong data-stage-random-status="distribution">ON</strong></label>
+            </div>
+            <div class="stage-deck-random-note">1회 뽑기는 1명, 10회 뽑기는 10명을 각각 독립 확률로 획득합니다. 전체 뽑기 기준 필그림 SSR은 0.5%, 그 외 SSR은 3.5%입니다. OFF로 끈 유형은 등장 대상에서 제외됩니다. 결과는 스테이지 추천 전용으로 저장됩니다.</div>
+          </div>
+        </details>
+        <section class="stage-deck-gacha-panel" id="stageDeckGachaPanel" aria-label="뽑기 결과">
+          <div class="stage-deck-gacha-panel-head"><strong>뽑기 결과</strong><span id="stageDeckGachaStats">누적 0회 · 보유 0명</span></div>
+          <div id="stageDeckGachaResult" class="stage-deck-gacha-result">‘1회 뽑기’ 또는 ‘10회 뽑기’를 눌러 시작하세요.</div>
+          <div id="stageDeckGachaHistory" class="stage-deck-gacha-history"></div>
+        </section>
       </section>
       <div class="stage-deck-toolbar">
         <label class="stage-deck-search-wrap"><input id="stageDeckSearch" class="stage-deck-search" type="search" placeholder="니케 이름 검색…" autocomplete="off" aria-label="니케 이름 검색"></label>
@@ -343,32 +406,8 @@
           <option value="pedia">도감 순</option>
           <option value="burst">버스트 순</option>
         </select>
-        <button type="button" class="stage-deck-random-account" id="stageDeckRandomAccount" title="확률에 따라 캐릭터 1명을 뽑습니다">1회 뽑기</button>
-        <button type="button" class="stage-deck-gacha-reset" id="stageDeckGachaReset">뽑기 초기화</button>
-        <button type="button" class="stage-deck-use-actual-roster" id="stageDeckUseActualRoster" hidden>실제 보유 목록</button>
-        <button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button>
         <span class="stage-deck-count" id="stageDeckVisibleCount"></span>
       </div>
-      <details class="stage-deck-random-settings" id="stageDeckRandomSettings">
-        <summary>뽑기 확률 및 캐릭터 설정</summary>
-        <div class="stage-deck-random-settings-body">
-          <div class="stage-deck-gacha-rates" aria-label="뽑기 확률">
-            <div><strong>SSR 4%</strong><span>필그림 0.5% · 기타 SSR 3.5%</span></div>
-            <div><strong>SR 43%</strong><span>SR 캐릭터</span></div>
-            <div><strong>R 53%</strong><span>R 캐릭터</span></div>
-          </div>
-          <div class="stage-deck-random-includes">
-            <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeLimited" checked><span>한정 캐</span><strong data-stage-random-status="limited">ON</strong></label>
-            <label class="stage-deck-random-switch"><input type="checkbox" id="stageDeckIncludeDistribution" checked><span>배포 캐</span><strong data-stage-random-status="distribution">ON</strong></label>
-          </div>
-          <div class="stage-deck-random-note">뽑기 1회마다 캐릭터 1명을 획득합니다. 확률은 전체 뽑기 기준이며, 필그림 SSR은 0.5%, 그 외 SSR은 3.5%입니다. OFF로 끈 유형은 등장 대상에서 제외됩니다. 결과는 스테이지 추천 전용으로 저장됩니다.</div>
-        </div>
-      </details>
-      <section class="stage-deck-gacha-panel" id="stageDeckGachaPanel" aria-label="뽑기 결과">
-        <div class="stage-deck-gacha-panel-head"><strong>뽑기 결과</strong><span id="stageDeckGachaStats">누적 0회 · 보유 0명</span></div>
-        <div id="stageDeckGachaResult" class="stage-deck-gacha-result">‘1회 뽑기’를 눌러 시작하세요.</div>
-        <div id="stageDeckGachaHistory" class="stage-deck-gacha-history"></div>
-      </section>
       <div class="stage-deck-grid" id="stageDeckGrid" aria-label="캐릭터 도감 목록"></div>
       <div id="stageDeckNotice" hidden aria-live="polite"></div>
     `;
@@ -540,18 +579,34 @@
     const result = document.getElementById('stageDeckGachaResult');
     const history = document.getElementById('stageDeckGachaHistory');
     if (stats) stats.textContent = '누적 ' + state.pulls + '회 · 보유 ' + Object.keys(state.counts).filter(name => Number(state.counts[name]) > 0).length + '명 · 필그림 SSR ' + state.pilgrimSSR + '회';
-    const outcome = latest || state.history[state.history.length - 1] || null;
+    const batch = Array.isArray(latest) && latest.length > 1 ? latest : null;
+    const outcome = batch ? null : (Array.isArray(latest) ? latest[0] : latest) || state.history[state.history.length - 1] || null;
     if (result) {
-      if (!outcome) {
-        result.textContent = '‘1회 뽑기’를 눌러 시작하세요.';
+      if (batch) {
+        result.classList.add('batch');
+        result.innerHTML = '<div class="stage-deck-gacha-batch-grid">' + batch.map(entry => {
+          const item = getCharacter(entry.name);
+          const image = item && String(item.image || '').startsWith('http') ? String(item.image) : '';
+          const rarity = String(entry.rarity || '').toLowerCase();
+          return '<div class="stage-deck-gacha-batch-item">' +
+            (image ? '<img src="' + esc(image) + '" alt="' + esc(entry.name) + '">' : '') +
+            '<div class="stage-deck-gacha-batch-copy"><span class="stage-deck-gacha-rarity ' + esc(rarity) + '">' + esc(entry.rarity) + (entry.pilgrim ? ' · 필그림' : '') + '</span>' +
+            '<strong class="stage-deck-gacha-result-name">' + esc(entry.name) + '</strong>' +
+            '<span>' + (entry.duplicate ? '중복 ' + esc(entry.characterCount) + '번째' : '신규 획득') + '</span></div></div>';
+        }).join('') + '</div>';
       } else {
-        const item = getCharacter(outcome.name);
-        const image = item && /^https?:\/\//i.test(String(item.image || '')) ? String(item.image) : '';
-        const rarity = String(outcome.rarity || '').toLowerCase();
-        result.innerHTML = (image ? '<img src="' + esc(image) + '" alt="' + esc(outcome.name) + '">' : '') +
-          '<div class="stage-deck-gacha-result-copy"><span class="stage-deck-gacha-rarity ' + esc(rarity) + '">' + esc(outcome.rarity) + (outcome.pilgrim ? ' · 필그림' : '') + '</span>' +
-          '<strong class="stage-deck-gacha-result-name">' + esc(outcome.name) + '</strong>' +
-          '<span>' + esc(outcome.company || '') + (outcome.duplicate ? ' · 중복 획득 (' + esc(outcome.characterCount) + '번째)' : ' · 신규 획득') + '</span></div>';
+        result.classList.remove('batch');
+        if (!outcome) {
+          result.textContent = '‘1회 뽑기’ 또는 ‘10회 뽑기’를 눌러 시작하세요.';
+        } else {
+          const item = getCharacter(outcome.name);
+          const image = item && String(item.image || '').startsWith('http') ? String(item.image) : '';
+          const rarity = String(outcome.rarity || '').toLowerCase();
+          result.innerHTML = (image ? '<img src="' + esc(image) + '" alt="' + esc(outcome.name) + '">' : '') +
+            '<div class="stage-deck-gacha-result-copy"><span class="stage-deck-gacha-rarity ' + esc(rarity) + '">' + esc(outcome.rarity) + (outcome.pilgrim ? ' · 필그림' : '') + '</span>' +
+            '<strong class="stage-deck-gacha-result-name">' + esc(outcome.name) + '</strong>' +
+            '<span>' + esc(outcome.company || '') + (outcome.duplicate ? ' · 중복 획득 (' + esc(outcome.characterCount) + '번째)' : ' · 신규 획득') + '</span></div>';
+        }
       }
     }
     if (history) {
@@ -565,7 +620,7 @@
     if (resetButton) resetButton.hidden = state.pulls === 0 && localStorage.getItem(RANDOM_ACCOUNT_ROSTER_ACTIVE_KEY) !== '1';
   }
 
-  function drawStageDeckGacha() {
+  function drawStageDeckGacha(pullCount = 1) {
     const settings = loadStageDeckRandomSettings();
     const eligible = getAvailableGachaPool(settings);
     if (!eligible.length) {
@@ -578,52 +633,67 @@
     const sr = eligible.filter(entry => String(entry.meta.rarity || '').toUpperCase() === 'SR');
     const r = eligible.filter(entry => String(entry.meta.rarity || '').toUpperCase() === 'R');
     const state = loadStageDeckGachaState();
+    const outcomes = [];
+    const requestedPulls = Number(pullCount) === 10 ? 10 : 1;
 
-    // Rates are per pull: SSR 4%, SR 43%, R 53%. Of all pulls, Pilgrim SSR is 0.5% (12.5% of SSR draws).
-    const roll = Math.random();
-    let rarity = roll < 0.04 ? 'SSR' : (roll < 0.47 ? 'SR' : 'R');
-    let selected = null;
-    let isPilgrim = false;
-    if (rarity === 'SSR') {
-      if (pilgrimSSR.length && otherSSR.length) {
-        isPilgrim = Math.random() < 0.125;
-        selected = chooseRandom(isPilgrim ? pilgrimSSR : otherSSR);
+    for (let drawIndex = 0; drawIndex < requestedPulls; drawIndex++) {
+      // Rates are per pull: SSR 4%, SR 43%, R 53%. Pilgrim SSR is 0.5% of all pulls.
+      const roll = Math.random();
+      const rarity = roll < 0.04 ? 'SSR' : (roll < 0.47 ? 'SR' : 'R');
+      let selected = null;
+      let isPilgrim = false;
+      if (rarity === 'SSR') {
+        if (pilgrimSSR.length && otherSSR.length) {
+          isPilgrim = Math.random() < 0.125;
+          selected = chooseRandom(isPilgrim ? pilgrimSSR : otherSSR);
+        } else {
+          selected = chooseRandom(pilgrimSSR.length ? pilgrimSSR : otherSSR);
+          isPilgrim = !!selected && String(selected.meta.company || '').trim() === '필그림';
+        }
+      } else if (rarity === 'SR') {
+        selected = chooseRandom(sr);
       } else {
-        selected = chooseRandom(pilgrimSSR.length ? pilgrimSSR : otherSSR);
-        isPilgrim = !!selected && String(selected.meta.company || '').trim() === '필그림';
+        selected = chooseRandom(r);
       }
-    } else if (rarity === 'SR') {
-      selected = chooseRandom(sr);
-    } else {
-      selected = chooseRandom(r);
-    }
-    if (!selected) {
-      showNotice(rarity + ' 등급의 대상 캐릭터가 없습니다. 한정·배포 포함 설정을 확인해 주세요.');
-      return;
+      if (!selected) {
+        showNotice(rarity + ' 등급의 뽑기 대상 캐릭터가 없습니다. 한정·배포 설정을 확인해 주세요.');
+        break;
+      }
+
+      const name = selected.name;
+      const oldCount = Math.max(0, Number(state.counts[name]) || 0);
+      state.pulls += 1;
+      state.counts[name] = oldCount + 1;
+      state.rarityCounts[rarity] = (state.rarityCounts[rarity] || 0) + 1;
+      if (rarity === 'SSR' && isPilgrim) state.pilgrimSSR += 1;
+      const outcome = {
+        pull: state.pulls,
+        name,
+        rarity,
+        company: String(selected.meta.company || ''),
+        pilgrim: rarity === 'SSR' && isPilgrim,
+        duplicate: oldCount > 0,
+        characterCount: oldCount + 1
+      };
+      state.history.push(outcome);
+      outcomes.push(outcome);
     }
 
-    const name = selected.name;
-    const oldCount = Math.max(0, Number(state.counts[name]) || 0);
-    state.pulls += 1;
-    state.counts[name] = oldCount + 1;
-    state.rarityCounts[rarity] = (state.rarityCounts[rarity] || 0) + 1;
-    if (rarity === 'SSR' && isPilgrim) state.pilgrimSSR += 1;
-    const outcome = {
-      pull: state.pulls,
-      name,
-      rarity,
-      company: String(selected.meta.company || ''),
-      pilgrim: rarity === 'SSR' && isPilgrim,
-      duplicate: oldCount > 0,
-      characterCount: oldCount + 1
-    };
-    state.history.push(outcome);
+    if (!outcomes.length) return;
     state.history = state.history.slice(-20);
     if (!saveStageDeckGachaState(state)) return;
     updateRandomInclusionStatus(settings);
-    renderStageDeckGachaStatus(outcome);
+    renderStageDeckGachaStatus(outcomes.length > 1 ? outcomes : outcomes[0]);
     renderGrid();
-    showNotice(outcome.duplicate ? '중복 획득: ' + name : '신규 획득: ' + name + ' (' + rarity + ')');
+    if (outcomes.length === 1) {
+      const outcome = outcomes[0];
+      showNotice(outcome.duplicate ? '중복 획득: ' + outcome.name : '신규 획득: ' + outcome.name + ' (' + outcome.rarity + ')');
+    } else {
+      const ssrCount = outcomes.filter(outcome => outcome.rarity === 'SSR').length;
+      const newCount = outcomes.filter(outcome => !outcome.duplicate).length;
+      const duplicateCount = outcomes.length - newCount;
+      showNotice(outcomes.length + '회 뽑기 완료 · SSR ' + ssrCount + '명 · 신규 ' + newCount + '명 · 중복 ' + duplicateCount + '회');
+    }
   }
 
   function clearStageDeckGacha() {
@@ -893,7 +963,8 @@
       renderGrid();
     });
     initStageDeckRandomSettings();
-    document.getElementById('stageDeckRandomAccount')?.addEventListener('click', drawStageDeckGacha);
+    document.getElementById('stageDeckRandomAccount')?.addEventListener('click', () => drawStageDeckGacha(1));
+    document.getElementById('stageDeckTenPull')?.addEventListener('click', () => drawStageDeckGacha(10));
     document.getElementById('stageDeckGachaReset')?.addEventListener('click', clearStageDeckGacha);
     document.getElementById('stageDeckUseActualRoster')?.addEventListener('click', useActualOwnedRoster);
     patchNavigation();
