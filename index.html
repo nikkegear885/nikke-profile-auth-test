@@ -6681,6 +6681,35 @@ function createRandomTestAccount(){
   ];
   if(!breakthroughOptions.some(item=>item.weight>0)) breakthroughOptions[0].weight=100;
   const parts=['머리','몸통','장갑','다리'];
+  const normalizeRandomName=value=>String(value==null?'':value)
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\\s:：·•._'’“”"\\-–—()\\[\\]{}]/g,'');
+  const limitedRandomNames=new Set([
+    '2B','A2','렘','마키마','파워','레이','레이 (가칭)','아스카','아스카 : WILLE','마리','미사토',
+    '로산나 : 시크 오션','루드밀라 : 윈터 오너','루피 : 윈터 쇼퍼','디젤 : 윈터 스위츠',
+    '길로틴 : 윈터 슬레이어','네온 : 블루 오션','도로시 : 세렌디피티','메어리 : 베이 갓데스',
+    '메이든 : 아이스 로즈','미카 : 스노우 버디','브리드 : 사일런트 트랙','사쿠라 : 블룸 인 서머',
+    '아니스 : 스파클링 서머','헬름 : 아쿠아마린','마르차나 : 마린 스터디','신데렐라 : 크리스탈 웨이브',
+    '에밀리아','에이다','유키코','이브','일레그 : 붐 앤 쇼크','질','치사토','퀸(마코토)','타키나',
+    '레이븐','클레어','쿠루미','히메노','사쿠라 스즈하라'
+  ].map(normalizeRandomName));
+  const distributionRandomNames=new Set([
+    '앵커','네베','차임','킬로','파스칼','앤 : 미라클 페어리','아이기스','길티','신','퀀시',
+    '라푼젤:퓨어그레이스','람','릴리','모리','아비스타','니힐리스타',
+    '스노우 화이트 : 이노센트 데이즈','라이'
+  ].map(normalizeRandomName));
+  let randomIncludeOptions={includeLimited:true,includeDistribution:true};
+  try{
+    const savedOptions=JSON.parse(localStorage.getItem('nikke_stage_deck_random_account_options_v1')||'{}')||{};
+    randomIncludeOptions={
+      includeLimited:savedOptions.includeLimited!==false,
+      includeDistribution:savedOptions.includeDistribution!==false
+    };
+  }catch(e){}
+  const randomTypeExcluded=name=>
+    (!randomIncludeOptions.includeLimited&&limitedRandomNames.has(normalizeRandomName(name)))||
+    (!randomIncludeOptions.includeDistribution&&distributionRandomNames.has(normalizeRandomName(name)));
   let ownedCount=0;
   mock.forEach(row=>{
     const name=String(row&&row['이름']||'').trim();
@@ -6693,6 +6722,8 @@ function createRandomTestAccount(){
     if(name==='프리바티'||name==='앨리스'){
       owned=true;
     }
+    // The stage-deck options override random ownership for the selected character categories.
+    if(randomTypeExcluded(name)) owned=false;
 
     // Update ownership tracking only after character-specific overrides are applied.
     if(!owned)unownedNames.push(name);
