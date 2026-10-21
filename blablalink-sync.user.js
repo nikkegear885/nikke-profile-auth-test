@@ -2,7 +2,7 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.32
+// @version      1.0.33
 // @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
@@ -432,12 +432,18 @@
     return SKILL_FIELD_GROUPS.every(group => skillFieldValue(char, group.keys) !== null);
   }
 
-  function mergeMissingSkillData(target, source) {
+  function allSkillsAreOne(char) {
+    return SKILL_FIELD_GROUPS.every(group => Number(skillFieldValue(char, group.keys)) === 1);
+  }
+
+  function mergeMissingSkillData(target, source, overwriteExisting=false) {
     if (!target || !source) return;
     for (const group of SKILL_FIELD_GROUPS) {
-      if (skillFieldValue(target, group.keys) !== null) continue;
-      const value = skillFieldValue(source, group.keys);
-      if (value !== null) target[group.target] = value;
+      const current = skillFieldValue(target, group.keys);
+      const incoming = skillFieldValue(source, group.keys);
+      if (incoming === null) continue;
+      // For suspicious batch 1/1/1 rows, a valid single-character response takes priority.
+      if (overwriteExisting || current === null) target[group.target] = incoming;
     }
   }
 
@@ -476,9 +482,14 @@
     // 묶음 조회 결과에 스킬 레벨이 빠진 캐릭터만 단일 name_code로 재조회합니다.
     // 정상 응답은 그대로 사용하므로 API 호출량을 불필요하게 늘리지 않습니다.
     for (const detail of out) {
-      if (hasCompleteSkillData(detail)) continue;
+      const complete = hasCompleteSkillData(detail);
+      const suspiciousAllOnes = complete && allSkillsAreOne(detail);
+      // Recheck incomplete rows and rows whose batch response says 1/1/1.
+      // Some profiles' batch response can return default-looking values even when their true levels differ.
+      if (complete && !suspiciousAllOnes) continue;
       const code = String(detail?.name_code ?? '').trim();
       if (!code) continue;
+      let singleChecked = false;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const j = await postJson(API.details, {
@@ -489,7 +500,18 @@
           if (String(j?.code ?? '') === '0' && Array.isArray(j?.data?.character_details)) {
             const single = j.data.character_details.find(item => String(item?.name_code ?? '') === code)
               || j.data.character_details[0];
-            if (single) mergeMissingSkillData(detail, single);
+            if (single) {
+              mergeMissingSkillData(detail, single, suspiciousAllOnes);
+              singleChecked = true;
+              if (code === '5148') {
+                console.info('[NIKKE GM] Vesti: Tactical Up skill diagnostic', {
+                  batchSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys)),
+                  singleSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys)),
+                  suspiciousAllOnes,
+                  mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
+                });
+              }
+            }
             break;
           }
           if (attempt === 1) console.warn('[NIKKE GM] Single-character skill retry returned no data:', code, j?.message || j?.msg || j?.code);
@@ -498,10 +520,14 @@
           else await delay(250);
         }
       }
+      if (suspiciousAllOnes && !singleChecked) {
+        console.warn('[NIKKE GM] 1/1/1 skill row could not be rechecked:', code);
+      }
       await delay(100);
     }
     const completeSkills = out.filter(hasCompleteSkillData).length;
-    console.log('[NIKKE GM] Skill fields verified:', completeSkills + '/' + out.length);
+    const allOnes = out.filter(allSkillsAreOne).length;
+    console.log('[NIKKE GM] Skill fields verified:', completeSkills + '/' + out.length, '· still 1/1/1:', allOnes);
     return out;
   }
 
