@@ -4736,6 +4736,10 @@ function createFreshAccountData(){
   const fresh=structuredClone(RAW);
   const freshGearParts=['머리','몸통','장갑','다리'];
   fresh.forEach(r=>{
+    // RAW also contains a previously populated sample account; never seed another account with its skill levels.
+    r['스킬1']=null;
+    r['스킬2']=null;
+    r['버스트스킬']=null;
     freshGearParts.forEach(p=>{
       r[p+'_티어']=0;
       r[p+'_레벨']=0;
@@ -4876,6 +4880,8 @@ const BL_SYNC_SITE_ORIGIN=location.origin;
 let blSyncPopup=null;
 let blSyncToken='';
 let blSyncTimer=null;
+let blSyncAccount='';
+let blSyncAccountStartedAt='';
 function normalizeSyncCorp(v){
   if(v&&typeof v==='object'){
     for(const k of ['corporation_type','corporationType','company','manufacturer','corp','code','id','value','name']){
@@ -4987,9 +4993,17 @@ function applyBlablalinkSyncPayload(p,targetAccount){
     ];
     let hasSkillData=false;
     for(const [key,rawSkill] of skillValues){
-      if(rawSkill===undefined || rawSkill===null || rawSkill==='')continue;
+      if(rawSkill===undefined || rawSkill===null || rawSkill===''){
+        // The current sync script queried skill levels for this character. A missing value
+        // must remain unknown, not silently reuse an old value from another account or RAW.
+        if(p.skillsQueried===true && r[key]!==null){r[key]=null;changed++}
+        continue;
+      }
       const skill=normalizeSyncNumber(rawSkill);
-      if(skill===null)continue;
+      if(skill===null){
+        if(p.skillsQueried===true && r[key]!==null){r[key]=null;changed++}
+        continue;
+      }
       const value=Math.max(0,Math.min(10,Math.floor(skill)));
       hasSkillData=true;
       if(num(r[key])!==value){r[key]=value;changed++}
@@ -5022,6 +5036,9 @@ function applyBlablalinkSyncPayload(p,targetAccount){
         for(const key of [part+'_옵1',part+'_옵1값',part+'_옵2',part+'_옵2값',part+'_옵3',part+'_옵3값']){
           if(row[key]!==null && row[key]!==''){row[key]=null;changed++}
         }
+      }
+      for(const key of ['스킬1','스킬2','버스트스킬']){
+        if(row[key]!==null){row[key]=null;changed++}
       }
       for(const key of ['우코(%)','공증(%)','장탄(%)','크확(%)','크댐(%)','명중(%)','차댐(%)','차속(%)','방어(%)']){
         if(num(row[key])!==0){row[key]=0;changed++}
@@ -5113,9 +5130,21 @@ function applyBlablalinkSyncPayload(p,targetAccount){
     renderKpis();
     renderDropRatePanel();
   }
+  // Explicitly repaint Skill Status from the exact account that was just saved.
+  // This covers the case where the target account was already active and switchAccount did not fire.
+  if(typeof window.__NIKKE_GM_REFRESH_SKILL_STATUS__==='function'){
+    window.__NIKKE_GM_REFRESH_SKILL_STATUS__(syncAccount);
+  }
+  console.info('[NIKKE GM] sync applied', {
+    targetAccount: syncAccount,
+    activeAccount: activeAccount,
+    sourceNickname: p.nickname || '',
+    areaId: p.areaId || null,
+    skillDataCount: skillDataCount
+  });
   closeBlablalinkSyncGuide();
   const unresolved=Array.isArray(p.unresolved)?p.unresolved.length:0;
-  toast('BlablaLink 동기화 완료 · '+matched+'명 반영 · 스킬 데이터 '+skillDataCount+'명 · '+changed+'개 변경'+(unresolved?' · 미매칭 '+unresolved+'명':''));
+  toast('BlablaLink 동기화 완료 · 대상 '+syncAccount+' / 출처 '+(p.nickname||'닉네임 확인 불가')+' · '+matched+'명 반영 · 스킬 데이터 '+skillDataCount+'명 · '+changed+'개 변경'+(unresolved?' · 미매칭 '+unresolved+'명':''));
 }
 window.__NIKKE_GM_APPLY_SYNC__=applyBlablalinkSyncPayload;
 
@@ -7207,7 +7236,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="profile-import-button.js?v=1.024"></script><script src="pedia.js?v=1054"></script><script src="wishlist.js?v=3.08"></script><script src="stage-deck.js?v=1.425"></script><script src="skill-status.js?v=1.8"></script><style id="character-image-column-v004">
+</style><script src="profile-import-button.js?v=1.024"></script><script src="pedia.js?v=1054"></script><script src="wishlist.js?v=3.08"></script><script src="stage-deck.js?v=1.425"></script><script src="skill-status.js?v=1.9"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
