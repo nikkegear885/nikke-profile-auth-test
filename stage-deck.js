@@ -375,7 +375,7 @@
     panel.innerHTML = `
       <div class="stage-deck-head">
         <h3>스테이지 덱 추천</h3>
-        <p>아래 도감에서 니케를 누르면 위쪽 5인 덱에 배치됩니다. 위 슬롯을 먼저 누르면 원하는 위치에 넣거나 교체할 수 있습니다.</p>
+        <p>기본 편성은 Ⅰ버스트 1명, Ⅱ버스트 1~2명, Ⅲ버스트 2명입니다. 자동추천은 이 구성을 우선해 보유 니케 중 무작위로 편성합니다. 아래 도감에서 직접 선택하거나 위 슬롯을 눌러 원하는 위치에 넣고 교체할 수도 있습니다.</p>
       </div>
       <section class="stage-deck-top" aria-label="스테이지 덱 슬롯">
         <div class="stage-deck-top-head"><span class="stage-deck-top-title">선택한 니케 <span id="stageDeckSelectedCount">0 / 5</span></span><span class="stage-deck-top-actions"><span class="stage-deck-top-note">슬롯을 눌러 배치 위치 선택</span><button type="button" class="stage-deck-auto-recommend" id="stageDeckAutoRecommend" title="보유한 니케 중 무작위로 5명을 추천합니다">자동추천</button><button type="button" class="stage-deck-clear" id="stageDeckClear">덱 비우기</button></span></div>
@@ -864,19 +864,46 @@
       showNotice('현재 보유 목록에 추천할 니케가 없습니다.');
       return;
     }
-    // Fisher-Yates shuffle ensures a random, non-duplicated selection from owned characters.
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-    }
+
+    // Build a random team around the foundational Burst composition:
+    // Burst I x1, Burst II x1-2, Burst III x2. No character can be selected twice.
+    const shuffleCopy = items => {
+      const copy = items.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
+    const burstPools = {'1': [], '2': [], '3': []};
+    candidates.forEach(item => {
+      const burst = String(getMeta(item.name).burst || '');
+      if (Object.prototype.hasOwnProperty.call(burstPools, burst)) burstPools[burst].push(item);
+    });
+    Object.keys(burstPools).forEach(burst => { burstPools[burst] = shuffleCopy(burstPools[burst]); });
+
+    const burstI = burstPools['1'].slice(0, 1);
+    // Prefer two Burst II characters to fill all five slots, but one is valid under the base rule.
+    const burstII = burstPools['2'].slice(0, Math.min(2, burstPools['2'].length));
+    const burstIII = burstPools['3'].slice(0, 2);
+
+    // Keep the team slots in a practical Burst I / Burst II / Burst III sequence.
+    const selected = [burstI[0], burstII[0], burstIII[0], burstII[1], burstIII[1]]
+      .filter(Boolean);
     slots = Array(SLOT_COUNT).fill('');
-    candidates.slice(0, SLOT_COUNT).forEach((item, index) => { slots[index] = item.name; });
+    selected.slice(0, SLOT_COUNT).forEach((item, index) => { slots[index] = item.name; });
     activeSlot = 0;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch (_) {}
     renderSlots();
     renderGrid();
-    const selectedCount = candidates.length < SLOT_COUNT ? candidates.length : SLOT_COUNT;
-    showNotice('보유 니케 중 무작위 ' + selectedCount + '명을 덱에 배치했습니다.');
+
+    const selectedCount = selected.length;
+    const coreRuleMet = burstI.length === 1 && burstII.length >= 1 && burstIII.length === 2;
+    if (coreRuleMet) {
+      showNotice('기본 버스트 구성(Ⅰ 1명 · Ⅱ 1~2명 · Ⅲ 2명)에 맞춰 무작위 ' + selectedCount + '명을 배치했습니다.');
+    } else {
+      showNotice('보유 니케의 버스트 구성이 부족해 기본 규칙을 완전히 맞추지 못했습니다. 가능한 범위에서 ' + selectedCount + '명을 배치했습니다.');
+    }
   }
 
   function removeCharacterFromDeck(index) {
