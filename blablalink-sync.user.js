@@ -2,9 +2,9 @@
 
 // @name         NIKKE Gear Manager - BlablaLink 자동 장비 동기화
 // @namespace    https://nikkegear885.github.io/nikke-profile-auth-test/
-// @version      1.0.42
-// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.42
-// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.42
+// @version      1.0.43
+// @updateURL    https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.43
+// @downloadURL  https://raw.githubusercontent.com/nikkegear885/nikke-profile-auth-test/main/blablalink-sync.user.js?v=1.0.43
 // @description  테스트 사이트 계정동기화에서 보유·돌파·코강·스킬 레벨·장비 정보를 가져옵니다.
 // @author       NIKKE Gear Manager
 // @match        https://*.blablalink.com/*
@@ -15,6 +15,13 @@
 // ==/UserScript==
 (function(){
   'use strict';
+
+  const NIKKE_GM_SCRIPT_VERSION = '1.0.43';
+  console.info('[NIKKE GM] Userscript loaded', {
+    version: NIKKE_GM_SCRIPT_VERSION,
+    host: location.hostname,
+    href: location.href
+  });
 
   const TARGET_ORIGIN = 'https://nikkegear885.github.io';
   const API = {
@@ -487,6 +494,27 @@
     for(let i=0;i<clean.length;i+=40) chunks.push(clean.slice(i,i+40));
     const byCode = new Map();
     const singleLookupCache = new Map();
+    let loggedSkillFieldShape = false;
+
+    function findSkillFieldPaths(root) {
+      const found = [];
+      const seen = new Set();
+      function walk(value, path, depth) {
+        if (!value || typeof value !== 'object' || depth > 5 || seen.has(value) || found.length >= 30) return;
+        seen.add(value);
+        for (const [key, item] of Object.entries(value)) {
+          const nextPath = path ? path + '.' + key : key;
+          if (/skill|ulti|burst/i.test(key) && item !== null && item !== undefined &&
+              (typeof item === 'number' || (typeof item === 'string' && item.trim() !== '' && Number.isFinite(Number(item))))) {
+            found.push({path: nextPath, value: item});
+          }
+          if (item && typeof item === 'object') walk(item, nextPath, depth + 1);
+          if (found.length >= 30) break;
+        }
+      }
+      walk(root, '', 0);
+      return found;
+    }
 
     function addExactDetails(list, requestedCodes, source) {
       const allowed = new Set(requestedCodes.map(String));
@@ -589,7 +617,21 @@
             name_codes: chunk
           });
           if (String(j?.code ?? '') === '0'){
-            addExactDetails(j?.data?.character_details, chunk, 'batch');
+            const responseRows = j?.data?.character_details;
+            addExactDetails(responseRows, chunk, 'batch');
+            if (!loggedSkillFieldShape) {
+              loggedSkillFieldShape = true;
+              console.info('[NIKKE GM] Detail API response shape', {
+                areaId: state.areaId,
+                requestedCodes: chunk.length,
+                returnedRows: Array.isArray(responseRows) ? responseRows.length : null,
+                samples: (Array.isArray(responseRows) ? responseRows : []).slice(0, 3).map(item => ({
+                  name_code: item?.name_code,
+                  topLevelKeys: Object.keys(item || {}).slice(0, 45),
+                  skillFields: findSkillFieldPaths(item)
+                }))
+              });
+            }
             ok = true;
           } else if (attempt === 1) {
             throw new Error(j?.message || j?.msg || '장비 상세 조회 실패');
@@ -759,6 +801,7 @@
   async function runSync(token, sourceWindow){
     if(state.syncing) return;
     state.syncing = true;
+    console.info('[NIKKE GM] Sync handler entered', {version: NIKKE_GM_SCRIPT_VERSION, at: new Date().toISOString()});
     try{
       showStatus('NIKKE Gear Manager: 로그인/서버 정보 확인 중…');
       if(!await resolveAccount()){
@@ -785,6 +828,14 @@
         : 'NIKKE Gear Manager: 장비 기업 정보를 조회 중… ('+codes.length+'명)');
       const details = await fetchDetails(codes);
       const {updates, unresolved} = makeUpdates(details);
+      console.info('[NIKKE GM] Skill extraction summary', {
+        rosterCodes: codes.length,
+        detailRows: details.length,
+        updates: updates.length,
+        rowsWithAnySkill: updates.filter(u => [u.skill1,u.skill2,u.burstSkill].some(v => v !== null && v !== undefined)).length,
+        rowsAllOnes: updates.filter(u => Number(u.skill1)===1 && Number(u.skill2)===1 && Number(u.burstSkill)===1).length,
+        sample: updates.slice(0, 8).map(u => ({name_code:u.name_code,name:u.name,skill1:u.skill1,skill2:u.skill2,burstSkill:u.burstSkill}))
+      });
       // The normal character-list endpoint is the source of truth for ownership.
       // In details-only fallback mode, the response contains only owned characters, so use details.
       const rosterSource = detailsOnlyFallback ? details : chars;
