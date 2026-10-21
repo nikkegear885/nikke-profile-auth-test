@@ -12,6 +12,8 @@
   let imageMap = {};
   let imageLoadPromise = null;
   let skillFilterLevel = 10;
+  const skillMetadataFilters = {element:new Set(),burst:new Set(),company:new Set(),weapon:new Set()};
+  const SKILL_FILTER_DEFINITIONS = {burst:{label:'버스트',key:'버스트',order:['버스트1','버스트2','버스트3','ALL']},company:{label:'기업',key:'기업',order:['엘리시온','미실리스','테트라','필그림','어브노멀']},weapon:{label:'무기군',key:'무기',order:['AR','MG','RL','SG','SMG','SR']}};
   let skillSortKey = '';
   let skillSortDirection = 'desc';
   let showHiddenCharacters = false;
@@ -145,6 +147,30 @@
       '.skill-status-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:12px 14px;border:1px solid #d8e3ed;border-radius:12px;background:#fff}' +
       '.skill-status-filter-description{display:inline-flex;align-items:center;gap:7px;color:#37556e;font-size:13px;font-weight:900;white-space:nowrap}' +
       '.skill-status-filter-level{height:36px;min-width:78px;padding:0 9px;border:1px solid #b9d0e3;border-radius:8px;background:#f3f8fc;color:#2e5f82;font-size:13px;font-weight:900;cursor:pointer}' +
+      '.skill-status-filter-bar{display:flex;flex-direction:column;gap:10px;width:100%;margin:0 0 12px;padding:12px 14px;border:1px solid #d8e3ed;border-radius:12px;background:#fff}' +
+      '.skill-status-element-filter{display:flex;align-items:center;flex-wrap:wrap;gap:6px}' +
+      '.skill-status-filter-group-label{margin-right:4px;color:#526b80;font-size:12px;font-weight:900}' +
+      '.skill-status-element-button{min-height:32px;padding:0 11px;border:1px solid #c8d8e5;border-radius:8px;background:#f6f9fc;color:#415a70;font-size:12px;font-weight:800;cursor:pointer}' +
+      '.skill-status-element-button.active{border-color:#3985b9;background:#e1f1ff;color:#145b8c;box-shadow:inset 0 0 0 1px rgba(57,133,185,.12)}' +
+      '.skill-status-select-filters{display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px}' +
+      '.skill-status-filter-dropdown{position:relative;min-width:115px}' +
+      '.skill-status-filter-dropdown>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;padding:0 10px;border:1px solid #c8d8e5;border-radius:8px;background:#f6f9fc;color:#415a70;font-size:12px;font-weight:900;cursor:pointer;list-style:none}' +
+      '.skill-status-filter-dropdown>summary::-webkit-details-marker{display:none}' +
+      '.skill-status-filter-dropdown[open]>summary{border-color:#3985b9;background:#eaf5ff;color:#145b8c}' +
+      '.skill-status-filter-options{position:absolute;top:calc(100% + 5px);left:0;z-index:30;min-width:165px;max-height:260px;overflow:auto;padding:7px;border:1px solid #c8d8e5;border-radius:10px;background:#fff;box-shadow:0 10px 28px rgba(30,60,90,.16)}' +
+      '.skill-status-filter-option{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;color:#354d62;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}' +
+      '.skill-status-filter-option:hover{background:#edf6fd}' +
+      '.skill-status-filter-option input{width:15px;height:15px;accent-color:#3985b9}' +
+      '.skill-status-filter-clear{min-height:34px;padding:0 10px;border:1px solid #c8d8e5;border-radius:8px;background:transparent;color:#526b80;font-size:12px;font-weight:800;cursor:pointer}' +
+      '.skill-status-filter-clear:hover{background:#edf6fd;color:#145b8c}' +
+      'html.dark-theme .skill-status-filter-bar{background:#111e2c;border-color:#304356}' +
+      'html.dark-theme .skill-status-filter-group-label{color:#b8cadb}' +
+      'html.dark-theme .skill-status-element-button,html.dark-theme .skill-status-filter-dropdown>summary,html.dark-theme .skill-status-filter-clear{background:#1b2b3c;border-color:#405469;color:#d5e2ef}' +
+      'html.dark-theme .skill-status-element-button.active,html.dark-theme .skill-status-filter-dropdown[open]>summary{background:#203d58;border-color:#4b91c4;color:#e4f4ff}' +
+      'html.dark-theme .skill-status-filter-options{background:#111e2c;border-color:#405469;box-shadow:0 10px 28px rgba(0,0,0,.35)}' +
+      'html.dark-theme .skill-status-filter-option{color:#d5e2ef}' +
+      'html.dark-theme .skill-status-filter-option:hover,html.dark-theme .skill-status-filter-clear:hover{background:#20334b;color:#e4f4ff}' +
+      '@media(max-width:560px){.skill-status-filter-bar{padding:10px}.skill-status-element-button{padding:0 8px}.skill-status-select-filters{gap:6px}.skill-status-filter-dropdown{min-width:96px}}' +
       '.skill-status-hide-manage-toggle{min-height:38px;padding:0 13px;border:1px solid #d4c4ed;border-radius:9px;background:#f8f3ff;color:#7654a7;font-size:12px;font-weight:900;cursor:pointer}' +
       '.skill-status-hide-manage-toggle.active{background:#7654a7;border-color:#7654a7;color:#fff}' +
       '.skill-status-restore-all-button{min-height:38px;padding:0 13px;border:1px solid #b8ddc5;border-radius:9px;background:#f2fbf5;color:#267344;font-size:12px;font-weight:900;cursor:pointer}' +
@@ -207,6 +233,23 @@
         '<button type="button" id="skillStatusHideManageToggle" class="skill-status-hide-manage-toggle" aria-pressed="false">원하는 캐릭터 숨기기</button>' +
         '<button type="button" id="skillStatusRestoreAllButton" class="skill-status-restore-all-button">숨긴 캐릭터 취소하기</button>' +
         '<span id="skillStatusHideState" class="skill-status-hide-state" aria-live="polite"></span>' +
+      '</div>' +
+      '<div class="skill-status-filter-bar" id="skillStatusFilterBar">' +
+        '<div class="skill-status-element-filter" role="group" aria-label="속성 필터">' +
+          '<span class="skill-status-filter-group-label">속성</span>' +
+          '<button type="button" class="skill-status-element-button active" data-skill-element-filter="">전체</button>' +
+          '<button type="button" class="skill-status-element-button" data-skill-element-filter="작열">작열</button>' +
+          '<button type="button" class="skill-status-element-button" data-skill-element-filter="수냉">수냉</button>' +
+          '<button type="button" class="skill-status-element-button" data-skill-element-filter="풍압">풍압</button>' +
+          '<button type="button" class="skill-status-element-button" data-skill-element-filter="전격">전격</button>' +
+          '<button type="button" class="skill-status-element-button" data-skill-element-filter="철갑">철갑</button>' +
+        '</div>' +
+        '<div class="skill-status-select-filters">' +
+          '<details class="skill-status-filter-dropdown" data-skill-filter-dropdown="burst"><summary>버스트 <span aria-hidden="true">▾</span></summary><div class="skill-status-filter-options" id="skillStatusBurstOptions"></div></details>' +
+          '<details class="skill-status-filter-dropdown" data-skill-filter-dropdown="company"><summary>기업 <span aria-hidden="true">▾</span></summary><div class="skill-status-filter-options" id="skillStatusCompanyOptions"></div></details>' +
+          '<details class="skill-status-filter-dropdown" data-skill-filter-dropdown="weapon"><summary>무기군 <span aria-hidden="true">▾</span></summary><div class="skill-status-filter-options" id="skillStatusWeaponOptions"></div></details>' +
+          '<button type="button" class="skill-status-filter-clear" id="skillStatusClearFilters">필터 초기화</button>' +
+        '</div>' +
       '</div>' +
       '<div class="skill-status-wrap">' +
         '<table class="skill-status-table">' +
