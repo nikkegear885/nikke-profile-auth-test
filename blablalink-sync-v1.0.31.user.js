@@ -413,19 +413,36 @@
 
   function skillFieldValue(char, keys) {
     if (!char || typeof char !== 'object') return null;
+    const numeric = value => value !== undefined && value !== null &&
+      String(value).trim() !== '' && Number.isFinite(Number(value));
+    // Prefer exact top-level keys, then inspect nested skill objects used by some API variants.
     for (const key of keys) {
-      const value = char[key];
-      if (value !== undefined && value !== null && String(value).trim() !== '' && Number.isFinite(Number(value))) {
-        return value;
-      }
+      if (numeric(char[key])) return char[key];
     }
-    return null;
+    const wanted = new Set(keys.map(key => String(key).toLowerCase().replace(/[^a-z0-9]/g, '')));
+    const seen = new Set();
+    function visit(value, depth) {
+      if (!value || typeof value !== 'object' || depth > 5 || seen.has(value)) return null;
+      seen.add(value);
+      for (const [key, item] of Object.entries(value)) {
+        const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (wanted.has(normalizedKey) && numeric(item)) return item;
+      }
+      for (const item of Object.values(value)) {
+        if (item && typeof item === 'object') {
+          const found = visit(item, depth + 1);
+          if (found !== null) return found;
+        }
+      }
+      return null;
+    }
+    return visit(char, 0);
   }
 
   const SKILL_FIELD_GROUPS = [
-    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill1Level','skill1']},
-    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill2Level','skill2']},
-    {target:'ulti_skill_lv', keys:['ulti_skill_lv','skill3_lv','skill_3_lv','burst_lv','skill_burst_level','burstSkill','ultiSkillLv']}
+    {target:'skill1_lv', keys:['skill1_lv','skill_1_lv','skill1_level','skill_1_level','skill_level_1','skill_lv1','skill_lv_1','normal_skill1_lv','normal_skill_1_lv','skill1Level','skill1']},
+    {target:'skill2_lv', keys:['skill2_lv','skill_2_lv','skill2_level','skill_2_level','skill_level_2','skill_lv2','skill_lv_2','normal_skill2_lv','normal_skill_2_lv','skill2Level','skill2']},
+    {target:'ulti_skill_lv', keys:['ulti_skill_lv','ultimate_skill_lv','ult_skill_lv','skill3_lv','skill_3_lv','skill3_level','skill_3_level','skill_level_3','skill_lv3','skill_lv_3','burst_lv','burst_skill_lv','burst_skill_level','skill_burst_lv','skill_burst_level','burstSkillLv','burstSkill','ultiSkillLv']}
   ];
 
   function hasCompleteSkillData(char) {
@@ -501,12 +518,15 @@
             const single = j.data.character_details.find(item => String(item?.name_code ?? '') === code)
               || j.data.character_details[0];
             if (single) {
+              const batchSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys));
+              const singleSkills = SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys));
               mergeMissingSkillData(detail, single, suspiciousAllOnes);
               singleChecked = true;
               if (code === '5148') {
                 console.info('[NIKKE GM] Vesti: Tactical Up skill diagnostic', {
-                  batchSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys)),
-                  singleSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(single, group.keys)),
+                  name_code: code,
+                  batchSkills,
+                  singleSkills,
                   suspiciousAllOnes,
                   mergedSkills: SKILL_FIELD_GROUPS.map(group => skillFieldValue(detail, group.keys))
                 });
