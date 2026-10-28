@@ -87,7 +87,7 @@
     <div class="syn-wrap">
       <h1 class="syn-sr-only">싱크로 레벨업 계산기</h1>
       <div class="syn-utility">
-        <span class="syn-utility-note">구글 시트 계산 규칙 기준 · 전초기지 1~800레벨 · 최대 싱크로 1000레벨</span>
+        <span class="syn-utility-note">전초기지 생산량: 사이트 내 인게임 확인 표(1~800레벨) · 레벨업 비용: 원본 시트</span>
         <div class="syn-actions"><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button></div>
       </div>
       <div id="syn-output">
@@ -171,7 +171,7 @@
       <details class="syn-box"><summary>5. 구간별 필요 재화 세부표</summary><div class="syn-box-body syn-result-detail"><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>레벨 구간</th><th>적용 횟수</th><th>필요 코더</th><th>필요 배데</th><th>필요 크레딧</th></tr></thead>
         <tbody id="syn-band-table"></tbody></table></div></div></details>
       <div class="syn-status" id="syn-status">계산 중...</div>
-      <div class="syn-note">자료 기준: 싱크로 레벨업 계산기 (2026-10-28) · 설정은 이 브라우저의 테섭 저장 공간에만 보관됩니다. 원본 구글 시트는 수정하지 않습니다.</div>
+      <div class="syn-note">자료 기준: 전초기지 생산량은 사이트 내 인게임 확인 표, 레벨업 비용·수급 규칙은 원본 시트(2026-10-28) · 입력 설정은 테섭 브라우저에 저장됩니다. 원본 시트는 수정하지 않습니다.</div>
     </div>`;
     enforcePackageEditPolicy();
     update();
@@ -254,7 +254,7 @@
     const status=el("syn-status");
     if(c.goal<=c.level){status.classList.add("warn");status.textContent="목표 레벨은 현재 레벨보다 높아야 해요.";}
     else if(c.completeDay===null){status.classList.add("warn");status.textContent="1500일 이내에 목표에 도달하지 못해요. 기본 수급량이나 패키지 설정을 확인해 주세요.";}
-    else{status.classList.remove("warn");status.textContent="원본 시트의 레벨별 비용·시간당 생산량·일일 수급·패키지 지급 규칙을 반영한 예상 결과입니다. 구매 조건과 재화 수급 가정이 실제 게임과 다르면 결과도 달라질 수 있어요.";}
+    else{status.classList.remove("warn");status.textContent="사이트의 인게임 확인 전초기지 시간당 생산량과 원본 시트의 레벨업 비용·일일 수급·패키지 규칙을 반영한 예상 결과입니다. 구매 조건과 재화 수급 가정이 실제 게임과 다르면 결과도 달라질 수 있어요.";}
   }
   function onEdit(e){
     const x=e.target;if(!x.dataset)return;
