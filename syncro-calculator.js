@@ -47,11 +47,29 @@
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
   const numberInput=(value,attrs="")=>`<input class="syn-cell-input" type="number" step="any" min="0" value="${safe(value)}" ${attrs}>`;
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
+  const locked=value=>`<output class="syn-fixed-value" aria-readonly="true" title="원본 고정값 · 수정 불가">${escape(value)}</output>`;
   function pkgGrantH(p){
     if(safe(p.choice)>=0 && p.choice!==-1 && Number.isInteger(+p.choice)){
       const index=+p.choice, arr=[0,0,0];if(index<3)arr[index]=safe(p.baseH)*safe(state.ratios[index]);return arr;
     }
     return Array.isArray(p.h)?p.h.map(safe):[0,0,0];
+  }
+
+  function enforcePackageEditPolicy(){
+    const table=root.querySelector(".syn-package-table");
+    if(!table||typeof table.querySelectorAll!=="function")return;
+    const controls=table.querySelectorAll("input, select, textarea, button");
+    for(const control of controls){
+      const idx=Number(control.dataset.package);
+      const yellow=control.dataset.yellowCell==="true";
+      const validIndex=Number.isInteger(idx)&&idx>=0&&idx<9;
+      const isCheckbox=control.tagName==="INPUT"&&control.type==="checkbox"&&control.dataset.field==="on";
+      const isChoice=control.tagName==="SELECT"&&control.dataset.field==="choice"&&allowedPackageChoices.has(idx);
+      if(!(yellow&&validIndex&&(isCheckbox||isChoice))){
+        control.disabled=true;
+        control.setAttribute("aria-disabled","true");
+      }
+    }
   }
   function render(){
     root.innerHTML=`
@@ -126,21 +144,22 @@
             <span>월정액 적용: 30일</span>
             <span>커스텀 지급 비율: 코더 ×1 · 배데 ×1 · 크레딧 ×3</span>
           </div>
-          <p class="syn-hint syn-source-edit-notice">원본의 노란색 셀에 해당하는 사용 체크와 커스텀 선택 재화만 변경할 수 있습니다. 나머지 수치는 원본 고정값입니다.</p>
-          <div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>사용</th><th>패키지</th><th>주기</th><th>가격(원)</th><th>기준 h</th><th>선택 재화</th><th>코더 h</th><th>배데 h</th><th>크레딧 h</th><th>코더 고정</th><th>구매 횟수</th><th>총 과금</th></tr></thead>
+          <p class="syn-hint syn-source-edit-notice"><strong>수정 허용: 사용 체크 9개 · 선택 재화 3개</strong> (월간 커스텀 1·2, 월정액). 나머지 표 항목은 클릭·선택·수정할 수 없는 원본 고정값입니다. <span class="syn-build-tag">TEST 1.434</span></p>
+          <div class="syn-table-wrap"><table class="syn-table syn-package-table"><thead><tr><th>사용</th><th>패키지</th><th>주기</th><th>가격(원)</th><th>기준 h</th><th>선택 재화</th><th>코더 h</th><th>배데 h</th><th>크레딧 h</th><th>코더 고정</th><th>구매 횟수</th><th>총 과금</th></tr></thead>
           <tbody>${state.packages.map((p,i)=>`<tr>
-            <td><input type="checkbox" aria-label="${escape(p.name)} 사용" data-package="${i}" data-field="on" ${p.on?"checked":""}></td>
-            <td class="syn-name">${escape(p.name)}</td><td>${escape(p.cycle)}</td>
-            <td class="syn-num syn-locked">${fmt(p.price)}</td>
-            <td class="syn-num syn-locked">${allowedPackageChoices.has(i)?fmt(p.baseH):"—"}</td>
-            <td>${allowedPackageChoices.has(i)
-              ?`<select class="syn-cell-input syn-select syn-editable-choice" aria-label="${escape(p.name)} 선택 재화" data-package="${i}" data-field="choice">
+            <td class="syn-yellow-cell"><input type="checkbox" aria-label="${escape(p.name)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}></td>
+            <td class="syn-name syn-locked">${locked(p.name)}</td><td class="syn-locked">${locked(p.cycle)}</td>
+            <td class="syn-num syn-locked">${locked(fmt(p.price))}</td>
+            <td class="syn-num syn-locked">${locked(allowedPackageChoices.has(i)?fmt(p.baseH):"—")}</td>
+            <td class="${allowedPackageChoices.has(i)?"syn-yellow-cell":"syn-locked"}">${allowedPackageChoices.has(i)
+              ?`<select class="syn-cell-input syn-select syn-editable-choice" aria-label="${escape(p.name)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
                 ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
               </select>`
-              :'<span class="syn-locked">—</span>'}</td>
-            ${[0,1,2].map(j=>`<td class="syn-num syn-locked" id="syn-pkg-h-${i}-${j}">${fmt(pkgGrantH(p)[j])}</td>`).join("")}
-            <td class="syn-num syn-locked">${p.coreFixed?fmt(p.coreFixed):"—"}</td>
-            <td id="syn-pkg-count-${i}">-</td><td id="syn-pkg-price-${i}">-</td>
+              :locked("—")}</td>
+            ${[0,1,2].map(j=>`<td class="syn-num syn-locked" id="syn-pkg-h-${i}-${j}">${locked(fmt(pkgGrantH(p)[j]))}</td>`).join("")}
+            <td class="syn-num syn-locked">${locked(p.coreFixed?fmt(p.coreFixed):"—")}</td>
+            <td class="syn-locked" id="syn-pkg-count-${i}">${locked("—")}</td>
+            <td class="syn-locked" id="syn-pkg-price-${i}">${locked("—")}</td>
           </tr>`).join("")}</tbody></table></div>
           <p class="syn-hint">고정 수치는 원본 시트에서 읽은 값입니다. 패키지는 사용 여부만 선택하며, 월간 커스텀 패키지 1·2와 월정액의 선택 재화만 변경할 수 있습니다.</p>
         </div>
@@ -152,6 +171,7 @@
       <div class="syn-status" id="syn-status">계산 중...</div>
       <div class="syn-note">자료 기준: 싱크로 레벨업 계산기 (2026-10-28) · 설정은 이 브라우저의 테섭 저장 공간에만 보관됩니다. 원본 구글 시트는 수정하지 않습니다.</div>
     </div>`;
+    enforcePackageEditPolicy();
     update();
   }
   function calculate(){
@@ -256,6 +276,7 @@
       if(x.dataset.field!=="on"||!Number.isInteger(i)||i<0||i>=state.daily.length)return;
       state.daily[i].on=Boolean(x.checked);
     }else if(x.dataset.package!==undefined){
+      if(x.dataset.yellowCell!=="true")return;
       const i=Number(x.dataset.package),key=x.dataset.field;
       if(!Number.isInteger(i)||i<0||i>=state.packages.length)return;
       if(key==="on")state.packages[i].on=Boolean(x.checked);
