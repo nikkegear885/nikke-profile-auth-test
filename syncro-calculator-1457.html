@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#eaf3fa">
+  <title>싱크로 레벨업 계산기 · TEST 1.457</title>
+  <script>
+    // Apply the same saved theme as the main site before loading the stylesheet.
+    try {
+      if (localStorage.getItem("nikke_theme_v1")==="dark") {
+        document.documentElement.classList.add("dark-theme");
+      }
+    } catch(e) {}
+  </script>
+  <link rel="stylesheet" href="./syncro-calculator.css?v=1457">
+</head>
+<body>
+  <div id="syn-app"></div>
+  <script src="./syncro-data.js?v=1456"></script>
+  <script src="./syncro-calculator.js?v=1457"></script>
+  <script>
+    (function(){
+      function applyTheme(dark){
+        document.documentElement.classList.toggle("dark-theme",Boolean(dark));
+        var meta=document.querySelector('meta[name="theme-color"]');
+        if(meta)meta.setAttribute("content",dark?"#0a101c":"#eaf3fa");
+      }
+      window.addEventListener("message",function(event){
+        if(event.origin!==location.origin||!event.data||event.data.type!=="nikke-syncro-theme")return;
+        applyTheme(event.data.theme==="dark");
+      });
+      function report(){
+        var box=document.getElementById("syn-app");
+        if(box&&parent!==window){
+          parent.postMessage({type:"nikke-syncro-height",height:Math.ceil(box.getBoundingClientRect().height)+24},location.origin);
+        }
+      }
+      if(typeof ResizeObserver!=="undefined"){
+        new ResizeObserver(report).observe(document.getElementById("syn-app"));
+      }
+      window.addEventListener("load",function(){
+        report();
+        if(parent!==window)parent.postMessage({type:"nikke-syncro-ready"},location.origin);
+      });
+    })();
+  </script>
+</body>
+</html>

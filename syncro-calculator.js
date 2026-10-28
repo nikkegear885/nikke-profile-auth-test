@@ -180,7 +180,13 @@
           </div>
         </section>
         <section class="syn-box syn-package-panel" aria-label="과금 패키지 선택">
-          <div class="syn-box-head">3. 과금 패키지</div>
+          <div class="syn-box-head syn-header-controls">
+            <span>3. 과금 패키지</span>
+            <span class="syn-check-actions" role="group" aria-label="과금 패키지 일괄 선택">
+              <button type="button" data-bulk-target="packages" data-bulk-set="all">전부 체크</button>
+              <button type="button" data-bulk-target="packages" data-bulk-set="none">전부 체크 해제</button>
+            </span>
+          </div>
           <div class="syn-box-body">
             <div class="syn-package-list">
               ${packageDisplayOrder.map(i=>{
@@ -205,7 +211,13 @@
         </section>
       </div>
       <section class="syn-box syn-daily-panel syn-daily-wide" aria-label="재화 수급 체크 항목 선택">
-        <div class="syn-box-head">4. 재화 수급 체크</div>
+        <div class="syn-box-head syn-header-controls">
+          <span>4. 재화 수급 체크</span>
+          <span class="syn-check-actions" role="group" aria-label="재화 수급 일괄 선택">
+            <button type="button" data-bulk-target="daily" data-bulk-set="all">전부 체크</button>
+            <button type="button" data-bulk-target="daily" data-bulk-set="none">전부 체크 해제</button>
+          </span>
+        </div>
         <div class="syn-box-body">
           <div class="syn-daily-list">
             ${state.daily.map((r,i)=>`<label class="syn-daily-item">
@@ -398,6 +410,17 @@
   root.addEventListener("input",onEdit);
   root.addEventListener("change",onEdit);
   root.addEventListener("click",e=>{
+    const bulk=e.target.closest("[data-bulk-target][data-bulk-set]");
+    if(bulk){
+      const target=bulk.dataset.bulkTarget,checked=bulk.dataset.bulkSet==="all";
+      if(!["packages","daily"].includes(target)||!["all","none"].includes(bulk.dataset.bulkSet))return;
+      state[target].forEach(item=>{item.on=checked;});
+      const selector=target==="packages"?'input[data-package][data-field="on"]':'input[data-daily][data-field="on"]';
+      root.querySelectorAll(selector).forEach(input=>{input.checked=checked;});
+      try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
+      update();
+      return;
+    }
     if(e.target.id==="syn-reset"){
       if(!confirm("싱크로 계산기의 입력값과 체크 상태를 원본 시트 기본값으로 초기화할까요?"))return;
       state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}render();
