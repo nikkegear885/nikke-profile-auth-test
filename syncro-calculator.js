@@ -293,27 +293,32 @@
     return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay};
   }
   function el(id){return document.getElementById(id);}
-  // Two independent reference measures: time saved / cost, and absolute time saved.
-  // Both are normalized against the stand-alone monthly subscription (index 8).
-  // Cost display uses the CURRENT combination for checked packages and a hypothetical
-  // combination (current selection + this package) for unchecked packages.
+  // The global target date is determined by the slowest of three resources.
+  // A core-only subscription can therefore improve its resource completion date
+  // without changing the overall date when credits or battle data are limiting.
+  // Measure independent resource-day savings for each package versus free.
+  // This is an efficiency contribution metric, not literal overall days saved.
+  function resourceDaysSaved(free,withPackage){
+    if(!free||!withPackage||!free.reached.every(Number.isFinite)||
+       !withPackage.reached.every(Number.isFinite))return null;
+    return free.reached.reduce((sum,day,j)=>
+      sum+Math.max(0,day-withPackage.reached[j]),0);
+  }
   function updatePackageEfficiency(active){
     const free=calculate(-1);
     const standalone=state.packages.map((p,i)=>calculate(i));
     const subscription=standalone[8];
-    const monthSaved=free.completeDay!==null&&subscription.completeDay!==null
-      ? Math.max(0,free.completeDay-subscription.completeDay):0;
-    const priceReference=monthSaved>0&&subscription.spent>0?monthSaved/subscription.spent:0;
+    const monthImpact=resourceDaysSaved(free,subscription);
+    const priceReference=monthImpact>0&&subscription.spent>0?monthImpact/subscription.spent:0;
     const selected=state.packages.map((p,i)=>p.on?i:null).filter(i=>i!==null);
     for(const i of packageDisplayOrder){
       const target=root.querySelector(`[data-package-efficiency="${i}"]`);
       if(!target)continue;
       const p=state.packages[i],alone=standalone[i];
-      const comparable=free.completeDay!==null&&alone.completeDay!==null;
-      const saved=comparable?Math.max(0,free.completeDay-alone.completeDay):null;
-      const costScore=priceReference>0&&comparable&&alone.spent>0
-        ? 100*(saved/alone.spent)/priceReference:null;
-      const timeScore=monthSaved>0&&comparable?100*saved/monthSaved:null;
+      const impact=resourceDaysSaved(free,alone);
+      const costScore=priceReference>0&&impact!==null&&alone.spent>0
+        ? 100*(impact/alone.spent)/priceReference:null;
+      const timeScore=monthImpact>0&&impact!==null?100*impact/monthImpact:null;
       const priceText=costScore===null?"비교 불가":`${fmt(costScore,1)}%`;
       const timeText=timeScore===null?"비교 불가":`${fmt(timeScore,1)}%`;
       const actual=p.on;
@@ -321,11 +326,13 @@
       const count=scenario.count[i]||0;
       const estimatedCost=scenario.completeDay!==null?count*safe(p.price):null;
       const otherDetail=actual?"현재 체크된 패키지 조합":"현재 조합에 이 패키지만 추가했을 때";
-      const hint=`${otherDetail} · 목표까지 ${fmt(count)}회 구매`;
+      const overallSaved=free.completeDay!==null&&alone.completeDay!==null
+        ? Math.max(0,free.completeDay-alone.completeDay):null;
+      const hint=`${otherDetail} · 목표까지 ${fmt(count)}회 구매 · 단독 구매 시 전체 목표 ${overallSaved===null?"산정 불가":fmt(overallSaved)+"일 단축"}`;
       target.innerHTML=`
         <div class="syn-package-values">
-          <span class="syn-package-value" title="목표 달성 기간 단축 1원당 효율을 월정액 100%와 비교">가격 효율 <strong>${priceText}</strong></span>
-          <span class="syn-package-value" title="단독 구매 시 단축 일수를 월정액 단축 일수 100%와 비교">기간 단축 효율 <strong>${timeText}</strong></span>
+          <span class="syn-package-value" title="재화별 충족일 단축 합계 ÷ 총 구매비용을 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">가격 효율 <strong>${priceText}</strong></span>
+          <span class="syn-package-value" title="코더·배데·크레딧 각각의 충족일 단축 합계를 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">기간 단축 효율 <strong>${timeText}</strong></span>
         </div>
         <div class="syn-package-spend" title="${escape(hint)}">목표까지 예상 구매비용 ${estimatedCost===null?"산정 불가":fmt(estimatedCost)+"원"}</div>`;
     }
