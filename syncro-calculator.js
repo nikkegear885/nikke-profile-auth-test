@@ -69,7 +69,7 @@
         <tbody>${state.daily.map((r,i)=>`<tr>
           <td><input type="checkbox" aria-label="${escape(r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}></td><td class="syn-name">${escape(r.name)}</td>
           <td class="syn-num">${dayInput(r,i,"period")}</td>
-          ${[0,1,2].map(j=>inputFieldOfRow(r,i,"h",j)+inputFieldOfRow(r,i,"fixed",j)).map(x=>`<td class="syn-num">${x}</td>`).join("")}
+          ${[0,1,2].map(j=>`<td class="syn-num">${inputFieldOfRow(r,i,"h",j)}</td><td class="syn-num">${inputFieldOfRow(r,i,"fixed",j)}</td>`).join("")}
           ${[0,1,2].map(j=>`<td id="syn-daily-${i}-${j}">-</td>`).join("")}
         </tr>`).join("")}</tbody></table></div>
         <p class="syn-hint">사용 체크된 항목만 반영. 시간(h) × 전초기지 시간당 생산량 + 고정량을 주기(일)로 나눠 일일 수급으로 계산해요.</p>
