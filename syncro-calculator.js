@@ -153,9 +153,11 @@
                       ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
                     </select>`
                     : ""}
+                  <div class="syn-package-efficiency" data-package-efficiency="${i}"></div>
                 </div>`;
               }).join("")}
             </div>
+            <div class="syn-package-efficiency-note">가격 대비 효율은 구매 1회당 재화별 1시간 환산 수급량을 1만원 기준으로 나눈 값입니다. 서로 다른 재화는 합산하지 않습니다. 월정액은 30일 모두 수령, 쌩코더는 현재 전초기지 생산량으로 환산합니다.</div>
           </div>
         </section>
       </div>
@@ -232,8 +234,30 @@
     return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay};
   }
   function el(id){return document.getElementById(id);}
+  // Compare each resource independently: 1-hour box equivalent per 10,000 won.
+  // Subscription total assumes full configured 30-day delivery; raw core dust converts at selected outpost rate.
+  function updatePackageEfficiency(c){
+    for(const i of packageDisplayOrder){
+      const target=root.querySelector(`[data-package-efficiency="${i}"]`);
+      if(!target)continue;
+      const p=state.packages[i];
+      const price=Math.max(0,safe(p.price));
+      const days=p.cycle==="월정액"?Math.max(1,Math.trunc(safe(state.subscriptionDays))):1;
+      const reward=pkgGrantH(p).map(hours=>safe(hours)*days);
+      const coreFixed=safe(p.coreFixed);
+      const equivalent=reward.map((hours,j)=>hours+(j===0&&coreFixed>0?coreFixed/Math.max(0.0000001,safe(c.rate[0])):0));
+      const gain=reward.map((hours,j)=>hours>0?`${currencyNames[j]} ${fmt(hours,2)}시간`:null).filter(Boolean);
+      if(coreFixed>0)gain.push(`쌩코더 ${fmt(coreFixed)}개`);
+      const value=equivalent.map((hours,j)=>hours>0&&price>0?`${currencyNames[j]} ${fmt(hours*10000/price,2)}시간`:null).filter(Boolean);
+      target.innerHTML=`
+        <div class="syn-package-price">가격 <strong>${fmt(price)}원</strong> <span>· ${days>1?`${fmt(days)}일 수령 총합`:"1회 구매 기준"}</span></div>
+        <div class="syn-package-gain">획득: ${gain.join(" · ")||"-"}</div>
+        <div class="syn-package-value">1만원당: ${value.join(" · ")||"-"}</div>`;
+    }
+  }
   function update(){
     const c=calculate();
+    updatePackageEfficiency(c);
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     el("syn-overall-days").textContent=c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승`;
     el("syn-overall-cost").textContent=fmt(c.spent)+"원";

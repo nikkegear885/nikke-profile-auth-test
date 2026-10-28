@@ -381,3 +381,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   .syn-package-item{grid-template-columns:minmax(0,1fr) 90px}
   .syn-daily-wide .syn-daily-list{grid-template-columns:1fr}
 }
+
+/* v1.444: read-only per-package cost efficiency, separated by resource */
+.syn-package-efficiency{
+  grid-column:1/-1;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+  padding:2px 2px 7px 25px;
+  line-height:1.45;
+  font-size:11px;
+  overflow-wrap:anywhere;
+  font-variant-numeric:tabular-nums;
+}
+.syn-package-price{color:var(--sy-muted)}
+.syn-package-price strong{color:var(--sy-text);font-weight:800}
+.syn-package-gain{color:var(--sy-text)}
+.syn-package-value{color:var(--sy-title);font-weight:850}
+.syn-package-efficiency-note{margin:9px 1px 1px;color:var(--sy-muted);font-size:11px;line-height:1.5}
