@@ -184,8 +184,10 @@
     update();
   }
   function calculate(onlyPackage=null){
-    // null: active selections; -1: free income only; 0-8: one package alone.
-    const packages=onlyPackage===null?state.packages:state.packages.map((p,i)=>({...p,on:i===onlyPackage}));
+    // null: active selections; -1: free only; index: one package; array: selected package indices.
+    const packages=onlyPackage===null?state.packages:state.packages.map((p,i)=>({
+      ...p,on:Array.isArray(onlyPackage)?onlyPackage.includes(i):i===onlyPackage
+    }));
     const level=Math.min(999,Math.max(200,Math.trunc(safe(state.current))));
     const goal=Math.min(1000,Math.max(201,Math.trunc(safe(state.goal))));
     const outpost=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
@@ -237,35 +239,46 @@
     return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay};
   }
   function el(id){return document.getElementById(id);}
-  // Each option is simulated by itself until the overall level target is achieved.
-  // Efficiency = days saved versus no paid packages / cumulative spending needed to reach the target.
-  // Normalize against subscription (index 8) as 100%, avoiding raw resource-type comparisons.
-  function updatePackageEfficiency(){
+  // Two independent reference measures: time saved / cost, and absolute time saved.
+  // Both are normalized against the stand-alone monthly subscription (index 8).
+  // Cost display uses the CURRENT combination for checked packages and a hypothetical
+  // combination (current selection + this package) for unchecked packages.
+  function updatePackageEfficiency(active){
     const free=calculate(-1);
-    const simulations=state.packages.map((p,i)=>calculate(i));
-    const subscription=simulations[8];
-    const reference=free.completeDay!==null&&subscription.completeDay!==null&&subscription.spent>0
-      ? Math.max(0,free.completeDay-subscription.completeDay)/subscription.spent : 0;
+    const standalone=state.packages.map((p,i)=>calculate(i));
+    const subscription=standalone[8];
+    const monthSaved=free.completeDay!==null&&subscription.completeDay!==null
+      ? Math.max(0,free.completeDay-subscription.completeDay):0;
+    const priceReference=monthSaved>0&&subscription.spent>0?monthSaved/subscription.spent:0;
+    const selected=state.packages.map((p,i)=>p.on?i:null).filter(i=>i!==null);
     for(const i of packageDisplayOrder){
       const target=root.querySelector(`[data-package-efficiency="${i}"]`);
       if(!target)continue;
-      const p=state.packages[i],scenario=simulations[i];
-      const comparable=free.completeDay!==null&&scenario.completeDay!==null;
-      const saved=comparable?Math.max(0,free.completeDay-scenario.completeDay):null;
-      const score=reference>0&&comparable&&scenario.spent>0
-        ? 100*(saved/scenario.spent)/reference : null;
-      const efficiency=score===null?"비교 불가":`${fmt(score,1)}%`;
-      const detail=comparable
-        ? `무과금 대비 ${fmt(saved)}일 단축 · 목표까지 ${fmt(scenario.count[i])}회 구매, ${fmt(scenario.spent)}원`
-        : "1500일 내 목표 달성을 비교할 수 없습니다";
+      const p=state.packages[i],alone=standalone[i];
+      const comparable=free.completeDay!==null&&alone.completeDay!==null;
+      const saved=comparable?Math.max(0,free.completeDay-alone.completeDay):null;
+      const costScore=priceReference>0&&comparable&&alone.spent>0
+        ? 100*(saved/alone.spent)/priceReference:null;
+      const timeScore=monthSaved>0&&comparable?100*saved/monthSaved:null;
+      const priceText=costScore===null?"비교 불가":`${fmt(costScore,1)}%`;
+      const timeText=timeScore===null?"비교 불가":`${fmt(timeScore,1)}%`;
+      const actual=p.on;
+      const scenario=actual?active:calculate([...selected,i]);
+      const count=scenario.count[i]||0;
+      const estimatedCost=scenario.completeDay!==null?count*safe(p.price):null;
+      const otherDetail=actual?"현재 체크된 패키지 조합":"현재 조합에 이 패키지만 추가했을 때";
+      const hint=`${otherDetail} · 목표까지 ${fmt(count)}회 구매`;
       target.innerHTML=`
-        <div class="syn-package-value">기간 단축 효율 <strong>${efficiency}</strong>${i===8?" <span>(월정액 기준)</span>":""}</div>
-        <div class="syn-package-spend" title="${escape(detail)}">목표까지 예상 구매비용 ${comparable?fmt(scenario.spent)+"원":"산정 불가"}</div>`;
+        <div class="syn-package-values">
+          <span class="syn-package-value" title="목표 달성 기간 단축 1원당 효율을 월정액 100%와 비교">가격 효율 <strong>${priceText}</strong></span>
+          <span class="syn-package-value" title="단독 구매 시 단축 일수를 월정액 단축 일수 100%와 비교">기간 단축 효율 <strong>${timeText}</strong></span>
+        </div>
+        <div class="syn-package-spend" title="${escape(hint)}">목표까지 예상 구매비용 ${estimatedCost===null?"산정 불가":fmt(estimatedCost)+"원"}</div>`;
     }
   }
   function update(){
     const c=calculate();
-    updatePackageEfficiency();
+    updatePackageEfficiency(c);
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     el("syn-overall-days").textContent=c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승`;
     el("syn-overall-cost").textContent=fmt(c.spent)+"원";

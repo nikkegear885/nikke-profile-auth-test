@@ -459,3 +459,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   .syn-package-item.syn-no-choice{grid-template-columns:minmax(0,1fr)}
   .syn-package-toggle{font-size:12px}
 }
+
+/* v1.447: show price and time efficiencies side by side in compact rows */
+.syn-package-values{
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  column-gap:9px;
+  row-gap:2px;
+  min-width:0;
+}
+.syn-package-values .syn-package-value{
+  display:inline-flex;
+  align-items:baseline;
+  gap:3px;
+  white-space:nowrap;
+  font-size:10px;
+  line-height:1.2;
+}
+.syn-package-values .syn-package-value strong{font-size:12px}
+.syn-package-spend{margin-top:2px}
