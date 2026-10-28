@@ -46,8 +46,12 @@
         if(Array.isArray(saved[key])&&saved[key].length===3)
           state[key]=saved[key].map(value=>Math.max(0,safe(value)));
       }
-      if(Array.isArray(saved.daily)&&saved.daily.length===state.daily.length)
-        state.daily.forEach((row,i)=>{if(typeof saved.daily[i]?.on==="boolean")row.on=saved.daily[i].on;});
+      if(Array.isArray(saved.daily))
+        state.daily.forEach(row=>{
+          // Preserve saved switches by name when new income rows are appended.
+          const previous=saved.daily.find(item=>item?.name===row.name);
+          if(typeof previous?.on==="boolean")row.on=previous.on;
+        });
       if(Array.isArray(saved.packages)&&saved.packages.length===state.packages.length)
         state.packages.forEach((row,i)=>{
           if(typeof saved.packages[i]?.on==="boolean")row.on=saved.packages[i].on;
