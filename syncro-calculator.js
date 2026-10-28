@@ -26,6 +26,9 @@
       if(!Array.isArray(data.packages)||data.packages.length!==9)state.packages=clone(SOURCE.packages);
     }
   }catch(e){}
+  // Migrate any previously edited daily quantities back to fixed source values.
+  // Only checkbox flags remain user-configurable.
+  try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
   const numberInput=(value,attrs="")=>`<input class="syn-cell-input" type="number" step="any" min="0" value="${safe(value)}" ${attrs}>`;
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
   function pkgGrantH(p){
