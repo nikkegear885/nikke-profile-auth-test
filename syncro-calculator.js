@@ -19,17 +19,15 @@
     const data=JSON.parse(localStorage.getItem(storageKey));
     if(data&&typeof data==="object"){
       state=Object.assign(state,data);
-      if(!Array.isArray(data.daily)||data.daily.length!==12)state.daily=clone(SOURCE.daily);
+      // Daily rewards are fixed to the original spreadsheet. Preserve only each checkbox.
+      const savedDaily=Array.isArray(data.daily)&&data.daily.length===SOURCE.daily.length?data.daily:null;
+      state.daily=clone(SOURCE.daily);
+      if(savedDaily)state.daily.forEach((row,i)=>{if(typeof savedDaily[i]?.on==="boolean")row.on=savedDaily[i].on;});
       if(!Array.isArray(data.packages)||data.packages.length!==9)state.packages=clone(SOURCE.packages);
     }
   }catch(e){}
   const numberInput=(value,attrs="")=>`<input class="syn-cell-input" type="number" step="any" min="0" value="${safe(value)}" ${attrs}>`;
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
-  const dayInput=(row,i,k)=>numberInput(row[k],`data-daily="${i}" data-field="${k}"`);
-  function inputFieldOfRow(row,i,key,j){
-    const isSweep=row.name==="단기섬멸"&&key==="h";
-    return numberInput(isSweep?state.sweep*2:row[key][j],`data-daily="${i}" data-field="${key}" data-index="${j}" ${isSweep?"disabled title='단기섬멸 횟수 × 2시간'":""}`);
-  }
   function pkgGrantH(p){
     if(safe(p.choice)>=0 && p.choice!==-1 && Number.isInteger(+p.choice)){
       const index=+p.choice, arr=[0,0,0];if(index<3)arr[index]=safe(p.baseH)*safe(state.ratios[index]);return arr;
@@ -44,39 +42,64 @@
         <span class="syn-utility-note">구글 시트 계산 규칙 기준 · 전초기지 1~800레벨 · 최대 싱크로 1000레벨</span>
         <div class="syn-actions"><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button></div>
       </div>
-      <section class="syn-box"><div class="syn-box-head">1. 싱크로 정보 입력</div><div class="syn-box-body">
-        <div class="syn-form">${field("현재 싱크로 레벨","current",200,999)}${field("목표 싱크로 레벨","goal",201,1000)}${field("전초기지 레벨","outpost",1,800)}${field("단기섬멸 횟수 / 일","sweep",1,11)}
-          <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label></div>
-        <p class="syn-hint">현재 레벨 다음 단계부터 목표 레벨까지의 비용을 합산해요. 단기섬멸 1회당 2시간 생산량으로 계산해요.</p>
-      </div></section>
       <div id="syn-output">
-        <div class="syn-summary">
-          <div class="syn-highlight"><div class="sub">전체 목표 달성 예상</div><div class="big" id="syn-overall-date">-</div><div class="foot" id="syn-overall-days">-</div></div>
-          <div class="syn-highlight"><div class="sub">전체 목표 달성까지의 패키지 과금액</div><div class="big" id="syn-overall-cost">-</div><div class="foot" id="syn-overall-sub">선택한 패키지만 계산</div></div>
+        <div class="syn-top-grid">
+          <section class="syn-box syn-input-panel">
+            <div class="syn-box-head">1. 싱크로 정보 입력</div>
+            <div class="syn-box-body">
+              <div class="syn-form">
+                ${field("현재 싱크로 레벨","current",200,999)}
+                ${field("목표 싱크로 레벨","goal",201,1000)}
+                ${field("전초기지 레벨","outpost",1,800)}
+                ${field("단기섬멸 횟수 / 일","sweep",1,11)}
+                <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label>
+              </div>
+              <p class="syn-hint">현재 레벨 다음 단계부터 목표 레벨까지 계산 · 단기섬멸 1회 = 2시간</p>
+            </div>
+          </section>
+          <section class="syn-highlight syn-result-panel" aria-label="목표 달성 예상">
+            <div class="sub">전체 목표 달성 예상</div>
+            <div class="big" id="syn-overall-date">-</div>
+            <div class="foot" id="syn-overall-days">-</div>
+          </section>
+          <section class="syn-highlight syn-result-panel" aria-label="목표 달성까지 과금액">
+            <div class="sub">목표 달성까지 패키지 과금액</div>
+            <div class="big" id="syn-overall-cost">-</div>
+            <div class="foot" id="syn-overall-sub">선택한 패키지만 계산</div>
+          </section>
         </div>
         <div class="syn-resource-cards" id="syn-resource-cards"></div>
         <p class="syn-progress-explain">진행률 막대 = 보유 재화 ÷ 전체 필요 재화 (100% 상한). 보유 재화 차감 설정과 별개로 현재 보유량을 표시합니다.</p>
       </div>
-      <details class="syn-box" open><summary>2. 보유 재화 입력 및 차감</summary>
-        <div class="syn-box-body"><label class="syn-check"><input type="checkbox" data-key="subtractOwned" ${state.subtractOwned?"checked":""}>보유 재화를 필요량에서 차감</label>
-          <p class="syn-hint" id="syn-hourly">전초기지 시간당 생산량</p>
-          <div class="syn-wealth">${names.map((name,j)=>`<div class="syn-wealth-card"><div class="syn-wealth-title">${name}</div>
-            <label class="syn-field">보유 재화 상자(h)<input type="number" min="0" step="any" data-owned="ownedHours" data-index="${j}" value="${safe(state.ownedHours[j])}"></label>
-            <label class="syn-field">보유 재화(낱개)<input type="number" min="0" step="any" data-owned="ownedUnits" data-index="${j}" value="${safe(state.ownedUnits[j])}"></label>
-            <div class="syn-hint" id="syn-owned-${j}">-</div></div>`).join("")}</div>
-        </div>
-      </details>
-      <details class="syn-box"><summary>3. 일일 수급 재화 · 12개 항목 (수정 가능)</summary>
-        <div class="syn-box-body"><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>사용</th><th>항목</th><th>주기(일)</th><th>코더 h</th><th>코더 고정</th><th>배데 h</th><th>배데 고정</th><th>크레딧 h</th><th>크레딧 고정</th><th>일일 코더</th><th>일일 배데</th><th>일일 크레딧</th></tr></thead>
-        <tbody>${state.daily.map((r,i)=>`<tr>
-          <td><input type="checkbox" aria-label="${escape(r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}></td><td class="syn-name">${escape(r.name)}</td>
-          <td class="syn-num">${dayInput(r,i,"period")}</td>
-          ${[0,1,2].map(j=>`<td class="syn-num">${inputFieldOfRow(r,i,"h",j)}</td><td class="syn-num">${inputFieldOfRow(r,i,"fixed",j)}</td>`).join("")}
-          ${[0,1,2].map(j=>`<td id="syn-daily-${i}-${j}">-</td>`).join("")}
-        </tr>`).join("")}</tbody></table></div>
-        <p class="syn-hint">사용 체크된 항목만 반영. 시간(h) × 전초기지 시간당 생산량 + 고정량을 주기(일)로 나눠 일일 수급으로 계산해요.</p>
-        </div><div class="syn-kpis"><span>일일 코어더스트 <strong id="syn-daily-total-0">-</strong></span><span>일일 배틀데이터 <strong id="syn-daily-total-1">-</strong></span><span>일일 크레딧 <strong id="syn-daily-total-2">-</strong></span></div>
-      </details>
+      <div class="syn-detail-grid">
+        <section class="syn-box syn-owned-panel" aria-label="보유 재화 입력 및 차감">
+          <div class="syn-box-head">2. 보유 재화 입력 및 차감</div>
+          <div class="syn-box-body">
+            <label class="syn-check"><input type="checkbox" data-key="subtractOwned" ${state.subtractOwned?"checked":""}>보유 재화를 필요량에서 차감</label>
+            <p class="syn-hint" id="syn-hourly">전초기지 시간당 생산량</p>
+            <div class="syn-wealth">
+              ${names.map((name,j)=>`<div class="syn-wealth-card">
+                <div class="syn-wealth-title">${name}</div>
+                <label class="syn-field">보유 재화 상자(h)<input type="number" min="0" step="any" data-owned="ownedHours" data-index="${j}" value="${safe(state.ownedHours[j])}"></label>
+                <label class="syn-field">보유 재화(낱개)<input type="number" min="0" step="any" data-owned="ownedUnits" data-index="${j}" value="${safe(state.ownedUnits[j])}"></label>
+                <div class="syn-hint" id="syn-owned-${j}">-</div>
+              </div>`).join("")}
+            </div>
+          </div>
+        </section>
+        <section class="syn-box syn-daily-panel" aria-label="일일 재화 수급 항목 선택">
+          <div class="syn-box-head">3. 일일 재화 수급</div>
+          <div class="syn-box-body">
+            <p class="syn-hint syn-daily-hint">계산에 포함할 수급 항목을 체크하세요.</p>
+            <div class="syn-daily-list">
+              ${state.daily.map((r,i)=>`<label class="syn-daily-item">
+                <input type="checkbox" aria-label="${escape(r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}>
+                <span>${escape(r.name)}</span>
+              </label>`).join("")}
+            </div>
+          </div>
+        </section>
+      </div>
       <details class="syn-box" open><summary>4. 과금 패키지 시뮬레이션 (사용 체크)</summary>
         <div class="syn-box-body">
           <div class="syn-setup">
@@ -181,9 +204,7 @@
     }).join("");
     for(let j=0;j<3;j++){
       el("syn-owned-"+j).textContent="낱개 환산: "+fmt(c.owned[j]);
-      el("syn-daily-total-"+j).textContent=fmt(c.daily[j],2);
     }
-    for(let i=0;i<c.dailyRows.length;i++)for(let j=0;j<3;j++)el(`syn-daily-${i}-${j}`).textContent=fmt(c.dailyRows[i][j]);
     for(let i=0;i<state.packages.length;i++){
       el(`syn-pkg-count-${i}`).textContent=fmt(c.count[i]);
       el(`syn-pkg-price-${i}`).textContent=fmt(c.count[i]*safe(state.packages[i].price))+"원";
@@ -191,9 +212,6 @@
       row.forEach((input,j)=>{input.value=c.grants[i][j]===0?"0":pkgGrantH(state.packages[i])[j];input.disabled=+state.packages[i].choice>=0;});
       const base=root.querySelector(`input[data-package="${i}"][data-field="baseH"]`);base.disabled=+state.packages[i].choice<0;
     }
-    root.querySelectorAll('input[data-daily][data-field="h"]').forEach(input=>{
-      const r=state.daily[+input.dataset.daily];if(r.name==="단기섬멸")input.value=fmt(safe(state.sweep)*2,4).replace(/,/g,"");
-    });
     el("syn-band-table").innerHTML=c.bands.filter(b=>b.qty).map(b=>`<tr><td>${b.start}~${b.end}</td><td>${fmt(b.qty)}</td>${[0,1,2].map(j=>`<td>${fmt(b.qty*safe(b.need[j]))}</td>`).join("")}</tr>`).join("")||
       '<tr><td colspan="5">현재 레벨과 목표 레벨을 확인해 주세요.</td></tr>';
     const status=el("syn-status");
@@ -209,10 +227,9 @@
     }else if(x.dataset.owned){state[x.dataset.owned][+x.dataset.index]=safe(x.value);}
     else if(x.dataset.ratio!==undefined){state.ratios[+x.dataset.ratio]=safe(x.value);}
     else if(x.dataset.daily!==undefined){
-      const r=state.daily[+x.dataset.daily],key=x.dataset.field;
-      if(key==="on")r.on=x.checked;
-      else if(key==="h"||key==="fixed")r[key][+x.dataset.index]=safe(x.value);
-      else r[key]=safe(x.value);
+      const i=Number(x.dataset.daily);
+      if(x.dataset.field!=="on"||!Number.isInteger(i)||i<0||i>=state.daily.length)return;
+      state.daily[i].on=Boolean(x.checked);
     }else if(x.dataset.package!==undefined){
       const r=state.packages[+x.dataset.package],key=x.dataset.field;
       if(key==="on")r.on=x.checked;
