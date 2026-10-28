@@ -275,3 +275,55 @@ html.dark-theme .syn-editable-choice{
   color:#ffe7a3;
   border-color:#9c8749;
 }
+
+
+/* v1.434: lock all non-yellow package cells as non-interactive output */
+.syn-package-table .syn-locked,
+.syn-package-table .syn-fixed-value{
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+  cursor:default;
+}
+.syn-package-table .syn-fixed-value{
+  display:inline-block;
+  min-width:2.2em;
+  padding:2px 0;
+  color:var(--sy-text);
+  font-variant-numeric:tabular-nums;
+}
+.syn-package-table .syn-locked .syn-fixed-value{color:var(--sy-muted)}
+.syn-package-table td.syn-yellow-cell{
+  background:#fff3bd;
+  cursor:pointer;
+}
+.syn-package-table .syn-yellow-cell input[type="checkbox"]{
+  width:17px;
+  height:17px;
+  cursor:pointer;
+  accent-color:#c58d15;
+}
+.syn-package-table .syn-yellow-cell select{
+  cursor:pointer;
+  background:#fff6d5;
+  border-color:#c4a04b;
+  color:#493b18;
+}
+html.dark-theme .syn-package-table td.syn-yellow-cell{
+  background:#42361f;
+}
+html.dark-theme .syn-package-table .syn-yellow-cell select{
+  background:#514322;
+  color:#ffebbb;
+  border-color:#ab904a;
+}
+.syn-build-tag{
+  display:inline-block;
+  margin-left:6px;
+  padding:1px 7px;
+  border:1px solid var(--sy-line);
+  border-radius:5px;
+  font-size:11px;
+  color:var(--sy-muted);
+  vertical-align:middle;
+}
