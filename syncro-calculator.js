@@ -7,7 +7,7 @@
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v1";
-  const boxDurations=[1,2,4,8,12,24];
+  const boxDurations=[1,2,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
   const fmt=(n,d=0)=>Number.isFinite(+n)?new Intl.NumberFormat("ko-KR",{maximumFractionDigits:d}).format(+n):"-";
   const safe=n=>Number.isFinite(+n)?+n:0;
@@ -57,6 +57,17 @@
       if(Array.isArray(saved.ownedBoxes)&&saved.ownedBoxes.length===3&&
          saved.ownedBoxes.every(row=>Array.isArray(row)&&row.length===boxDurations.length)){
         state.ownedBoxes=saved.ownedBoxes.map(row=>row.map(value=>Math.max(0,safe(value))));
+      }else if(Array.isArray(saved.ownedBoxes)&&saved.ownedBoxes.length===3&&
+               saved.ownedBoxes.every(row=>Array.isArray(row)&&row.length===6)){
+        // v1.449 stored [1h,2h,4h,8h,12h,24h]. Convert each 4h box
+        // into four 1h boxes while preserving all other denominations.
+        state.ownedBoxes=saved.ownedBoxes.map(row=>[
+          Math.max(0,safe(row[0]))+4*Math.max(0,safe(row[2])),
+          Math.max(0,safe(row[1])),
+          Math.max(0,safe(row[3])),
+          Math.max(0,safe(row[4])),
+          Math.max(0,safe(row[5]))
+        ]);
       }else{
         // Legacy users previously entered their combined box-hours in one input.
         state.ownedBoxes=state.ownedHours.map(hours=>boxDurations.map((duration,i)=>i===0?Math.max(0,safe(hours)):0));
