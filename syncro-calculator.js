@@ -6,7 +6,7 @@
   if(!SOURCE||!root){document.body.insertAdjacentHTML("afterbegin","<p>계산기 데이터를 불러오지 못했습니다. 새로고침해 주세요.</p>");return;}
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
-  const storageKey="nikke-syncro-calc-test-v1";
+  const storageKey="nikke-syncro-calc-test-v2";
   const boxDurations=[1,2,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
   const fmt=(n,d=0)=>Number.isFinite(+n)?new Intl.NumberFormat("ko-KR",{maximumFractionDigits:d}).format(+n):"-";
@@ -129,11 +129,11 @@
       <div id="syn-output">
         <div class="syn-top-grid">
           <section class="syn-box syn-input-panel">
-            <div class="syn-box-head">1. 싱크로 정보 입력</div>
+            <div class="syn-box-head">1. 정보입력</div>
             <div class="syn-box-body">
               <div class="syn-form">
-                ${field("현재 싱크로 레벨","current",200,999)}
-                ${field("목표 싱크로 레벨","goal",201,1000)}
+                ${field("현재 싱크로 레벨","current",1,999)}
+                ${field("목표 싱크로 레벨","goal",2,1000)}
                 ${field("전초기지 레벨","outpost",1,800)}
                 ${field("단기섬멸 횟수 / 일","sweep",1,11)}
                 <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label>
@@ -155,8 +155,8 @@
         </div>
       </div>
       <div class="syn-detail-grid">
-        <section class="syn-box syn-owned-panel" aria-label="보유 재화 입력 및 차감">
-          <div class="syn-box-head">2. 보유 재화 입력 및 차감</div>
+        <section class="syn-box syn-owned-panel" aria-label="보유 재화 입력">
+          <div class="syn-box-head">2. 보유 재화 입력</div>
           <div class="syn-box-body">
             <label class="syn-check"><input type="checkbox" data-key="subtractOwned" ${state.subtractOwned?"checked":""}>보유 재화를 필요량에서 차감</label>
             <p class="syn-hint" id="syn-hourly">전초기지 시간당 생산량</p>
@@ -204,8 +204,8 @@
           </div>
         </section>
       </div>
-      <section class="syn-box syn-daily-panel syn-daily-wide" aria-label="일일 재화 수급 항목 선택">
-        <div class="syn-box-head">4. 일일 재화 수급</div>
+      <section class="syn-box syn-daily-panel syn-daily-wide" aria-label="재화 수급 체크 항목 선택">
+        <div class="syn-box-head">4. 재화 수급 체크</div>
         <div class="syn-box-body">
           <div class="syn-daily-list">
             ${state.daily.map((r,i)=>`<label class="syn-daily-item">
@@ -230,8 +230,8 @@
     const packages=onlyPackage===null?state.packages:state.packages.map((p,i)=>({
       ...p,on:Array.isArray(onlyPackage)?onlyPackage.includes(i):i===onlyPackage
     }));
-    const level=Math.min(999,Math.max(200,Math.trunc(safe(state.current))));
-    const goal=Math.min(1000,Math.max(201,Math.trunc(safe(state.goal))));
+    const level=Math.min(999,Math.max(1,Math.trunc(safe(state.current))));
+    const goal=Math.min(1000,Math.max(2,Math.trunc(safe(state.goal))));
     const outpost=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
     const rate=SOURCE.rates[outpost-1];
     const bands=SOURCE.bands.map(b=>({start:b.start,end:b.end,need:b.need,qty:Math.max(0,Math.min(goal,b.end)-Math.max(level+1,b.start)+1)}));
@@ -350,6 +350,10 @@
     if(c.goal<=c.level){status.classList.add("warn");status.textContent="목표 레벨은 현재 레벨보다 높아야 해요.";}
     else if(c.completeDay===null){status.classList.add("warn");status.textContent="1500일 이내에 목표에 도달하지 못해요. 기본 수급량이나 패키지 설정을 확인해 주세요.";}
     else{status.classList.remove("warn");status.textContent="사이트의 인게임 확인 전초기지 시간당 생산량과 원본 시트의 레벨업 비용·일일 수급·패키지 규칙을 반영한 예상 결과입니다. 구매 조건과 재화 수급 가정이 실제 게임과 다르면 결과도 달라질 수 있어요.";}
+    if(c.level<200){
+      status.classList.add("warn");
+      status.textContent+=" 주의: 현재 보유한 레벨업 비용 데이터는 201레벨부터입니다. 1~200레벨의 비용은 제외되므로 예상 날짜·과금액은 정확한 전체 구간 계산이 아닙니다.";
+    }
   }
   function onEdit(e){
     const x=e.target;if(!x.dataset)return;
@@ -383,8 +387,8 @@
       else return;
     }else return;
     if(e.type==="change"){
-      if(x.dataset.key==="current")x.value=state.current=Math.min(999,Math.max(200,Math.trunc(state.current)));
-      if(x.dataset.key==="goal")x.value=state.goal=Math.min(1000,Math.max(201,Math.trunc(state.goal)));
+      if(x.dataset.key==="current")x.value=state.current=Math.min(999,Math.max(1,Math.trunc(state.current)));
+      if(x.dataset.key==="goal")x.value=state.goal=Math.min(1000,Math.max(2,Math.trunc(state.goal)));
       if(x.dataset.key==="outpost")x.value=state.outpost=Math.min(800,Math.max(1,Math.trunc(state.outpost)));
       if(x.dataset.key==="sweep")x.value=state.sweep=Math.min(11,Math.max(1,Math.trunc(state.sweep)));
     }
