@@ -557,3 +557,25 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   overflow:hidden;
   text-overflow:ellipsis;
 }
+
+/* v1.449: inventory panel follows only its own content, not the taller package panel.
+   Denomination cards expand to reveal every box input without internal scrolling. */
+.syn-detail-grid > .syn-owned-panel{
+  align-self:start;
+  height:auto;
+}
+.syn-owned-panel .syn-wealth-card{
+  height:auto;
+  min-height:0;
+  overflow:visible;
+}
+.syn-owned-panel .syn-wealth-boxes{
+  flex:none;
+  height:auto;
+  min-height:0;
+  overflow:visible;
+  padding-right:0;
+}
+.syn-owned-panel .syn-wealth-subhead span:last-child{
+  display:none;
+}
