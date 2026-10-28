@@ -400,3 +400,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .syn-package-gain{color:var(--sy-text)}
 .syn-package-value{color:var(--sy-title);font-weight:850}
 .syn-package-efficiency-note{margin:9px 1px 1px;color:var(--sy-muted);font-size:11px;line-height:1.5}
+
+/* v1.445: normalize package time-savings per actual cost to subscription = 100% */
+.syn-package-value strong{font-size:14px;font-weight:900;color:var(--sy-title)}
+.syn-package-value span{font-size:10px;font-weight:700;color:var(--sy-muted)}
+.syn-package-spend{font-size:10px;color:var(--sy-muted)}

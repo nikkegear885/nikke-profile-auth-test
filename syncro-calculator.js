@@ -157,7 +157,7 @@
                 </div>`;
               }).join("")}
             </div>
-            <div class="syn-package-efficiency-note">가격 대비 효율은 구매 1회당 재화별 1시간 환산 수급량을 1만원 기준으로 나눈 값입니다. 서로 다른 재화는 합산하지 않습니다. 월정액은 30일 모두 수령, 쌩코더는 현재 전초기지 생산량으로 환산합니다.</div>
+            <div class="syn-package-efficiency-note">기간 단축 효율 = 패키지 단독 사용 시 (무과금 대비 목표 도달 단축일수 ÷ 목표 달성까지 실제 예상 과금액). 월정액을 100% 기준으로 상대 비교합니다. 목표 달성 조건에 따라 효율이 달라지며, 월정액의 단축 효과가 0이거나 기간을 계산할 수 없으면 비교 불가로 표시합니다.</div>
           </div>
         </section>
       </div>
@@ -182,7 +182,9 @@
     enforcePackageEditPolicy();
     update();
   }
-  function calculate(){
+  function calculate(onlyPackage=null){
+    // null: active selections; -1: free income only; 0-8: one package alone.
+    const packages=onlyPackage===null?state.packages:state.packages.map((p,i)=>({...p,on:i===onlyPackage}));
     const level=Math.min(999,Math.max(200,Math.trunc(safe(state.current))));
     const goal=Math.min(1000,Math.max(201,Math.trunc(safe(state.goal))));
     const outpost=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
@@ -201,16 +203,16 @@
       }
       dailyRows.push(row);
     }
-    const grants=state.packages.map(p=>pkgGrantH(p).map((h,j)=>h*rate[j]+(j===0?safe(p.coreFixed):0)));
-    const reached=[null,null,null],acc=[0,0,0],count=state.packages.map(()=>0);
+    const grants=packages.map(p=>pkgGrantH(p).map((h,j)=>h*rate[j]+(j===0?safe(p.coreFixed):0)));
+    const reached=[null,null,null],acc=[0,0,0],count=packages.map(()=>0);
     let spent=0,completeDay=null,subExpiry=0;
     for(let day=1;day<=1500;day++){
       const previousReached=acc.map((n,j)=>n>=needed[j]);
       const when=dateByDay(state.date,day);
       const weekday=when.getUTCDay()||7, monthDay=when.getUTCDate();
       let subToday=false;
-      for(let k=0;k<state.packages.length;k++){
-        const p=state.packages[k], gr=grants[k];if(!p.on)continue;
+      for(let k=0;k<packages.length;k++){
+        const p=packages[k], gr=grants[k];if(!p.on)continue;
         const relevant=gr.some((v,j)=>v>0&&!previousReached[j]);
         if(p.cycle==="월정액"){
           if(relevant && day>subExpiry){
@@ -234,30 +236,36 @@
     return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay};
   }
   function el(id){return document.getElementById(id);}
-  // Compare each resource independently: 1-hour box equivalent per 10,000 won.
-  // Subscription total assumes full configured 30-day delivery; raw core dust converts at selected outpost rate.
-  function updatePackageEfficiency(c){
+  // Each option is simulated by itself until the overall level target is achieved.
+  // Efficiency = days saved versus no paid packages / cumulative spending needed to reach the target.
+  // Normalize against subscription (index 8) as 100%, avoiding raw resource-type comparisons.
+  function updatePackageEfficiency(){
+    const free=calculate(-1);
+    const simulations=state.packages.map((p,i)=>calculate(i));
+    const subscription=simulations[8];
+    const reference=free.completeDay!==null&&subscription.completeDay!==null&&subscription.spent>0
+      ? Math.max(0,free.completeDay-subscription.completeDay)/subscription.spent : 0;
     for(const i of packageDisplayOrder){
       const target=root.querySelector(`[data-package-efficiency="${i}"]`);
       if(!target)continue;
-      const p=state.packages[i];
-      const price=Math.max(0,safe(p.price));
-      const days=p.cycle==="월정액"?Math.max(1,Math.trunc(safe(state.subscriptionDays))):1;
-      const reward=pkgGrantH(p).map(hours=>safe(hours)*days);
-      const coreFixed=safe(p.coreFixed);
-      const equivalent=reward.map((hours,j)=>hours+(j===0&&coreFixed>0?coreFixed/Math.max(0.0000001,safe(c.rate[0])):0));
-      const gain=reward.map((hours,j)=>hours>0?`${currencyNames[j]} ${fmt(hours,2)}시간`:null).filter(Boolean);
-      if(coreFixed>0)gain.push(`쌩코더 ${fmt(coreFixed)}개`);
-      const value=equivalent.map((hours,j)=>hours>0&&price>0?`${currencyNames[j]} ${fmt(hours*10000/price,2)}시간`:null).filter(Boolean);
+      const p=state.packages[i],scenario=simulations[i];
+      const comparable=free.completeDay!==null&&scenario.completeDay!==null;
+      const saved=comparable?Math.max(0,free.completeDay-scenario.completeDay):null;
+      const score=reference>0&&comparable&&scenario.spent>0
+        ? 100*(saved/scenario.spent)/reference : null;
+      const efficiency=score===null?"비교 불가":`${fmt(score,1)}%`;
+      const detail=comparable
+        ? `무과금 대비 ${fmt(saved)}일 단축 · 목표까지 ${fmt(scenario.count[i])}회 구매, ${fmt(scenario.spent)}원`
+        : "1500일 내 목표 달성을 비교할 수 없습니다";
       target.innerHTML=`
-        <div class="syn-package-price">가격 <strong>${fmt(price)}원</strong> <span>· ${days>1?`${fmt(days)}일 수령 총합`:"1회 구매 기준"}</span></div>
-        <div class="syn-package-gain">획득: ${gain.join(" · ")||"-"}</div>
-        <div class="syn-package-value">1만원당: ${value.join(" · ")||"-"}</div>`;
+        <div class="syn-package-price">가격 <strong>${fmt(p.price)}원</strong><span> · 1회 구매 가격</span></div>
+        <div class="syn-package-value">기간 단축 효율 <strong>${efficiency}</strong>${i===8?" <span>(월정액 기준)</span>":""}</div>
+        <div class="syn-package-spend" title="${escape(detail)}">목표까지 예상 구매비용 ${comparable?fmt(scenario.spent)+"원":"산정 불가"}</div>`;
     }
   }
   function update(){
     const c=calculate();
-    updatePackageEfficiency(c);
+    updatePackageEfficiency();
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     el("syn-overall-days").textContent=c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승`;
     el("syn-overall-cost").textContent=fmt(c.spent)+"원";
