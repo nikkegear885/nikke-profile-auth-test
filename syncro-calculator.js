@@ -14,20 +14,36 @@
   const dateByDay=(date,day)=>{const a=String(date).split("-").map(Number);const d=new Date(Date.UTC(a[0]||2026,(a[1]||10)-1,a[2]||28));d.setUTCDate(d.getUTCDate()+day-1);return d;};
   const dateTxt=d=>d.toISOString().slice(0,10);
   const defaults=()=>Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages)});
+  // Yellow background cells in the original spreadsheet:
+  // Input B5:B9, B13:D14, B16, A31:A42; Results A28:A36, F30, F31, F36.
+  const allowedPackageChoices=new Set([2,3,8]);
+  const editableKeys=new Set(["current","goal","outpost","sweep","date","subtractOwned"]);
   let state=defaults();
   try{
-    const data=JSON.parse(localStorage.getItem(storageKey));
-    if(data&&typeof data==="object"){
-      state=Object.assign(state,data);
-      // Daily rewards are fixed to the original spreadsheet. Preserve only each checkbox.
-      const savedDaily=Array.isArray(data.daily)&&data.daily.length===SOURCE.daily.length?data.daily:null;
-      state.daily=clone(SOURCE.daily);
-      if(savedDaily)state.daily.forEach((row,i)=>{if(typeof savedDaily[i]?.on==="boolean")row.on=savedDaily[i].on;});
-      if(!Array.isArray(data.packages)||data.packages.length!==9)state.packages=clone(SOURCE.packages);
+    const saved=JSON.parse(localStorage.getItem(storageKey));
+    if(saved&&typeof saved==="object"){
+      // Rebuild fixed rules from the original data even when an older site version
+      // saved changes to non-yellow cells (prices, hours, schedules, ratios).
+      for(const key of ["current","goal","outpost","sweep"]){
+        if(Number.isFinite(Number(saved[key])))state[key]=Number(saved[key]);
+      }
+      if(typeof saved.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(saved.date))state.date=saved.date;
+      if(typeof saved.subtractOwned==="boolean")state.subtractOwned=saved.subtractOwned;
+      for(const key of ["ownedHours","ownedUnits"]){
+        if(Array.isArray(saved[key])&&saved[key].length===3)
+          state[key]=saved[key].map(value=>Math.max(0,safe(value)));
+      }
+      if(Array.isArray(saved.daily)&&saved.daily.length===state.daily.length)
+        state.daily.forEach((row,i)=>{if(typeof saved.daily[i]?.on==="boolean")row.on=saved.daily[i].on;});
+      if(Array.isArray(saved.packages)&&saved.packages.length===state.packages.length)
+        state.packages.forEach((row,i)=>{
+          if(typeof saved.packages[i]?.on==="boolean")row.on=saved.packages[i].on;
+          if(allowedPackageChoices.has(i)&&[0,1,2].includes(Number(saved.packages[i]?.choice)))
+            row.choice=Number(saved.packages[i].choice);
+        });
     }
   }catch(e){}
-  // Migrate any previously edited daily quantities back to fixed source values.
-  // Only checkbox flags remain user-configurable.
+  // Replace legacy editable non-yellow data with fixed source values.
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
   const numberInput=(value,attrs="")=>`<input class="syn-cell-input" type="number" step="any" min="0" value="${safe(value)}" ${attrs}>`;
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
@@ -103,27 +119,30 @@
       </div>
       <details class="syn-box" open><summary>4. 과금 패키지 시뮬레이션 (사용 체크)</summary>
         <div class="syn-box-body">
-          <div class="syn-setup">
-            <label class="syn-field">주간 구매 요일<select data-key="weeklyDay">${["월","화","수","목","금","토","일"].map((x,i)=>`<option value="${i+1}" ${state.weeklyDay===i+1?"selected":""}>${x}요일</option>`).join("")}</select></label>
-            <label class="syn-field">월간 구매일<input type="number" min="1" max="31" data-key="monthlyDay" value="${safe(state.monthlyDay)}"></label>
-            <label class="syn-field">월정액 적용 일수<input type="number" min="1" max="365" data-key="subscriptionDays" value="${safe(state.subscriptionDays)}"></label>
-            ${["코더","배데","크레딧"].map((n,i)=>`<label class="syn-field">${n} 커스텀 비율<input type="number" min="0" step="any" data-ratio="${i}" value="${safe(state.ratios[i])}"></label>`).join("")}
+          <div class="syn-fixed-settings">
+            <span>원본 고정 설정</span>
+            <span>주간 구매: 화요일</span>
+            <span>월간 구매: 매월 1일</span>
+            <span>월정액 적용: 30일</span>
+            <span>커스텀 지급 비율: 코더 ×1 · 배데 ×1 · 크레딧 ×3</span>
           </div>
+          <p class="syn-hint syn-source-edit-notice">원본의 노란색 셀에 해당하는 사용 체크와 커스텀 선택 재화만 변경할 수 있습니다. 나머지 수치는 원본 고정값입니다.</p>
           <div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>사용</th><th>패키지</th><th>주기</th><th>가격(원)</th><th>기준 h</th><th>선택 재화</th><th>코더 h</th><th>배데 h</th><th>크레딧 h</th><th>코더 고정</th><th>구매 횟수</th><th>총 과금</th></tr></thead>
           <tbody>${state.packages.map((p,i)=>`<tr>
             <td><input type="checkbox" aria-label="${escape(p.name)} 사용" data-package="${i}" data-field="on" ${p.on?"checked":""}></td>
             <td class="syn-name">${escape(p.name)}</td><td>${escape(p.cycle)}</td>
-            <td class="syn-num">${numberInput(p.price,`data-package="${i}" data-field="price"`)}</td>
-            <td class="syn-num">${numberInput(p.baseH,`data-package="${i}" data-field="baseH" ${+p.choice<0?"disabled":""}`)}</td>
-            <td><select class="syn-cell-input syn-select" data-package="${i}" data-field="choice">
-              <option value="-1" ${+p.choice<0?"selected":""}>직접 입력</option>
-              ${["코더","배데","크레딧"].map((c,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${c}</option>`).join("")}
-            </select></td>
-            ${[0,1,2].map(j=>`<td class="syn-num">${numberInput(pkgGrantH(p)[j],`data-package="${i}" data-field="h" data-index="${j}" ${+p.choice>=0?"disabled":""}`)}</td>`).join("")}
-            <td class="syn-num">${numberInput(p.coreFixed,`data-package="${i}" data-field="coreFixed"`)}</td>
+            <td class="syn-num syn-locked">${fmt(p.price)}</td>
+            <td class="syn-num syn-locked">${allowedPackageChoices.has(i)?fmt(p.baseH):"—"}</td>
+            <td>${allowedPackageChoices.has(i)
+              ?`<select class="syn-cell-input syn-select syn-editable-choice" aria-label="${escape(p.name)} 선택 재화" data-package="${i}" data-field="choice">
+                ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
+              </select>`
+              :'<span class="syn-locked">—</span>'}</td>
+            ${[0,1,2].map(j=>`<td class="syn-num syn-locked" id="syn-pkg-h-${i}-${j}">${fmt(pkgGrantH(p)[j])}</td>`).join("")}
+            <td class="syn-num syn-locked">${p.coreFixed?fmt(p.coreFixed):"—"}</td>
             <td id="syn-pkg-count-${i}">-</td><td id="syn-pkg-price-${i}">-</td>
           </tr>`).join("")}</tbody></table></div>
-          <p class="syn-hint">월간은 지정 구매일, 주간은 지정 요일, 일일은 매일 구매합니다. 월정액은 지정 일수 동안 매일 지급되며 만료 후 재구매됩니다. 이미 필요한 재화를 모두 모은 패키지는 추가 구매하지 않습니다.</p>
+          <p class="syn-hint">고정 수치는 원본 시트에서 읽은 값입니다. 패키지는 사용 여부만 선택하며, 월간 커스텀 패키지 1·2와 월정액의 선택 재화만 변경할 수 있습니다.</p>
         </div>
       </details>
       <div class="syn-resource-cards" id="syn-resource-cards"></div>
@@ -211,9 +230,8 @@
     for(let i=0;i<state.packages.length;i++){
       el(`syn-pkg-count-${i}`).textContent=fmt(c.count[i]);
       el(`syn-pkg-price-${i}`).textContent=fmt(c.count[i]*safe(state.packages[i].price))+"원";
-      const row=root.querySelectorAll(`input[data-package="${i}"][data-field="h"]`);
-      row.forEach((input,j)=>{input.value=c.grants[i][j]===0?"0":pkgGrantH(state.packages[i])[j];input.disabled=+state.packages[i].choice>=0;});
-      const base=root.querySelector(`input[data-package="${i}"][data-field="baseH"]`);base.disabled=+state.packages[i].choice<0;
+      for(let j=0;j<3;j++)
+        el(`syn-pkg-h-${i}-${j}`).textContent=fmt(pkgGrantH(state.packages[i])[j]);
     }
     el("syn-band-table").innerHTML=c.bands.filter(b=>b.qty).map(b=>`<tr><td>${b.start}~${b.end}</td><td>${fmt(b.qty)}</td>${[0,1,2].map(j=>`<td>${fmt(b.qty*safe(b.need[j]))}</td>`).join("")}</tr>`).join("")||
       '<tr><td colspan="5">현재 레벨과 목표 레벨을 확인해 주세요.</td></tr>';
@@ -225,27 +243,31 @@
   function onEdit(e){
     const x=e.target;if(!x.dataset)return;
     if(x.dataset.key){
-      const k=x.dataset.key;state[k]=x.type==="checkbox"?x.checked:x.type==="date"?x.value:safe(x.value);
+      const k=x.dataset.key;
+      if(!editableKeys.has(k))return;
+      state[k]=x.type==="checkbox"?Boolean(x.checked):x.type==="date"?x.value:safe(x.value);
       if(["current","goal"].includes(k))state[k]=Math.trunc(state[k]);
-    }else if(x.dataset.owned){state[x.dataset.owned][+x.dataset.index]=safe(x.value);}
-    else if(x.dataset.ratio!==undefined){state.ratios[+x.dataset.ratio]=safe(x.value);}
-    else if(x.dataset.daily!==undefined){
+    }else if(x.dataset.owned){
+      const i=Number(x.dataset.index);
+      if(!["ownedHours","ownedUnits"].includes(x.dataset.owned)||![0,1,2].includes(i))return;
+      state[x.dataset.owned][i]=Math.max(0,safe(x.value));
+    }else if(x.dataset.daily!==undefined){
       const i=Number(x.dataset.daily);
       if(x.dataset.field!=="on"||!Number.isInteger(i)||i<0||i>=state.daily.length)return;
       state.daily[i].on=Boolean(x.checked);
     }else if(x.dataset.package!==undefined){
-      const r=state.packages[+x.dataset.package],key=x.dataset.field;
-      if(key==="on")r.on=x.checked;
-      else if(key==="h")r.h[+x.dataset.index]=safe(x.value);
-      else r[key]=safe(x.value);
+      const i=Number(x.dataset.package),key=x.dataset.field;
+      if(!Number.isInteger(i)||i<0||i>=state.packages.length)return;
+      if(key==="on")state.packages[i].on=Boolean(x.checked);
+      else if(key==="choice"&&allowedPackageChoices.has(i)&&[0,1,2].includes(Number(x.value)))
+        state.packages[i].choice=Number(x.value);
+      else return;
     }else return;
     if(e.type==="change"){
       if(x.dataset.key==="current")x.value=state.current=Math.min(999,Math.max(200,Math.trunc(state.current)));
       if(x.dataset.key==="goal")x.value=state.goal=Math.min(1000,Math.max(201,Math.trunc(state.goal)));
       if(x.dataset.key==="outpost")x.value=state.outpost=Math.min(800,Math.max(1,Math.trunc(state.outpost)));
       if(x.dataset.key==="sweep")x.value=state.sweep=Math.min(11,Math.max(1,Math.trunc(state.sweep)));
-      if(x.dataset.key==="monthlyDay")x.value=state.monthlyDay=Math.min(31,Math.max(1,Math.trunc(state.monthlyDay)));
-      if(x.dataset.key==="subscriptionDays")x.value=state.subscriptionDays=Math.min(365,Math.max(1,Math.trunc(state.subscriptionDays)));
     }
     try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
     update();
