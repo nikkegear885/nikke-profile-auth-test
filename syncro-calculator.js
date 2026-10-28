@@ -7,13 +7,21 @@
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v1";
+  const boxDurations=[1,2,4,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
   const fmt=(n,d=0)=>Number.isFinite(+n)?new Intl.NumberFormat("ko-KR",{maximumFractionDigits:d}).format(+n):"-";
   const safe=n=>Number.isFinite(+n)?+n:0;
   const escape=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const dateByDay=(date,day)=>{const a=String(date).split("-").map(Number);const d=new Date(Date.UTC(a[0]||2026,(a[1]||10)-1,a[2]||28));d.setUTCDate(d.getUTCDate()+day-1);return d;};
   const dateTxt=d=>d.toISOString().slice(0,10);
-  const defaults=()=>Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages)});
+  // The old "ownedHours" field represented one total of hours per resource.
+  // Preserve that total and migrate it into the 1-hour denomination at first load.
+  const defaults=()=>{
+    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages)});
+    initial.ownedBoxes=initial.ownedHours.map(h=>boxDurations.map((duration,i)=>i===0?Math.max(0,safe(h)):0));
+    return initial;
+  };
+  const ownedBoxHours=boxes=>boxDurations.reduce((total,h,i)=>total+Math.max(0,safe(boxes[i]))*h,0);
   // Yellow background cells in the original spreadsheet:
   // Input B5:B9, B13:D14, B16, A31:A42; Results A28:A36, F30, F31, F36.
   const allowedPackageChoices=new Set([2,3,8]);
@@ -46,6 +54,13 @@
         if(Array.isArray(saved[key])&&saved[key].length===3)
           state[key]=saved[key].map(value=>Math.max(0,safe(value)));
       }
+      if(Array.isArray(saved.ownedBoxes)&&saved.ownedBoxes.length===3&&
+         saved.ownedBoxes.every(row=>Array.isArray(row)&&row.length===boxDurations.length)){
+        state.ownedBoxes=saved.ownedBoxes.map(row=>row.map(value=>Math.max(0,safe(value))));
+      }else{
+        // Legacy users previously entered their combined box-hours in one input.
+        state.ownedBoxes=state.ownedHours.map(hours=>boxDurations.map((duration,i)=>i===0?Math.max(0,safe(hours)):0));
+      }
       if(Array.isArray(saved.daily))
         state.daily.forEach(row=>{
           // Preserve saved switches by name when new income rows are appended.
@@ -60,6 +75,7 @@
         });
     }
   }catch(e){}
+  state.ownedHours=state.ownedBoxes.map(ownedBoxHours);
   // Replace legacy editable non-yellow data with fixed source values.
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
@@ -130,8 +146,17 @@
             <div class="syn-wealth">
               ${names.map((name,j)=>`<div class="syn-wealth-card">
                 <div class="syn-wealth-title">${name}</div>
-                <label class="syn-field">보유 재화 상자(h)<input type="number" min="0" step="any" data-owned="ownedHours" data-index="${j}" value="${safe(state.ownedHours[j])}"></label>
-                <label class="syn-field">보유 재화(낱개)<input type="number" min="0" step="any" data-owned="ownedUnits" data-index="${j}" value="${safe(state.ownedUnits[j])}"></label>
+                <label class="syn-field syn-wealth-raw">보유 재화(낱개)
+                  <input type="number" min="0" step="any" data-owned="ownedUnits" data-index="${j}" value="${safe(state.ownedUnits[j])}">
+                </label>
+                <div class="syn-wealth-subhead"><span>보유 상자 (개수)</span><span>스크롤 ↓</span></div>
+                <div class="syn-wealth-boxes" role="group" aria-label="${escape(name)} 시간별 보유 상자">
+                  ${boxDurations.map((hours,i)=>`<label class="syn-wealth-box-row">
+                    <span>${hours}시간</span>
+                    <input type="number" min="0" step="1" inputmode="numeric" data-owned-box="${j}" data-duration="${hours}"
+                      aria-label="${escape(name)} ${hours}시간 상자 개수" value="${safe(state.ownedBoxes[j][i])}">
+                  </label>`).join("")}
+                </div>
                 <div class="syn-hint" id="syn-owned-${j}">-</div>
               </div>`).join("")}
             </div>
@@ -312,10 +337,17 @@
       if(!editableKeys.has(k))return;
       state[k]=x.type==="checkbox"?Boolean(x.checked):x.type==="date"?x.value:safe(x.value);
       if(["current","goal"].includes(k))state[k]=Math.trunc(state[k]);
+    }else if(x.dataset.ownedBox!==undefined){
+      const j=Number(x.dataset.ownedBox),duration=Number(x.dataset.duration);
+      const i=boxDurations.indexOf(duration);
+      if(![0,1,2].includes(j)||i<0)return;
+      state.ownedBoxes[j][i]=Math.max(0,Math.trunc(safe(x.value)));
+      state.ownedHours[j]=ownedBoxHours(state.ownedBoxes[j]);
+      if(e.type==="change")x.value=state.ownedBoxes[j][i];
     }else if(x.dataset.owned){
       const i=Number(x.dataset.index);
-      if(!["ownedHours","ownedUnits"].includes(x.dataset.owned)||![0,1,2].includes(i))return;
-      state[x.dataset.owned][i]=Math.max(0,safe(x.value));
+      if(x.dataset.owned!=="ownedUnits"||![0,1,2].includes(i))return;
+      state.ownedUnits[i]=Math.max(0,safe(x.value));
     }else if(x.dataset.daily!==undefined){
       const i=Number(x.dataset.daily);
       if(x.dataset.field!=="on"||!Number.isInteger(i)||i<0||i>=state.daily.length)return;

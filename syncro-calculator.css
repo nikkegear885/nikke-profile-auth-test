@@ -479,3 +479,81 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 }
 .syn-package-values .syn-package-value strong{font-size:12px}
 .syn-package-spend{margin-top:2px}
+
+/* v1.448: fixed-size inventory cards with individual 1/2/4/8/12/24-hour boxes */
+.syn-owned-panel .syn-wealth-card{
+  height:179px;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.syn-owned-panel .syn-wealth-title{flex:none;margin-bottom:4px}
+.syn-owned-panel .syn-wealth-raw{
+  flex:none;
+  margin:0 0 5px;
+  gap:2px;
+  font-size:11px;
+  line-height:1.2;
+}
+.syn-owned-panel .syn-wealth-raw input{
+  height:27px;
+  padding:4px 7px;
+  font-size:12px;
+}
+.syn-wealth-subhead{
+  flex:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:3px;
+  margin-bottom:3px;
+  color:var(--sy-muted);
+  font-size:10px;
+  font-weight:700;
+}
+.syn-wealth-boxes{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:var(--sy-field-border) transparent;
+  padding-right:3px;
+}
+.syn-wealth-box-row{
+  display:grid;
+  grid-template-columns:minmax(40px,1fr) minmax(62px,0.95fr);
+  gap:4px;
+  align-items:center;
+  margin-bottom:3px;
+  color:var(--sy-text);
+  font-size:11px;
+  font-weight:700;
+}
+.syn-wealth-box-row input{
+  width:100%;
+  min-width:0;
+  height:26px;
+  padding:3px 6px;
+  border:1px solid var(--sy-field-border);
+  border-radius:6px;
+  background:var(--sy-field);
+  color:var(--sy-field-text);
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+}
+.syn-wealth-box-row input:focus{
+  outline:2px solid var(--sy-accent);
+  outline-offset:0;
+}
+.syn-owned-panel .syn-wealth-card .syn-hint{
+  flex:none;
+  margin:4px 0 0;
+  font-size:10px;
+  line-height:1.3;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
