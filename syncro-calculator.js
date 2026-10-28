@@ -160,8 +160,8 @@
         <div class="syn-box-body">
           <div class="syn-daily-list">
             ${state.daily.map((r,i)=>`<label class="syn-daily-item">
-              <input type="checkbox" aria-label="${escape(r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}>
-              <span>${escape(r.name)}</span>
+              <input type="checkbox" aria-label="${escape(i===0?"전초기지 자연생산":r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}>
+              <span>${escape(i===0?"전초기지 자연생산":r.name)}</span>
             </label>`).join("")}
           </div>
         </div>
