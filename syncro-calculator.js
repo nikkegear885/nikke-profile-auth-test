@@ -6,7 +6,7 @@
   if(!SOURCE||!root){document.body.insertAdjacentHTML("afterbegin","<p>계산기 데이터를 불러오지 못했습니다. 새로고침해 주세요.</p>");return;}
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
-  const storageKey="nikke-syncro-calc-test-v3";
+  const storageKey="nikke-syncro-calc-test-v4";
   const boxDurations=[1,2,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
   const fmt=(n,d=0)=>Number.isFinite(+n)?new Intl.NumberFormat("ko-KR",{maximumFractionDigits:d}).format(+n):"-";
