@@ -157,7 +157,7 @@
             <span>월정액 적용: 30일</span>
             <span>커스텀 지급 비율: 코더 ×1 · 배데 ×1 · 크레딧 ×3</span>
           </div>
-          <p class="syn-hint syn-source-edit-notice"><strong>수정 가능: 사용 체크 9개 · 선택 재화 3개</strong> (월간 커스텀 1·2, 월정액). 나머지 항목은 수정할 수 없는 원본 고정값입니다. <span class="syn-build-tag">TEST 1.435</span></p>
+          <p class="syn-hint syn-source-edit-notice"><strong>수정 가능: 사용 체크 9개 · 선택 재화 3개</strong> (월간 커스텀 패키지 1, 월간 커스텀 패키지 2, 월정액 2). 나머지 항목은 수정할 수 없는 원본 고정값입니다. <span class="syn-build-tag">TEST 1.435</span></p>
           <div class="syn-table-wrap"><table class="syn-table syn-package-table"><thead><tr><th>사용</th><th>패키지</th><th>주기</th><th>가격(원)</th><th>기준 h</th><th>선택 재화</th><th>코더 h</th><th>배데 h</th><th>크레딧 h</th><th>코더 고정</th><th>구매 횟수</th><th>총 과금</th></tr></thead>
           <tbody>${packageDisplayOrder.map(i=>{const p=state.packages[i],displayName=packageDisplayNames[i];return `<tr>
             <td class="syn-package-check"><input type="checkbox" aria-label="${escape(displayName)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}></td>
@@ -174,7 +174,7 @@
             <td class="syn-locked">${locked("—",`syn-pkg-count-${i}`)}</td>
             <td class="syn-locked">${locked("—",`syn-pkg-price-${i}`)}</td>
           </tr>`}).join("")}</tbody></table></div>
-          <p class="syn-hint">고정 수치는 원본 시트에서 읽은 값입니다. 패키지는 사용 여부만 선택하며, 월간 커스텀 패키지 1·2와 월정액의 선택 재화만 변경할 수 있습니다.</p>
+          <p class="syn-hint">고정 수치는 원본 시트에서 읽은 값입니다. 패키지는 사용 여부만 선택하며, 월간 커스텀 패키지 1, 월간 커스텀 패키지 2, 월정액 2의 선택 재화만 변경할 수 있습니다.</p>
         </div>
       </details>
       <div class="syn-resource-cards" id="syn-resource-cards"></div>
