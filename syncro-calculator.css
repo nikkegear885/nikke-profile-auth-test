@@ -650,3 +650,35 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   .syn-package-panel .syn-package-item.syn-no-choice{gap:4px}
   .syn-package-panel .syn-package-toggle{font-size:10.5px}
 }
+
+/* v1.453: keep the package panel bottom aligned with the neighboring inventory panel.
+   Redistribute vertical space between entries rather than compressing their text. */
+.syn-detail-grid > .syn-package-panel{
+  align-self:stretch;
+  display:flex;
+  flex-direction:column;
+  height:auto;
+  min-height:0;
+}
+.syn-package-panel .syn-box-head{
+  flex:0 0 auto;
+}
+.syn-package-panel .syn-box-body{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  padding:5px 10px 7px;
+}
+.syn-package-panel .syn-package-list{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.syn-package-panel .syn-package-item,
+.syn-package-panel .syn-package-item.syn-no-choice{
+  flex:0 0 auto;
+  padding:3px 1px;
+}
