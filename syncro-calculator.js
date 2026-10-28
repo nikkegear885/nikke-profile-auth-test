@@ -58,9 +58,7 @@
   }catch(e){}
   // Replace legacy editable non-yellow data with fixed source values.
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
-  const numberInput=(value,attrs="")=>`<input class="syn-cell-input" type="number" step="any" min="0" value="${safe(value)}" ${attrs}>`;
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
-  const locked=(value,id="")=>`<output ${id?`id="${id}"`:""} class="syn-fixed-value" aria-readonly="true" title="원본 고정값 · 수정 불가">${escape(value)}</output>`;
   function pkgGrantH(p){
     if(safe(p.choice)>=0 && p.choice!==-1 && Number.isInteger(+p.choice)){
       const index=+p.choice, arr=[0,0,0];if(index<3)arr[index]=safe(p.baseH)*safe(state.ratios[index]);return arr;
@@ -69,7 +67,7 @@
   }
 
   function enforcePackageEditPolicy(){
-    const table=root.querySelector(".syn-package-table");
+    const table=root.querySelector(".syn-package-list");
     if(!table||typeof table.querySelectorAll!=="function")return;
     const controls=table.querySelectorAll("input, select, textarea, button");
     for(const control of controls){
@@ -135,48 +133,39 @@
             </div>
           </div>
         </section>
-        <section class="syn-box syn-daily-panel" aria-label="일일 재화 수급 항목 선택">
-          <div class="syn-box-head">3. 일일 재화 수급</div>
+        <section class="syn-box syn-package-panel" aria-label="과금 패키지 선택">
+          <div class="syn-box-head">3. 과금 패키지</div>
           <div class="syn-box-body">
-            <p class="syn-hint syn-daily-hint">계산에 포함할 수급 항목을 체크하세요.</p>
-            <div class="syn-daily-list">
-              ${state.daily.map((r,i)=>`<label class="syn-daily-item">
-                <input type="checkbox" aria-label="${escape(r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}>
-                <span>${escape(r.name)}</span>
-              </label>`).join("")}
+            <div class="syn-package-list">
+              ${packageDisplayOrder.map(i=>{
+                const p=state.packages[i],displayName=packageDisplayNames[i];
+                return `<div class="syn-package-item">
+                  <label class="syn-package-toggle">
+                    <input type="checkbox" aria-label="${escape(displayName)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}>
+                    <span>${escape(displayName)}</span>
+                  </label>
+                  ${allowedPackageChoices.has(i)
+                    ? `<select class="syn-cell-input syn-select syn-package-select" aria-label="${escape(displayName)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
+                      ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
+                    </select>`
+                    : ""}
+                </div>`;
+              }).join("")}
             </div>
           </div>
         </section>
       </div>
-      <details class="syn-box" open><summary>4. 과금 패키지 시뮬레이션 (사용 체크)</summary>
+      <section class="syn-box syn-daily-panel syn-daily-wide" aria-label="일일 재화 수급 항목 선택">
+        <div class="syn-box-head">4. 일일 재화 수급</div>
         <div class="syn-box-body">
-          <div class="syn-fixed-settings">
-            <span>원본 고정 설정</span>
-            <span>주간 구매: 화요일</span>
-            <span>월간 구매: 매월 1일</span>
-            <span>월정액 적용: 30일</span>
-            <span>커스텀 지급 비율: 코더 ×1 · 배데 ×1 · 크레딧 ×3</span>
+          <div class="syn-daily-list">
+            ${state.daily.map((r,i)=>`<label class="syn-daily-item">
+              <input type="checkbox" aria-label="${escape(r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}>
+              <span>${escape(r.name)}</span>
+            </label>`).join("")}
           </div>
-          <p class="syn-hint syn-source-edit-notice"><strong>수정 가능: 사용 체크 9개 · 선택 재화 3개</strong> (월간 커스텀 패키지 1, 월간 커스텀 패키지 2, 월정액 2). 나머지 항목은 수정할 수 없는 원본 고정값입니다. <span class="syn-build-tag">TEST 1.435</span></p>
-          <div class="syn-table-wrap"><table class="syn-table syn-package-table"><thead><tr><th>사용</th><th>패키지</th><th>주기</th><th>가격(원)</th><th>기준 h</th><th>선택 재화</th><th>코더 h</th><th>배데 h</th><th>크레딧 h</th><th>코더 고정</th><th>구매 횟수</th><th>총 과금</th></tr></thead>
-          <tbody>${packageDisplayOrder.map(i=>{const p=state.packages[i],displayName=packageDisplayNames[i];return `<tr>
-            <td class="syn-package-check"><input type="checkbox" aria-label="${escape(displayName)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}></td>
-            <td class="syn-name syn-locked">${locked(displayName)}</td><td class="syn-locked">${locked(p.cycle)}</td>
-            <td class="syn-num syn-locked">${locked(fmt(p.price))}</td>
-            <td class="syn-num syn-locked">${locked(allowedPackageChoices.has(i)?fmt(p.baseH):"—")}</td>
-            <td class="${allowedPackageChoices.has(i)?"syn-package-choice":"syn-locked"}">${allowedPackageChoices.has(i)
-              ?`<select class="syn-cell-input syn-select syn-editable-choice" aria-label="${escape(displayName)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
-                ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
-              </select>`
-              :locked("—")}</td>
-            ${[0,1,2].map(j=>`<td class="syn-num syn-locked">${locked(fmt(pkgGrantH(p)[j]),`syn-pkg-h-${i}-${j}`)}</td>`).join("")}
-            <td class="syn-num syn-locked">${locked(p.coreFixed?fmt(p.coreFixed):"—")}</td>
-            <td class="syn-locked">${locked("—",`syn-pkg-count-${i}`)}</td>
-            <td class="syn-locked">${locked("—",`syn-pkg-price-${i}`)}</td>
-          </tr>`}).join("")}</tbody></table></div>
-          <p class="syn-hint">고정 수치는 원본 시트에서 읽은 값입니다. 패키지는 사용 여부만 선택하며, 월간 커스텀 패키지 1, 월간 커스텀 패키지 2, 월정액 2의 선택 재화만 변경할 수 있습니다.</p>
         </div>
-      </details>
+      </section>
       <div class="syn-resource-cards" id="syn-resource-cards"></div>
       <p class="syn-progress-explain">진행률 막대 = 보유 재화 ÷ 전체 필요 재화 (100% 상한). 보유 재화 차감 설정과 별개로 현재 보유량을 표시합니다.</p>
       <details class="syn-box"><summary>5. 구간별 필요 재화 세부표</summary><div class="syn-box-body syn-result-detail"><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>레벨 구간</th><th>적용 횟수</th><th>필요 코더</th><th>필요 배데</th><th>필요 크레딧</th></tr></thead>
@@ -259,12 +248,6 @@
     }).join("");
     for(let j=0;j<3;j++){
       el("syn-owned-"+j).textContent="낱개 환산: "+fmt(c.owned[j]);
-    }
-    for(let i=0;i<state.packages.length;i++){
-      el(`syn-pkg-count-${i}`).textContent=fmt(c.count[i]);
-      el(`syn-pkg-price-${i}`).textContent=fmt(c.count[i]*safe(state.packages[i].price))+"원";
-      for(let j=0;j<3;j++)
-        el(`syn-pkg-h-${i}-${j}`).textContent=fmt(pkgGrantH(state.packages[i])[j]);
     }
     el("syn-band-table").innerHTML=c.bands.filter(b=>b.qty).map(b=>`<tr><td>${b.start}~${b.end}</td><td>${fmt(b.qty)}</td>${[0,1,2].map(j=>`<td>${fmt(b.qty*safe(b.need[j]))}</td>`).join("")}</tr>`).join("")||
       '<tr><td colspan="5">현재 레벨과 목표 레벨을 확인해 주세요.</td></tr>';
