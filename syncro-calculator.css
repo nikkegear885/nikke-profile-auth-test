@@ -240,3 +240,38 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   .syn-top-grid{grid-template-columns:1fr}
   .syn-top-grid .syn-input-panel{grid-column:auto}
 }
+
+
+/* v1.433: Only yellow spreadsheet cells are editable. Package figures are read-only. */
+.syn-fixed-settings{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px 14px;
+  padding:9px 11px;
+  border:1px solid var(--sy-line);
+  border-radius:8px;
+  background:var(--sy-card-alt);
+  color:var(--sy-muted);
+  font-size:12px;
+  line-height:1.5;
+}
+.syn-fixed-settings > span:first-child{font-weight:900;color:var(--sy-title)}
+.syn-source-edit-notice{margin:8px 0 12px}
+.syn-locked{
+  color:var(--sy-muted);
+  font-variant-numeric:tabular-nums;
+}
+.syn-table td.syn-locked{color:var(--sy-muted)}
+.syn-table td.syn-locked:not(:first-child){text-align:center}
+.syn-editable-choice{
+  background:#fff5c7;
+  color:#4a3a16;
+  border-color:#d5b75b;
+  font-weight:800;
+}
+html.dark-theme .syn-editable-choice{
+  background:#40371b;
+  color:#ffe7a3;
+  border-color:#9c8749;
+}
