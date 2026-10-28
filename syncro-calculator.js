@@ -17,6 +17,19 @@
   // Yellow background cells in the original spreadsheet:
   // Input B5:B9, B13:D14, B16, A31:A42; Results A28:A36, F30, F31, F36.
   const allowedPackageChoices=new Set([2,3,8]);
+  // Only display is reordered. SOURCE.packages remains index-stable for calculations.
+  const packageDisplayOrder=[8,1,2,0,4,5,6,7,3];
+  const packageDisplayNames=[
+    "월간 더블업 더블 업 패키지",
+    "이벤트 패키지",
+    "월간 커스텀 패키지 1",
+    "월간 커스텀 패키지 2",
+    "주간 코어 더스트 세트",
+    "일일 코어 더스트 팩",
+    "일일 배틀 데이터 팩",
+    "일일 퍼펙트 부스트 팩",
+    "월정액 2"
+  ];
   const editableKeys=new Set(["current","goal","outpost","sweep","date","subtractOwned"]);
   let state=defaults();
   try{
@@ -144,15 +157,15 @@
             <span>월정액 적용: 30일</span>
             <span>커스텀 지급 비율: 코더 ×1 · 배데 ×1 · 크레딧 ×3</span>
           </div>
-          <p class="syn-hint syn-source-edit-notice"><strong>수정 허용: 사용 체크 9개 · 선택 재화 3개</strong> (월간 커스텀 1·2, 월정액). 나머지 표 항목은 클릭·선택·수정할 수 없는 원본 고정값입니다. <span class="syn-build-tag">TEST 1.434</span></p>
+          <p class="syn-hint syn-source-edit-notice"><strong>수정 가능: 사용 체크 9개 · 선택 재화 3개</strong> (월간 커스텀 1·2, 월정액). 나머지 항목은 수정할 수 없는 원본 고정값입니다. <span class="syn-build-tag">TEST 1.435</span></p>
           <div class="syn-table-wrap"><table class="syn-table syn-package-table"><thead><tr><th>사용</th><th>패키지</th><th>주기</th><th>가격(원)</th><th>기준 h</th><th>선택 재화</th><th>코더 h</th><th>배데 h</th><th>크레딧 h</th><th>코더 고정</th><th>구매 횟수</th><th>총 과금</th></tr></thead>
-          <tbody>${state.packages.map((p,i)=>`<tr>
-            <td class="syn-yellow-cell"><input type="checkbox" aria-label="${escape(p.name)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}></td>
-            <td class="syn-name syn-locked">${locked(p.name)}</td><td class="syn-locked">${locked(p.cycle)}</td>
+          <tbody>${packageDisplayOrder.map(i=>{const p=state.packages[i],displayName=packageDisplayNames[i];return `<tr>
+            <td class="syn-package-check"><input type="checkbox" aria-label="${escape(displayName)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}></td>
+            <td class="syn-name syn-locked">${locked(displayName)}</td><td class="syn-locked">${locked(p.cycle)}</td>
             <td class="syn-num syn-locked">${locked(fmt(p.price))}</td>
             <td class="syn-num syn-locked">${locked(allowedPackageChoices.has(i)?fmt(p.baseH):"—")}</td>
-            <td class="${allowedPackageChoices.has(i)?"syn-yellow-cell":"syn-locked"}">${allowedPackageChoices.has(i)
-              ?`<select class="syn-cell-input syn-select syn-editable-choice" aria-label="${escape(p.name)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
+            <td class="${allowedPackageChoices.has(i)?"syn-package-choice":"syn-locked"}">${allowedPackageChoices.has(i)
+              ?`<select class="syn-cell-input syn-select syn-editable-choice" aria-label="${escape(displayName)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
                 ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
               </select>`
               :locked("—")}</td>
@@ -160,7 +173,7 @@
             <td class="syn-num syn-locked">${locked(p.coreFixed?fmt(p.coreFixed):"—")}</td>
             <td class="syn-locked">${locked("—",`syn-pkg-count-${i}`)}</td>
             <td class="syn-locked">${locked("—",`syn-pkg-price-${i}`)}</td>
-          </tr>`).join("")}</tbody></table></div>
+          </tr>`}).join("")}</tbody></table></div>
           <p class="syn-hint">고정 수치는 원본 시트에서 읽은 값입니다. 패키지는 사용 여부만 선택하며, 월간 커스텀 패키지 1·2와 월정액의 선택 재화만 변경할 수 있습니다.</p>
         </div>
       </details>
