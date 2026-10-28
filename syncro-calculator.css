@@ -264,17 +264,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 }
 .syn-table td.syn-locked{color:var(--sy-muted)}
 .syn-table td.syn-locked:not(:first-child){text-align:center}
-.syn-editable-choice{
-  background:#fff5c7;
-  color:#4a3a16;
-  border-color:#d5b75b;
-  font-weight:800;
-}
-html.dark-theme .syn-editable-choice{
-  background:#40371b;
-  color:#ffe7a3;
-  border-color:#9c8749;
-}
 
 
 /* v1.434: lock all non-yellow package cells as non-interactive output */
@@ -293,30 +282,6 @@ html.dark-theme .syn-editable-choice{
   font-variant-numeric:tabular-nums;
 }
 .syn-package-table .syn-locked .syn-fixed-value{color:var(--sy-muted)}
-.syn-package-table td.syn-yellow-cell{
-  background:#fff3bd;
-  cursor:pointer;
-}
-.syn-package-table .syn-yellow-cell input[type="checkbox"]{
-  width:17px;
-  height:17px;
-  cursor:pointer;
-  accent-color:#c58d15;
-}
-.syn-package-table .syn-yellow-cell select{
-  cursor:pointer;
-  background:#fff6d5;
-  border-color:#c4a04b;
-  color:#493b18;
-}
-html.dark-theme .syn-package-table td.syn-yellow-cell{
-  background:#42361f;
-}
-html.dark-theme .syn-package-table .syn-yellow-cell select{
-  background:#514322;
-  color:#ffebbb;
-  border-color:#ab904a;
-}
 .syn-build-tag{
   display:inline-block;
   margin-left:6px;
@@ -326,4 +291,28 @@ html.dark-theme .syn-package-table .syn-yellow-cell select{
   font-size:11px;
   color:var(--sy-muted);
   vertical-align:middle;
+}
+
+
+/* v1.435: neutral package controls; no colored check/selection cell backgrounds */
+.syn-package-table .syn-name{min-width:224px}
+.syn-package-table td.syn-package-check,
+.syn-package-table td.syn-package-choice{
+  background:transparent;
+  color:var(--sy-text);
+}
+.syn-package-table .syn-package-check input[type="checkbox"]{
+  width:17px;height:17px;
+  cursor:pointer;
+  accent-color:var(--sy-accent);
+}
+.syn-package-table .syn-package-choice select{
+  background:var(--sy-field);
+  border-color:var(--sy-field-border);
+  color:var(--sy-field-text);
+  font-weight:700;
+  cursor:pointer;
+}
+.syn-package-table .syn-package-choice select:focus{
+  border-color:var(--sy-accent);
 }
