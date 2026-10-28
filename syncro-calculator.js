@@ -144,20 +144,21 @@
               ${packageDisplayOrder.map(i=>{
                 const p=state.packages[i],displayName=packageDisplayNames[i];
                 return `<div class="syn-package-item ${allowedPackageChoices.has(i)?"syn-has-choice":"syn-no-choice"}">
-                  <label class="syn-package-toggle">
-                    <input type="checkbox" aria-label="${escape(displayName)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}>
-                    <span>${escape(displayName)}</span>
-                  </label>
+                  <div class="syn-package-row-main">
+                    <label class="syn-package-toggle">
+                      <input type="checkbox" aria-label="${escape(displayName)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}>
+                      <span>${escape(displayName)}</span>
+                    </label>
+                    <div class="syn-package-efficiency" data-package-efficiency="${i}"></div>
+                  </div>
                   ${allowedPackageChoices.has(i)
                     ? `<select class="syn-cell-input syn-select syn-package-select" aria-label="${escape(displayName)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
                       ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
                     </select>`
                     : ""}
-                  <div class="syn-package-efficiency" data-package-efficiency="${i}"></div>
                 </div>`;
               }).join("")}
             </div>
-            <div class="syn-package-efficiency-note">기간 단축 효율 = 패키지 단독 사용 시 (무과금 대비 목표 도달 단축일수 ÷ 목표 달성까지 실제 예상 과금액). 월정액을 100% 기준으로 상대 비교합니다. 목표 달성 조건에 따라 효율이 달라지며, 월정액의 단축 효과가 0이거나 기간을 계산할 수 없으면 비교 불가로 표시합니다.</div>
           </div>
         </section>
       </div>
@@ -258,7 +259,6 @@
         ? `무과금 대비 ${fmt(saved)}일 단축 · 목표까지 ${fmt(scenario.count[i])}회 구매, ${fmt(scenario.spent)}원`
         : "1500일 내 목표 달성을 비교할 수 없습니다";
       target.innerHTML=`
-        <div class="syn-package-price">가격 <strong>${fmt(p.price)}원</strong><span> · 1회 구매 가격</span></div>
         <div class="syn-package-value">기간 단축 효율 <strong>${efficiency}</strong>${i===8?" <span>(월정액 기준)</span>":""}</div>
         <div class="syn-package-spend" title="${escape(detail)}">목표까지 예상 구매비용 ${comparable?fmt(scenario.spent)+"원":"산정 불가"}</div>`;
     }

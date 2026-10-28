@@ -405,3 +405,57 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .syn-package-value strong{font-size:14px;font-weight:900;color:var(--sy-title)}
 .syn-package-value span{font-size:10px;font-weight:700;color:var(--sy-muted)}
 .syn-package-spend{font-size:10px;color:var(--sy-muted)}
+
+/* v1.446: compact package rows matching the existing site, not an image clone */
+.syn-package-panel .syn-box-body{padding:5px 12px 8px}
+.syn-package-list{gap:0}
+.syn-package-item,
+.syn-package-item.syn-no-choice{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 88px;
+  gap:7px;
+  align-items:center;
+  min-height:51px;
+  padding:7px 3px;
+}
+.syn-package-item.syn-no-choice{grid-template-columns:minmax(0,1fr)}
+.syn-package-row-main{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  min-width:0;
+  gap:3px 9px;
+}
+.syn-package-toggle{
+  flex:0 1 auto;
+  max-width:100%;
+  min-width:0;
+  gap:6px;
+  font-size:12px;
+  line-height:1.3;
+}
+.syn-package-toggle input[type="checkbox"]{width:15px;height:15px;min-width:15px}
+.syn-package-efficiency{
+  grid-column:auto;
+  flex:1 1 130px;
+  min-width:118px;
+  padding:0;
+  gap:2px;
+  line-height:1.3;
+  font-size:11px;
+}
+.syn-package-value{font-weight:800;white-space:normal}
+.syn-package-value strong{font-size:13px}
+.syn-package-value span{font-size:9px}
+.syn-package-spend{font-size:10px;line-height:1.25}
+.syn-package-select{width:88px;height:30px;padding:4px 7px;font-size:11px}
+@media(max-width:1000px){
+  .syn-package-item,.syn-package-item.syn-no-choice{gap:5px}
+  .syn-package-row-main{gap:3px 6px}
+  .syn-package-toggle{font-size:11px}
+}
+@media(max-width:680px){
+  .syn-package-item{grid-template-columns:minmax(0,1fr) 88px}
+  .syn-package-item.syn-no-choice{grid-template-columns:minmax(0,1fr)}
+  .syn-package-toggle{font-size:12px}
+}
