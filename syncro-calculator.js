@@ -39,6 +39,11 @@
     "월정액 2"
   ];
   const editableKeys=new Set(["current","goal","outpost","sweep","date","subtractOwned"]);
+  // Indexed by 1-based daily sweep count (first clear is free).
+  // 1회=0, 2회=50, 3회=70, ... 11회=450 jewels per individual clear.
+  const sweepJewelPrice=[0,0,50,70,100,150,200,250,300,350,400,450];
+  const jewelsPerDay=()=>state.daily.some(row=>row.name==="단기섬멸"&&row.on)
+    ? sweepJewelPrice.slice(1,Math.min(11,Math.max(1,Math.trunc(safe(state.sweep))))+1).reduce((sum,price)=>sum+price,0):0;
   let state=defaults();
   try{
     const saved=JSON.parse(localStorage.getItem(storageKey));
@@ -144,6 +149,7 @@
           <section class="syn-highlight syn-result-panel" aria-label="목표 달성까지 과금액">
             <div class="sub">목표 달성까지 패키지 과금액</div>
             <div class="big" id="syn-overall-cost">-</div>
+            <div class="syn-jewel-usage" id="syn-overall-jewels">쥬얼 소모량 계산 중...</div>
             <div class="foot" id="syn-overall-sub">선택한 패키지만 계산</div>
           </section>
         </div>
@@ -318,6 +324,10 @@
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     el("syn-overall-days").textContent=c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승`;
     el("syn-overall-cost").textContent=fmt(c.spent)+"원";
+    const dailyJewels=jewelsPerDay();
+    const jewelEl=el("syn-overall-jewels");
+    jewelEl.textContent=c.completeDay===null?"쥬얼 소모량 산정 불가":`쥬얼 소모량 ${fmt(dailyJewels*c.completeDay)}개`;
+    jewelEl.title=`단기섬멸 ${Math.trunc(safe(state.sweep))}회/일 · 하루 ${fmt(dailyJewels)}쥬얼 · 1회 무료, 2회부터 회당 비용 적용`;
     el("syn-overall-sub").textContent="활성화된 패키지 구매 기준 · 목표 달성까지 합산";
     el("syn-hourly").textContent=`전초기지 ${c.outpost}레벨 · 시간당 코더 ${fmt(c.rate[0],2)}, 배데 ${fmt(c.rate[1],2)}, 크레딧 ${fmt(c.rate[2],2)}`;
     el("syn-resource-cards").innerHTML=names.map((name,j)=>{

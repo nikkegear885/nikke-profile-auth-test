@@ -579,3 +579,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .syn-owned-panel .syn-wealth-subhead span:last-child{
   display:none;
 }
+
+/* v1.451: daily sweep jewel spend shown below package expenditure */
+.syn-result-panel .syn-jewel-usage{
+  color:var(--sy-title);
+  font-size:13px;
+  font-weight:800;
+  line-height:1.45;
+  margin:-4px 0 6px;
+  font-variant-numeric:tabular-nums;
+}
