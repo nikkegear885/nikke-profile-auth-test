@@ -589,3 +589,64 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   margin:-4px 0 6px;
   font-variant-numeric:tabular-nums;
 }
+
+/* v1.452: compact paid-package row vertical rhythm to align with inventory panel */
+.syn-detail-grid > .syn-package-panel{
+  align-self:start;
+  height:auto;
+}
+.syn-package-panel .syn-box-body{
+  padding:3px 10px 5px;
+}
+.syn-package-panel .syn-package-item,
+.syn-package-panel .syn-package-item.syn-no-choice{
+  min-height:0;
+  padding:2px 1px;
+  gap:4px;
+}
+.syn-package-panel .syn-package-row-main{
+  gap:1px 5px;
+  align-items:center;
+}
+.syn-package-panel .syn-package-toggle{
+  gap:5px;
+  font-size:11px;
+  line-height:1.15;
+}
+.syn-package-panel .syn-package-toggle input[type="checkbox"]{
+  width:14px;
+  height:14px;
+  min-width:14px;
+}
+.syn-package-panel .syn-package-efficiency{
+  gap:0;
+  min-width:115px;
+  line-height:1.15;
+}
+.syn-package-panel .syn-package-values{
+  column-gap:6px;
+  row-gap:0;
+}
+.syn-package-panel .syn-package-values .syn-package-value{
+  gap:2px;
+  font-size:9px;
+  line-height:1.12;
+}
+.syn-package-panel .syn-package-values .syn-package-value strong{
+  font-size:11px;
+}
+.syn-package-panel .syn-package-spend{
+  margin:0;
+  font-size:9px;
+  line-height:1.15;
+}
+.syn-package-panel .syn-package-select{
+  height:26px;
+  padding:3px 5px;
+  font-size:11px;
+}
+@media(max-width:1000px){
+  .syn-package-panel .syn-package-item,
+  .syn-package-panel .syn-package-item.syn-no-choice{gap:4px}
+  .syn-package-panel .syn-package-toggle{font-size:10.5px}
+}
