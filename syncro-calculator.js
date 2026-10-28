@@ -47,7 +47,7 @@
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
   const numberInput=(value,attrs="")=>`<input class="syn-cell-input" type="number" step="any" min="0" value="${safe(value)}" ${attrs}>`;
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
-  const locked=value=>`<output class="syn-fixed-value" aria-readonly="true" title="원본 고정값 · 수정 불가">${escape(value)}</output>`;
+  const locked=(value,id="")=>`<output ${id?`id="${id}"`:""} class="syn-fixed-value" aria-readonly="true" title="원본 고정값 · 수정 불가">${escape(value)}</output>`;
   function pkgGrantH(p){
     if(safe(p.choice)>=0 && p.choice!==-1 && Number.isInteger(+p.choice)){
       const index=+p.choice, arr=[0,0,0];if(index<3)arr[index]=safe(p.baseH)*safe(state.ratios[index]);return arr;
@@ -156,10 +156,10 @@
                 ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
               </select>`
               :locked("—")}</td>
-            ${[0,1,2].map(j=>`<td class="syn-num syn-locked" id="syn-pkg-h-${i}-${j}">${locked(fmt(pkgGrantH(p)[j]))}</td>`).join("")}
+            ${[0,1,2].map(j=>`<td class="syn-num syn-locked">${locked(fmt(pkgGrantH(p)[j]),`syn-pkg-h-${i}-${j}`)}</td>`).join("")}
             <td class="syn-num syn-locked">${locked(p.coreFixed?fmt(p.coreFixed):"—")}</td>
-            <td class="syn-locked" id="syn-pkg-count-${i}">${locked("—")}</td>
-            <td class="syn-locked" id="syn-pkg-price-${i}">${locked("—")}</td>
+            <td class="syn-locked">${locked("—",`syn-pkg-count-${i}`)}</td>
+            <td class="syn-locked">${locked("—",`syn-pkg-price-${i}`)}</td>
           </tr>`).join("")}</tbody></table></div>
           <p class="syn-hint">고정 수치는 원본 시트에서 읽은 값입니다. 패키지는 사용 여부만 선택하며, 월간 커스텀 패키지 1·2와 월정액의 선택 재화만 변경할 수 있습니다.</p>
         </div>
