@@ -39,10 +39,11 @@
   function render(){
     root.innerHTML=`
     <div class="syn-wrap">
-      <header class="syn-head">
-        <div><div class="syn-eyebrow">NIKKE · DOROSYNC</div><h1>싱크로 레벨업 계산기</h1><div class="syn-note">구글 시트 계산식 기준 · 전초기지 1~800 · 최대 싱크로 1000레벨</div></div>
-        <div class="syn-actions"><a class="syn-link" href="https://docs.google.com/spreadsheets/d/1D2Yu_HYfgWmBhKFQenWxwE-EipH_hb0NJgOFCKb2VtY/edit" target="_blank" rel="noopener noreferrer">원본 시트 보기</a><button class="syn-btn" id="syn-reset" type="button">기본값으로 초기화</button></div>
-      </header>
+      <h1 class="syn-sr-only">싱크로 레벨업 계산기</h1>
+      <div class="syn-utility">
+        <span class="syn-utility-note">구글 시트 계산 규칙 기준 · 전초기지 1~800레벨 · 최대 싱크로 1000레벨</span>
+        <div class="syn-actions"><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button></div>
+      </div>
       <section class="syn-box"><div class="syn-box-head">1. 싱크로 정보 입력</div><div class="syn-box-body">
         <div class="syn-form">${field("현재 싱크로 레벨","current",200,999)}${field("목표 싱크로 레벨","goal",201,1000)}${field("전초기지 레벨","outpost",1,800)}${field("단기섬멸 횟수 / 일","sweep",1,11)}
           <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label></div>
@@ -54,6 +55,7 @@
           <div class="syn-highlight"><div class="sub">전체 목표 달성까지의 패키지 과금액</div><div class="big" id="syn-overall-cost">-</div><div class="foot" id="syn-overall-sub">선택한 패키지만 계산</div></div>
         </div>
         <div class="syn-resource-cards" id="syn-resource-cards"></div>
+        <p class="syn-progress-explain">진행률 막대 = 보유 재화 ÷ 전체 필요 재화 (100% 상한). 보유 재화 차감 설정과 별개로 현재 보유량을 표시합니다.</p>
       </div>
       <details class="syn-box" open><summary>2. 보유 재화 입력 및 차감</summary>
         <div class="syn-box-body"><label class="syn-check"><input type="checkbox" data-key="subtractOwned" ${state.subtractOwned?"checked":""}>보유 재화를 필요량에서 차감</label>
@@ -172,7 +174,9 @@
         <div class="metric"><span>소요 기간</span><strong>${c.reached[j]===null?"미도달":fmt(c.reached[j])+"일"}</strong></div>
         <div class="metric"><span>총 필요 재화</span><strong>${fmt(c.total[j])}</strong></div>
         <div class="metric"><span>보유 차감 후</span><strong>${fmt(c.needed[j])}</strong></div>
-        <div class="metric"><span>일일 기본 수급</span><strong>${fmt(c.daily[j])}</strong></div><div class="syn-bar"><span style="width:${Math.max(0,ratio)}%"></span></div>
+        <div class="metric"><span>일일 기본 수급</span><strong>${fmt(c.daily[j])}</strong></div>
+        <div class="syn-progress-caption"><span>보유 재화 충족률</span><strong>${fmt(ratio,1)}%</strong></div>
+        <div class="syn-bar" role="progressbar" aria-label="${name} 보유 재화 충족률" aria-valuenow="${Math.round(ratio)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${Math.max(0,ratio)}%"></span></div>
       </article>`;
     }).join("");
     for(let j=0;j<3;j++){
