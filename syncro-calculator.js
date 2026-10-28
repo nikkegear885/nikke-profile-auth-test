@@ -71,8 +71,6 @@
             <div class="foot" id="syn-overall-sub">선택한 패키지만 계산</div>
           </section>
         </div>
-        <div class="syn-resource-cards" id="syn-resource-cards"></div>
-        <p class="syn-progress-explain">진행률 막대 = 보유 재화 ÷ 전체 필요 재화 (100% 상한). 보유 재화 차감 설정과 별개로 현재 보유량을 표시합니다.</p>
       </div>
       <div class="syn-detail-grid">
         <section class="syn-box syn-owned-panel" aria-label="보유 재화 입력 및 차감">
@@ -128,6 +126,8 @@
           <p class="syn-hint">월간은 지정 구매일, 주간은 지정 요일, 일일은 매일 구매합니다. 월정액은 지정 일수 동안 매일 지급되며 만료 후 재구매됩니다. 이미 필요한 재화를 모두 모은 패키지는 추가 구매하지 않습니다.</p>
         </div>
       </details>
+      <div class="syn-resource-cards" id="syn-resource-cards"></div>
+      <p class="syn-progress-explain">진행률 막대 = 보유 재화 ÷ 전체 필요 재화 (100% 상한). 보유 재화 차감 설정과 별개로 현재 보유량을 표시합니다.</p>
       <details class="syn-box"><summary>5. 구간별 필요 재화 세부표</summary><div class="syn-box-body syn-result-detail"><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>레벨 구간</th><th>적용 횟수</th><th>필요 코더</th><th>필요 배데</th><th>필요 크레딧</th></tr></thead>
         <tbody id="syn-band-table"></tbody></table></div></div></details>
       <div class="syn-status" id="syn-status">계산 중...</div>
