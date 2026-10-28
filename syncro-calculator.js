@@ -139,7 +139,7 @@
             <div class="syn-package-list">
               ${packageDisplayOrder.map(i=>{
                 const p=state.packages[i],displayName=packageDisplayNames[i];
-                return `<div class="syn-package-item">
+                return `<div class="syn-package-item ${allowedPackageChoices.has(i)?"syn-has-choice":"syn-no-choice"}">
                   <label class="syn-package-toggle">
                     <input type="checkbox" aria-label="${escape(displayName)} 사용" data-yellow-cell="true" data-package="${i}" data-field="on" ${p.on?"checked":""}>
                     <span>${escape(displayName)}</span>
