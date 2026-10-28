@@ -140,3 +140,103 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   .syn-box-body{padding:12px}
   .syn-box-head,.syn-box>summary{padding:12px 13px}
 }
+
+
+/* v1.431: compact horizontal rows for input/results and owned/daily sections */
+.syn-top-grid{
+  display:grid;
+  grid-template-columns:minmax(0,2.45fr) minmax(0,.84fr) minmax(0,.84fr);
+  gap:12px;
+  align-items:stretch;
+  margin:0 0 14px;
+}
+.syn-top-grid > *{min-width:0;margin-bottom:0}
+.syn-input-panel .syn-box-body{padding:12px 13px 10px}
+.syn-top-grid .syn-form{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 10px}
+.syn-top-grid .syn-field{font-size:12px;gap:4px}
+.syn-top-grid .syn-field input{min-width:0;height:35px;font-size:14px;padding:5px 8px}
+.syn-input-panel .syn-hint{font-size:11px;line-height:1.45;margin:9px 0 0}
+.syn-result-panel{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-width:0;
+  padding:14px 14px;
+  overflow-wrap:anywhere;
+}
+.syn-result-panel .sub{font-size:12px;line-height:1.45}
+.syn-result-panel .big{font-size:25px;line-height:1.25;margin:9px 0}
+.syn-result-panel .foot{font-size:12px;line-height:1.55}
+.syn-detail-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);
+  align-items:stretch;
+  gap:12px;
+}
+.syn-detail-grid > .syn-box{min-width:0;margin-bottom:16px}
+.syn-detail-grid .syn-box-head{padding:12px 14px}
+.syn-owned-panel .syn-box-body{padding:11px 12px}
+.syn-owned-panel .syn-wealth{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:0}
+.syn-owned-panel .syn-wealth-card{padding:10px}
+.syn-owned-panel .syn-wealth-title{font-size:13px;margin-bottom:5px}
+.syn-owned-panel .syn-field{font-size:12px;margin:5px 0;gap:4px}
+.syn-owned-panel .syn-field input{height:34px;font-size:13px;padding:6px 8px}
+.syn-owned-panel .syn-hint{font-size:11px;margin:8px 0}
+.syn-owned-panel .syn-wealth-card .syn-hint{overflow-wrap:anywhere}
+.syn-daily-panel .syn-box-body{padding:12px}
+.syn-daily-panel .syn-daily-hint{margin:0 0 10px;font-size:12px}
+.syn-daily-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.syn-daily-item{
+  min-height:35px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 9px;
+  border:1px solid var(--sy-line);
+  background:var(--sy-card-alt);
+  border-radius:7px;
+  color:var(--sy-text);
+  cursor:pointer;
+  font-size:13px;
+  font-weight:700;
+  min-width:0;
+}
+.syn-daily-item:hover{border-color:var(--sy-accent)}
+.syn-daily-item input{
+  width:16px;
+  height:16px;
+  flex:0 0 16px;
+  margin:0;
+  accent-color:var(--sy-accent);
+  cursor:pointer;
+}
+.syn-daily-item span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:1030px){
+  .syn-top-grid{grid-template-columns:minmax(0,1.9fr) repeat(2,minmax(0,1fr))}
+  .syn-top-grid .syn-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .syn-detail-grid{grid-template-columns:1fr}
+  .syn-daily-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:720px){
+  .syn-top-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .syn-top-grid .syn-input-panel{grid-column:1/-1}
+  .syn-result-panel{min-height:118px;padding:12px}
+  .syn-result-panel .big{font-size:23px}
+  .syn-detail-grid .syn-wealth{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .syn-daily-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:500px){
+  .syn-top-grid .syn-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .syn-detail-grid .syn-wealth{grid-template-columns:1fr}
+  .syn-daily-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .syn-result-panel .big{font-size:21px}
+}
+@media(max-width:350px){
+  .syn-daily-list{grid-template-columns:1fr}
+  .syn-top-grid{grid-template-columns:1fr}
+  .syn-top-grid .syn-input-panel{grid-column:auto}
+}
