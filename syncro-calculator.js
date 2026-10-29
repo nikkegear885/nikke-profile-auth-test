@@ -88,7 +88,8 @@
         for(const mode of ["normal","hard"]){
           const stage=String(saved.stageProgress[mode]||"");
           const ch=Number(stage.match(/^(\d+)-/)?.[1]);
-          if(stage&&Number.isInteger(ch)&&campaignStages[ch]?.includes(stage))
+          if(mode==="hard"&&stage==="__uncleared__")state.stageProgress[mode]=stage;
+          else if(stage&&Number.isInteger(ch)&&campaignStages[ch]?.includes(stage))
             state.stageProgress[mode]=stage;
         }
       }
@@ -178,29 +179,24 @@
   function readOutpostCalculatorStages(){
     try{
       if(window.parent===window)return null;
-      const doc=window.parent.document, result={};
-      for(const mode of ["normal","hard"]){
-        const id=mode==="normal"?"outpostNormalStage":"outpostHardStage";
-        const stage=String(doc.getElementById(id)?.value||"");
-        const ch=Number(stage.match(/^(\d+)-/)?.[1]);
-        if(!stage||!campaignStages[ch]?.includes(stage))return null;
-        result[mode]=stage;
-      }
-      return result;
+      // The parent starts with empty stage controls. Don't replace real saved
+      // progress with defaults before the outpost calculator restores them.
+      if(window.parent.__NIKKE_OUTPOST_PROGRESS_READY!==true)return null;
+      const doc=window.parent.document;
+      const normal=String(doc.getElementById("outpostNormalStage")?.value||"");
+      const hard=String(doc.getElementById("outpostHardStage")?.value||"");
+      const nc=Number(normal.match(/^(\d+)-/)?.[1]);
+      const hc=Number(hard.match(/^(\d+)-/)?.[1]);
+      if(!normal||!campaignStages[nc]?.includes(normal))return null;
+      if(hard&&!campaignStages[hc]?.includes(hard))return null;
+      return {normal,hard:hard||"__uncleared__"};
     }catch(err){return null}
   }
   function linkOutpostStages(){
     const next=readOutpostCalculatorStages();
-    if(!next){
-      // The main outpost calculator has no complete position (e.g. after a reload).
-      // Do not silently reuse a stale position saved from a previous session.
-      if(window.parent!==window&&(state.stageProgress.normal||state.stageProgress.hard)){
-        state.stageProgress={normal:"",hard:""};
-        try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
-        update();
-      }
-      return false;
-    }
+    // When controls have not been restored yet, keep the last valid saved
+    // position rather than resetting it to a level-based approximation.
+    if(!next)return false;
     if(["normal","hard"].some(mode=>state.stageProgress[mode]!==next[mode])){
       state.stageProgress=next;
       try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
@@ -348,6 +344,8 @@
   // Read the exact normal/hard clear positions from the site's outpost calculator.
   function getCampaignStart(mode,current){
     const selected=String(state.stageProgress?.[mode]||"");
+    if(mode==="hard"&&selected==="__uncleared__")
+      return {mode,chapter:0,stage:"",completed:0,absolute:0,manual:true};
     const chapter=Number(selected.match(/^(\d+)-/)?.[1]);
     const index=campaignStages[chapter]?.indexOf(selected)??-1;
     if(selected&&index>=0){
@@ -647,8 +645,9 @@
     if(linkSettings)linkSettings.hidden=state.progressMode!=="progress";
     const stageStatus=el("syn-stage-link-status");
     if(stageStatus){
+      const hardDisplay=state.stageProgress.hard==="__uncleared__"?"미클리어":state.stageProgress.hard;
       stageStatus.textContent=state.stageProgress.normal&&state.stageProgress.hard?
-        "연동된 실제 진행도: 노말 "+state.stageProgress.normal+" · 하드 "+state.stageProgress.hard:
+        "연동된 실제 진행도: 노말 "+state.stageProgress.normal+" · 하드 "+hardDisplay:
         "실제 진행 위치 미지정: 전초기지 생산량 화면에서 노말·하드 클리어 위치를 선택하거나 싱크로 기준 추정치를 사용합니다.";
     }
     const c=calculate();
@@ -796,7 +795,8 @@
     }
     if(e.target.id==="syn-reset"){
       if(!confirm("싱크로 계산기의 입력값과 체크 상태를 원본 시트 기본값으로 초기화할까요?"))return;
-      state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}render();
+      state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}
+      render();linkOutpostStages();
     }
   });
   render();
