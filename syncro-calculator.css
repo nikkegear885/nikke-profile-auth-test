@@ -783,3 +783,7 @@ html.dark-theme .syn-outpost-discrepancy{background:#391d26;border-color:#a95764
 
 /* TEST 1.467: preserve requested three-line outpost discrepancy warning */
 .syn-outpost-discrepancy{white-space:pre-line}
+
+/* v1.472: collapsible resource-specific goal dates */
+.syn-resource-date-details .syn-resource-cards{margin-bottom:10px}
+.syn-resource-date-details .syn-progress-explain{margin:0}
