@@ -15,6 +15,20 @@
   const stageDerivedLevel=(normal,hard)=>Math.min(800,1+Math.floor(Math.max(0,normal+hard-18)/5));
   // Stage catalog includes chapters 49-50, but do not invent new synchro milestone thresholds.
   const campaignMilestones=[{"mode":"normal","chapter":32,"level":221},{"mode":"normal","chapter":34,"level":231},{"mode":"normal","chapter":36,"level":241},{"mode":"normal","chapter":38,"level":251},{"mode":"normal","chapter":40,"level":281},{"mode":"normal","chapter":42,"level":301},{"mode":"normal","chapter":44,"level":321},{"mode":"normal","chapter":46,"level":331},{"mode":"normal","chapter":48,"level":341},{"mode":"hard","chapter":16,"level":241},{"mode":"hard","chapter":18,"level":261},{"mode":"hard","chapter":20,"level":281},{"mode":"hard","chapter":22,"level":301},{"mode":"hard","chapter":24,"level":321},{"mode":"hard","chapter":26,"level":341},{"mode":"hard","chapter":28,"level":350},{"mode":"hard","chapter":30,"level":361},{"mode":"hard","chapter":31,"level":381},{"mode":"hard","chapter":32,"level":461},{"mode":"hard","chapter":34,"level":481},{"mode":"hard","chapter":36,"level":501},{"mode":"hard","chapter":38,"level":521},{"mode":"hard","chapter":40,"level":581},{"mode":"hard","chapter":42,"level":601},{"mode":"hard","chapter":44,"level":621},{"mode":"hard","chapter":46,"level":641},{"mode":"hard","chapter":48,"level":681}];
+  // Hard chapters 49 and 50 have no verified synchro clear thresholds.
+  // Apply them only when the user provides their actual thresholds.
+  const activeMilestones=()=>{
+    const extra=[];
+    let last=681;
+    for(const chapter of [49,50]){
+      const lv=Number(state.optionalHardThresholds?.[chapter]);
+      if(Number.isInteger(lv)&&lv>last&&lv<=1000){
+        extra.push({mode:"hard",chapter,level:lv,custom:true});
+        last=lv;
+      }
+    }
+    return campaignMilestones.concat(extra);
+  };
   const boxDurations=[1,2,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
   const fmt=(n,d=0)=>Number.isFinite(+n)?new Intl.NumberFormat("ko-KR",{maximumFractionDigits:d}).format(+n):"-";
@@ -30,7 +44,7 @@
     return `${value("year")}-${value("month")}-${value("day")}`;
   };
   const defaults=()=>{
-    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0});
+    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0,stageProgress:{normal:"",hard:""},optionalHardThresholds:{"49":null,"50":null}});
     // Use the current local Korean date for a fresh/reset calculator; preserve any saved date.
     initial.date=seoulTodayISO();
     initial.daily.forEach(row=>{row.on=true;});
@@ -70,6 +84,21 @@
         if(Number.isFinite(Number(saved[key])))state[key]=Number(saved[key]);
       }
       if(typeof saved.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(saved.date))state.date=saved.date;
+      if(saved.stageProgress&&typeof saved.stageProgress==="object"){
+        for(const mode of ["normal","hard"]){
+          const stage=String(saved.stageProgress[mode]||"");
+          const ch=Number(stage.match(/^(\d+)-/)?.[1]);
+          if(stage&&Number.isInteger(ch)&&campaignStages[ch]?.includes(stage))
+            state.stageProgress[mode]=stage;
+        }
+      }
+      if(saved.optionalHardThresholds&&typeof saved.optionalHardThresholds==="object"){
+        for(const ch of [49,50]){
+          const lv=Number(saved.optionalHardThresholds[ch]);
+          if(saved.optionalHardThresholds[ch]!==null&&Number.isInteger(lv)&&lv>=682&&lv<=1000)
+            state.optionalHardThresholds[ch]=lv;
+        }
+      }
       if(typeof saved.subtractOwned==="boolean")state.subtractOwned=saved.subtractOwned;
       if(["fixed","progress"].includes(saved.progressMode))state.progressMode=saved.progressMode;
       if(typeof saved.progressNormal==="boolean")state.progressNormal=saved.progressNormal;
@@ -145,6 +174,31 @@
       }
     }
   }
+  // The two calculators run on the same origin, including the embedded iframe.
+  function readOutpostCalculatorStages(){
+    try{
+      if(window.parent===window)return null;
+      const doc=window.parent.document, result={};
+      for(const mode of ["normal","hard"]){
+        const id=mode==="normal"?"outpostNormalStage":"outpostHardStage";
+        const stage=String(doc.getElementById(id)?.value||"");
+        const ch=Number(stage.match(/^(\d+)-/)?.[1]);
+        if(!stage||!campaignStages[ch]?.includes(stage))return null;
+        result[mode]=stage;
+      }
+      return result;
+    }catch(err){return null}
+  }
+  function linkOutpostStages(){
+    const next=readOutpostCalculatorStages();
+    if(!next)return false;
+    if(["normal","hard"].some(mode=>state.stageProgress[mode]!==next[mode])){
+      state.stageProgress=next;
+      try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
+      update();
+    }
+    return true;
+  }
   function render(){
     root.innerHTML=`
     <div class="syn-wrap">
@@ -174,6 +228,18 @@
                       <button type="button" data-progress-mode="progress" class="${state.progressMode==="progress"?"active":""}" aria-pressed="${state.progressMode==="progress"}">싱크로에 따른 전초기지 레벨 상승 임의 적용</button>
                     </div>
                   </div>
+                </div>
+                <div id="syn-stage-link-settings" class="syn-stage-link-settings" ${state.progressMode==="progress"?"":"hidden"}>
+                  <div class="syn-stage-link-header"><strong>전초기지 계산기 실제 스테이지 연동</strong>
+                    <button type="button" class="syn-btn" id="syn-import-outpost">현재 클리어 위치 가져오기</button>
+                  </div>
+                  <p class="syn-progress-tip" id="syn-stage-link-status">노말·하드 실제 클리어 위치를 확인하고 있습니다.</p>
+                  <div class="syn-hard-threshold-inputs">
+                    ${[49,50].map(ch=>'<label class="syn-field">하드 '+ch+'챕터 클리어 싱크로 (선택)'+
+                      '<input type="number" min="682" max="1000" step="1" placeholder="미확정" data-hard-threshold="'+ch+'" value="'+
+                      (state.optionalHardThresholds[ch]??'')+'"></label>').join("")}
+                  </div>
+                  <p class="syn-progress-tip">49·50챕터의 확정 싱크로 클리어 기준이 없어 기본값은 비워 둡니다. 실제 기준 레벨을 입력한 챕터만 목표 상승 계산에 포함됩니다.</p>
                 </div>
             </div>
           </section>
@@ -270,19 +336,16 @@
     enforcePackageEditPolicy();
     update();
   }
+  // Read the exact normal/hard clear positions from the site's outpost calculator.
   function getCampaignStart(mode,current){
-    const chapter=Math.trunc(safe(state[mode+"StartChapter"]));
-    const stage=Math.trunc(safe(state[mode+"StartStage"]));
-    const list=campaignStages[chapter]||[];
-    const stageId=chapter+"-"+stage;
-    const stageIndex=list.findIndex(name=>name===stageId||name===stageId+" BOSS");
-    if(chapter>0&&stage>0&&stageIndex>=0){
-      const completed=stageIndex+1;
-      return {mode,chapter,stage,completed,absolute:chapterPosition(chapter)+completed,manual:true};
+    const selected=String(state.stageProgress?.[mode]||"");
+    const chapter=Number(selected.match(/^(\d+)-/)?.[1]);
+    const index=campaignStages[chapter]?.indexOf(selected)??-1;
+    if(selected&&index>=0){
+      return {mode,chapter,stage:selected,completed:index+1,
+        absolute:chapterPosition(chapter)+index+1,manual:true};
     }
-    // When the current stage is unknown, only assume milestones already
-    // passed by the starting synchro. Never award their stages again.
-    const checkpoints=campaignMilestones.filter(m=>m.mode===mode).sort((a,b)=>a.level-b.level);
+    const checkpoints=activeMilestones().filter(m=>m.mode===mode).sort((x,y)=>x.level-y.level);
     const reached=checkpoints.filter(m=>m.level<=current).at(-1);
     const initialChapter=reached?reached.chapter:checkpoints[0].chapter-2;
     const completed=safe(campaignStageCounts[initialChapter]);
@@ -320,7 +383,7 @@
       if(!(mode==="normal"?state.progressNormal:state.progressHard))continue;
       const start=starts[mode];
       let previousAbsolute=start.absolute;
-      for(const m of campaignMilestones.filter(entry=>entry.mode===mode).sort((a,b)=>a.chapter-b.chapter)){
+      for(const m of activeMilestones().filter(entry=>entry.mode===mode).sort((a,b)=>a.chapter-b.chapter)){
         const bossAbsolute=chapterPosition(m.chapter)+safe(campaignStageCounts[m.chapter]);
         if(bossAbsolute<=previousAbsolute)continue;
         if(m.level>goal)break;
@@ -571,6 +634,14 @@
       button.classList.toggle("active",active);
       button.setAttribute("aria-pressed",String(active));
     });
+    const linkSettings=el("syn-stage-link-settings");
+    if(linkSettings)linkSettings.hidden=state.progressMode!=="progress";
+    const stageStatus=el("syn-stage-link-status");
+    if(stageStatus){
+      stageStatus.textContent=state.stageProgress.normal&&state.stageProgress.hard?
+        "연동된 실제 진행도: 노말 "+state.stageProgress.normal+" · 하드 "+state.stageProgress.hard:
+        "실제 진행 위치 미지정: 전초기지 생산량 화면에서 노말·하드 클리어 위치를 선택하거나 싱크로 기준 추정치를 사용합니다.";
+    }
     const c=calculate();
     const outpostInput=root.querySelector('input[data-key="outpost"]');
     if(outpostInput){
@@ -632,6 +703,19 @@
   }
   function onEdit(e){
     const x=e.target;if(!x.dataset)return;
+    if(x.dataset.hardThreshold!==undefined){
+      const ch=Number(x.dataset.hardThreshold);
+      const lv=x.value===""?null:Number(x.value);
+      if(![49,50].includes(ch))return;
+      if(lv!==null&&(!Number.isInteger(lv)||lv<682||lv>1000)){
+        if(e.type==="change")x.value=state.optionalHardThresholds[ch]??"";
+        return;
+      }
+      state.optionalHardThresholds[ch]=lv;
+      try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
+      update();
+      return;
+    }
     if(x.dataset.key){
       const k=x.dataset.key;
       if(!editableKeys.has(k))return;
@@ -672,6 +756,10 @@
   root.addEventListener("input",onEdit);
   root.addEventListener("change",onEdit);
   root.addEventListener("click",e=>{
+    if(e.target.closest("#syn-import-outpost")){
+      if(!linkOutpostStages())window.alert("전초기지 생산량 화면에서 노말·하드 마지막 클리어 스테이지를 모두 선택해 주세요.");
+      return;
+    }
     const modeButton=e.target.closest("button[data-progress-mode]");
     if(modeButton){
       const mode=modeButton.dataset.progressMode;
@@ -700,4 +788,13 @@
     }
   });
   render();
+  try{
+    if(window.parent!==window){
+      window.parent.document.addEventListener("change",event=>{
+        if(["outpostNormalChapter","outpostNormalStage","outpostHardChapter","outpostHardStage"].includes(event.target?.id))
+          linkOutpostStages();
+      });
+      linkOutpostStages();
+    }
+  }catch(err){}
 })();
