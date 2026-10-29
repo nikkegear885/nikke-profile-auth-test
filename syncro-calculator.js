@@ -154,6 +154,7 @@
                 ${field("단기섬멸 횟수 / 일","sweep",1,11)}
                 <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label>
               </div>
+              <p id="syn-outpost-discrepancy" class="syn-outpost-discrepancy" role="alert" hidden></p>
                 <div class="syn-progress-options">
                   <div class="syn-progress-modes">
                     <span class="syn-progress-label">전초기지 생산량 계산 방식</span>
@@ -312,6 +313,26 @@
   }
   function getCampaignStarts(current){
     return {normal:getCampaignStart("normal",current),hard:getCampaignStart("hard",current)};
+  }
+
+  // Estimate the outpost at the current synchro checkpoint, using any
+  // manually selected stage position and otherwise the stage milestone table.
+  function expectedOutpostForStart(current){
+    const starts=getCampaignStarts(current);
+    return stageDerivedLevel(starts.normal.absolute,starts.hard.absolute);
+  }
+  function updateOutpostDiscrepancy(calculated){
+    const warning=el("syn-outpost-discrepancy");
+    if(!warning)return;
+    // If both stages are entered, the manually typed outpost is ignored.
+    const manualUsed=state.progressMode==="progress"&&calculated.stageDerivedOutpost===null;
+    const reference=manualUsed?expectedOutpostForStart(calculated.level):null;
+    const typed=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
+    const gap=manualUsed?typed-reference:0;
+    const high=manualUsed&&gap>=40;
+    warning.hidden=!high;
+    warning.textContent=high?
+      `⚠ 오류 · 오차발생 주의! 직접 입력한 전초기지 Lv.${fmt(typed)}이 현재 싱크로 및 캠페인 기준 추정 Lv.${fmt(reference)}보다 ${fmt(gap)}레벨 높습니다. 임의 상승 계산 결과에 큰 오차가 생길 수 있습니다.`:"";
   }
   function buildProgressPlan(current,goal){
     if(state.progressMode!=="progress")return [];
@@ -573,6 +594,7 @@
       outpostInput.value=auto?String(c.stageDerivedOutpost):String(state.outpost);
       outpostInput.title=auto?"현재 노말·하드 클리어 스테이지로 자동 산정한 전초기지 레벨":"전초기지 시작 레벨 직접 입력";
     }
+    updateOutpostDiscrepancy(c);
     const free=updatePackageEfficiency(c);
     updateProgressOverview(c);
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
