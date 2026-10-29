@@ -25,6 +25,7 @@
   // Preserve that total and migrate it into the 1-hour denomination at first load.
   const defaults=()=>{
     const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0});
+    initial.daily.forEach(row=>{row.on=true;});
     initial.ownedBoxes=initial.ownedHours.map(h=>boxDurations.map((duration,i)=>i===0?Math.max(0,safe(h)):0));
     return initial;
   };
@@ -93,12 +94,6 @@
         // Legacy users previously entered their combined box-hours in one input.
         state.ownedBoxes=state.ownedHours.map(hours=>boxDurations.map((duration,i)=>i===0?Math.max(0,safe(hours)):0));
       }
-      if(Array.isArray(saved.daily))
-        state.daily.forEach(row=>{
-          // Preserve saved switches by name when new income rows are appended.
-          const previous=saved.daily.find(item=>item?.name===row.name);
-          if(typeof previous?.on==="boolean")row.on=previous.on;
-        });
       if(Array.isArray(saved.packages)&&saved.packages.length===state.packages.length)
         state.packages.forEach((row,i)=>{
           if(typeof saved.packages[i]?.on==="boolean")row.on=saved.packages[i].on;
@@ -108,6 +103,7 @@
     }
   }catch(e){}
   // Both campaigns are automatically enabled. Any older saved positions are ignored.
+  state.daily.forEach(row=>{row.on=true;});
   state.progressNormal=true;
   state.progressHard=true;
   state.normalStartChapter=0;
@@ -251,26 +247,9 @@
           </div>
         </section>
       </div>
-      <section class="syn-box syn-daily-panel syn-daily-wide" aria-label="재화 수급 체크 항목 선택">
-        <div class="syn-box-head syn-header-controls">
-          <span>4. 재화 수급 체크</span>
-          <span class="syn-check-actions" role="group" aria-label="재화 수급 일괄 선택">
-            <button type="button" data-bulk-target="daily" data-bulk-set="all">전부 체크</button>
-            <button type="button" data-bulk-target="daily" data-bulk-set="none">전부 체크 해제</button>
-          </span>
-        </div>
-        <div class="syn-box-body">
-          <div class="syn-daily-list">
-            ${state.daily.map((r,i)=>`<label class="syn-daily-item">
-              <input type="checkbox" aria-label="${escape(i===0?"전초기지 자연생산":r.name)} 사용" data-daily="${i}" data-field="on" ${r.on?"checked":""}>
-              <span>${escape(i===0?"전초기지 자연생산":r.name)}</span>
-            </label>`).join("")}
-          </div>
-        </div>
-      </section>
       <div class="syn-resource-cards" id="syn-resource-cards"></div>
       <p class="syn-progress-explain">진행률 막대 = 보유 재화 ÷ 전체 필요 재화 (100% 상한). 보유 재화 차감 설정과 별개로 현재 보유량을 표시합니다.</p>
-      <details class="syn-box"><summary>5. 구간별 필요 재화 세부표</summary><div class="syn-box-body syn-result-detail"><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>레벨 구간</th><th>적용 횟수</th><th>필요 코더</th><th>필요 배데</th><th>필요 크레딧</th></tr></thead>
+      <details class="syn-box"><summary>4. 구간별 필요 재화 세부표</summary><div class="syn-box-body syn-result-detail"><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>레벨 구간</th><th>적용 횟수</th><th>필요 코더</th><th>필요 배데</th><th>필요 크레딧</th></tr></thead>
         <tbody id="syn-band-table"></tbody></table></div></div></details>
       <div class="syn-status" id="syn-status">계산 중...</div>
       <div class="syn-note">자료 기준: 전초기지 생산량은 사이트 내 인게임 확인 표, 레벨업 비용·수급 규칙은 원본 시트(2026-10-28) · 입력 설정은 테섭 브라우저에 저장됩니다. 원본 시트는 수정하지 않습니다.</div>
@@ -638,10 +617,6 @@
       const i=Number(x.dataset.index);
       if(x.dataset.owned!=="ownedUnits"||![0,1,2].includes(i))return;
       state.ownedUnits[i]=Math.max(0,safe(x.value));
-    }else if(x.dataset.daily!==undefined){
-      const i=Number(x.dataset.daily);
-      if(x.dataset.field!=="on"||!Number.isInteger(i)||i<0||i>=state.daily.length)return;
-      state.daily[i].on=Boolean(x.checked);
     }else if(x.dataset.package!==undefined){
       if(x.dataset.yellowCell!=="true")return;
       const i=Number(x.dataset.package),key=x.dataset.field;
@@ -680,9 +655,9 @@
     const bulk=e.target.closest("[data-bulk-target][data-bulk-set]");
     if(bulk){
       const target=bulk.dataset.bulkTarget,checked=bulk.dataset.bulkSet==="all";
-      if(!["packages","daily"].includes(target)||!["all","none"].includes(bulk.dataset.bulkSet))return;
-      state[target].forEach(item=>{item.on=checked;});
-      const selector=target==="packages"?'input[data-package][data-field="on"]':'input[data-daily][data-field="on"]';
+      if(target!=="packages"||!["all","none"].includes(bulk.dataset.bulkSet))return;
+      state.packages.forEach(item=>{item.on=checked;});
+      const selector='input[data-package][data-field="on"]';
       root.querySelectorAll(selector).forEach(input=>{input.checked=checked;});
       try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
       update();
