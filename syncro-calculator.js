@@ -181,7 +181,7 @@
                       </div>
                       <span class="syn-progress-tip">노말·하드를 모두 입력하면 기존 전초기지 계산기와 동일한 방식으로 시작 전초기지 레벨을 자동 계산합니다. 예: 노말 48-36 / 하드 32-29 → Lv.570. 빈칸은 시작 싱크로 기준으로 추정합니다.</span>
                     </div>
-                    <span class="syn-progress-tip">기존 전초기지 계산기에 등록된 스테이지(A/B 분기 포함)와 5스테이지당 +1 규칙을 적용합니다. 기준 싱크로를 달성하면 해당 보스까지의 남은 스테이지를 반영합니다.</span>
+                    <span class="syn-progress-tip">노말·하드 기준표의 싱크로 레벨 달성 시점에 전초기지가 한 번에 상승합니다. 중간 레벨에서는 상승하지 않습니다.</span>
                   </div>
                 </div>
             </div>
@@ -203,7 +203,8 @@
          <div class="syn-box-head">전초기지 상승 시뮬레이션</div>
          <div class="syn-box-body">
            <div class="syn-progress-stats" id="syn-progress-stats"></div>
-           <p class="syn-progress-disclaimer">노말과 하드 진행 위치를 모두 입력하면 사이트의 기존 전초기지 계산식으로 시작 레벨과 5스테이지 잔여 진행도를 산정합니다. 이미 클리어한 스테이지는 중복 반영하지 않습니다. 어느 한쪽이라도 비어 있으면 해당 진행 위치를 싱크로 기준으로 추정하고, 전초기지 시작 레벨은 정보입력의 수동 값을 사용합니다. 실제 클리어 날짜는 알 수 없으므로 보스 클리어 기준 싱크로 달성일에 해당 구간을 일괄 반영합니다.</p>
+            <p class="syn-progress-next" id="syn-progress-next"></p>
+           <p class="syn-progress-disclaimer">노말·하드 보스 클리어 기준 싱크로 레벨을 달성한 순간에만 해당 구간의 전초기지 상승분을 일괄 반영합니다. 기준 레벨 사이에는 전초기지 생산량이 유지됩니다. 현재 진행 위치를 입력하면 이미 클리어한 스테이지는 중복 반영하지 않습니다. 중간 스테이지별 클리어 날짜는 계산하지 않습니다.</p>
            <details class="syn-progress-details"><summary>챕터별 전초기지 상승 내역</summary><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>모드</th><th>보스 챕터</th><th>기준 싱크로</th><th>반영 스테이지</th><th>전초기지 상승</th><th>도달 날짜</th><th>전초기지</th></tr></thead><tbody id="syn-progress-events"></tbody></table></div></details>
          </div>
        </section>
@@ -349,14 +350,19 @@
   });
   const balance=state.subtractOwned?owned.slice():[0,0,0],earned=[0,0,0],reached=[null,null,null],count=packages.map(()=>0),progressLog=[];
   let spent=0,completeDay=null,subExpiry=0,levelReached=level,currentOutpost=outpost,eventIndex=0;
-  for(let day=1;day<=1500;day++){
-    // Apply milestones already affordable at the starting synchro level
-    // for manually entered campaign positions behind the current level.
+  // Only a configured synchro checkpoint can increase outpost production.
+  // Stage clears are applied together at that checkpoint, not continuously.
+  function applyReachedCheckpoints(day){
     while(eventIndex<events.length&&levelReached>=events[eventIndex].requiredLevel){
       const ev=events[eventIndex++],before=currentOutpost;
       currentOutpost=Math.min(800,currentOutpost+ev.gain);
       progressLog.push({...ev,day,before,outpost:currentOutpost,actualGain:currentOutpost-before});
     }
+  }
+  for(let day=1;day<=1500;day++){
+    // If the current synchro already exceeds a not-yet-cleared boss threshold,
+    // complete it once as catch-up, without counting previous clears twice.
+    applyReachedCheckpoints(day);
     const dayRate=SOURCE.rates[currentOutpost-1],dayIncome=[0,0,0];
     for(const row of state.daily)if(row.on){
       for(let j=0;j<3;j++){
@@ -390,11 +396,7 @@
       if(!cost.every((value,j)=>balance[j]+1e-7>=value))break;
       for(let j=0;j<3;j++)balance[j]=Math.max(0,balance[j]-cost[j]);
       levelReached++;
-      while(eventIndex<events.length&&levelReached>=events[eventIndex].level){
-        const ev=events[eventIndex++],before=currentOutpost;
-        currentOutpost=Math.min(800,currentOutpost+ev.gain);
-        progressLog.push({...ev,day,before,outpost:currentOutpost,actualGain:currentOutpost-before});
-      }
+      applyReachedCheckpoints(day);
     }
     if(levelReached>=goal){completeDay=day;break;}
   }
@@ -544,6 +546,13 @@
     <div class="syn-progress-stat"><span>예상 최종 전초기지</span><strong>Lv.${fmt(c.endOutpost)} (+${fmt(c.endOutpost-c.outpost)})</strong></div>
     <div class="syn-progress-stat"><span>고정 방식 예상</span><strong>${fixed.completeDay===null?"1,500일 내 미도달":fmt(fixed.completeDay)+"일"}</strong></div>
     <div class="syn-progress-stat"><span>고정 방식 대비</span><strong>${deltaText}</strong></div>`;
+  const next=c.events.find(m=>m.requiredLevel>c.level);
+  const nextStatus=el("syn-progress-next");
+  if(nextStatus){
+    nextStatus.textContent=next?
+      `다음 일괄 상승: 싱크로 ${fmt(next.level)} → ${next.mode==="normal"?"노말":"하드"} ${next.chapter}챕터 (+${fmt(next.gain)} 전초기지 레벨)`:
+      "목표 싱크로까지 추가로 반영할 전초기지 상승 기준이 없습니다.";
+  }
   const log=new Map(c.progressLog.map(m=>[m.mode+":"+m.chapter,m]));
   el("syn-progress-events").innerHTML=c.events.length?c.events.map(m=>{
     const actual=log.get(m.mode+":"+m.chapter);
