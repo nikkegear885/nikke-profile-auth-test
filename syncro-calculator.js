@@ -332,7 +332,7 @@
     const high=manualUsed&&gap>=40;
     warning.hidden=!high;
     warning.textContent=high?
-      `⚠ 오류 · 오차발생 주의! 직접 입력한 전초기지 Lv.${fmt(typed)}이 현재 싱크로 및 캠페인 기준 추정 Lv.${fmt(reference)}보다 ${fmt(gap)}레벨 높습니다. 임의 상승 계산 결과에 큰 오차가 생길 수 있습니다.`:"";
+      `직접 입력한 전초기지 레벨이 싱크로 기준 추정 레벨보다 40레벨 이상 높습니다.\n임의 상승 계산 결과에 오차가 생길 수 있습니다.\n입력한 전초기지 레벨과 싱크로 레벨이 정확하다면 이 경고는 무시해도 됩니다.`:"";
   }
   function buildProgressPlan(current,goal){
     if(state.progressMode!=="progress")return [];
