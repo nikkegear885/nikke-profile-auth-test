@@ -107,6 +107,13 @@
         });
     }
   }catch(e){}
+  // Both campaigns are automatically enabled. Any older saved positions are ignored.
+  state.progressNormal=true;
+  state.progressHard=true;
+  state.normalStartChapter=0;
+  state.normalStartStage=0;
+  state.hardStartChapter=0;
+  state.hardStartStage=0;
   state.ownedHours=state.ownedBoxes.map(ownedBoxHours);
   // Replace legacy editable non-yellow data with fixed source values.
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
@@ -163,27 +170,6 @@
                       <button type="button" data-progress-mode="progress" class="${state.progressMode==="progress"?"active":""}" aria-pressed="${state.progressMode==="progress"}">싱크로에 따른 전초기지 레벨 상승 임의 적용</button>
                     </div>
                   </div>
-                  <div class="syn-progress-choices" id="syn-progress-choices" ${state.progressMode==="progress"?"":"hidden"}>
-                    <label class="syn-check"><input type="checkbox" data-key="progressNormal" ${state.progressNormal?"checked":""}>노말 챕터 반영</label>
-                    <label class="syn-check"><input type="checkbox" data-key="progressHard" ${state.progressHard?"checked":""}>하드 챕터 반영</label>
-                    <div class="syn-stage-anchor-panel">
-                      <span class="syn-progress-label">현재 캠페인 진행 위치</span>
-                      <div class="syn-stage-anchor-grid">
-                        <div class="syn-stage-anchor-row">
-                          <span>노말</span>
-                          <label class="syn-field"><span>챕터</span><input data-key="normalStartChapter" type="number" min="0" max="48" step="1" placeholder="자동" value="${state.normalStartChapter||""}"></label>
-                          <label class="syn-field"><span>스테이지</span><input data-key="normalStartStage" type="number" min="0" max="50" step="1" placeholder="자동" value="${state.normalStartStage||""}"></label>
-                        </div>
-                        <div class="syn-stage-anchor-row">
-                          <span>하드</span>
-                          <label class="syn-field"><span>챕터</span><input data-key="hardStartChapter" type="number" min="0" max="48" step="1" placeholder="자동" value="${state.hardStartChapter||""}"></label>
-                          <label class="syn-field"><span>스테이지</span><input data-key="hardStartStage" type="number" min="0" max="50" step="1" placeholder="자동" value="${state.hardStartStage||""}"></label>
-                        </div>
-                      </div>
-                      <span class="syn-progress-tip">노말·하드를 모두 입력하면 기존 전초기지 계산기와 동일한 방식으로 시작 전초기지 레벨을 자동 계산합니다. 예: 노말 48-36 / 하드 32-29 → Lv.570. 빈칸은 시작 싱크로 기준으로 추정합니다.</span>
-                    </div>
-                    <span class="syn-progress-tip">노말·하드 기준표의 싱크로 레벨 달성 시점에 전초기지가 한 번에 상승합니다. 중간 레벨에서는 상승하지 않습니다.</span>
-                  </div>
                 </div>
             </div>
           </section>
@@ -205,7 +191,7 @@
          <div class="syn-box-body">
            <div class="syn-progress-stats" id="syn-progress-stats"></div>
             <p class="syn-progress-next" id="syn-progress-next"></p>
-           <p class="syn-progress-disclaimer">노말·하드 보스 클리어 기준 싱크로 레벨을 달성한 순간에만 해당 구간의 전초기지 상승분을 일괄 반영합니다. 기준 레벨 사이에는 전초기지 생산량이 유지됩니다. 현재 진행 위치를 입력하면 이미 클리어한 스테이지는 중복 반영하지 않습니다. 중간 스테이지별 클리어 날짜는 계산하지 않습니다.</p>
+           <p class="syn-progress-disclaimer">노말·하드 보스 클리어 기준 싱크로 레벨을 달성한 순간에만 해당 구간의 전초기지 상승분을 일괄 반영합니다. 기준 레벨 사이에는 전초기지 생산량이 유지됩니다. 노말·하드 진행 위치는 시작 싱크로 레벨을 기준으로 자동 추정합니다. 중간 스테이지별 클리어 날짜는 계산하지 않습니다.</p>
            <details class="syn-progress-details"><summary>챕터별 전초기지 상승 내역</summary><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>모드</th><th>보스 챕터</th><th>기준 싱크로</th><th>반영 스테이지</th><th>전초기지 상승</th><th>도달 날짜</th><th>전초기지</th></tr></thead><tbody id="syn-progress-events"></tbody></table></div></details>
          </div>
        </section>
