@@ -761,3 +761,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 /* TEST 1.462: show marginal whole-target duration change per paid package */
 .syn-package-panel .syn-package-impact{color:var(--sy-blue);font-size:10px;font-weight:800;line-height:1.25;margin-top:3px}
 .syn-package-panel .syn-package-values .syn-package-value{white-space:normal}
+
+/* TEST 1.463: user-anchored remaining campaign progress */
+.syn-stage-anchor-panel{flex:1 1 100%;border-top:1px solid var(--sy-line);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.syn-stage-anchor-grid{display:flex;flex-wrap:wrap;gap:8px 14px}
+.syn-stage-anchor-row{display:flex;align-items:end;gap:8px;flex:1 1 250px;max-width:380px}
+.syn-stage-anchor-row>span{font-size:13px;color:var(--sy-title);font-weight:800;min-width:30px;padding-bottom:9px}
+.syn-stage-anchor-row .syn-field{min-width:0;flex:1 1 0;font-size:12px}
+.syn-stage-anchor-row input{max-width:140px;min-height:37px}
