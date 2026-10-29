@@ -833,17 +833,17 @@ html.dark-theme .syn-resource-date-details.syn-has-package-warning:not([open])>s
 }
 html.dark-theme .syn-resource-date-details.syn-has-package-warning:not([open])>summary::before{color:#ffd383}
 
-/* Always emphasize the resource with the soonest calculated completion date.
-   Equal earliest dates share the highlight; unavailable dates are excluded. */
-.syn-resource-cards .syn-resource.syn-earliest-goal{
+/* Always emphasize the resource with the latest calculated completion date.
+   Equal latest dates share the highlight; unavailable dates are excluded. */
+.syn-resource-cards .syn-resource.syn-latest-goal{
  border-color:#d6a03a;
  background:#fff8e8;
  box-shadow:0 0 0 2px rgba(214,160,58,.26);
 }
-.syn-resource-cards .syn-resource.syn-earliest-goal .date{color:#875009}
-html.dark-theme .syn-resource-cards .syn-resource.syn-earliest-goal{
+.syn-resource-cards .syn-resource.syn-latest-goal .date{color:#875009}
+html.dark-theme .syn-resource-cards .syn-resource.syn-latest-goal{
  border-color:#bf8d38;
  background:#322b1b;
  box-shadow:0 0 0 2px rgba(223,165,61,.30);
 }
-html.dark-theme .syn-resource-cards .syn-resource.syn-earliest-goal .date{color:#ffe1a1}
+html.dark-theme .syn-resource-cards .syn-resource.syn-latest-goal .date{color:#ffe1a1}
