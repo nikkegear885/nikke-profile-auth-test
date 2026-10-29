@@ -806,6 +806,7 @@
         if(["outpostNormalChapter","outpostNormalStage","outpostHardChapter","outpostHardStage"].includes(event.target?.id))
           linkOutpostStages();
       });
+      window.parent.document.addEventListener("nikke-outpost-stage-updated",linkOutpostStages);
       linkOutpostStages();
     }
   }catch(err){}
