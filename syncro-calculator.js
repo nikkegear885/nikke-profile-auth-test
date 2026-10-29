@@ -144,12 +144,13 @@
                 <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label>
               </div>
                 <div class="syn-progress-options">
-                  <label class="syn-field">전초기지 생산량 계산 방식
-                    <select data-key="progressMode" aria-label="전초기지 계산 방식">
-                      <option value="fixed" ${state.progressMode==="fixed"?"selected":""}>현재 전초기지 고정 (기존 계산)</option>
-                      <option value="progress" ${state.progressMode==="progress"?"selected":""}>싱크로 달성에 따른 전초기지 상승 (시뮬레이션)</option>
-                    </select>
-                  </label>
+                  <div class="syn-progress-modes">
+                    <span class="syn-progress-label">전초기지 생산량 계산 방식</span>
+                    <div class="syn-mode-buttons" role="group" aria-label="전초기지 생산량 계산 방식">
+                      <button type="button" data-progress-mode="fixed" class="${state.progressMode==="fixed"?"active":""}" aria-pressed="${state.progressMode==="fixed"}">현재 전초기지 고정</button>
+                      <button type="button" data-progress-mode="progress" class="${state.progressMode==="progress"?"active":""}" aria-pressed="${state.progressMode==="progress"}">싱크로 달성에 따른 전초기지 상승</button>
+                    </div>
+                  </div>
                   <div class="syn-progress-choices" id="syn-progress-choices" ${state.progressMode==="progress"?"":"hidden"}>
                     <label class="syn-check"><input type="checkbox" data-key="progressNormal" ${state.progressNormal?"checked":""}>노말 챕터 반영</label>
                     <label class="syn-check"><input type="checkbox" data-key="progressHard" ${state.progressHard?"checked":""}>하드 챕터 반영</label>
@@ -453,6 +454,11 @@
   }).join(""):'<tr><td colspan="7">선택한 싱크로 구간에 적용되는 기준이 없습니다.</td></tr>';
 }
   function update(){
+    root.querySelectorAll("[data-progress-mode]").forEach(button=>{
+      const active=button.dataset.progressMode===state.progressMode;
+      button.classList.toggle("active",active);
+      button.setAttribute("aria-pressed",String(active));
+    });
     const c=calculate();
     updatePackageEfficiency(c);
     updateProgressOverview(c);
@@ -534,6 +540,17 @@
   root.addEventListener("input",onEdit);
   root.addEventListener("change",onEdit);
   root.addEventListener("click",e=>{
+    const modeButton=e.target.closest("button[data-progress-mode]");
+    if(modeButton){
+      const mode=modeButton.dataset.progressMode;
+      if(!["fixed","progress"].includes(mode))return;
+      if(state.progressMode!==mode){
+        state.progressMode=mode;
+        try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
+        update();
+      }
+      return;
+    }
     const bulk=e.target.closest("[data-bulk-target][data-bulk-set]");
     if(bulk){
       const target=bulk.dataset.bulkTarget,checked=bulk.dataset.bulkSet==="all";
