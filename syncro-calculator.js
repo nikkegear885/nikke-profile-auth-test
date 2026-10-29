@@ -621,9 +621,9 @@
     el("syn-overall-date").textContent=c.invalidGoal?"목표 레벨 확인 필요":
       c.completeDay===null?"1,500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     const freeSavings=free.completeDay!==null&&c.completeDay!==null?free.completeDay-c.completeDay:null;
-    const compared=freeSavings===null?"":freeSavings>0?` · 무과금 대비 ${fmt(freeSavings)}일 단축`:" · 무과금 대비 기간 변화 없음";
+    const compared=freeSavings===null?"":freeSavings>0?`\n무과금 대비 ${fmt(freeSavings)}일 단축`:"\n무과금 대비 기간 변화 없음";
     el("syn-overall-days").textContent=c.invalidGoal?"현재보다 높은 목표 레벨을 입력해 주세요":
-      c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승${compared}`;
+      c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요\n${fmt(c.goal-c.level)}레벨 상승${compared}`;
     el("syn-overall-cost").textContent=c.completeDay===null?"산정 불가":fmt(c.spent)+"원";
     const dailyJewels=jewelsPerDay();
     const jewelEl=el("syn-overall-jewels");
