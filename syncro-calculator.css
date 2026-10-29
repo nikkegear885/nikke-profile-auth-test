@@ -861,3 +861,6 @@ html.dark-theme .syn-resource-cards .syn-resource.syn-latest-goal .date{color:#f
   overflow-wrap:anywhere;
   text-align:center;
 }
+
+/* TEST 1.485: each goal summary metric on its own centered line */
+#syn-overall-days{white-space:pre-line;line-height:1.85;text-align:center}
