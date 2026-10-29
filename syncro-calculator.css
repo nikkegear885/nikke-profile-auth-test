@@ -847,3 +847,11 @@ html.dark-theme .syn-resource-cards .syn-resource.syn-latest-goal{
  box-shadow:0 0 0 2px rgba(223,165,61,.30);
 }
 html.dark-theme .syn-resource-cards .syn-resource.syn-latest-goal .date{color:#ffe1a1}
+
+/* TEST 1.480: actual outpost progress linkage and optional HARD 49/50 levels */
+.syn-stage-link-settings{margin-top:12px;padding:12px;border:1px solid var(--sy-line);border-radius:9px;background:var(--sy-card-alt)}
+.syn-stage-link-settings[hidden]{display:none!important}
+.syn-stage-link-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.syn-hard-threshold-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.syn-stage-link-settings .syn-progress-tip{margin:10px 0 0;line-height:1.5}
+@media(max-width:750px){.syn-hard-threshold-inputs{grid-template-columns:1fr}}
