@@ -237,9 +237,9 @@
                     <div class="syn-package-efficiency" data-package-efficiency="${i}"></div>
                   </div>
                   ${allowedPackageChoices.has(i)
-                    ? `<select class="syn-cell-input syn-select syn-package-select" aria-label="${escape(displayName)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
+                    ? `<div class="syn-package-choice-wrap"><select class="syn-cell-input syn-select syn-package-select" aria-label="${escape(displayName)} 선택 재화" data-yellow-cell="true" data-package="${i}" data-field="choice">
                       ${["코더","배데","크레딧"].map((name,j)=>`<option value="${j}" ${+p.choice===j?"selected":""}>${name}</option>`).join("")}
-                    </select>`
+                    </select><span class="syn-package-choice-warning" data-package-choice-warning="${i}" role="note" tabindex="0" aria-label="4. 재화별 목표 달성일자를 확인해주세요" hidden>!<span class="syn-package-warning-note" role="tooltip">4. 재화별 목표 달성일자를 확인해주세요</span></span></div>`
                     : ""}
                 </div>`;
               }).join("")}
@@ -498,6 +498,13 @@
       const without=actual?calculate(selected.filter(index=>index!==i)):active;
       const before=actual?without:active;
       const after=actual?active:scenario;
+      // Flag checked, resource-selectable packages when they do not shorten
+      // the overall target date compared with leaving this package unchecked.
+      const choiceWarning=root.querySelector(`[data-package-choice-warning="${i}"]`);
+      if(choiceWarning){
+        const comparable=before.completeDay!==null&&after.completeDay!==null;
+        choiceWarning.hidden=!(actual&&allowedPackageChoices.has(i)&&comparable&&after.completeDay>=before.completeDay);
+      }
       let impactText;
       if(before.completeDay!==null&&after.completeDay!==null){
         const saved=before.completeDay-after.completeDay;
