@@ -388,6 +388,9 @@
       if(!(mode==="normal"?state.progressNormal:state.progressHard))return false;
       const start=starts[mode];
       if(!start.manual)return false;
+      // An entirely uncleared HARD campaign cannot be projected to an
+      // advanced chapter solely from a future synchro level milestone.
+      if(mode==="hard"&&start.absolute===0)return true;
       const prior=activeMilestones().filter(m=>m.mode===mode&&m.level<=current)
         .sort((a,b)=>a.level-b.level).at(-1);
       if(!prior)return false;
