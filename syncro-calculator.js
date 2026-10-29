@@ -526,6 +526,14 @@
       dailyRows.push(row);
     }
     const grants=packages.map(p=>pkgGrantH(p).map((h,j)=>h*rate[j]+(j===0?safe(p.coreFixed):0)));
+    // There are no verified upgrade costs below the 200 synchro boundary.
+    // Do not run package or resource projections for those characters.
+    if(level<200){
+      return {level,goal,outpost,rate,bands,total:[0,0,0],owned,needed:[0,0,0],daily,dailyRows,grants,
+        reached:[null,null,null],count:packages.map(()=>0),spent:0,completeDay:null,
+        endOutpost:outpost,dailyEnd:daily,progressLog:[],events:[],levelReached:level,
+        inputOutpost,stageDerivedOutpost,unsupportedLevel:true};
+    }
     if(goal<=level){
       return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,
         reached:[null,null,null],count:packages.map(()=>0),spent:0,completeDay:null,
@@ -688,6 +696,32 @@
       outpostInput.value=auto?String(c.stageDerivedOutpost):String(state.outpost);
       outpostInput.title=auto?"현재 노말·하드 클리어 스테이지로 자동 산정한 전초기지 레벨":"전초기지 시작 레벨 직접 입력";
     }
+    if(c.unsupportedLevel){
+      const notice="싱크로 200레벨 미만은 계산을 지원하지 않습니다. 현재 싱크로 레벨을 200 이상으로 입력해 주세요.";
+      el("syn-overall-date").textContent="계산 대상 아님";
+      el("syn-overall-days").textContent="현재 싱크로 200레벨부터 계산할 수 있습니다.";
+      el("syn-overall-cost").textContent="산정 불가";
+      el("syn-overall-jewels").textContent="쥬얼 소모량 산정 불가";
+      el("syn-overall-sub").textContent="레벨업 비용 자료는 201레벨부터 제공됩니다.";
+      el("syn-hourly").textContent="싱크로 200레벨 미만에서는 예상 생산량 변화 및 달성일을 계산하지 않습니다.";
+      el("syn-resource-cards").innerHTML='<p class="syn-progress-tip">'+notice+'</p>';
+      el("syn-band-table").innerHTML='<tr><td colspan="5">싱크로 200레벨 이상부터 필요 재화를 계산합니다.</td></tr>';
+      for(let j=0;j<3;j++)el("syn-owned-"+j).textContent="계산 대상 아님";
+      root.querySelectorAll("[data-package-efficiency]").forEach(node=>{
+        node.textContent="200레벨 이상부터 비교할 수 있습니다.";
+      });
+      root.querySelectorAll("[data-package-choice-warning]").forEach(node=>{node.hidden=true;});
+      const resourceDates=root.querySelector(".syn-resource-date-details");
+      if(resourceDates)resourceDates.classList.remove("syn-has-package-warning");
+      const warning=el("syn-outpost-discrepancy");
+      if(warning)warning.hidden=true;
+      const progressPanel=el("syn-progress-overview");
+      if(progressPanel)progressPanel.hidden=true;
+      const status=el("syn-status");
+      status.classList.add("warn");
+      status.textContent=notice;
+      return;
+    }
     updateOutpostDiscrepancy(c);
     const free=updatePackageEfficiency(c);
     const resourceDates=root.querySelector(".syn-resource-date-details");
@@ -740,10 +774,7 @@
     if(c.invalidGoal){status.classList.add("warn");status.textContent="목표 레벨은 현재 레벨보다 높아야 해요.";}
     else if(c.completeDay===null){status.classList.add("warn");status.textContent="1500일 이내에 목표에 도달하지 못해요. 기본 수급량이나 패키지 설정을 확인해 주세요.";}
     else{status.classList.remove("warn");status.textContent="사이트의 인게임 확인 전초기지 시간당 생산량과 원본 시트의 레벨업 비용·일일 수급·패키지 규칙을 반영한 예상 결과입니다. 구매 조건과 재화 수급 가정이 실제 게임과 다르면 결과도 달라질 수 있어요.";}
-    if(c.level<200){
-      status.classList.add("warn");
-      status.textContent+=" 주의: 현재 보유한 레벨업 비용 데이터는 201레벨부터입니다. 1~200레벨의 비용은 제외되므로 예상 날짜·과금액은 정확한 전체 구간 계산이 아닙니다.";
-    }
+
   }
   function onEdit(e){
     const x=e.target;if(!x.dataset)return;
