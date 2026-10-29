@@ -772,3 +772,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 
 /* TEST 1.464: outpost value is computed from both exact campaign progress anchors */
 .syn-field input:disabled{opacity:.73;cursor:not-allowed;background:var(--sy-card-alt)}
+
+/* TEST 1.465: the next threshold-only outpost jump */
+.syn-progress-next{margin:11px 0 2px;padding:9px 12px;border:1px solid var(--sy-line);border-radius:8px;background:var(--sy-card-alt);color:var(--sy-title);font-size:13px;font-weight:800}
