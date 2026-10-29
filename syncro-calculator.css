@@ -780,3 +780,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .syn-outpost-discrepancy{margin:12px 0 0;padding:10px 12px;border:1px solid #df8e97;border-left:4px solid #c43e50;border-radius:8px;background:#fff0f2;color:#a12639;font-size:13px;line-height:1.6;font-weight:800}
 .syn-outpost-discrepancy[hidden]{display:none!important}
 html.dark-theme .syn-outpost-discrepancy{background:#391d26;border-color:#a95764;border-left-color:#f18a99;color:#ffc4cc}
+
+/* TEST 1.467: preserve requested three-line outpost discrepancy warning */
+.syn-outpost-discrepancy{white-space:pre-line}
