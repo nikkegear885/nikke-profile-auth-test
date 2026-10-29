@@ -8,6 +8,7 @@
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v4";
   const campaignStageCounts={"15":37,"16":33,"17":38,"18":40,"19":42,"20":41,"21":42,"22":43,"23":42,"24":44,"25":40,"26":42,"27":44,"28":43,"29":42,"30":42,"31":44,"32":45,"33":42,"34":46,"35":44,"36":45,"37":44,"38":45,"39":44,"40":44,"41":44,"42":44,"43":44,"44":44,"45":44,"46":44,"47":44,"48":44};
+  const campaignBossStages={"16":28,"18":33,"20":31,"22":36,"24":38,"26":34,"28":40,"30":34,"32":33,"34":38,"36":37,"38":37,"40":36,"42":44,"44":36,"46":40,"48":36};
   const campaignMilestones=[{"mode":"normal","chapter":32,"level":221},{"mode":"normal","chapter":34,"level":231},{"mode":"normal","chapter":36,"level":241},{"mode":"normal","chapter":38,"level":251},{"mode":"normal","chapter":40,"level":281},{"mode":"normal","chapter":42,"level":301},{"mode":"normal","chapter":44,"level":321},{"mode":"normal","chapter":46,"level":331},{"mode":"normal","chapter":48,"level":341},{"mode":"hard","chapter":16,"level":241},{"mode":"hard","chapter":18,"level":261},{"mode":"hard","chapter":20,"level":281},{"mode":"hard","chapter":22,"level":301},{"mode":"hard","chapter":24,"level":321},{"mode":"hard","chapter":26,"level":341},{"mode":"hard","chapter":28,"level":350},{"mode":"hard","chapter":30,"level":361},{"mode":"hard","chapter":31,"level":381},{"mode":"hard","chapter":32,"level":461},{"mode":"hard","chapter":34,"level":481},{"mode":"hard","chapter":36,"level":501},{"mode":"hard","chapter":38,"level":521},{"mode":"hard","chapter":40,"level":581},{"mode":"hard","chapter":42,"level":601},{"mode":"hard","chapter":44,"level":621},{"mode":"hard","chapter":46,"level":641},{"mode":"hard","chapter":48,"level":681}];
   const boxDurations=[1,2,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
@@ -19,7 +20,7 @@
   // The old "ownedHours" field represented one total of hours per resource.
   // Preserve that total and migrate it into the 1-hour denomination at first load.
   const defaults=()=>{
-    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true});
+    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0});
     initial.ownedBoxes=initial.ownedHours.map(h=>boxDurations.map((duration,i)=>i===0?Math.max(0,safe(h)):0));
     return initial;
   };
@@ -40,7 +41,7 @@
     "일일 퍼펙트 부스트 팩",
     "월정액 2"
   ];
-  const editableKeys=new Set(["current","goal","outpost","sweep","date","subtractOwned","progressMode","progressNormal","progressHard"]);
+  const editableKeys=new Set(["current","goal","outpost","sweep","date","subtractOwned","progressMode","progressNormal","progressHard","normalStartChapter","normalStartStage","hardStartChapter","hardStartStage"]);
   // Indexed by 1-based daily sweep count (first clear is free).
   // 1회=0, 2회=50, 3회=70, ... 11회=450 jewels per individual clear.
   const sweepJewelPrice=[0,0,50,70,100,150,200,250,300,350,400,450];
@@ -60,6 +61,12 @@
       if(["fixed","progress"].includes(saved.progressMode))state.progressMode=saved.progressMode;
       if(typeof saved.progressNormal==="boolean")state.progressNormal=saved.progressNormal;
       if(typeof saved.progressHard==="boolean")state.progressHard=saved.progressHard;
+      for(const key of ["normalStartChapter","normalStartStage","hardStartChapter","hardStartStage"]){
+        if(Number.isInteger(saved[key])&&saved[key]>=0){
+          const max=key.endsWith("Chapter")?48:50;
+          state[key]=Math.min(max,saved[key]);
+        }
+      }
       for(const key of ["ownedHours","ownedUnits"]){
         if(Array.isArray(saved[key])&&saved[key].length===3)
           state[key]=saved[key].map(value=>Math.max(0,safe(value)));
@@ -154,7 +161,23 @@
                   <div class="syn-progress-choices" id="syn-progress-choices" ${state.progressMode==="progress"?"":"hidden"}>
                     <label class="syn-check"><input type="checkbox" data-key="progressNormal" ${state.progressNormal?"checked":""}>노말 챕터 반영</label>
                     <label class="syn-check"><input type="checkbox" data-key="progressHard" ${state.progressHard?"checked":""}>하드 챕터 반영</label>
-                    <span class="syn-progress-tip">보스 클리어 기준 싱크로를 달성하면 해당 구간 스테이지를 일괄 반영합니다. 5스테이지당 전초기지 +1 (추정)</span>
+                    <div class="syn-stage-anchor-panel">
+                      <span class="syn-progress-label">현재 캠페인 진행 위치</span>
+                      <div class="syn-stage-anchor-grid">
+                        <div class="syn-stage-anchor-row">
+                          <span>노말</span>
+                          <label class="syn-field"><span>챕터</span><input data-key="normalStartChapter" type="number" min="0" max="48" step="1" placeholder="자동" value="${state.normalStartChapter||""}"></label>
+                          <label class="syn-field"><span>스테이지</span><input data-key="normalStartStage" type="number" min="0" max="50" step="1" placeholder="자동" value="${state.normalStartStage||""}"></label>
+                        </div>
+                        <div class="syn-stage-anchor-row">
+                          <span>하드</span>
+                          <label class="syn-field"><span>챕터</span><input data-key="hardStartChapter" type="number" min="0" max="48" step="1" placeholder="자동" value="${state.hardStartChapter||""}"></label>
+                          <label class="syn-field"><span>스테이지</span><input data-key="hardStartStage" type="number" min="0" max="50" step="1" placeholder="자동" value="${state.hardStartStage||""}"></label>
+                        </div>
+                      </div>
+                      <span class="syn-progress-tip">현재 클리어한 위치를 입력하세요. 예: 노말 48-36 / 하드 32-29. 둘 다 비워 두면 시작 싱크로 기준으로 추정합니다. 이미 클리어한 스테이지는 다시 계산하지 않습니다.</span>
+                    </div>
+                    <span class="syn-progress-tip">기준 싱크로 달성일에 남은 스테이지만 일괄 반영합니다. 노말·하드 합산 5스테이지마다 전초기지 +1 · 현재 단계의 남은 누적 진행량은 추정치입니다.</span>
                   </div>
                 </div>
             </div>
@@ -176,7 +199,7 @@
          <div class="syn-box-head">전초기지 상승 시뮬레이션</div>
          <div class="syn-box-body">
            <div class="syn-progress-stats" id="syn-progress-stats"></div>
-           <p class="syn-progress-disclaimer">현재 전초기지 레벨을 시작값으로 사용하며 이미 지난 기준은 중복 적용하지 않습니다. 보스 클리어 시점에 각 구간 스테이지를 일괄 반영하는 추정 계산입니다. 잔여 스테이지는 0개로 가정하며 전초기지는 800레벨을 상한으로 계산합니다.</p>
+           <p class="syn-progress-disclaimer">입력한 전초기지 레벨을 시작값으로 사용합니다. 현재 노말·하드 진행 위치 이전에 클리어한 스테이지는 제외합니다. 스테이지 번호와 실제 클리어 횟수가 다른 경우 구간별 스테이지 수를 비례 추정하며, 전초기지 레벨의 5스테이지 단위 잔여치는 0으로 가정합니다. 해당 보스 기준 싱크로에 도달하면 남은 구간을 일괄 반영합니다.</p>
            <details class="syn-progress-details"><summary>챕터별 전초기지 상승 내역</summary><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>모드</th><th>보스 챕터</th><th>기준 싱크로</th><th>반영 스테이지</th><th>전초기지 상승</th><th>도달 날짜</th><th>전초기지</th></tr></thead><tbody id="syn-progress-events"></tbody></table></div></details>
          </div>
        </section>
@@ -263,16 +286,60 @@
     enforcePackageEditPolicy();
     update();
   }
+  function getCampaignStart(mode,current){
+    const chapter=Math.trunc(safe(state[mode+"StartChapter"]));
+    const stage=Math.trunc(safe(state[mode+"StartStage"]));
+    if(chapter>0&&stage>0){
+      const chapterCount=Math.trunc(safe(campaignStageCounts[chapter]));
+      const bossNumber=Math.trunc(safe(campaignBossStages[chapter]))||chapterCount;
+      const completed=Math.max(0,Math.min(chapterCount,Math.floor(chapterCount*Math.min(stage,bossNumber)/Math.max(1,bossNumber))));
+      return {mode,chapter,stage,completed,auto:false};
+    }
+    // A missing manual stage means the last boss whose estimated required
+    // synchro is already achieved. This is a starting position, not new loot.
+    const milestones=campaignMilestones.filter(m=>m.mode===mode).sort((a,b)=>a.level-b.level);
+    const past=milestones.filter(m=>m.level<=current).at(-1);
+    const chapter0=past?past.chapter:milestones[0].chapter-2;
+    return {mode,chapter:chapter0,stage:0,completed:safe(campaignStageCounts[chapter0]),auto:true};
+  }
   function buildProgressPlan(current,goal){
-  if(state.progressMode!=="progress")return [];
-  const candidates=campaignMilestones.filter(m=>m.mode==="normal"?state.progressNormal:state.progressHard).map(m=>{
-    const prev=campaignMilestones.filter(v=>v.mode===m.mode&&v.chapter<m.chapter).reduce((n,v)=>Math.max(n,v.chapter),m.chapter-2);
-    let stages=0;for(let chapter=prev+1;chapter<=m.chapter;chapter++)stages+=safe(campaignStageCounts[chapter]);
-    return {...m,stages};
-  }).filter(m=>m.level>current&&m.level<=goal).sort((a,b)=>a.level-b.level||(a.mode==="normal"?-1:1));
-  let remainder=0;
-  return candidates.map(m=>{remainder+=m.stages;const gain=Math.floor(remainder/5);remainder%=5;return {...m,gain};});
-}
+    if(state.progressMode!=="progress")return [];
+    const starts={
+      normal:getCampaignStart("normal",current),
+      hard:getCampaignStart("hard",current)
+    };
+    const selected=campaignMilestones.filter(m=>
+      m.mode==="normal"?state.progressNormal:state.progressHard
+    );
+    const results=[];
+    for(const mode of ["normal","hard"]){
+      const start=starts[mode];
+      let previousChapter=start.chapter,previousCompleted=start.completed;
+      for(const m of selected.filter(m=>m.mode===mode).sort((a,b)=>a.chapter-b.chapter)){
+        if(m.chapter<previousChapter||m.chapter===previousChapter&&previousCompleted>=safe(campaignStageCounts[m.chapter]))continue;
+        if(m.level>goal)break;
+        let stages=0;
+        for(let chapter=previousChapter;chapter<=m.chapter;chapter++){
+          if(chapter===previousChapter){
+            stages+=Math.max(0,safe(campaignStageCounts[chapter])-previousCompleted);
+          }else{
+            stages+=safe(campaignStageCounts[chapter]);
+          }
+        }
+        results.push({...m,stages,requiredLevel:Math.max(current,m.level)});
+        previousChapter=m.chapter;
+        previousCompleted=safe(campaignStageCounts[m.chapter]);
+      }
+    }
+    results.sort((a,b)=>a.requiredLevel-b.requiredLevel||(a.mode==="normal"?-1:1));
+    let remainder=0;
+    return results.map(m=>{
+      remainder+=m.stages;
+      const gain=Math.floor(remainder/5);
+      remainder%=5;
+      return {...m,gain};
+    });
+  }
   function simulateProgress(base){
   const {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages}=base;
   const events=buildProgressPlan(level,goal);
@@ -283,6 +350,13 @@
   const balance=state.subtractOwned?owned.slice():[0,0,0],earned=[0,0,0],reached=[null,null,null],count=packages.map(()=>0),progressLog=[];
   let spent=0,completeDay=null,subExpiry=0,levelReached=level,currentOutpost=outpost,eventIndex=0;
   for(let day=1;day<=1500;day++){
+    // Apply milestones already affordable at the starting synchro level
+    // for manually entered campaign positions behind the current level.
+    while(eventIndex<events.length&&levelReached>=events[eventIndex].requiredLevel){
+      const ev=events[eventIndex++],before=currentOutpost;
+      currentOutpost=Math.min(800,currentOutpost+ev.gain);
+      progressLog.push({...ev,day,before,outpost:currentOutpost,actualGain:currentOutpost-before});
+    }
     const dayRate=SOURCE.rates[currentOutpost-1],dayIncome=[0,0,0];
     for(const row of state.daily)if(row.on){
       for(let j=0;j<3;j++){
@@ -551,6 +625,9 @@
       if(x.dataset.key==="goal")x.value=state.goal=Math.min(1000,Math.max(2,Math.trunc(state.goal)));
       if(x.dataset.key==="outpost")x.value=state.outpost=Math.min(800,Math.max(1,Math.trunc(state.outpost)));
       if(x.dataset.key==="sweep")x.value=state.sweep=Math.min(11,Math.max(1,Math.trunc(state.sweep)));
+      if(["normalStartChapter","hardStartChapter"].includes(x.dataset.key))state[x.dataset.key]=Math.min(48,Math.max(0,Math.trunc(state[x.dataset.key])));
+      if(["normalStartStage","hardStartStage"].includes(x.dataset.key))state[x.dataset.key]=Math.min(50,Math.max(0,Math.trunc(state[x.dataset.key])));
+      if(["normalStartChapter","hardStartChapter","normalStartStage","hardStartStage"].includes(x.dataset.key))x.value=state[x.dataset.key]||"";
     }
     try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
     update();
