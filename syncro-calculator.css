@@ -769,3 +769,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .syn-stage-anchor-row>span{font-size:13px;color:var(--sy-title);font-weight:800;min-width:30px;padding-bottom:9px}
 .syn-stage-anchor-row .syn-field{min-width:0;flex:1 1 0;font-size:12px}
 .syn-stage-anchor-row input{max-width:140px;min-height:37px}
+
+/* TEST 1.464: outpost value is computed from both exact campaign progress anchors */
+.syn-field input:disabled{opacity:.73;cursor:not-allowed;background:var(--sy-card-alt)}
