@@ -417,7 +417,22 @@
       const priceText=costScore===null?"비교 불가":`${fmt(costScore,1)}%`;
       const timeText=timeScore===null?"비교 불가":`${fmt(timeScore,1)}%`;
       const actual=p.on;
+      // Compare the selected set with and without exactly this package.
+      // An additional credit/battle-data package cannot reduce the overall date
+      // when core dust is still the limiting resource.
       const scenario=actual?active:calculate([...selected,i]);
+      const without=actual?calculate(selected.filter(index=>index!==i)):active;
+      const before=actual?without:active;
+      const after=actual?active:scenario;
+      let impactText;
+      if(before.completeDay!==null&&after.completeDay!==null){
+        const saved=before.completeDay-after.completeDay;
+        impactText=saved>0?`${actual?"선택 효과":"추가 시"} ${fmt(saved)}일 단축`
+          :saved<0?`${actual?"선택 효과":"추가 시"} ${fmt(-saved)}일 증가`
+          :"전체 목표일 변화 없음";
+      }else if(before.completeDay===null&&after.completeDay!==null){
+        impactText="패키지로 1,500일 내 목표 달성 가능";
+      }else impactText="전체 목표일 산정 불가";
       const count=scenario.count[i]||0;
       const estimatedCost=scenario.completeDay!==null?count*safe(p.price):null;
       const otherDetail=actual?"현재 체크된 패키지 조합":"현재 조합에 이 패키지만 추가했을 때";
@@ -427,10 +442,12 @@
       target.innerHTML=`
         <div class="syn-package-values">
           <span class="syn-package-value" title="재화별 충족일 단축 합계 ÷ 총 구매비용을 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">가격 효율 <strong>${priceText}</strong></span>
-          <span class="syn-package-value" title="코더·배데·크레딧 각각의 충족일 단축 합계를 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">기간 단축 효율 <strong>${timeText}</strong></span>
+          <span class="syn-package-value" title="코더·배데·크레딧 각각의 충족일 단축 합계를 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">재화별 단축 효율 <strong>${timeText}</strong></span>
         </div>
+        <div class="syn-package-impact" title="현재 선택 조합에서 이 패키지 하나의 차이를 비교합니다. 0일이면 다른 재화 병목 또는 일 단위 차이 때문일 수 있습니다.">${impactText}</div>
         <div class="syn-package-spend" title="${escape(hint)}">목표까지 예상 구매비용 ${estimatedCost===null?"산정 불가":fmt(estimatedCost)+"원"}</div>`;
     }
+    return free;
   }
   function updateProgressOverview(c){
   const panel=el("syn-progress-overview"),choices=el("syn-progress-choices");
@@ -459,10 +476,12 @@
       button.setAttribute("aria-pressed",String(active));
     });
     const c=calculate();
-    updatePackageEfficiency(c);
+    const free=updatePackageEfficiency(c);
     updateProgressOverview(c);
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
-    el("syn-overall-days").textContent=c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승`;
+    const freeSavings=free.completeDay!==null&&c.completeDay!==null?free.completeDay-c.completeDay:null;
+    const compared=freeSavings===null?"":freeSavings>0?` · 무과금 대비 ${fmt(freeSavings)}일 단축`:" · 무과금 대비 기간 변화 없음";
+    el("syn-overall-days").textContent=c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승${compared}`;
     el("syn-overall-cost").textContent=fmt(c.spent)+"원";
     const dailyJewels=jewelsPerDay();
     const jewelEl=el("syn-overall-jewels");
