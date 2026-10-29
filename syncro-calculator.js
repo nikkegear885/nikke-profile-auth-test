@@ -186,7 +186,7 @@
           </section>
         </div>
       </div>
-       <section class="syn-box syn-progress-overview" id="syn-progress-overview" hidden aria-label="전초기지 상승 시뮬레이션 결과">
+       <section class="syn-box syn-progress-overview" id="syn-progress-overview" hidden style="display:none!important" aria-label="전초기지 상승 시뮬레이션 결과">
          <div class="syn-box-head">전초기지 상승 시뮬레이션</div>
          <div class="syn-box-body">
            <div class="syn-progress-stats" id="syn-progress-stats"></div>
