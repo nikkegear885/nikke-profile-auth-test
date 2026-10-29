@@ -382,17 +382,33 @@
     warning.textContent=high?
       `입력한 전초기지 레벨이 싱크로 ${fmt(calculated.level)}레벨 기준 전초기지 예상치 ${fmt(reference)}레벨보다 50레벨 이상 높습니다.\n계산 결과에 오차가 생길 수 있습니다.\n전초기지 레벨과 싱크로 레벨이 정확하다면 이 경고는 무시해도 됩니다.`:"";
   }
+  function laggingCampaignModes(current){
+    const starts=getCampaignStarts(current);
+    return ["normal","hard"].filter(mode=>{
+      if(!(mode==="normal"?state.progressNormal:state.progressHard))return false;
+      const start=starts[mode];
+      if(!start.manual)return false;
+      const prior=activeMilestones().filter(m=>m.mode===mode&&m.level<=current)
+        .sort((a,b)=>a.level-b.level).at(-1);
+      if(!prior)return false;
+      const required=chapterPosition(prior.chapter)+safe(campaignStageCounts[prior.chapter]);
+      return start.absolute<required;
+    });
+  }
   function buildProgressPlan(current,goal){
     if(state.progressMode!=="progress")return [];
+    const lagging=new Set(laggingCampaignModes(current));
     const starts=getCampaignStarts(current);
     const results=[];
     for(const mode of ["normal","hard"]){
-      if(!(mode==="normal"?state.progressNormal:state.progressHard))continue;
+      if(!(mode==="normal"?state.progressNormal:state.progressHard)||lagging.has(mode))continue;
       const start=starts[mode];
       let previousAbsolute=start.absolute;
       for(const m of activeMilestones().filter(entry=>entry.mode===mode).sort((a,b)=>a.chapter-b.chapter)){
         const bossAbsolute=chapterPosition(m.chapter)+safe(campaignStageCounts[m.chapter]);
         if(bossAbsolute<=previousAbsolute)continue;
+        // Never grant uncompleted past campaign milestones at simulation day 1.
+        if(m.level<=current)continue;
         if(m.level>goal)break;
         const stages=bossAbsolute-previousAbsolute;
         results.push({...m,stages,requiredLevel:Math.max(current,m.level)});
@@ -507,6 +523,12 @@
       dailyRows.push(row);
     }
     const grants=packages.map(p=>pkgGrantH(p).map((h,j)=>h*rate[j]+(j===0?safe(p.coreFixed):0)));
+    if(goal<=level){
+      return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,
+        reached:[null,null,null],count:packages.map(()=>0),spent:0,completeDay:null,
+        endOutpost:outpost,dailyEnd:daily,progressLog:[],events:[],levelReached:level,
+        inputOutpost,stageDerivedOutpost,invalidGoal:true};
+    }
     if(isProgress)return simulateProgress({level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages,inputOutpost,stageDerivedOutpost});
     const reached=[null,null,null],acc=[0,0,0],count=packages.map(()=>0);
     let spent=0,completeDay=null,subExpiry=0;
@@ -649,6 +671,11 @@
       stageStatus.textContent=state.stageProgress.normal&&state.stageProgress.hard?
         "연동된 실제 진행도: 노말 "+state.stageProgress.normal+" · 하드 "+hardDisplay:
         "실제 진행 위치 미지정: 전초기지 생산량 화면에서 노말·하드 클리어 위치를 선택하거나 싱크로 기준 추정치를 사용합니다.";
+      if(state.progressMode==="progress"){
+        const lag=laggingCampaignModes(Math.trunc(safe(state.current)));
+        if(lag.length)stageStatus.textContent+=" · "+lag.map(mode=>mode==="normal"?"노말":"하드").join("·")+
+          "는 실제 클리어 위치가 싱크로 기준보다 뒤처져 미래 스테이지 자동 상승을 보류합니다.";
+      }
     }
     const c=calculate();
     const outpostInput=root.querySelector('input[data-key="outpost"]');
@@ -667,22 +694,28 @@
       resourceDates.classList.toggle("syn-has-package-warning",anyWarning);
     }
     updateProgressOverview(c);
-    el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
+    el("syn-overall-date").textContent=c.invalidGoal?"목표 레벨 확인 필요":
+      c.completeDay===null?"1,500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     const freeSavings=free.completeDay!==null&&c.completeDay!==null?free.completeDay-c.completeDay:null;
     const compared=freeSavings===null?"":freeSavings>0?` · 무과금 대비 ${fmt(freeSavings)}일 단축`:" · 무과금 대비 기간 변화 없음";
-    el("syn-overall-days").textContent=c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승${compared}`;
-    el("syn-overall-cost").textContent=fmt(c.spent)+"원";
+    el("syn-overall-days").textContent=c.invalidGoal?"현재보다 높은 목표 레벨을 입력해 주세요":
+      c.completeDay===null?"수급 설정을 조정해 주세요":`${fmt(c.completeDay)}일 소요 · ${fmt(c.goal-c.level)}레벨 상승${compared}`;
+    el("syn-overall-cost").textContent=c.completeDay===null?"산정 불가":fmt(c.spent)+"원";
     const dailyJewels=jewelsPerDay();
     const jewelEl=el("syn-overall-jewels");
     jewelEl.textContent=c.completeDay===null?"쥬얼 소모량 산정 불가":`쥬얼 소모량 ${fmt(dailyJewels*c.completeDay)}개`;
     jewelEl.title=`단기섬멸 ${Math.trunc(safe(state.sweep))}회/일 · 하루 ${fmt(dailyJewels)}쥬얼 · 1회 무료, 2회부터 회당 비용 적용`;
-    el("syn-overall-sub").textContent="활성화된 패키지 구매 기준 · 목표 달성까지 합산";
+    el("syn-overall-sub").textContent=c.invalidGoal?"목표 레벨 입력을 확인해 주세요":
+      c.completeDay===null?"1,500일 내 목표 미도달 · 목표 달성 비용 산정 불가":
+      "활성화된 패키지 구매 기준 · 목표 달성까지 합산";
     const endRate=SOURCE.rates[c.endOutpost-1];
     el("syn-hourly").textContent=state.progressMode==="progress"?`시작 전초기지 Lv.${c.outpost} (시간당 코더 ${fmt(c.rate[0],2)}) → 예상 최종 Lv.${c.endOutpost} (시간당 코더 ${fmt(endRate[0],2)}) · 보유 상자는 시작 시점 생산량 적용`:`전초기지 ${c.outpost}레벨 · 시간당 코더 ${fmt(c.rate[0],2)}, 배데 ${fmt(c.rate[1],2)}, 크레딧 ${fmt(c.rate[2],2)}`;
     const finiteGoalDays=c.reached.filter(day=>Number.isFinite(day));
     const latestGoalDay=finiteGoalDays.length?Math.max(...finiteGoalDays):null;
     const hasUnreachedResource=c.reached.some(day=>day===null);
-    el("syn-resource-cards").innerHTML=names.map((name,j)=>{
+    el("syn-resource-cards").innerHTML=c.invalidGoal?
+      '<p class="syn-progress-tip">목표 레벨은 현재 레벨보다 높아야 합니다. 유효한 목표를 입력하면 재화별 예상 날짜가 표시됩니다.</p>':
+      names.map((name,j)=>{
       const ratio=c.total[j]>0?Math.min(100,100*c.owned[j]/c.total[j]):100;
       // A resource missing the 1500-day horizon is slower than any reached resource.
       const isLatest=hasUnreachedResource?c.reached[j]===null:latestGoalDay!==null&&c.reached[j]===latestGoalDay;
@@ -701,7 +734,7 @@
     el("syn-band-table").innerHTML=c.bands.filter(b=>b.qty).map(b=>`<tr><td>${b.start}~${b.end}</td><td>${fmt(b.qty)}</td>${[0,1,2].map(j=>`<td>${fmt(b.qty*safe(b.need[j]))}</td>`).join("")}</tr>`).join("")||
       '<tr><td colspan="5">현재 레벨과 목표 레벨을 확인해 주세요.</td></tr>';
     const status=el("syn-status");
-    if(c.goal<=c.level){status.classList.add("warn");status.textContent="목표 레벨은 현재 레벨보다 높아야 해요.";}
+    if(c.invalidGoal){status.classList.add("warn");status.textContent="목표 레벨은 현재 레벨보다 높아야 해요.";}
     else if(c.completeDay===null){status.classList.add("warn");status.textContent="1500일 이내에 목표에 도달하지 못해요. 기본 수급량이나 패키지 설정을 확인해 주세요.";}
     else{status.classList.remove("warn");status.textContent="사이트의 인게임 확인 전초기지 시간당 생산량과 원본 시트의 레벨업 비용·일일 수급·패키지 규칙을 반영한 예상 결과입니다. 구매 조건과 재화 수급 가정이 실제 게임과 다르면 결과도 달라질 수 있어요.";}
     if(c.level<200){
