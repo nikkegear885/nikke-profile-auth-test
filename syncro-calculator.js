@@ -573,6 +573,12 @@
     }
     updateOutpostDiscrepancy(c);
     const free=updatePackageEfficiency(c);
+    const resourceDates=root.querySelector(".syn-resource-date-details");
+    if(resourceDates){
+      const anyWarning=Array.from(root.querySelectorAll("[data-package-choice-warning]"))
+        .some(note=>!note.hidden);
+      resourceDates.classList.toggle("syn-has-package-warning",anyWarning);
+    }
     updateProgressOverview(c);
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     const freeSavings=free.completeDay!==null&&c.completeDay!==null?free.completeDay-c.completeDay:null;
@@ -586,9 +592,12 @@
     el("syn-overall-sub").textContent="활성화된 패키지 구매 기준 · 목표 달성까지 합산";
     const endRate=SOURCE.rates[c.endOutpost-1];
     el("syn-hourly").textContent=state.progressMode==="progress"?`시작 전초기지 Lv.${c.outpost} (시간당 코더 ${fmt(c.rate[0],2)}) → 예상 최종 Lv.${c.endOutpost} (시간당 코더 ${fmt(endRate[0],2)}) · 보유 상자는 시작 시점 생산량 적용`:`전초기지 ${c.outpost}레벨 · 시간당 코더 ${fmt(c.rate[0],2)}, 배데 ${fmt(c.rate[1],2)}, 크레딧 ${fmt(c.rate[2],2)}`;
+    const finiteGoalDays=c.reached.filter(day=>Number.isFinite(day));
+    const earliestGoalDay=finiteGoalDays.length?Math.min(...finiteGoalDays):null;
     el("syn-resource-cards").innerHTML=names.map((name,j)=>{
       const ratio=c.total[j]>0?Math.min(100,100*c.owned[j]/c.total[j]):100;
-      return `<article class="syn-resource"><div class="title">${name}</div><div class="date">${c.reached[j]===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.reached[j]))}</div>
+      const isEarliest=earliestGoalDay!==null&&c.reached[j]===earliestGoalDay;
+      return `<article class="syn-resource${isEarliest?" syn-earliest-goal":""}"><div class="title">${name}</div><div class="date">${c.reached[j]===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.reached[j]))}</div>
         <div class="metric"><span>소요 기간</span><strong>${c.reached[j]===null?"미도달":fmt(c.reached[j])+"일"}</strong></div>
         <div class="metric"><span>총 필요 재화</span><strong>${fmt(c.total[j])}</strong></div>
         <div class="metric"><span>보유 차감 후</span><strong>${fmt(c.needed[j])}</strong></div>
