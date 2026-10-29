@@ -757,3 +757,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .syn-mode-buttons button.active:hover{filter:brightness(1.08)}
 .syn-mode-buttons button:focus-visible{outline:3px solid var(--sy-accent);outline-offset:2px}
 @media(max-width:550px){.syn-mode-buttons{flex-direction:column}}
+
+/* TEST 1.462: show marginal whole-target duration change per paid package */
+.syn-package-panel .syn-package-impact{color:var(--sy-blue);font-size:10px;font-weight:800;line-height:1.25;margin-top:3px}
+.syn-package-panel .syn-package-values .syn-package-value{white-space:normal}
