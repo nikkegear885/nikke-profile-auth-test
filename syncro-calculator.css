@@ -787,3 +787,27 @@ html.dark-theme .syn-outpost-discrepancy{background:#391d26;border-color:#a95764
 /* v1.472: collapsible resource-specific goal dates */
 .syn-resource-date-details .syn-resource-cards{margin-bottom:10px}
 .syn-resource-date-details .syn-progress-explain{margin:0}
+
+/* v1.473: Excel-style warning note for a resource choice without date improvement */
+.syn-package-panel{overflow:visible}
+.syn-package-choice-wrap{display:flex;position:relative;align-items:center;width:100%;min-width:0}
+.syn-package-panel .syn-package-choice-wrap .syn-package-select{width:100%;min-width:0}
+.syn-package-choice-warning{
+ position:absolute;top:-8px;right:-5px;z-index:4;
+ display:inline-flex;justify-content:center;align-items:center;
+ width:17px;height:17px;border:1px solid #c88715;border-radius:4px;
+ background:#fff0b7;color:#8e4e00;font-size:12px;font-weight:900;
+ line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.16);cursor:help
+}
+.syn-package-choice-warning[hidden]{display:none!important}
+.syn-package-choice-warning:focus-visible{outline:2px solid #c88715;outline-offset:2px}
+.syn-package-warning-note{
+ position:absolute;bottom:calc(100% + 8px);right:0;z-index:5;
+ display:none;width:max-content;max-width:min(260px,80vw);
+ padding:9px 11px;border:1px solid #cca64d;border-radius:5px;
+ background:#fffbea;color:#40341a;box-shadow:0 7px 18px rgba(0,0,0,.19);
+ text-align:left;white-space:normal;font-size:12px;line-height:1.45;
+ font-weight:700;pointer-events:none
+}
+.syn-package-choice-warning:hover .syn-package-warning-note,
+.syn-package-choice-warning:focus-visible .syn-package-warning-note{display:block}
