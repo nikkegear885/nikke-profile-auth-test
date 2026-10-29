@@ -7,8 +7,12 @@
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v4";
-  const campaignStageCounts={"15":37,"16":33,"17":38,"18":40,"19":42,"20":41,"21":42,"22":43,"23":42,"24":44,"25":40,"26":42,"27":44,"28":43,"29":42,"30":42,"31":44,"32":45,"33":42,"34":46,"35":44,"36":45,"37":44,"38":45,"39":44,"40":44,"41":44,"42":44,"43":44,"44":44,"45":44,"46":44,"47":44,"48":44};
-  const campaignBossStages={"16":28,"18":33,"20":31,"22":36,"24":38,"26":34,"28":40,"30":34,"32":33,"34":38,"36":37,"38":37,"40":36,"42":44,"44":36,"46":40,"48":36};
+  // Exact stage list copied from the site's existing OUTPOST_CHAPTER_STAGES table.
+  // This includes A/B branches. One completed entry = one cleared stage.
+  const campaignStages=SOURCE.campaignStages;
+  const campaignStageCounts=campaignStages.map(chapter=>chapter.length);
+  const chapterPosition=(chapter)=>campaignStageCounts.slice(0,chapter).reduce((sum,count)=>sum+count,0);
+  const stageDerivedLevel=(normal,hard)=>Math.min(800,1+Math.floor(Math.max(0,normal+hard-18)/5));
   const campaignMilestones=[{"mode":"normal","chapter":32,"level":221},{"mode":"normal","chapter":34,"level":231},{"mode":"normal","chapter":36,"level":241},{"mode":"normal","chapter":38,"level":251},{"mode":"normal","chapter":40,"level":281},{"mode":"normal","chapter":42,"level":301},{"mode":"normal","chapter":44,"level":321},{"mode":"normal","chapter":46,"level":331},{"mode":"normal","chapter":48,"level":341},{"mode":"hard","chapter":16,"level":241},{"mode":"hard","chapter":18,"level":261},{"mode":"hard","chapter":20,"level":281},{"mode":"hard","chapter":22,"level":301},{"mode":"hard","chapter":24,"level":321},{"mode":"hard","chapter":26,"level":341},{"mode":"hard","chapter":28,"level":350},{"mode":"hard","chapter":30,"level":361},{"mode":"hard","chapter":31,"level":381},{"mode":"hard","chapter":32,"level":461},{"mode":"hard","chapter":34,"level":481},{"mode":"hard","chapter":36,"level":501},{"mode":"hard","chapter":38,"level":521},{"mode":"hard","chapter":40,"level":581},{"mode":"hard","chapter":42,"level":601},{"mode":"hard","chapter":44,"level":621},{"mode":"hard","chapter":46,"level":641},{"mode":"hard","chapter":48,"level":681}];
   const boxDurations=[1,2,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
@@ -175,9 +179,9 @@
                           <label class="syn-field"><span>스테이지</span><input data-key="hardStartStage" type="number" min="0" max="50" step="1" placeholder="자동" value="${state.hardStartStage||""}"></label>
                         </div>
                       </div>
-                      <span class="syn-progress-tip">현재 클리어한 위치를 입력하세요. 예: 노말 48-36 / 하드 32-29. 둘 다 비워 두면 시작 싱크로 기준으로 추정합니다. 이미 클리어한 스테이지는 다시 계산하지 않습니다.</span>
+                      <span class="syn-progress-tip">노말·하드를 모두 입력하면 기존 전초기지 계산기와 동일한 방식으로 시작 전초기지 레벨을 자동 계산합니다. 예: 노말 48-36 / 하드 32-29 → Lv.570. 빈칸은 시작 싱크로 기준으로 추정합니다.</span>
                     </div>
-                    <span class="syn-progress-tip">기준 싱크로 달성일에 남은 스테이지만 일괄 반영합니다. 노말·하드 합산 5스테이지마다 전초기지 +1 · 현재 단계의 남은 누적 진행량은 추정치입니다.</span>
+                    <span class="syn-progress-tip">기존 전초기지 계산기에 등록된 스테이지(A/B 분기 포함)와 5스테이지당 +1 규칙을 적용합니다. 기준 싱크로를 달성하면 해당 보스까지의 남은 스테이지를 반영합니다.</span>
                   </div>
                 </div>
             </div>
@@ -199,7 +203,7 @@
          <div class="syn-box-head">전초기지 상승 시뮬레이션</div>
          <div class="syn-box-body">
            <div class="syn-progress-stats" id="syn-progress-stats"></div>
-           <p class="syn-progress-disclaimer">입력한 전초기지 레벨을 시작값으로 사용합니다. 현재 노말·하드 진행 위치 이전에 클리어한 스테이지는 제외합니다. 스테이지 번호와 실제 클리어 횟수가 다른 경우 구간별 스테이지 수를 비례 추정하며, 전초기지 레벨의 5스테이지 단위 잔여치는 0으로 가정합니다. 해당 보스 기준 싱크로에 도달하면 남은 구간을 일괄 반영합니다.</p>
+           <p class="syn-progress-disclaimer">노말과 하드 진행 위치를 모두 입력하면 사이트의 기존 전초기지 계산식으로 시작 레벨과 5스테이지 잔여 진행도를 산정합니다. 이미 클리어한 스테이지는 중복 반영하지 않습니다. 어느 한쪽이라도 비어 있으면 해당 진행 위치를 싱크로 기준으로 추정하고, 전초기지 시작 레벨은 정보입력의 수동 값을 사용합니다. 실제 클리어 날짜는 알 수 없으므로 보스 클리어 기준 싱크로 달성일에 해당 구간을 일괄 반영합니다.</p>
            <details class="syn-progress-details"><summary>챕터별 전초기지 상승 내역</summary><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>모드</th><th>보스 챕터</th><th>기준 싱크로</th><th>반영 스테이지</th><th>전초기지 상승</th><th>도달 날짜</th><th>전초기지</th></tr></thead><tbody id="syn-progress-events"></tbody></table></div></details>
          </div>
        </section>
@@ -289,50 +293,46 @@
   function getCampaignStart(mode,current){
     const chapter=Math.trunc(safe(state[mode+"StartChapter"]));
     const stage=Math.trunc(safe(state[mode+"StartStage"]));
-    if(chapter>0&&stage>0){
-      const chapterCount=Math.trunc(safe(campaignStageCounts[chapter]));
-      const bossNumber=Math.trunc(safe(campaignBossStages[chapter]))||chapterCount;
-      const completed=Math.max(0,Math.min(chapterCount,Math.floor(chapterCount*Math.min(stage,bossNumber)/Math.max(1,bossNumber))));
-      return {mode,chapter,stage,completed,auto:false};
+    const list=campaignStages[chapter]||[];
+    const stageId=chapter+"-"+stage;
+    const stageIndex=list.findIndex(name=>name===stageId||name===stageId+" BOSS");
+    if(chapter>0&&stage>0&&stageIndex>=0){
+      const completed=stageIndex+1;
+      return {mode,chapter,stage,completed,absolute:chapterPosition(chapter)+completed,manual:true};
     }
-    // A missing manual stage means the last boss whose estimated required
-    // synchro is already achieved. This is a starting position, not new loot.
-    const milestones=campaignMilestones.filter(m=>m.mode===mode).sort((a,b)=>a.level-b.level);
-    const past=milestones.filter(m=>m.level<=current).at(-1);
-    const chapter0=past?past.chapter:milestones[0].chapter-2;
-    return {mode,chapter:chapter0,stage:0,completed:safe(campaignStageCounts[chapter0]),auto:true};
+    // When the current stage is unknown, only assume milestones already
+    // passed by the starting synchro. Never award their stages again.
+    const checkpoints=campaignMilestones.filter(m=>m.mode===mode).sort((a,b)=>a.level-b.level);
+    const reached=checkpoints.filter(m=>m.level<=current).at(-1);
+    const initialChapter=reached?reached.chapter:checkpoints[0].chapter-2;
+    const completed=safe(campaignStageCounts[initialChapter]);
+    return {mode,chapter:initialChapter,stage:0,completed,
+      absolute:chapterPosition(initialChapter)+completed,manual:false};
+  }
+  function getCampaignStarts(current){
+    return {normal:getCampaignStart("normal",current),hard:getCampaignStart("hard",current)};
   }
   function buildProgressPlan(current,goal){
     if(state.progressMode!=="progress")return [];
-    const starts={
-      normal:getCampaignStart("normal",current),
-      hard:getCampaignStart("hard",current)
-    };
-    const selected=campaignMilestones.filter(m=>
-      m.mode==="normal"?state.progressNormal:state.progressHard
-    );
+    const starts=getCampaignStarts(current);
     const results=[];
     for(const mode of ["normal","hard"]){
+      if(!(mode==="normal"?state.progressNormal:state.progressHard))continue;
       const start=starts[mode];
-      let previousChapter=start.chapter,previousCompleted=start.completed;
-      for(const m of selected.filter(m=>m.mode===mode).sort((a,b)=>a.chapter-b.chapter)){
-        if(m.chapter<previousChapter||m.chapter===previousChapter&&previousCompleted>=safe(campaignStageCounts[m.chapter]))continue;
+      let previousAbsolute=start.absolute;
+      for(const m of campaignMilestones.filter(entry=>entry.mode===mode).sort((a,b)=>a.chapter-b.chapter)){
+        const bossAbsolute=chapterPosition(m.chapter)+safe(campaignStageCounts[m.chapter]);
+        if(bossAbsolute<=previousAbsolute)continue;
         if(m.level>goal)break;
-        let stages=0;
-        for(let chapter=previousChapter;chapter<=m.chapter;chapter++){
-          if(chapter===previousChapter){
-            stages+=Math.max(0,safe(campaignStageCounts[chapter])-previousCompleted);
-          }else{
-            stages+=safe(campaignStageCounts[chapter]);
-          }
-        }
+        const stages=bossAbsolute-previousAbsolute;
         results.push({...m,stages,requiredLevel:Math.max(current,m.level)});
-        previousChapter=m.chapter;
-        previousCompleted=safe(campaignStageCounts[m.chapter]);
+        previousAbsolute=bossAbsolute;
       }
     }
     results.sort((a,b)=>a.requiredLevel-b.requiredLevel||(a.mode==="normal"?-1:1));
-    let remainder=0;
+    // The starting stage positions already contain 0~4 partial stages towards
+    // the next outpost level. Preserve them rather than restarting at zero.
+    let remainder=Math.max(0,starts.normal.absolute+starts.hard.absolute-18)%5;
     return results.map(m=>{
       remainder+=m.stages;
       const gain=Math.floor(remainder/5);
@@ -341,7 +341,7 @@
     });
   }
   function simulateProgress(base){
-  const {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages}=base;
+  const {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages,inputOutpost,stageDerivedOutpost}=base;
   const events=buildProgressPlan(level,goal);
   const stepCosts=Array.from({length:goal+1},(_,lv)=>{
     const b=bands.find(row=>lv>=row.start&&lv<=row.end);
@@ -403,7 +403,7 @@
     const hours=r.name==="단기섬멸"?safe(state.sweep)*2:safe(r.h[j]);
     dailyEnd[j]+=(hours*lastRate[j]+safe(r.fixed[j]))/Math.max(.0000001,safe(r.period));
   }
-  return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay,endOutpost:currentOutpost,dailyEnd,progressLog,events,levelReached};
+  return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay,endOutpost:currentOutpost,dailyEnd,progressLog,events,levelReached,inputOutpost,stageDerivedOutpost};
 }
   function calculate(onlyPackage=null,modeOverride=null){
     // null: active selections; -1: free only; index: one package; array: selected package indices.
@@ -412,7 +412,14 @@
     }));
     const level=Math.min(999,Math.max(1,Math.trunc(safe(state.current))));
     const goal=Math.min(1000,Math.max(2,Math.trunc(safe(state.goal))));
-    const outpost=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
+    const inputOutpost=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
+    const isProgress=(modeOverride||state.progressMode)==="progress";
+    const starts=isProgress?getCampaignStarts(level):null;
+    const stageDerivedOutpost=starts&&starts.normal.manual&&starts.hard.manual
+      ?stageDerivedLevel(starts.normal.absolute,starts.hard.absolute):null;
+    // If both campaign positions are known, the site's existing outpost
+    // calculator is authoritative; the editable field is only a fallback.
+    const outpost=isProgress&&stageDerivedOutpost!==null?stageDerivedOutpost:inputOutpost;
     const rate=SOURCE.rates[outpost-1];
     const bands=SOURCE.bands.map(b=>({start:b.start,end:b.end,need:b.need,qty:Math.max(0,Math.min(goal,b.end)-Math.max(level+1,b.start)+1)}));
     const total=[0,0,0];bands.forEach(b=>{for(let j=0;j<3;j++)total[j]+=b.qty*safe(b.need[j]);});
@@ -429,7 +436,7 @@
       dailyRows.push(row);
     }
     const grants=packages.map(p=>pkgGrantH(p).map((h,j)=>h*rate[j]+(j===0?safe(p.coreFixed):0)));
-    if((modeOverride||state.progressMode)==="progress")return simulateProgress({level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages});
+    if(isProgress)return simulateProgress({level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages,inputOutpost,stageDerivedOutpost});
     const reached=[null,null,null],acc=[0,0,0],count=packages.map(()=>0);
     let spent=0,completeDay=null,subExpiry=0;
     for(let day=1;day<=1500;day++){
@@ -533,7 +540,7 @@
   const delta=fixed.completeDay!==null&&c.completeDay!==null?fixed.completeDay-c.completeDay:null;
   const deltaText=delta===null?"산정 불가":delta>=0?`${fmt(delta)}일 단축`:`${fmt(-delta)}일 증가`;
   el("syn-progress-stats").innerHTML=`
-    <div class="syn-progress-stat"><span>시작 전초기지</span><strong>Lv.${fmt(c.outpost)}</strong></div>
+    <div class="syn-progress-stat"><span>시작 전초기지</span><strong>Lv.${fmt(c.outpost)}${c.stageDerivedOutpost!==null?" (진행 위치 기준)":""}</strong></div>
     <div class="syn-progress-stat"><span>예상 최종 전초기지</span><strong>Lv.${fmt(c.endOutpost)} (+${fmt(c.endOutpost-c.outpost)})</strong></div>
     <div class="syn-progress-stat"><span>고정 방식 예상</span><strong>${fixed.completeDay===null?"1,500일 내 미도달":fmt(fixed.completeDay)+"일"}</strong></div>
     <div class="syn-progress-stat"><span>고정 방식 대비</span><strong>${deltaText}</strong></div>`;
@@ -550,6 +557,13 @@
       button.setAttribute("aria-pressed",String(active));
     });
     const c=calculate();
+    const outpostInput=root.querySelector('input[data-key="outpost"]');
+    if(outpostInput){
+      const auto=state.progressMode==="progress"&&c.stageDerivedOutpost!==null;
+      outpostInput.disabled=auto;
+      outpostInput.value=auto?String(c.stageDerivedOutpost):String(state.outpost);
+      outpostInput.title=auto?"현재 노말·하드 클리어 스테이지로 자동 산정한 전초기지 레벨":"전초기지 시작 레벨 직접 입력";
+    }
     const free=updatePackageEfficiency(c);
     updateProgressOverview(c);
     el("syn-overall-date").textContent=c.completeDay===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
