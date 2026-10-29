@@ -15,20 +15,8 @@
   const stageDerivedLevel=(normal,hard)=>Math.min(800,1+Math.floor(Math.max(0,normal+hard-18)/5));
   // Stage catalog includes chapters 49-50, but do not invent new synchro milestone thresholds.
   const campaignMilestones=[{"mode":"normal","chapter":32,"level":221},{"mode":"normal","chapter":34,"level":231},{"mode":"normal","chapter":36,"level":241},{"mode":"normal","chapter":38,"level":251},{"mode":"normal","chapter":40,"level":281},{"mode":"normal","chapter":42,"level":301},{"mode":"normal","chapter":44,"level":321},{"mode":"normal","chapter":46,"level":331},{"mode":"normal","chapter":48,"level":341},{"mode":"hard","chapter":16,"level":241},{"mode":"hard","chapter":18,"level":261},{"mode":"hard","chapter":20,"level":281},{"mode":"hard","chapter":22,"level":301},{"mode":"hard","chapter":24,"level":321},{"mode":"hard","chapter":26,"level":341},{"mode":"hard","chapter":28,"level":350},{"mode":"hard","chapter":30,"level":361},{"mode":"hard","chapter":31,"level":381},{"mode":"hard","chapter":32,"level":461},{"mode":"hard","chapter":34,"level":481},{"mode":"hard","chapter":36,"level":501},{"mode":"hard","chapter":38,"level":521},{"mode":"hard","chapter":40,"level":581},{"mode":"hard","chapter":42,"level":601},{"mode":"hard","chapter":44,"level":621},{"mode":"hard","chapter":46,"level":641},{"mode":"hard","chapter":48,"level":681}];
-  // Hard chapters 49 and 50 have no verified synchro clear thresholds.
-  // Apply them only when the user provides their actual thresholds.
-  const activeMilestones=()=>{
-    const extra=[];
-    let last=681;
-    for(const chapter of [49,50]){
-      const lv=Number(state.optionalHardThresholds?.[chapter]);
-      if(Number.isInteger(lv)&&lv>last&&lv<=1000){
-        extra.push({mode:"hard",chapter,level:lv,custom:true});
-        last=lv;
-      }
-    }
-    return campaignMilestones.concat(extra);
-  };
+  // Keep only verified automatic synchro-clear milestones; 49-50 remain unverified.
+  const activeMilestones=()=>campaignMilestones;
   const boxDurations=[1,2,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
   const fmt=(n,d=0)=>Number.isFinite(+n)?new Intl.NumberFormat("ko-KR",{maximumFractionDigits:d}).format(+n):"-";
@@ -44,7 +32,7 @@
     return `${value("year")}-${value("month")}-${value("day")}`;
   };
   const defaults=()=>{
-    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0,stageProgress:{normal:"",hard:""},optionalHardThresholds:{"49":null,"50":null}});
+    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0,});
     // Use the current local Korean date for a fresh/reset calculator; preserve any saved date.
     initial.date=seoulTodayISO();
     initial.daily.forEach(row=>{row.on=true;});
@@ -84,22 +72,6 @@
         if(Number.isFinite(Number(saved[key])))state[key]=Number(saved[key]);
       }
       if(typeof saved.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(saved.date))state.date=saved.date;
-      if(saved.stageProgress&&typeof saved.stageProgress==="object"){
-        for(const mode of ["normal","hard"]){
-          const stage=String(saved.stageProgress[mode]||"");
-          const ch=Number(stage.match(/^(\d+)-/)?.[1]);
-          if(mode==="hard"&&stage==="__uncleared__")state.stageProgress[mode]=stage;
-          else if(stage&&Number.isInteger(ch)&&campaignStages[ch]?.includes(stage))
-            state.stageProgress[mode]=stage;
-        }
-      }
-      if(saved.optionalHardThresholds&&typeof saved.optionalHardThresholds==="object"){
-        for(const ch of [49,50]){
-          const lv=Number(saved.optionalHardThresholds[ch]);
-          if(saved.optionalHardThresholds[ch]!==null&&Number.isInteger(lv)&&lv>=682&&lv<=1000)
-            state.optionalHardThresholds[ch]=lv;
-        }
-      }
       if(typeof saved.subtractOwned==="boolean")state.subtractOwned=saved.subtractOwned;
       if(["fixed","progress"].includes(saved.progressMode))state.progressMode=saved.progressMode;
       if(typeof saved.progressNormal==="boolean")state.progressNormal=saved.progressNormal;
@@ -175,35 +147,6 @@
       }
     }
   }
-  // The two calculators run on the same origin, including the embedded iframe.
-  function readOutpostCalculatorStages(){
-    try{
-      if(window.parent===window)return null;
-      // The parent starts with empty stage controls. Don't replace real saved
-      // progress with defaults before the outpost calculator restores them.
-      if(window.parent.__NIKKE_OUTPOST_PROGRESS_READY!==true)return null;
-      const doc=window.parent.document;
-      const normal=String(doc.getElementById("outpostNormalStage")?.value||"");
-      const hard=String(doc.getElementById("outpostHardStage")?.value||"");
-      const nc=Number(normal.match(/^(\d+)-/)?.[1]);
-      const hc=Number(hard.match(/^(\d+)-/)?.[1]);
-      if(!normal||!campaignStages[nc]?.includes(normal))return null;
-      if(hard&&!campaignStages[hc]?.includes(hard))return null;
-      return {normal,hard:hard||"__uncleared__"};
-    }catch(err){return null}
-  }
-  function linkOutpostStages(){
-    const next=readOutpostCalculatorStages();
-    // When controls have not been restored yet, keep the last valid saved
-    // position rather than resetting it to a level-based approximation.
-    if(!next)return false;
-    if(["normal","hard"].some(mode=>state.stageProgress[mode]!==next[mode])){
-      state.stageProgress=next;
-      try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
-      update();
-    }
-    return true;
-  }
   function render(){
     root.innerHTML=`
     <div class="syn-wrap">
@@ -233,18 +176,6 @@
                       <button type="button" data-progress-mode="progress" class="${state.progressMode==="progress"?"active":""}" aria-pressed="${state.progressMode==="progress"}">싱크로에 따른 전초기지 레벨 상승 임의 적용</button>
                     </div>
                   </div>
-                </div>
-                <div id="syn-stage-link-settings" class="syn-stage-link-settings" ${state.progressMode==="progress"?"":"hidden"}>
-                  <div class="syn-stage-link-header"><strong>전초기지 계산기 실제 스테이지 연동</strong>
-                    <button type="button" class="syn-btn" id="syn-import-outpost">현재 클리어 위치 가져오기</button>
-                  </div>
-                  <p class="syn-progress-tip" id="syn-stage-link-status">노말·하드 실제 클리어 위치를 확인하고 있습니다.</p>
-                  <div class="syn-hard-threshold-inputs">
-                    ${[49,50].map(ch=>'<label class="syn-field">하드 '+ch+'챕터 클리어 싱크로 (선택)'+
-                      '<input type="number" min="682" max="1000" step="1" placeholder="미확정" data-hard-threshold="'+ch+'" value="'+
-                      (state.optionalHardThresholds[ch]??'')+'"></label>').join("")}
-                  </div>
-                  <p class="syn-progress-tip">49·50챕터의 확정 싱크로 클리어 기준이 없어 기본값은 비워 둡니다. 실제 기준 레벨을 입력한 챕터만 목표 상승 계산에 포함됩니다.</p>
                 </div>
             </div>
           </section>
@@ -341,23 +272,13 @@
     enforcePackageEditPolicy();
     update();
   }
-  // Read the exact normal/hard clear positions from the site's outpost calculator.
+  // Progression-mode starting chapters are estimated from verified synchro milestones.
   function getCampaignStart(mode,current){
-    const selected=String(state.stageProgress?.[mode]||"");
-    if(mode==="hard"&&selected==="__uncleared__")
-      return {mode,chapter:0,stage:"",completed:0,absolute:0,manual:true};
-    const chapter=Number(selected.match(/^(\d+)-/)?.[1]);
-    const index=campaignStages[chapter]?.indexOf(selected)??-1;
-    if(selected&&index>=0){
-      return {mode,chapter,stage:selected,completed:index+1,
-        absolute:chapterPosition(chapter)+index+1,manual:true};
-    }
-    const checkpoints=activeMilestones().filter(m=>m.mode===mode).sort((x,y)=>x.level-y.level);
+    const checkpoints=activeMilestones().filter(m=>m.mode===mode).sort((a,b)=>a.level-b.level);
     const reached=checkpoints.filter(m=>m.level<=current).at(-1);
-    const initialChapter=reached?reached.chapter:checkpoints[0].chapter-2;
-    const completed=safe(campaignStageCounts[initialChapter]);
-    return {mode,chapter:initialChapter,stage:0,completed,
-      absolute:chapterPosition(initialChapter)+completed,manual:false};
+    const chapter=reached?reached.chapter:checkpoints[0].chapter-2;
+    const completed=safe(campaignStageCounts[chapter]);
+    return {mode,chapter,stage:0,completed,absolute:chapterPosition(chapter)+completed,manual:false};
   }
   function getCampaignStarts(current){
     return {normal:getCampaignStart("normal",current),hard:getCampaignStart("hard",current)};
@@ -372,7 +293,7 @@
   function updateOutpostDiscrepancy(calculated){
     const warning=el("syn-outpost-discrepancy");
     if(!warning)return;
-    // If both stages are entered, the manually typed outpost is ignored.
+    // The outpost level is always entered directly; use the milestone estimate only for this warning.
     const manualUsed=state.progressMode==="progress"&&calculated.stageDerivedOutpost===null;
     const reference=manualUsed?expectedOutpostForStart(calculated.level):null;
     const typed=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
@@ -382,29 +303,12 @@
     warning.textContent=high?
       `입력한 전초기지 레벨이 싱크로 ${fmt(calculated.level)}레벨 기준 전초기지 예상치 ${fmt(reference)}레벨보다 50레벨 이상 높습니다.\n계산 결과에 오차가 생길 수 있습니다.\n전초기지 레벨과 싱크로 레벨이 정확하다면 이 경고는 무시해도 됩니다.`:"";
   }
-  function laggingCampaignModes(current){
-    const starts=getCampaignStarts(current);
-    return ["normal","hard"].filter(mode=>{
-      if(!(mode==="normal"?state.progressNormal:state.progressHard))return false;
-      const start=starts[mode];
-      if(!start.manual)return false;
-      // An entirely uncleared HARD campaign cannot be projected to an
-      // advanced chapter solely from a future synchro level milestone.
-      if(mode==="hard"&&start.absolute===0)return true;
-      const prior=activeMilestones().filter(m=>m.mode===mode&&m.level<=current)
-        .sort((a,b)=>a.level-b.level).at(-1);
-      if(!prior)return false;
-      const required=chapterPosition(prior.chapter)+safe(campaignStageCounts[prior.chapter]);
-      return start.absolute<required;
-    });
-  }
   function buildProgressPlan(current,goal){
     if(state.progressMode!=="progress")return [];
-    const lagging=new Set(laggingCampaignModes(current));
     const starts=getCampaignStarts(current);
     const results=[];
     for(const mode of ["normal","hard"]){
-      if(!(mode==="normal"?state.progressNormal:state.progressHard)||lagging.has(mode))continue;
+      if(!(mode==="normal"?state.progressNormal:state.progressHard))continue;
       const start=starts[mode];
       let previousAbsolute=start.absolute;
       for(const m of activeMilestones().filter(entry=>entry.mode===mode).sort((a,b)=>a.chapter-b.chapter)){
@@ -505,11 +409,9 @@
     const inputOutpost=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
     const isProgress=(modeOverride||state.progressMode)==="progress";
     const starts=isProgress?getCampaignStarts(level):null;
-    const stageDerivedOutpost=starts&&starts.normal.manual&&starts.hard.manual
-      ?stageDerivedLevel(starts.normal.absolute,starts.hard.absolute):null;
-    // If both campaign positions are known, the site's existing outpost
-    // calculator is authoritative; the editable field is only a fallback.
-    const outpost=isProgress&&stageDerivedOutpost!==null?stageDerivedOutpost:inputOutpost;
+    const stageDerivedOutpost=null;
+    // Manual starting outpost is independent of the campaign level estimate.
+    const outpost=inputOutpost;
     const rate=SOURCE.rates[outpost-1];
     const bands=SOURCE.bands.map(b=>({start:b.start,end:b.end,need:b.need,qty:Math.max(0,Math.min(goal,b.end)-Math.max(level+1,b.start)+1)}));
     const total=[0,0,0];bands.forEach(b=>{for(let j=0;j<3;j++)total[j]+=b.qty*safe(b.need[j]);});
@@ -674,27 +576,12 @@
       button.classList.toggle("active",active);
       button.setAttribute("aria-pressed",String(active));
     });
-    const linkSettings=el("syn-stage-link-settings");
-    if(linkSettings)linkSettings.hidden=state.progressMode!=="progress";
-    const stageStatus=el("syn-stage-link-status");
-    if(stageStatus){
-      const hardDisplay=state.stageProgress.hard==="__uncleared__"?"미클리어":state.stageProgress.hard;
-      stageStatus.textContent=state.stageProgress.normal&&state.stageProgress.hard?
-        "연동된 실제 진행도: 노말 "+state.stageProgress.normal+" · 하드 "+hardDisplay:
-        "실제 진행 위치 미지정: 전초기지 생산량 화면에서 노말·하드 클리어 위치를 선택하거나 싱크로 기준 추정치를 사용합니다.";
-      if(state.progressMode==="progress"){
-        const lag=laggingCampaignModes(Math.trunc(safe(state.current)));
-        if(lag.length)stageStatus.textContent+=" · "+lag.map(mode=>mode==="normal"?"노말":"하드").join("·")+
-          "는 실제 클리어 위치가 싱크로 기준보다 뒤처져 미래 스테이지 자동 상승을 보류합니다.";
-      }
-    }
     const c=calculate();
     const outpostInput=root.querySelector('input[data-key="outpost"]');
     if(outpostInput){
-      const auto=state.progressMode==="progress"&&c.stageDerivedOutpost!==null;
-      outpostInput.disabled=auto;
-      outpostInput.value=auto?String(c.stageDerivedOutpost):String(state.outpost);
-      outpostInput.title=auto?"현재 노말·하드 클리어 스테이지로 자동 산정한 전초기지 레벨":"전초기지 시작 레벨 직접 입력";
+      outpostInput.disabled=false;
+      outpostInput.value=String(state.outpost);
+      outpostInput.title="전초기지 시작 레벨 직접 입력";
     }
     if(c.unsupportedLevel){
       const notice="싱크로 200레벨 미만은 계산을 지원하지 않습니다. 현재 싱크로 레벨을 200 이상으로 입력해 주세요.";
@@ -778,22 +665,6 @@
   }
   function onEdit(e){
     const x=e.target;if(!x.dataset)return;
-    if(x.dataset.hardThreshold!==undefined){
-      const ch=Number(x.dataset.hardThreshold);
-      const lv=x.value===""?null:Number(x.value);
-      if(![49,50].includes(ch))return;
-      const other=state.optionalHardThresholds[ch===49?50:49];
-      const invalid=lv!==null&&(!Number.isInteger(lv)||lv<682||lv>1000||
-        (other!==null&&(ch===49?lv>=other:lv<=other)));
-      if(invalid){
-        if(e.type==="change")x.value=state.optionalHardThresholds[ch]??"";
-        return;
-      }
-      state.optionalHardThresholds[ch]=lv;
-      try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
-      update();
-      return;
-    }
     if(x.dataset.key){
       const k=x.dataset.key;
       if(!editableKeys.has(k))return;
@@ -834,10 +705,6 @@
   root.addEventListener("input",onEdit);
   root.addEventListener("change",onEdit);
   root.addEventListener("click",e=>{
-    if(e.target.closest("#syn-import-outpost")){
-      if(!linkOutpostStages())window.alert("전초기지 생산량 화면에서 노말·하드 마지막 클리어 스테이지를 모두 선택해 주세요.");
-      return;
-    }
     const modeButton=e.target.closest("button[data-progress-mode]");
     if(modeButton){
       const mode=modeButton.dataset.progressMode;
@@ -863,18 +730,8 @@
     if(e.target.id==="syn-reset"){
       if(!confirm("싱크로 계산기의 입력값과 체크 상태를 원본 시트 기본값으로 초기화할까요?"))return;
       state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}
-      render();linkOutpostStages();
+      render();
     }
   });
   render();
-  try{
-    if(window.parent!==window){
-      window.parent.document.addEventListener("change",event=>{
-        if(["outpostNormalChapter","outpostNormalStage","outpostHardChapter","outpostHardStage"].includes(event.target?.id))
-          linkOutpostStages();
-      });
-      window.parent.document.addEventListener("nikke-outpost-stage-updated",linkOutpostStages);
-      linkOutpostStages();
-    }
-  }catch(err){}
 })();
