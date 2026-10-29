@@ -811,3 +811,39 @@ html.dark-theme .syn-outpost-discrepancy{background:#391d26;border-color:#a95764
 }
 .syn-package-choice-warning:hover .syn-package-warning-note,
 .syn-package-choice-warning:focus-visible .syn-package-warning-note{display:block}
+
+/* v1.474: highlight the collapsed resource-date heading when a paid resource
+   selection triggers the no-improvement warning. */
+.syn-resource-date-details.syn-has-package-warning:not([open]){
+ border-color:#d6a03a;
+ box-shadow:0 0 0 1px rgba(214,160,58,.26);
+}
+.syn-resource-date-details.syn-has-package-warning:not([open])>summary{
+ background:#fff0c9;
+ color:#75440b;
+}
+.syn-resource-date-details.syn-has-package-warning:not([open])>summary::before{color:#a36c0c}
+html.dark-theme .syn-resource-date-details.syn-has-package-warning:not([open]){
+ border-color:#bc8735;
+ box-shadow:0 0 0 1px rgba(223,165,61,.26);
+}
+html.dark-theme .syn-resource-date-details.syn-has-package-warning:not([open])>summary{
+ background:#45331a;
+ color:#ffe5ac;
+}
+html.dark-theme .syn-resource-date-details.syn-has-package-warning:not([open])>summary::before{color:#ffd383}
+
+/* Always emphasize the resource with the soonest calculated completion date.
+   Equal earliest dates share the highlight; unavailable dates are excluded. */
+.syn-resource-cards .syn-resource.syn-earliest-goal{
+ border-color:#d6a03a;
+ background:#fff8e8;
+ box-shadow:0 0 0 2px rgba(214,160,58,.26);
+}
+.syn-resource-cards .syn-resource.syn-earliest-goal .date{color:#875009}
+html.dark-theme .syn-resource-cards .syn-resource.syn-earliest-goal{
+ border-color:#bf8d38;
+ background:#322b1b;
+ box-shadow:0 0 0 2px rgba(223,165,61,.30);
+}
+html.dark-theme .syn-resource-cards .syn-resource.syn-earliest-goal .date{color:#ffe1a1}
