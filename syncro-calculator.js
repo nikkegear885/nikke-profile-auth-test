@@ -24,8 +24,15 @@
   const dateTxt=d=>d.toISOString().slice(0,10);
   // The old "ownedHours" field represented one total of hours per resource.
   // Preserve that total and migrate it into the 1-hour denomination at first load.
+  const seoulTodayISO=()=>{
+    const dateParts=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+    const value=type=>dateParts.find(part=>part.type===type)?.value||"";
+    return `${value("year")}-${value("month")}-${value("day")}`;
+  };
   const defaults=()=>{
     const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0});
+    // Use the current local Korean date for a fresh/reset calculator; preserve any saved date.
+    initial.date=seoulTodayISO();
     initial.daily.forEach(row=>{row.on=true;});
     initial.ownedBoxes=initial.ownedHours.map(h=>boxDurations.map((duration,i)=>i===0?Math.max(0,safe(h)):0));
     return initial;
@@ -595,9 +602,11 @@
     el("syn-hourly").textContent=state.progressMode==="progress"?`시작 전초기지 Lv.${c.outpost} (시간당 코더 ${fmt(c.rate[0],2)}) → 예상 최종 Lv.${c.endOutpost} (시간당 코더 ${fmt(endRate[0],2)}) · 보유 상자는 시작 시점 생산량 적용`:`전초기지 ${c.outpost}레벨 · 시간당 코더 ${fmt(c.rate[0],2)}, 배데 ${fmt(c.rate[1],2)}, 크레딧 ${fmt(c.rate[2],2)}`;
     const finiteGoalDays=c.reached.filter(day=>Number.isFinite(day));
     const latestGoalDay=finiteGoalDays.length?Math.max(...finiteGoalDays):null;
+    const hasUnreachedResource=c.reached.some(day=>day===null);
     el("syn-resource-cards").innerHTML=names.map((name,j)=>{
       const ratio=c.total[j]>0?Math.min(100,100*c.owned[j]/c.total[j]):100;
-      const isLatest=latestGoalDay!==null&&c.reached[j]===latestGoalDay;
+      // A resource missing the 1500-day horizon is slower than any reached resource.
+      const isLatest=hasUnreachedResource?c.reached[j]===null:latestGoalDay!==null&&c.reached[j]===latestGoalDay;
       return `<article class="syn-resource${isLatest?" syn-latest-goal":""}"><div class="title">${name}</div><div class="date">${c.reached[j]===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.reached[j]))}</div>
         <div class="metric"><span>소요 기간</span><strong>${c.reached[j]===null?"미도달":fmt(c.reached[j])+"일"}</strong></div>
         <div class="metric"><span>총 필요 재화</span><strong>${fmt(c.total[j])}</strong></div>
