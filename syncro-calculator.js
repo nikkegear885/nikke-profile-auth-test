@@ -329,10 +329,10 @@
     const reference=manualUsed?expectedOutpostForStart(calculated.level):null;
     const typed=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
     const gap=manualUsed?typed-reference:0;
-    const high=manualUsed&&gap>=40;
+    const high=manualUsed&&gap>=50;
     warning.hidden=!high;
     warning.textContent=high?
-      `직접 입력한 전초기지 레벨이 싱크로 기준 추정 레벨보다 40레벨 이상 높습니다.\n임의 상승 계산 결과에 오차가 생길 수 있습니다.\n입력한 전초기지 레벨과 싱크로 레벨이 정확하다면 이 경고는 무시해도 됩니다.`:"";
+      `입력한 전초기지 레벨이 싱크로 ${fmt(calculated.level)}레벨 기준 전초기지 예상치 ${fmt(reference)}레벨보다 50레벨 이상 높습니다.\n계산 결과에 오차가 생길 수 있습니다.\n전초기지 레벨과 싱크로 레벨이 정확하다면 이 경고는 무시해도 됩니다.`:"";
   }
   function buildProgressPlan(current,goal){
     if(state.progressMode!=="progress")return [];
