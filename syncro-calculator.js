@@ -191,7 +191,16 @@
   }
   function linkOutpostStages(){
     const next=readOutpostCalculatorStages();
-    if(!next)return false;
+    if(!next){
+      // The main outpost calculator has no complete position (e.g. after a reload).
+      // Do not silently reuse a stale position saved from a previous session.
+      if(window.parent!==window&&(state.stageProgress.normal||state.stageProgress.hard)){
+        state.stageProgress={normal:"",hard:""};
+        try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
+        update();
+      }
+      return false;
+    }
     if(["normal","hard"].some(mode=>state.stageProgress[mode]!==next[mode])){
       state.stageProgress=next;
       try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(err){}
@@ -707,7 +716,10 @@
       const ch=Number(x.dataset.hardThreshold);
       const lv=x.value===""?null:Number(x.value);
       if(![49,50].includes(ch))return;
-      if(lv!==null&&(!Number.isInteger(lv)||lv<682||lv>1000)){
+      const other=state.optionalHardThresholds[ch===49?50:49];
+      const invalid=lv!==null&&(!Number.isInteger(lv)||lv<682||lv>1000||
+        (other!==null&&(ch===49?lv>=other:lv<=other)));
+      if(invalid){
         if(e.type==="change")x.value=state.optionalHardThresholds[ch]??"";
         return;
       }
