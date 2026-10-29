@@ -6284,6 +6284,8 @@ function persistOutpostStageSelection(){
   try{
     localStorage.setItem(OUTPOST_STAGE_SELECTION_KEY,JSON.stringify({normal,hard}));
     window.__NIKKE_OUTPOST_PROGRESS_READY=true;
+    // Covers programmatic stage changes such as the normal-final-stage shortcut.
+    document.dispatchEvent(new Event('nikke-outpost-stage-updated'));
   }catch(e){}
 }
 function restoreOutpostStageSelection(){
