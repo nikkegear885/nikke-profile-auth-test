@@ -147,8 +147,8 @@
                   <div class="syn-progress-modes">
                     <span class="syn-progress-label">전초기지 생산량 계산 방식</span>
                     <div class="syn-mode-buttons" role="group" aria-label="전초기지 생산량 계산 방식">
-                      <button type="button" data-progress-mode="fixed" class="${state.progressMode==="fixed"?"active":""}" aria-pressed="${state.progressMode==="fixed"}">현재 전초기지 고정</button>
-                      <button type="button" data-progress-mode="progress" class="${state.progressMode==="progress"?"active":""}" aria-pressed="${state.progressMode==="progress"}">싱크로 달성에 따른 전초기지 상승</button>
+                      <button type="button" data-progress-mode="fixed" class="${state.progressMode==="fixed"?"active":""}" aria-pressed="${state.progressMode==="fixed"}">전초기지레벨 고정 기준</button>
+                      <button type="button" data-progress-mode="progress" class="${state.progressMode==="progress"?"active":""}" aria-pressed="${state.progressMode==="progress"}">싱크로에 따른 전초기지 레벨 상승 임의 적용</button>
                     </div>
                   </div>
                   <div class="syn-progress-choices" id="syn-progress-choices" ${state.progressMode==="progress"?"":"hidden"}>
@@ -157,7 +157,6 @@
                     <span class="syn-progress-tip">보스 클리어 기준 싱크로를 달성하면 해당 구간 스테이지를 일괄 반영합니다. 5스테이지당 전초기지 +1 (추정)</span>
                   </div>
                 </div>
-              <p class="syn-hint">현재 레벨 다음 단계부터 목표 레벨까지 계산 · 단기섬멸 1회 = 2시간</p>
             </div>
           </section>
           <section class="syn-highlight syn-result-panel" aria-label="목표 달성 예상">
