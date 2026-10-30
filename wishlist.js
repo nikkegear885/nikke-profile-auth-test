@@ -331,6 +331,14 @@
   );
   // 160-wall X rule 2: prioritize these characters whenever they are below 3 breakthroughs.
   const WISHLIST_160_WALL_X_PRIORITY_NAMES = new Set(['티아','나가','리타','헬름','앨리스'].map(norm));
+  // 160벽 X only: if both Flora and Tove lack first copies, Drake takes Tia's forced slot.
+  // When either Flora or Tove is owned, Tia keeps that slot and Drake uses normal priority.
+  function is160WallXPriorityName(name, drakeInsteadOfTia){
+    const key = norm(name);
+    if(key === norm('티아')) return !drakeInsteadOfTia;
+    if(key === norm('드레이크')) return drakeInsteadOfTia;
+    return WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
+  }
   const WISHLIST_GENERAL_NAMES = new Set(
     WISHLIST_PERFORMANCE_TIERS.filter(tier => tier.label === '범용캐').flatMap(tier => tier.names.map(norm))
   );
@@ -2208,6 +2216,10 @@
       alert('캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
       return;
     }
+    // 160-wall X, Misilis: when both first copies are missing, Drake replaces Tia;
+    // one or both owned means the Tia priority is restored.
+    const drakeInsteadOfTia160WallX = wallStatus === 'X' &&
+      isMarkedUnowned('플로라') && isMarkedUnowned('토브');
     const overLimitFavorites = STANDARD_PRIORITY_COMPANIES.map(company => ({
       company,
       names: getCharactersForCompany(company)
@@ -2228,7 +2240,7 @@
           .map(row => String(row['이름'] || '').trim())
           .filter(name => {
             const key = norm(name);
-            const isNamedPriority = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
+            const isNamedPriority = is160WallXPriorityName(name, drakeInsteadOfTia160WallX);
             const isUnownedRequired = isMarkedUnowned(name) &&
               (WISHLIST_REQUIRED_NAMES.has(key) || WISHLIST_TREASURE_REQUIRED_NAMES.has(key) || WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key));
             return !isManuallyExcludedCharacter(name) && (isNamedPriority || isUnownedRequired) && getBreakthrough(name) < 3;
@@ -2256,7 +2268,7 @@
           // Rule 2: the five named targets are forced in below 3 breakthroughs regardless of ownership.
           // Rule 3: company-required and mandatory-treasure characters are forced in only while unowned.
           // Once a first copy is owned, they leave rule 3 and are ranked by rule 4 instead.
-          const is160WallXPriorityTarget = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(key);
+          const is160WallXPriorityTarget = is160WallXPriorityName(name, drakeInsteadOfTia160WallX);
           const isUnownedRequired160WallX = unowned && (isRequired || isTreasureRequired);
           const forceInclude160WallX = wallStatus === 'X' &&
             (is160WallXPriorityTarget || isUnownedRequired160WallX);
@@ -2265,6 +2277,8 @@
           const is160WallXSilverMileageTwoBreakthrough =
             wallStatus === 'X' && copyPriority === 1 && SILVER_MILEAGE_NAMES.has(key) && breakthrough === 2;
 
+          // When Drake substitutes for Tia, do not let Tia reappear as a lower-priority fill.
+          if(drakeInsteadOfTia160WallX && key === norm('티아')) return false;
           // 160-wall X always excludes 3-breakthrough characters.
           if(wallStatus === 'X' && breakthrough >= 3) return false;
           if(getCoreEnhancement(name) >= 7 && !forceInclude160WallX) return false;
@@ -2290,8 +2304,8 @@
         // Rule 4 uses the visible silver-mileage list; non-silver characters only enter Rule 4 at 2★,
         // and only when they are not already in Rule 3. O mode keeps the existing ordering unchanged.
         if(wallStatus === 'X'){
-          const aNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(aName));
-          const bNamedPriority160WallX = WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(bName));
+          const aNamedPriority160WallX = is160WallXPriorityName(aName, drakeInsteadOfTia160WallX);
+          const bNamedPriority160WallX = is160WallXPriorityName(bName, drakeInsteadOfTia160WallX);
           if(aNamedPriority160WallX !== bNamedPriority160WallX) return aNamedPriority160WallX ? -1 : 1;
 
           const aMustInclude160WallX = aUnowned &&
