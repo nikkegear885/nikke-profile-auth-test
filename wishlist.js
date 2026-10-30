@@ -331,8 +331,8 @@
   );
   // 160-wall X rule 2: prioritize these characters whenever they are below 3 breakthroughs.
   const WISHLIST_160_WALL_X_PRIORITY_NAMES = new Set(['티아','나가','리타','헬름','앨리스'].map(norm));
-  // 160벽 X only: if both Flora and Tove lack first copies, Drake takes Tia's forced slot.
-  // When either Flora or Tove is owned, Tia keeps that slot and Drake uses normal priority.
+  // 160벽 X only: Drake substitutes for Tia only while eligible.
+  // Excluding Drake restores Tia, even if both Flora and Tove are missing.
   function is160WallXPriorityName(name, drakeInsteadOfTia){
     const key = norm(name);
     if(key === norm('티아')) return !drakeInsteadOfTia;
@@ -1012,6 +1012,25 @@
         }
       }
     }catch(_){}
+    // Recover old random-test rosters that predate the owned-roster key.
+    // Do not infer the real accounts' ownership from embedded RAW rows.
+    if(account === TEST_ACCOUNT_NAME){
+      try{
+        const savedUnowned = localStorage.getItem(ACCOUNT_UNOWNED_PREFIX + encodeURIComponent(account));
+        const accountRows = (typeof data !== 'undefined' && Array.isArray(data)) ? data : [];
+        if(savedUnowned !== null && accountRows.length){
+          const unownedNames = JSON.parse(savedUnowned);
+          if(Array.isArray(unownedNames)){
+            const unownedSet = new Set(unownedNames.map(norm));
+            syncedOwnedRoster = new Set(accountRows
+              .map(row => String(row && row['이름'] || '').trim())
+              .filter(name => name && !unownedSet.has(norm(name)))
+              .map(norm));
+            return syncedOwnedRoster;
+          }
+        }
+      }catch(_){}
+    }
     // Backward compatibility for an older synced account whose roster key was not saved,
     // but whose account rows already contain the explicit sync marker.
     try{
@@ -1697,8 +1716,8 @@
           '<summary>무작위 계정 생성 규칙 조절</summary>' +
           '<div class="wl-random-settings-body">' +
             '<div class="wl-random-setting">' +
-              '<div class="wl-random-setting-head"><label for="wlRandomOwnedChance">니케 보유 확률</label><output data-wl-random-rule-value="ownedChance">60%</output></div>' +
-              '<input id="wlRandomOwnedChance" type="range" min="0" max="100" step="5" value="60" data-wl-random-rule="ownedChance">' +
+              '<div class="wl-random-setting-head"><label for="wlRandomOwnedChance">니케 보유 확률</label><output data-wl-random-rule-value="ownedChance">50%</output></div>' +
+              '<input id="wlRandomOwnedChance" type="range" min="0" max="100" step="5" value="50" data-wl-random-rule="ownedChance">' +
             '</div>' +
             '<div class="wl-random-setting">' +
               '<div class="wl-random-setting-head"><label for="wlRandomOneChance">1돌 확률</label><output data-wl-random-rule-value="breakthroughOneChance">25%</output></div>' +
@@ -2082,7 +2101,7 @@
 
   const RANDOM_ACCOUNT_RULES_STORAGE_KEY = 'nikke_random_test_account_rules_v1';
   const RANDOM_ACCOUNT_RULE_DEFAULTS = {
-    ownedChance:60,
+    ownedChance:50,
     breakthroughOneChance:25,
     breakthroughTwoChance:10,
     breakthroughThreeChance:5
@@ -2216,10 +2235,11 @@
       alert('캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
       return;
     }
-    // 160-wall X, Misilis: when both first copies are missing, Drake replaces Tia;
-    // one or both owned means the Tia priority is restored.
+    // Drake substitutes for Tia only when Flora/Tove are both unowned and Drake remains eligible.
     const drakeInsteadOfTia160WallX = wallStatus === 'X' &&
-      isMarkedUnowned('플로라') && isMarkedUnowned('토브');
+      isMarkedUnowned('플로라') && isMarkedUnowned('토브') &&
+      !isManuallyExcludedCharacter('드레이크') &&
+      getBreakthrough('드레이크') < 3 && getCoreEnhancement('드레이크') < 7;
     const overLimitFavorites = STANDARD_PRIORITY_COMPANIES.map(company => ({
       company,
       names: getCharactersForCompany(company)
