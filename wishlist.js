@@ -1104,7 +1104,7 @@
       'body.wishlist-view #characterPanel,body.wishlist-view #kpis,body.wishlist-view #outpostPanel,body.wishlist-view #soleScorePanel,body.wishlist-view #pediaPanel{display:none!important}',
       'body.wishlist-view .topbar{display:none!important}',
       '#wishlistAccountSwitcher[hidden]{display:none!important}',
-      '#wishlistAccountSwitcher{display:flex;align-items:center;justify-content:flex-end;gap:6px;box-sizing:border-box;width:calc(100% - 24px);max-width:462px;margin:8px auto 8px;padding:0 2px;position:relative;z-index:20}',
+      '#wishlistAccountSwitcher{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;box-sizing:border-box;width:calc(100% - 24px);max-width:462px;margin:8px auto 8px;padding:0 2px;position:relative;z-index:20}',
       '#wishlistAccountSwitcher .wl-account-label{margin-right:3px;color:#7c8795;font-size:10px;font-weight:900;white-space:nowrap}',
       '#wishlistAccountSwitcher .wl-account-button{min-width:58px;max-width:128px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 11px;border:1px solid #c9d6e4;border-radius:999px;background:#fff;color:#586577;font-size:11px;font-weight:900;cursor:pointer;box-shadow:0 1px 3px rgba(27,55,85,.07)}',
       '#wishlistAccountSwitcher .wl-account-button.active{border-color:#159ed3;background:#eaf8ff;color:#087ca9;box-shadow:0 0 0 1px rgba(21,158,211,.10)}',
@@ -1483,7 +1483,10 @@
       const button = event.target.closest && event.target.closest('[data-wl-account]');
       if(!button) return;
       const account = button.dataset.wlAccount;
-      if(!account || !Array.isArray(ACCOUNTS) || !ACCOUNTS.includes(account)) return;
+      const allowed=(Array.isArray(ACCOUNTS)&&ACCOUNTS.includes(account))||
+        ([PRESET_TEST_ACCOUNT_NAME,TEST_ACCOUNT_NAME].includes(account)&&
+          !!localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(account)));
+      if(!account||!allowed)return;
       if(typeof window.switchAccount === 'function') window.switchAccount(account);
       renderAccountSwitcher();
     });
@@ -1497,6 +1500,9 @@
     const switcher = ensureAccountSwitcher();
     if(!switcher) return;
     const accounts = Array.isArray(ACCOUNTS) && ACCOUNTS.length ? ACCOUNTS.slice(0,2) : ['계정1','계정2'];
+    for(const testName of [PRESET_TEST_ACCOUNT_NAME,TEST_ACCOUNT_NAME]){
+      try{if(localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(testName)))accounts.push(testName);}catch(_){}
+    }
     const current = typeof activeAccount !== 'undefined' ? activeAccount : accounts[0];
     switcher.innerHTML = '<span class="wl-account-label">계정</span>' + accounts.map((account,index) =>
       '<button type="button" class="wl-account-button' + (current === account ? ' active' : '') + '" data-wl-account="' + esc(account) + '" aria-pressed="' + (current === account ? 'true' : 'false') + '" data-wl-hover-text="' + esc(account) + '">' + esc(account || ('계정' + (index+1))) + '</button>'
