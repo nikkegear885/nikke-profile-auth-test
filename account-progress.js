@@ -75,13 +75,27 @@
     if(!frame?.contentWindow)return;
     frame.contentWindow.postMessage({type:'nikke-gm-account-progress',account:name,baseline:b},location.origin);
   }
-  function activate(name){
+  function clearStageView(){
+    const nCh=document.getElementById('outpostNormalChapter');
+    const hCh=document.getElementById('outpostHardChapter');
+    const nSt=document.getElementById('outpostNormalStage');
+    const hSt=document.getElementById('outpostHardStage');
+    if(!nCh||!hCh||!nSt||!hSt)return;
+    nCh.value='0';hCh.value='0';
+    if(typeof updateOutpostStageOptions==='function')updateOutpostStageOptions();
+    if(typeof updateOutpostHardStageOptions==='function')updateOutpostHardStageOptions();
+    nSt.value='0-1';hSt.value='';
+    if(typeof updateOutpostCalculator==='function')updateOutpostCalculator();
+    if(typeof persistOutpostStageSelection==='function')persistOutpostStageSelection();
+  }
+  function activate(name,clearUnknown=false){
     const b=read(name);
     try{
       if(b)localStorage.setItem(ACTIVE,JSON.stringify(b));
       else localStorage.setItem(ACTIVE,JSON.stringify({account:name,baselineMissing:true}));
     }catch(_){}
     if(b?.normal)applyStages(b);
+    else if(clearUnknown)clearStageView();
     else if(typeof updateOutpostCalculator==='function')updateOutpostCalculator();
     sendToIframe(name,b);
     return b;
@@ -129,7 +143,7 @@
   if(typeof previousSwitch==='function'){
     window.switchAccount=function(){
       const was=account(),result=previousSwitch.apply(this,arguments),now=account();
-      if(now!==was)activate(now);
+      if(now!==was)activate(now,true);
       return result;
     };
   }
