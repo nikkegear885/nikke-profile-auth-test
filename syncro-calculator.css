@@ -969,3 +969,34 @@ html.dark-theme .syn-resource-cards .syn-resource.syn-latest-goal .date{color:#f
 
 /* 1.526: keep the reset control at the right after removing the source caption. */
 .syn-utility .syn-actions{margin-left:auto}
+
+/* Test v1.511: inline account synchro apply button beside the input section title. */
+.syn-input-panel .syn-input-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.syn-input-panel .syn-apply-my-synchro{
+  flex:0 0 auto;
+  min-height:28px;
+  padding:4px 11px;
+  border:1px solid var(--sy-accent);
+  border-radius:7px;
+  background:var(--sy-card);
+  color:var(--sy-title);
+  font:inherit;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.3;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.syn-input-panel .syn-apply-my-synchro:hover{
+  background:var(--sy-card-alt);
+}
+.syn-input-panel .syn-apply-my-synchro:focus-visible{
+  outline:2px solid var(--sy-accent);
+  outline-offset:2px;
+}
