@@ -12,6 +12,12 @@
       return item&&item.account===name?item:null;
     }catch(_){return null;}
   };
+  const profileLinkId=name=>{
+    try{
+      const raw=localStorage.getItem('nikke_bl_profile_url_'+encodeURIComponent(name))||'';
+      return raw?new URL(raw).searchParams.get('openid')||null:null;
+    }catch(_){return null;}
+  };
   const stageList=()=>typeof OUTPOST_CHAPTER_STAGES!=='undefined'?OUTPOST_CHAPTER_STAGES:[];
   // Use the site's stage catalogue, not a numeric guess. API labels can include
   // STAGE/BOSS prefixes or suffixes and optional branch identifiers.
@@ -149,8 +155,9 @@
     const b=read(account());
     if(!b?.normal){alert('현재 계정의 노말·하드 진행도가 없습니다. 먼저 계정을 동기화해 주세요.');return;}
     applyStages(b);
-    if(typeof toast==='function')toast(b.stageStale?
-      '최신 스테이지 조회에 실패해 마지막으로 확인한 스테이지를 복원했습니다.':
+    if(typeof toast==='function')toast(b.stageSource==='manual'
+      ? '이 계정에 직접 저장한 노말·하드 스테이지를 복원했습니다.':
+      b.stageStale?'최신 스테이지 조회에 실패해 마지막으로 확인한 스테이지를 복원했습니다.':
       '동기화한 스테이지와 실제 전초기지 레벨로 복원했습니다.');
   }
   function saveManualStages(){
@@ -171,6 +178,7 @@
     const sameArea=old&&Number(old.areaId)===Number(areaId);
     const b={
       account:name,areaId,profileId:sameArea?(old.profileId||null):null,
+      profileLink:profileLinkId(name),
       normal,hard:hard||'',stageSource:'manual',stageStale:false,
       progressError:null,
       outpostLevel:sameArea?(old.outpostLevel??null):null,
@@ -280,11 +288,14 @@
     }
     const old=read(name);
     // Never reuse a different profile's saved stage just because it has the same region.
+    const currentLink=profileLinkId(name);
     const sameProfile=old&&Number(old.areaId)===Number(p.areaId)&&
-      old.profileId&&p.profileId&&old.profileId===p.profileId;
+      ((old.profileId&&p.profileId&&old.profileId===p.profileId)||
+       (old.profileLink&&currentLink&&old.profileLink===currentLink));
     const manualRetained=!normal&&sameProfile&&old?.stageSource==='manual'&&!!old.normal;
     const b={
       account:name,areaId:Number(p.areaId)||null,profileId:p.profileId||null,
+      profileLink:currentLink,
       normal:normal||(sameProfile?old.normal:null)||null,
       hard:normal?(hard||''):(sameProfile?(old.hard||''):''),
       stageSource:normal?'api':manualRetained?'manual':'previous',
