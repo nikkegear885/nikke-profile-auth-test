@@ -57,6 +57,7 @@
       type:'nikke-gm-my-synchro',
       account:name,
       synchroLevel:num(b?.synchroLevel,1200),
+      outpostLevel:num(b?.outpostLevel,800),
       areaId:b?.areaId??null,
       profileId:b?.profileId??null,
       message:message||null
@@ -69,7 +70,7 @@
     if(event.data?.type!=='nikke-gm-request-my-synchro')return;
     const name=currentAccount();
     const cached=read(name);
-    if(num(cached?.synchroLevel,1200)!==null){
+    if(num(cached?.synchroLevel,1200)!==null&&num(cached?.outpostLevel,800)!==null){
       replyMySynchro(name);
       return;
     }
@@ -85,7 +86,7 @@
     }
     window.__NIKKE_GM_SYNC_LEVELS__({area_id:area},name,url,{silent:true})
       .then(message=>replyMySynchro(name,message))
-      .catch(error=>replyMySynchro(name,'싱크로 레벨 조회 실패: '+String(error?.message||error)));
+      .catch(error=>replyMySynchro(name,'계정 레벨 조회 실패: '+String(error?.message||error)));
   });
   // Account switching must use account-scoped records, not the last imported account.
   const previousSwitch=window.switchAccount;
