@@ -7,6 +7,14 @@
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v4";
+  const PROFILE_ACTIVE_KEY="nikke_gm_progress_active_v1";
+  const PROFILE_APPLIED_KEY="nikke_gm_syncro_applied_v1";
+  let syncedBaseline=null;
+  const readProfile=()=>{
+    try{const b=JSON.parse(localStorage.getItem(PROFILE_ACTIVE_KEY)||'null');
+      return b&&typeof b.account==="string"?b:null;
+    }catch(_){return null;}
+  };
   // Exact stage list copied from the site's existing OUTPOST_CHAPTER_STAGES table.
   // This includes A/B branches. One completed entry = one cleared stage.
   const campaignStages=SOURCE.campaignStages;
@@ -123,6 +131,37 @@
   state.ownedHours=state.ownedBoxes.map(ownedBoxHours);
   // Replace legacy editable non-yellow data with fixed source values.
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
+  // Only profile identity/stage/level fields are restored. Never reset resource or package choices.
+  function applyProfileBaseline(b,force=false,repaint=false){
+    const next=b&&typeof b.account==="string"?b:null;
+    syncedBaseline=next?.normal?next:null;
+    if(!next)return;
+    const signature=next.account+"|"+(next.syncedAt||"no-profile");
+    let applied="";
+    try{applied=localStorage.getItem(PROFILE_APPLIED_KEY)||"";}catch(_){}
+    if(!force&&signature===applied){if(repaint)render();return;}
+    if(!next.normal&&!force&&!applied){if(repaint)render();return;}
+    const level=Number(next.synchroLevel),outpost=Number(next.outpostLevel);
+    state.current=Number.isInteger(level)&&level>=1&&level<=999?level:defaults().current;
+    state.outpost=Number.isInteger(outpost)&&outpost>=1&&outpost<=800?outpost:defaults().outpost;
+    if(state.goal<=state.current)state.goal=Math.min(1000,state.current+1);
+    const parseStage=raw=>{
+      const match=String(raw||"").match(/^(\\d+)-/);
+      if(!match)return {chapter:0,index:0};
+      const chapter=Number(match[1]),list=campaignStages[chapter]||[];
+      const normalize=v=>String(v).toUpperCase().replace(/\\s*(STAGE|BOSS)\\s*$/,"").replace(/\\s+/g,"");
+      const i=list.findIndex(v=>normalize(v)===normalize(raw));
+      return {chapter,index:i>=0?i+1:0};
+    };
+    const n=parseStage(next.normal),h=parseStage(next.hard);
+    state.normalStartChapter=n.chapter;state.normalStartStage=n.index;
+    state.hardStartChapter=h.chapter;state.hardStartStage=h.index;
+    try{
+      localStorage.setItem(PROFILE_APPLIED_KEY,signature);
+      localStorage.setItem(storageKey,JSON.stringify(state));
+    }catch(_){}
+    if(repaint)render();
+  }
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
   function pkgGrantH(p){
     if(safe(p.choice)>=0 && p.choice!==-1 && Number.isInteger(+p.choice)){
@@ -152,8 +191,8 @@
     <div class="syn-wrap">
       <h1 class="syn-sr-only">싱크로 레벨업 계산기</h1>
       <div class="syn-utility">
-        <span class="syn-utility-note">전초기지 생산량: 사이트 내 인게임 확인 표(1~800레벨) · 레벨업 비용: 원본 시트</span>
-        <div class="syn-actions"><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button></div>
+        <span class="syn-utility-note">전초기지 생산량: 사이트 내 인게임 확인 표(1~800레벨) · 레벨업 비용: 원본 시트<br><span id="syn-profile-context"></span></span>
+        <div class="syn-actions"><button class="syn-btn" id="syn-profile-reset" type="button" title="마지막으로 동기화한 현재 계정의 싱크로·전초기지·스테이지 복원">정보 리셋</button><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button></div>
       </div>
       <div id="syn-output">
         <div class="syn-top-grid">
@@ -270,10 +309,27 @@
       <div class="syn-note">자료 기준: 전초기지 생산량은 사이트 내 인게임 확인 표, 레벨업 비용·수급 규칙은 원본 시트(2026-10-28) · 입력 설정은 테섭 브라우저에 저장됩니다. 원본 시트는 수정하지 않습니다.</div>
     </div>`;
     enforcePackageEditPolicy();
+    const context=el("syn-profile-context");
+    if(context)context.textContent=syncedBaseline?
+      "동기화 계정 "+syncedBaseline.account+" · 노말 "+syncedBaseline.normal+
+      " / 하드 "+(syncedBaseline.hard||"미클리어")+
+      " · 실제 전초기지 "+(syncedBaseline.outpostLevel||"확인 불가"):"동기화한 캠페인 정보 없음";
     update();
   }
   // Progression-mode starting chapters are estimated from verified synchro milestones.
   function getCampaignStart(mode,current){
+    // Start from the actual imported chapter/position when the current synchro is unchanged.
+    const actual=mode==="normal"?syncedBaseline?.normal:syncedBaseline?.hard;
+    if(actual && Number(syncedBaseline?.synchroLevel)===current){
+      const match=String(actual).match(/^(\\d+)-/);
+      const chapter=Number(match?.[1]);
+      const stages=campaignStages[chapter]||[];
+      const normalize=v=>String(v).toUpperCase().replace(/\\s*(STAGE|BOSS)\\s*$/,"").replace(/\\s+/g,"");
+      const index=stages.findIndex(v=>normalize(v)===normalize(actual));
+      if(Number.isInteger(chapter)&&index>=0)
+        return {mode,chapter,stage:index+1,completed:index+1,
+          absolute:chapterPosition(chapter)+index+1,manual:true};
+    }
     const checkpoints=activeMilestones().filter(m=>m.mode===mode).sort((a,b)=>a.level-b.level);
     const reached=checkpoints.filter(m=>m.level<=current).at(-1);
     const chapter=reached?reached.chapter:checkpoints[0].chapter-2;
@@ -727,11 +783,26 @@
       update();
       return;
     }
+    if(e.target.id==="syn-profile-reset"){
+      const b=readProfile();
+      if(!b?.normal){alert("현재 계정의 동기화된 스테이지 정보가 없습니다. 계정을 먼저 동기화해 주세요.");return;}
+      applyProfileBaseline(b,true,true);
+      return;
+    }
     if(e.target.id==="syn-reset"){
       if(!confirm("싱크로 계산기의 입력값과 체크 상태를 원본 시트 기본값으로 초기화할까요?"))return;
       state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}
       render();
     }
   });
+  window.addEventListener("message",event=>{
+    if(event.origin!==location.origin||event.source!==parent||event.data?.type!=="nikke-gm-account-progress")return;
+    const b=event.data.baseline||{account:String(event.data.account||"계정1"),baselineMissing:true};
+    applyProfileBaseline(b,false,true);
+  });
+  window.addEventListener("storage",event=>{
+    if(event.key===PROFILE_ACTIVE_KEY)applyProfileBaseline(readProfile(),false,true);
+  });
+  applyProfileBaseline(readProfile(),false,false);
   render();
 })();
