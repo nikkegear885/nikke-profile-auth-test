@@ -3,6 +3,7 @@
   'use strict';
   const PREFIX='nikke_gm_account_progress_v1_';
   const ACTIVE='nikke_gm_progress_active_v1';
+  const STATUS_PREFIX='nikke_gm_progress_status_v1_';
   const STAGE_KEY='nikke_outpost_stage_selection_v1';
   const ACCOUNT_KEY='nikke_active_account_v1';
   const account=()=>{try{return localStorage.getItem(ACCOUNT_KEY)||'계정1';}catch(_){return '계정1';}};
@@ -104,16 +105,25 @@
     if(typeof updateOutpostCalculator==='function')updateOutpostCalculator();
     if(typeof persistOutpostStageSelection==='function')persistOutpostStageSelection();
   }
+  function recordStatus(name,message){
+    if(!name)return;
+    const data={message:String(message||'').slice(0,300),at:new Date().toISOString()};
+    try{localStorage.setItem(STATUS_PREFIX+encodeURIComponent(name),JSON.stringify(data));}catch(_){}
+    if(account()===name)renderCampaignStatus(read(name));
+  }
   function renderCampaignStatus(b){
     const note=document.getElementById('outpost-account-progress-status');
     if(!note)return;
-    note.textContent=!b?'':b.stageStale
-      ? ('캠페인 최신 스테이지 조회 실패 · '+
-         (b.normal?'이전 스테이지 '+b.normal+' 유지 · ':'')+
+    let status=null;
+    try{status=JSON.parse(localStorage.getItem(STATUS_PREFIX+encodeURIComponent(account()))||'null');}catch(_){}
+    const baseline=!b?'':b.stageStale
+      ? ('스테이지 최신 조회 실패 · '+
+         (b.normal?'이전 스테이지 '+b.normal+' · ':'')+
          '싱크로 '+(b.synchroLevel??'조회 불가')+
          ' / 실제 전초기지 '+(b.outpostLevel??'조회 불가'))
-      : (b.normal?'계정 동기화 완료 · 노말 '+b.normal+' / 하드 '+(b.hard||'미클리어')+
+      : (b.normal?'동기화 계정 · 노말 '+b.normal+' / 하드 '+(b.hard||'미클리어')+
          ' · 실제 전초기지 '+(b.outpostLevel??'조회 불가'):'');
+    note.textContent=[baseline,status?.message].filter(Boolean).join(' | ');
     note.hidden=!note.textContent;
   }
   function activate(name,clearUnknown=false){
@@ -157,14 +167,22 @@
   }
   function accept(payload,name){
     const p=payload?.accountProgress;
-    if(!p||!name)return {saved:false,applied:false,reason:'계정 진행도 응답 없음'};
+    if(!p||!name){
+      recordStatus(name,'동기화 응답에 스테이지 진행도 정보가 없습니다.');
+      return {saved:false,applied:false,reason:'계정 진행도 응답 없음'};
+    }
     const normal=stageName(p.normal);
     const hard=stageName(p.hard);
     const level=Number(p.outpostLevel),synchro=Number(p.synchroLevel);
     const actualLevel=p.outpostLevel!=null&&Number.isInteger(level)&&level>=1&&level<=800?level:null;
     const actualSynchro=p.synchroLevel!=null&&Number.isInteger(synchro)&&synchro>=1&&synchro<=1200?synchro:null;
-    if(!normal&&actualLevel===null&&actualSynchro===null)
-      return {saved:false,applied:false,reason:p.progressError||'API에서 진행도·레벨을 받을 수 없음'};
+    if(!normal&&actualLevel===null&&actualSynchro===null){
+      const reason=p.normal
+        ? 'API 노말 스테이지 "'+String(p.normal).slice(0,45)+'"를 사이트 스테이지 목록에서 찾지 못했습니다.'
+        : (p.progressError||'API에서 스테이지와 레벨을 받지 못했습니다.');
+      recordStatus(name,'스테이지 입력 실패: '+reason);
+      return {saved:false,applied:false,reason};
+    }
     const old=read(name);
     // Never reuse a different profile's saved stage just because it has the same region.
     const sameProfile=old&&Number(old.areaId)===Number(p.areaId)&&
@@ -174,25 +192,35 @@
       normal:normal||(sameProfile?old.normal:null)||null,
       hard:normal?(hard||''):(sameProfile?(old.hard||''):''),
       stageStale:!normal,
+      progressError:p.progressError||null,
       outpostLevel:actualLevel,
       synchroLevel:actualSynchro,
       syncedAt:new Date().toISOString()
     };
     try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}
-    catch(e){console.warn('[NIKKE GM] save stage data',e);return {saved:false,applied:false,reason:'브라우저 저장 실패'};}
+    catch(e){
+      console.warn('[NIKKE GM] save stage data',e);
+      recordStatus(name,'스테이지 저장 실패: 브라우저 저장소 오류');
+      return {saved:false,applied:false,reason:'브라우저 저장 실패'};
+    }
     const isCurrent=account()===name;
     const applied=isCurrent&&!!normal?!!applyStages(b):false;
     if(isCurrent){
       try{localStorage.setItem(ACTIVE,JSON.stringify(b));}catch(_){}
-      renderCampaignStatus(b);
       sendToIframe(name,b);
     }
+    const reason=!normal?(
+        p.normal
+        ? 'API 스테이지 "'+String(p.normal).slice(0,45)+'"가 현재 스테이지 목록과 불일치'
+        : (p.progressError||'API 노말 스테이지 미수신'))
+      : !isCurrent?'동기화한 계정이 화면의 선택 계정과 다름'
+      : !applied?'노말/하드 선택칸이 API 진행도를 적용하지 못함':null;
+    recordStatus(name,normal
+      ? (applied?'API 스테이지 화면 적용 확인':('스테이지 저장됨 · '+reason))
+      : ('최신 스테이지 조회 실패 · '+reason));
     return {
       saved:true,stageResolved:!!normal,applied,active:isCurrent,
-      normal:b.normal,hard:b.hard,
-      reason:!normal?(p.progressError||'노말 스테이지를 받지 못함'):
-        !isCurrent?'동기화한 계정이 현재 선택된 계정과 다름':
-        !applied?'스테이지 선택칸에 일치하는 항목이 없음':null
+      normal:b.normal,hard:b.hard,reason
     };
   }
   // Reconcile a dropdown rebuilt by the production outpost view on navigation.
