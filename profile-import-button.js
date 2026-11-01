@@ -12,6 +12,8 @@
   var overlay = null;
   var targetAccount = '';
   var working = false;
+  // Keep the sync dialog visible while the legacy roster apply routine runs.
+  var suppressLegacyClose = false;
 
   function text(v){
     return String(v == null ? '' : v);
@@ -400,7 +402,9 @@
             String(payload.character_count || 0) + '명 · 상세 ' + String(payload.detail_count || 0) + '건';
         }
 
-        apply(payload, targetAccount);
+        suppressLegacyClose=true;
+        try{apply(payload, targetAccount);}
+        finally{suppressLegacyClose=false;}
         var progressResult={saved:false,applied:false,stageResolved:false};
         try{
           progressResult=window.__NIKKE_GM_ACCOUNT_PROGRESS__?.accept(payload,targetAccount)||
@@ -481,6 +485,9 @@
   };
 
   window.closeBlablalinkSyncGuide = function(){
+    // The production import routine automatically closes the sync dialog.
+    // On test it must stay visible so campaign errors cannot be silently hidden.
+    if(suppressLegacyClose)return;
     if(overlay) overlay.classList.remove('open');
     var old = document.getElementById('blsyncModal');
     if(old) old.hidden = true;
