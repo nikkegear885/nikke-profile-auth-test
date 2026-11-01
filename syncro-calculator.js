@@ -791,7 +791,8 @@
     }
     if(e.target.id==="syn-reset"){
       if(!confirm("싱크로 계산기의 입력값과 체크 상태를 원본 시트 기본값으로 초기화할까요?"))return;
-      state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}
+      state=defaults();
+      try{localStorage.removeItem(storageKey);localStorage.removeItem(PROFILE_APPLIED_KEY);}catch(e){}
       render();
     }
   });
