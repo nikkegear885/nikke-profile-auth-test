@@ -162,8 +162,8 @@
         hard:hardStage,
         normalStageId:p.campaign?.normal?.stageId??null,
         hardStageId:p.campaign?.hard?.stageId??null,
-        outpostLevel:info.outpost?.outpostBattleLevel??null,
-        synchroLevel:info.outpost?.synchroLevel??null,
+        outpostLevel:info?.outpost?.outpostBattleLevel??null,
+        synchroLevel:info?.outpost?.synchroLevel??null,
         // API can successfully return roster data without an accessible campaign profile.
         campaignAvailable:!!normalStage,
         progressError:normalStage?null:(diagnostic||(
