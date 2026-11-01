@@ -6,11 +6,44 @@
   const STATUS_PREFIX='nikke_gm_progress_status_v1_';
   const STAGE_KEY='nikke_outpost_stage_selection_v1';
   const ACCOUNT_KEY='nikke_active_account_v1';
+  const REGION_PREFIX='nikke_gm_progress_region_v2_';
+  const REGION_SELECTED_PREFIX='nikke_gm_progress_selected_region_v2_';
+  const REGION_LIST_PREFIX='nikke_gm_progress_regions_v2_';
+  const REGION_CODES=Object.freeze({81:'일본 (JP)',82:'북미 (NA)',83:'한국 (KR)',84:'글로벌',85:'동남아'});
   const account=()=>{try{return localStorage.getItem(ACCOUNT_KEY)||'계정1';}catch(_){return '계정1';}};
-  const read=name=>{
-    try{const item=JSON.parse(localStorage.getItem(PREFIX+encodeURIComponent(name))||'null');
+  const regionKey=(name,area)=>REGION_PREFIX+encodeURIComponent(name)+'_'+area;
+  const getStored=(key,name)=>{
+    try{
+      const item=JSON.parse(localStorage.getItem(key)||'null');
       return item&&item.account===name?item:null;
     }catch(_){return null;}
+  };
+  const legacy=name=>getStored(PREFIX+encodeURIComponent(name),name);
+  const regionOf=name=>{
+    try{
+      const selected=Number(localStorage.getItem(REGION_SELECTED_PREFIX+encodeURIComponent(name)));
+      if(REGION_CODES[selected])return selected;
+      const meta=JSON.parse(localStorage.getItem('nikkeBlSyncMeta_'+encodeURIComponent(name))||'null');
+      if(REGION_CODES[Number(meta?.areaId)])return Number(meta.areaId);
+    }catch(_){}
+    const old=legacy(name);
+    return REGION_CODES[old?.areaId]?Number(old.areaId):null;
+  };
+  const readRegion=(name,area)=>REGION_CODES[area]?getStored(regionKey(name,area),name):null;
+  const read=name=>{
+    const area=regionOf(name);
+    if(area!==null){
+      const item=readRegion(name,area);
+      if(item)return item;
+      const older=legacy(name);
+      return older&&Number(older.areaId)===area?older:null;
+    }
+    return legacy(name);
+  };
+  const saveRegion=(name,b)=>{
+    if(!REGION_CODES[Number(b?.areaId)])return false;
+    try{localStorage.setItem(regionKey(name,Number(b.areaId)),JSON.stringify(b));return true;}
+    catch(_){return false;}
   };
   const profileLinkId=name=>{
     try{
