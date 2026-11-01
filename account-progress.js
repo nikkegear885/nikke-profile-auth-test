@@ -72,20 +72,30 @@
   }
   function displayActualLevel(){
     const b=read(account());
-    if(!stageMatches(b)||!Number.isInteger(b.outpostLevel)||b.outpostLevel<1||b.outpostLevel>800)return;
+    const exact=stageMatches(b);
+    const noStage=!!b&&!b.normal&&
+      document.getElementById('outpostNormalStage')?.value==='0-1'&&
+      (document.getElementById('outpostHardStage')?.value||'')==='';
+    if(!(exact||noStage)||!Number.isInteger(b.outpostLevel)||b.outpostLevel<1||b.outpostLevel>800)return;
     const level=b.outpostLevel;
+    const coreHint=document.getElementById('outpostCoreHint');
+    if(coreHint&&noStage)coreHint.style.display='none';
     const value=document.getElementById('outpostLevelValue');
     const progress=document.getElementById('outpostProgressText');
     const help=document.getElementById('outpostLevelHelp');
     if(value)value.innerHTML=level+' <span>of 800 · API 실제</span>';
-    if(progress)progress.textContent='동기화된 실제 전초기지 Lv.'+level;
+    if(progress)progress.textContent=noStage
+      ? 'API 실제 전초기지 Lv.'+level+' · 스테이지는 미조회'
+      : '동기화된 실제 전초기지 Lv.'+level;
     document.querySelectorAll('#outpostProgressBars .outpost-progress-bar').forEach(bar=>bar.classList.remove('active'));
-    if(help)help.textContent='노말 '+b.normal+' · 하드 '+(b.hard||'미클리어')+
-      (b.stageSource==='manual'?' · 스테이지는 현재 계정에 직접 저장한 값입니다.':
-       b.stageStale?' · 스테이지는 마지막으로 확인된 이전 기록입니다.':
-       ' · API에서 조회한 실제 전초기지 레벨입니다.');
+    if(help)help.textContent=noStage
+      ? '선택한 서버의 노말·하드 캠페인 정보는 API에서 제공되지 않았습니다. 생산량은 실제 전초기지 레벨 기준이며, 스테이지를 직접 설정해 저장할 수 있습니다.'
+      : '노말 '+b.normal+' · 하드 '+(b.hard||'미클리어')+
+        (b.stageSource==='manual'?' · 스테이지는 현재 계정에 직접 저장한 값입니다.':
+         b.stageStale?' · 스테이지는 마지막으로 확인된 이전 기록입니다.':
+         ' · API에서 조회한 실제 전초기지 레벨입니다.');
     if(typeof updateOutpostCurrentProduction==='function')updateOutpostCurrentProduction(level);
-    if(typeof outpostStageToCount==='function'){
+    if(exact&&typeof outpostStageToCount==='function'){
       const nc=outpostStageToCount(Number(b.normal.split('-')[0]),b.normal);
       const hc=b.hard?outpostStageToCount(Number(b.hard.split('-')[0]),b.hard):0;
       if(typeof updateOutpostCoreDustHint==='function')updateOutpostCoreDustHint(nc,level,hc);
@@ -96,6 +106,8 @@
     const previous=window.updateOutpostCalculator;
     window.updateOutpostCalculator=function(){
       const result=previous.apply(this,arguments);
+      const hint=document.getElementById('outpostCoreHint');
+      if(hint)hint.style.display='';
       displayActualLevel();
       return result;
     };
