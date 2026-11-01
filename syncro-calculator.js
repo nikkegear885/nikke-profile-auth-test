@@ -160,7 +160,7 @@
       <div id="syn-output">
         <div class="syn-top-grid">
           <section class="syn-box syn-input-panel">
-            <div class="syn-box-head syn-input-head"><span>1. 정보입력</span><button class="syn-apply-my-synchro" id="syn-apply-my-synchro" type="button" title="현재 선택한 계정의 동기화된 싱크로 레벨을 입력합니다">내 싱크로 적용</button></div>
+            <div class="syn-box-head syn-input-head"><span>1. 정보입력</span><button class="syn-apply-my-synchro" id="syn-apply-my-synchro" type="button" title="현재 선택한 계정의 싱크로·전초기지 레벨을 적용합니다">내 계정 상태 적용</button></div>
             <div class="syn-box-body">
               <div class="syn-form">
                 ${field("현재 싱크로 레벨","current",1,1200)}
@@ -654,11 +654,11 @@
   root.addEventListener("click",e=>{
     if(e.target.closest("#syn-apply-my-synchro")){
       const note=el("syn-level-sync-status");
-      if(note)note.textContent="현재 계정의 싱크로 레벨을 확인하는 중…";
+      if(note)note.textContent="현재 계정의 싱크로·전초기지 레벨을 확인하는 중…";
       if(parent!==window){
         parent.postMessage({type:"nikke-gm-request-my-synchro"},location.origin);
       }else if(note){
-        note.textContent="계정 화면에서 계산기를 열면 싱크로 레벨을 적용할 수 있습니다.";
+        note.textContent="계정 화면에서 계산기를 열면 싱크로·전초기지 레벨을 적용할 수 있습니다.";
       }
       return;
     }
@@ -708,7 +708,6 @@
     }
     if(importedCurrent!==null)state.current=importedCurrent;
     if(importedOutpost!==null)state.outpost=importedOutpost;
-    if(state.goal<=state.current)state.goal=Math.min(1200,state.current+1);
     try{
       localStorage.setItem(accountLevelScopeKey,JSON.stringify({account:name,areaId:b.areaId,profileId:b.profileId}));
       localStorage.setItem(storageKey,JSON.stringify(state));
@@ -720,15 +719,21 @@
   window.addEventListener("message",event=>{
     if(parent===window||event.origin!==location.origin||event.source!==parent)return;
     if(event.data?.type==="nikke-gm-my-synchro"){
-      const level=validImportedLevel(event.data.synchroLevel,1200);
+      const synchro=validImportedLevel(event.data.synchroLevel,1200);
+      const outpost=validImportedLevel(event.data.outpostLevel,800);
       const note=el("syn-level-sync-status");
-      if(level===null){
-        if(note)note.textContent=String(event.data.message||"동기화된 싱크로 레벨이 없습니다. 먼저 계정을 동기화해 주세요.");
+      if(synchro===null&&outpost===null){
+        if(note)note.textContent=String(event.data.message||"동기화된 싱크로·전초기지 레벨이 없습니다. 먼저 계정을 동기화해 주세요.");
         return;
       }
-      state.current=level;
-      const input=root.querySelector('input[data-key="current"]');
-      if(input)input.value=String(level);
+      // Apply only valid, account-scoped levels. Goal, owned resources and all
+      // other calculator settings must remain exactly as the user entered them.
+      if(synchro!==null)state.current=synchro;
+      if(outpost!==null)state.outpost=outpost;
+      const currentInput=root.querySelector('input[data-key="current"]');
+      const outpostInput=root.querySelector('input[data-key="outpost"]');
+      if(currentInput&&synchro!==null)currentInput.value=String(synchro);
+      if(outpostInput&&outpost!==null)outpostInput.value=String(outpost);
       try{
         localStorage.setItem(storageKey,JSON.stringify(state));
         localStorage.setItem(accountLevelScopeKey,JSON.stringify({
@@ -738,7 +743,15 @@
         }));
       }catch(_){}
       update();
-      if(note)note.textContent="계정 "+String(event.data.account||"")+" · 싱크로 Lv."+level+" 적용 완료 (다른 입력값 유지)";
+      if(note){
+        const changed=[
+          synchro!==null?"싱크로 Lv."+synchro:null,
+          outpost!==null?"전초기지 Lv."+outpost:null
+        ].filter(Boolean).join(" / ");
+        note.textContent="계정 "+String(event.data.account||"")+" · "+changed+
+          " 적용 완료 (목표 레벨·보유 재화 유지)"+
+          (synchro===null||outpost===null?" · 미조회 항목은 기존값 유지":"");
+      }
       return;
     }
     if(event.data?.type!=="nikke-gm-calculator-levels")return;
