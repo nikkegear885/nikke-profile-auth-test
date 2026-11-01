@@ -405,6 +405,14 @@
         suppressLegacyClose=true;
         try{apply(payload, targetAccount);}
         finally{suppressLegacyClose=false;}
+        // Store level snapshots for every roster region, and attach any
+        // campaign returned for a DIFFERENT verified region only to that region.
+        var availableRegions=[];
+        try{
+          availableRegions=window.__NIKKE_GM_ACCOUNT_PROGRESS__?.registerAreas(payload,targetAccount)||[];
+        }catch(regionError){
+          console.warn('[NIKKE GM] region snapshots unavailable',regionError);
+        }
         var progressResult={saved:false,applied:false,stageResolved:false};
         try{
           progressResult=window.__NIKKE_GM_ACCOUNT_PROGRESS__?.accept(payload,targetAccount)||
@@ -424,7 +432,8 @@
           payload.accountProgress?.progressError||'API에서 스테이지 정보를 찾지 못했습니다.';
         var otherRegion=/(반환 서버|서버의 프로필을 확인하지 못했습니다|다른 서버의 스테이지)/.test(detail);
         status.className=stageImported?'bl-direct-status success':'bl-direct-status error';
-        status.textContent='장비·스킬 동기화 완료 · '+regionLabel(payload.area_id)+'. '+
+        status.textContent='장비·스킬 동기화 완료 · '+regionLabel(payload.area_id)+
+          (availableRegions.length?' · 진행도 저장 서버 '+availableRegions.length+'곳':'')+'. '+
           (stageImported
             ? '전초기지 생산량에 노말 '+progressResult.normal+' / 하드 '+
               (progressResult.hard||'미클리어')+' 자동 입력 확인.'
