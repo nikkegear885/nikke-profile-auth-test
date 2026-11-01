@@ -361,12 +361,21 @@
         }
 
         apply(payload, targetAccount);
+        var levelMessage = '';
+        if(typeof window.__NIKKE_GM_SYNC_LEVELS__ === 'function'){
+          status.textContent = '장비·스킬 동기화 완료 · 싱크로·전초기지 레벨 조회 중…';
+          try{
+            levelMessage = await window.__NIKKE_GM_SYNC_LEVELS__(payload, targetAccount, url);
+          }catch(levelError){
+            levelMessage = '레벨 조회 실패: ' + text(levelError?.message || levelError);
+          }
+        }
 
         if(regionPicker) regionPicker.hidden = true;
         if(regionSelect) regionSelect.innerHTML = '<option value="">지역 선택…</option>';
         primary.textContent = '동기화 시작';
         status.className = 'bl-direct-status success';
-        status.textContent = '동기화가 완료되었습니다. 지역: ' + regionLabel(payload.area_id) + '.';
+        status.textContent = '동기화가 완료되었습니다. 지역: ' + regionLabel(payload.area_id) + '. ' + levelMessage;
       }catch(err){
         status.className = 'bl-direct-status error';
         status.textContent = text(err && err.message || err || '동기화에 실패했습니다.');
