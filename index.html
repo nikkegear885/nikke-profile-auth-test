@@ -6688,7 +6688,7 @@ function switchMainView(view){
   if(title)title.textContent=isOutpost?'전초기지 생산량':isSole?'솔레점수기록':'니케 장비현황';
   const outpost=document.getElementById('outpostPanel');if(outpost)outpost.hidden=!isOutpost;
   const sole=document.getElementById('soleScorePanel');if(sole)sole.classList.toggle('active',isSole);
-  if(isOutpost){renderOutpostPanel();updateOutpostStageOptions();updateOutpostHardStageOptions();}
+  if(isOutpost){renderOutpostPanel();updateOutpostStageOptions();updateOutpostHardStageOptions();window.__NIKKE_GM_ACCOUNT_PROGRESS__?.refreshOutpost?.();}
   if(isSole)renderSoleScores();
   closeSidebar();
 }
