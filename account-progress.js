@@ -36,7 +36,8 @@
     if(value)value.innerHTML=level+' <span>of 800 · API 실제</span>';
     if(progress)progress.textContent='동기화된 실제 전초기지 Lv.'+level;
     document.querySelectorAll('#outpostProgressBars .outpost-progress-bar').forEach(bar=>bar.classList.remove('active'));
-    if(help)help.textContent='노말 '+b.normal+' · 하드 '+(b.hard||'미클리어')+' · API에서 조회한 실제 전초기지 레벨입니다.';
+    if(help)help.textContent='노말 '+b.normal+' · 하드 '+(b.hard||'미클리어')+
+      (b.stageStale?' · 스테이지는 마지막으로 확인된 이전 기록입니다.':' · API에서 조회한 실제 전초기지 레벨입니다.');
     if(typeof updateOutpostCurrentProduction==='function')updateOutpostCurrentProduction(level);
     if(typeof outpostStageToCount==='function'){
       const nc=outpostStageToCount(Number(b.normal.split('-')[0]),b.normal);
@@ -88,6 +89,18 @@
     if(typeof updateOutpostCalculator==='function')updateOutpostCalculator();
     if(typeof persistOutpostStageSelection==='function')persistOutpostStageSelection();
   }
+  function renderCampaignStatus(b){
+    const note=document.getElementById('outpost-account-progress-status');
+    if(!note)return;
+    note.textContent=!b?'':b.stageStale
+      ? ('캠페인 최신 스테이지 조회 실패 · '+
+         (b.normal?'이전 스테이지 '+b.normal+' 유지 · ':'')+
+         '싱크로 '+(b.synchroLevel??'조회 불가')+
+         ' / 실제 전초기지 '+(b.outpostLevel??'조회 불가'))
+      : (b.normal?'계정 동기화 완료 · 노말 '+b.normal+' / 하드 '+(b.hard||'미클리어')+
+         ' · 실제 전초기지 '+(b.outpostLevel??'조회 불가'):'');
+    note.hidden=!note.textContent;
+  }
   function activate(name,clearUnknown=false){
     const b=read(name);
     try{
@@ -97,6 +110,7 @@
     if(b?.normal)applyStages(b);
     else if(clearUnknown)clearStageView();
     else if(typeof updateOutpostCalculator==='function')updateOutpostCalculator();
+    renderCampaignStatus(b);
     sendToIframe(name,b);
     return b;
   }
@@ -104,7 +118,9 @@
     const b=read(account());
     if(!b?.normal){alert('현재 계정의 노말·하드 진행도가 없습니다. 먼저 계정을 동기화해 주세요.');return;}
     applyStages(b);
-    if(typeof toast==='function')toast('동기화한 스테이지와 실제 전초기지 레벨로 복원했습니다.');
+    if(typeof toast==='function')toast(b.stageStale?
+      '최신 스테이지 조회에 실패해 마지막으로 확인한 스테이지를 복원했습니다.':
+      '동기화한 스테이지와 실제 전초기지 레벨로 복원했습니다.');
   }
   function ensureButton(){
     if(document.getElementById('outpost-profile-reset'))return;
@@ -118,6 +134,11 @@
     button.title='현재 계정에서 마지막으로 동기화한 노말·하드 진행도 및 전초기지 레벨 복원';
     button.addEventListener('click',resetOutpost);
     label.appendChild(button);
+    const note=document.createElement('div');
+    note.id='outpost-account-progress-status';
+    note.style.cssText='font-size:12px;line-height:1.5;flex-basis:100%;width:100%;margin-top:5px;color:var(--muted,#728391)';
+    note.hidden=true;
+    label.insertAdjacentElement('afterend',note);
   }
   function accept(payload,name){
     const p=payload?.accountProgress;
