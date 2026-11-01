@@ -214,6 +214,9 @@
         const synchroLevel=valid(fromProfile?.synchroLevel)??valid(outpost.synchro_level);
         return {
           areaId:area,
+          // Public profile identity prevents carrying old stages into a newly
+          // linked account that happens to use the same server slot.
+          profileId:String(raw?.intlOpenId||'')||null,
           normal:fromProfile?.normal||null,
           hard:fromProfile?.hard||null,
           normalStageId:fromProfile?.normalStageId??null,
