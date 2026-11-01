@@ -40,6 +40,7 @@
     }
     return legacy(name);
   };
+  const statusKey=name=>STATUS_PREFIX+encodeURIComponent(name)+'_'+(regionOf(name)??'unknown');
   const saveRegion=(name,b)=>{
     if(!REGION_CODES[Number(b?.areaId)])return false;
     try{localStorage.setItem(regionKey(name,Number(b.areaId)),JSON.stringify(b));return true;}
@@ -161,14 +162,14 @@
   function recordStatus(name,message){
     if(!name)return;
     const data={message:String(message||'').slice(0,300),at:new Date().toISOString()};
-    try{localStorage.setItem(STATUS_PREFIX+encodeURIComponent(name),JSON.stringify(data));}catch(_){}
+    try{localStorage.setItem(statusKey(name),JSON.stringify(data));}catch(_){}
     if(account()===name)renderCampaignStatus(read(name));
   }
   function renderCampaignStatus(b){
     const note=document.getElementById('outpost-account-progress-status');
     if(!note)return;
     let status=null;
-    try{status=JSON.parse(localStorage.getItem(STATUS_PREFIX+encodeURIComponent(account()))||'null');}catch(_){}
+    try{status=JSON.parse(localStorage.getItem(statusKey(account()))||'null');}catch(_){}
     const baseline=!b?'':b.stageSource==='manual'
       ? ('수동 저장한 '+b.account+' 스테이지 · 노말 '+b.normal+
         ' / 하드 '+(b.hard||'미클리어')+
@@ -519,7 +520,10 @@
   });
   const ready=()=>{
     ensureButton();
-    activate(account());
+    // Do not leave a prior region's stage in the dropdown when this region only
+    // has outpost/synchro levels but no campaign API response.
+    const current=read(account());
+    activate(account(),!!current&&!current.normal);
     const frame=document.getElementById('syncroIframe');
     frame?.addEventListener('load',()=>sendToIframe(account(),read(account())));
   };
