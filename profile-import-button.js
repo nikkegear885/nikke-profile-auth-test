@@ -18,15 +18,18 @@
   }
 
   function getAccounts(){
+    // Use the same account names shown in the main site's top-right switcher.
+    // Ignore the extra random-account controls available only on the test site.
+    var visible = Array.from(document.querySelectorAll('.actions.account-switcher .account-switch-btn'))
+      .map(function(b){ return text(b.dataset.account || b.textContent).trim(); })
+      .filter(Boolean).slice(0,2);
+    if(visible.length===2 && visible[0]!==visible[1])return visible;
     try{
-      if(typeof ACCOUNTS !== 'undefined' && Array.isArray(ACCOUNTS)){
+      if(typeof ACCOUNTS !== 'undefined' && Array.isArray(ACCOUNTS)&&ACCOUNTS.length===2){
         return ACCOUNTS.slice();
       }
     }catch(_){}
-    return Array.from(document.querySelectorAll('.account-switch-btn'))
-      .map(function(b){ return text(b.textContent).trim(); })
-      .filter(Boolean)
-      .slice(0,2);
+    return ['계정1','계정2'];
   }
 
   function validateProfileUrl(value){
@@ -363,7 +366,7 @@
         if(!available.some(function(a){return a.area_id===areaId;}))
           throw new Error('선택한 서버가 공개 프로필의 보유 목록에 없습니다.');
         var info={username:'',avatar:''};
-        try{info=await engine.getProfile(url);}catch(error){
+        try{info=await engine.getProfile(url,areaId);}catch(error){
           console.warn('[NIKKE GM] optional profile metadata unavailable',String(error&&error.message||error));
         }
         var payload=engine.convert(roster,areaId,info);
@@ -435,8 +438,16 @@
   window.openBlablalinkSyncGuide = function(){
     var modal = ensureModal();
     var accounts = getAccounts();
-    if(!targetAccount) targetAccount = accounts[0] || '계정1';
+    // Never retain an obsolete or generated test-account target after renaming.
+    if(!accounts.includes(targetAccount)){
+      var current='';
+      try{if(typeof activeAccount!=='undefined')current=String(activeAccount||'');}catch(_){}
+      targetAccount=accounts.includes(current)?current:(accounts[0]||'계정1');
+    }
     refreshLabels();
+    // A profile shown from an earlier API request must not appear under a new target account.
+    var previousProfile=modal.querySelector('#blDirectProfile');
+    if(previousProfile)previousProfile.hidden=true;
 
     var savedKey = 'nikke_bl_profile_url_' + encodeURIComponent(targetAccount);
     try{
