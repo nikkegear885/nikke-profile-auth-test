@@ -1,4 +1,4 @@
-/* NIKKE Gear Manager test site: Synchro level calculator */
+/* NIKKE Gear Manager TEST: production 1.534 calculator + test-only linked profile baseline */
 (function syncroCalculatorApp(){
   "use strict";
   const SOURCE=window.NIKKE_SYNCRO_SOURCE;
@@ -7,11 +7,13 @@
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v4";
+  // Account-linked defaults are exclusively test-site behavior.
   const PROFILE_ACTIVE_KEY="nikke_gm_progress_active_v1";
   const PROFILE_APPLIED_KEY="nikke_gm_syncro_applied_v1";
   let syncedBaseline=null;
   const readProfile=()=>{
-    try{const b=JSON.parse(localStorage.getItem(PROFILE_ACTIVE_KEY)||'null');
+    try{
+      const b=JSON.parse(localStorage.getItem(PROFILE_ACTIVE_KEY)||"null");
       return b&&typeof b.account==="string"?b:null;
     }catch(_){return null;}
   };
@@ -25,7 +27,8 @@
   const campaignMilestones=[{"mode":"normal","chapter":32,"level":221},{"mode":"normal","chapter":34,"level":231},{"mode":"normal","chapter":36,"level":241},{"mode":"normal","chapter":38,"level":251},{"mode":"normal","chapter":40,"level":281},{"mode":"normal","chapter":42,"level":301},{"mode":"normal","chapter":44,"level":321},{"mode":"normal","chapter":46,"level":331},{"mode":"normal","chapter":48,"level":341},{"mode":"hard","chapter":16,"level":241},{"mode":"hard","chapter":18,"level":261},{"mode":"hard","chapter":20,"level":281},{"mode":"hard","chapter":22,"level":301},{"mode":"hard","chapter":24,"level":321},{"mode":"hard","chapter":26,"level":341},{"mode":"hard","chapter":28,"level":350},{"mode":"hard","chapter":30,"level":361},{"mode":"hard","chapter":31,"level":381},{"mode":"hard","chapter":32,"level":461},{"mode":"hard","chapter":34,"level":481},{"mode":"hard","chapter":36,"level":501},{"mode":"hard","chapter":38,"level":521},{"mode":"hard","chapter":40,"level":581},{"mode":"hard","chapter":42,"level":601},{"mode":"hard","chapter":44,"level":621},{"mode":"hard","chapter":46,"level":641},{"mode":"hard","chapter":48,"level":681}];
   // Keep only verified automatic synchro-clear milestones; 49-50 remain unverified.
   const activeMilestones=()=>campaignMilestones;
-  const boxDurations=[1,2,8,12,24];
+  const MAX_SIM_DAYS=6000;
+  const boxDurations=[1,2,4,8,12,24];
   const clone=x=>JSON.parse(JSON.stringify(x));
   const fmt=(n,d=0)=>Number.isFinite(+n)?new Intl.NumberFormat("ko-KR",{maximumFractionDigits:d}).format(+n):"-";
   const safe=n=>Number.isFinite(+n)?+n:0;
@@ -40,7 +43,7 @@
     return `${value("year")}-${value("month")}-${value("day")}`;
   };
   const defaults=()=>{
-    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressMode:"fixed",progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0,});
+    const initial=Object.assign(clone(SOURCE.defaults),{daily:clone(SOURCE.daily),packages:clone(SOURCE.packages),progressNormal:true,progressHard:true,normalStartChapter:0,normalStartStage:0,hardStartChapter:0,hardStartStage:0,});
     // Use the current local Korean date for a fresh/reset calculator; preserve any saved date.
     initial.date=seoulTodayISO();
     initial.daily.forEach(row=>{row.on=true;});
@@ -64,7 +67,7 @@
     "일일 퍼펙트 부스트 팩",
     "월정액 2"
   ];
-  const editableKeys=new Set(["current","goal","outpost","sweep","date","subtractOwned","progressMode","progressNormal","progressHard","normalStartChapter","normalStartStage","hardStartChapter","hardStartStage"]);
+  const editableKeys=new Set(["current","goal","outpost","sweep","date","subtractOwned","progressNormal","progressHard","normalStartChapter","normalStartStage","hardStartChapter","hardStartStage"]);
   // Indexed by 1-based daily sweep count (first clear is free).
   // 1회=0, 2회=50, 3회=70, ... 11회=450 jewels per individual clear.
   const sweepJewelPrice=[0,0,50,70,100,150,200,250,300,350,400,450];
@@ -81,7 +84,6 @@
       }
       if(typeof saved.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(saved.date))state.date=saved.date;
       if(typeof saved.subtractOwned==="boolean")state.subtractOwned=saved.subtractOwned;
-      if(["fixed","progress"].includes(saved.progressMode))state.progressMode=saved.progressMode;
       if(typeof saved.progressNormal==="boolean")state.progressNormal=saved.progressNormal;
       if(typeof saved.progressHard==="boolean")state.progressHard=saved.progressHard;
       for(const key of ["normalStartChapter","normalStartStage","hardStartChapter","hardStartStage"]){
@@ -96,17 +98,19 @@
       }
       if(Array.isArray(saved.ownedBoxes)&&saved.ownedBoxes.length===3&&
          saved.ownedBoxes.every(row=>Array.isArray(row)&&row.length===boxDurations.length)){
+        // The six-slot format is [1h,2h,4h,8h,12h,24h].
         state.ownedBoxes=saved.ownedBoxes.map(row=>row.map(value=>Math.max(0,safe(value))));
       }else if(Array.isArray(saved.ownedBoxes)&&saved.ownedBoxes.length===3&&
-               saved.ownedBoxes.every(row=>Array.isArray(row)&&row.length===6)){
-        // v1.449 stored [1h,2h,4h,8h,12h,24h]. Convert each 4h box
-        // into four 1h boxes while preserving all other denominations.
+               saved.ownedBoxes.every(row=>Array.isArray(row)&&row.length===5)){
+        // Preserve the v1.524 five-slot data [1h,2h,8h,12h,24h].
+        // Insert a new empty 4h slot without shifting existing denominations.
         state.ownedBoxes=saved.ownedBoxes.map(row=>[
-          Math.max(0,safe(row[0]))+4*Math.max(0,safe(row[2])),
+          Math.max(0,safe(row[0])),
           Math.max(0,safe(row[1])),
+          0,
+          Math.max(0,safe(row[2])),
           Math.max(0,safe(row[3])),
-          Math.max(0,safe(row[4])),
-          Math.max(0,safe(row[5]))
+          Math.max(0,safe(row[4]))
         ]);
       }else{
         // Legacy users previously entered their combined box-hours in one input.
@@ -131,31 +135,42 @@
   state.ownedHours=state.ownedBoxes.map(ownedBoxHours);
   // Replace legacy editable non-yellow data with fixed source values.
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
-  // Only profile identity/stage/level fields are restored. Never reset resource or package choices.
+  // Restore only the player's current level and the actual outpost/stage,
+  // leaving paid packages, owned resources, sweep count and target level alone.
   function applyProfileBaseline(b,force=false,repaint=false){
     const next=b&&typeof b.account==="string"?b:null;
+    const priorAccount=syncedBaseline?.account||null;
     syncedBaseline=next?.normal?next:null;
-    if(!next)return;
+    if(!next){if(repaint)render();return;}
     const signature=next.account+"|"+(next.syncedAt||"no-profile");
     let applied="";
     try{applied=localStorage.getItem(PROFILE_APPLIED_KEY)||"";}catch(_){}
     if(!force&&signature===applied){if(repaint)render();return;}
-    if(!next.normal&&!force&&!applied){if(repaint)render();return;}
-    const level=Number(next.synchroLevel),outpost=Number(next.outpostLevel);
-    state.current=Number.isInteger(level)&&level>=1&&level<=999?level:defaults().current;
-    state.outpost=Number.isInteger(outpost)&&outpost>=1&&outpost<=800?outpost:defaults().outpost;
-    if(state.goal<=state.current)state.goal=Math.min(1000,state.current+1);
-    const parseStage=raw=>{
-      const match=String(raw||"").match(/^(\d+)-/);
-      if(!match)return {chapter:0,index:0};
-      const chapter=Number(match[1]),list=campaignStages[chapter]||[];
-      const normalize=v=>String(v).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,"").replace(/\s+/g,"");
-      const i=list.findIndex(v=>normalize(v)===normalize(raw));
-      return {chapter,index:i>=0?i+1:0};
-    };
-    const n=parseStage(next.normal),h=parseStage(next.hard);
-    state.normalStartChapter=n.chapter;state.normalStartStage=n.index;
-    state.hardStartChapter=h.chapter;state.hardStartStage=h.index;
+    if(next.normal){
+      const current=Number(next.synchroLevel),outpost=Number(next.outpostLevel);
+      if(Number.isInteger(current)&&current>=1&&current<=1200)state.current=current;
+      else if(applied && !applied.startsWith(next.account+"|"))state.current=defaults().current;
+      if(Number.isInteger(outpost)&&outpost>=1&&outpost<=800)state.outpost=outpost;
+      else if(applied && !applied.startsWith(next.account+"|"))state.outpost=defaults().outpost;
+      if(state.goal<=state.current)state.goal=Math.min(1200,state.current+1);
+      const progress=raw=>{
+        const m=String(raw||"").match(/^(\d+)-/);
+        if(!m)return {chapter:0,stage:0};
+        const chapter=Number(m[1]),stages=campaignStages[chapter]||[];
+        const normalize=v=>String(v).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,"").replace(/\s+/g,"");
+        const index=stages.findIndex(v=>normalize(v)===normalize(raw));
+        return {chapter,stage:index>=0?index+1:0};
+      };
+      const n=progress(next.normal),h=progress(next.hard);
+      state.normalStartChapter=n.chapter;state.normalStartStage=n.stage;
+      state.hardStartChapter=h.chapter;state.hardStartStage=h.stage;
+    }else if(applied && !applied.startsWith(next.account+"|")){
+      // A newly selected account has no linked profile: do not show the previous player's levels.
+      state.current=defaults().current;
+      state.outpost=defaults().outpost;
+      state.normalStartChapter=0;state.normalStartStage=0;
+      state.hardStartChapter=0;state.hardStartStage=0;
+    }
     try{
       localStorage.setItem(PROFILE_APPLIED_KEY,signature);
       localStorage.setItem(storageKey,JSON.stringify(state));
@@ -191,35 +206,27 @@
     <div class="syn-wrap">
       <h1 class="syn-sr-only">싱크로 레벨업 계산기</h1>
       <div class="syn-utility">
-        <span class="syn-utility-note">전초기지 생산량: 사이트 내 인게임 확인 표(1~800레벨) · 레벨업 비용: 원본 시트<br><span id="syn-profile-context"></span></span>
-        <div class="syn-actions"><button class="syn-btn" id="syn-profile-reset" type="button" title="마지막으로 동기화한 현재 계정의 싱크로·전초기지·스테이지 복원">정보 리셋</button><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button></div>
+        <div class="syn-actions"><button class="syn-btn" id="syn-profile-reset" type="button" title="마지막으로 동기화한 현재 계정의 싱크로·전초기지·스테이지 복원">정보 리셋</button><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button><a class="syn-btn syn-source-link" href="https://gall.dcinside.com/mgallery/board/view/?id=gov&amp;no=6384055&amp;fcno=31685265&amp;fpno=31617879" target="_blank" rel="noopener noreferrer">참고한 자료</a></div>
       </div>
+      <p class="syn-profile-context" id="syn-profile-context" style="padding:0 8px;margin:0 0 10px;color:var(--muted,#8796ad);font-size:12px"></p>
       <div id="syn-output">
         <div class="syn-top-grid">
           <section class="syn-box syn-input-panel">
             <div class="syn-box-head">1. 정보입력</div>
             <div class="syn-box-body">
               <div class="syn-form">
-                ${field("현재 싱크로 레벨","current",1,999)}
-                ${field("목표 싱크로 레벨","goal",2,1000)}
+                ${field("현재 싱크로 레벨","current",1,1200)}
+                ${field("목표 싱크로 레벨","goal",2,1200)}
                 ${field("전초기지 레벨","outpost",1,800)}
                 ${field("단기섬멸 횟수 / 일","sweep",1,11)}
                 <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label>
               </div>
+              <p id="syn-cost-estimate" class="syn-hint" hidden>1001~1200레벨 구간의 배틀데이터·크레딧 비용은 공개된 1,000개 단위 자료를 적용한 추정값입니다.</p>
               <p id="syn-outpost-discrepancy" class="syn-outpost-discrepancy" role="alert" hidden></p>
-                <div class="syn-progress-options">
-                  <div class="syn-progress-modes">
-                    <span class="syn-progress-label">전초기지 생산량 계산 방식</span>
-                    <div class="syn-mode-buttons" role="group" aria-label="전초기지 생산량 계산 방식">
-                      <button type="button" data-progress-mode="fixed" class="${state.progressMode==="fixed"?"active":""}" aria-pressed="${state.progressMode==="fixed"}">전초기지레벨 고정 기준</button>
-                      <button type="button" data-progress-mode="progress" class="${state.progressMode==="progress"?"active":""}" aria-pressed="${state.progressMode==="progress"}">싱크로에 따른 전초기지 레벨 상승 임의 적용</button>
-                    </div>
-                  </div>
-                </div>
             </div>
           </section>
           <section class="syn-highlight syn-result-panel" aria-label="목표 달성 예상">
-            <div class="sub">전체 목표 달성 예상</div>
+            <div class="sub">목표 싱크로 달성 일자</div>
             <div class="big" id="syn-overall-date">-</div>
             <div class="foot" id="syn-overall-days">-</div>
           </section>
@@ -245,7 +252,6 @@
           <div class="syn-box-head">2. 보유 재화 입력</div>
           <div class="syn-box-body">
             <label class="syn-check"><input type="checkbox" data-key="subtractOwned" ${state.subtractOwned?"checked":""}>보유 재화를 필요량에서 차감</label>
-            <p class="syn-hint" id="syn-hourly">전초기지 시간당 생산량</p>
             <div class="syn-wealth">
               ${names.map((name,j)=>`<div class="syn-wealth-card">
                 <div class="syn-wealth-title">${name}</div>
@@ -305,20 +311,21 @@
       </details>
       <details class="syn-box"><summary>5. 구간별 필요 재화 세부표</summary><div class="syn-box-body syn-result-detail"><div class="syn-table-wrap"><table class="syn-table"><thead><tr><th>레벨 구간</th><th>적용 횟수</th><th>필요 코더</th><th>필요 배데</th><th>필요 크레딧</th></tr></thead>
         <tbody id="syn-band-table"></tbody></table></div></div></details>
-      <div class="syn-status" id="syn-status">계산 중...</div>
-      <div class="syn-note">자료 기준: 전초기지 생산량은 사이트 내 인게임 확인 표, 레벨업 비용·수급 규칙은 원본 시트(2026-10-28) · 입력 설정은 테섭 브라우저에 저장됩니다. 원본 시트는 수정하지 않습니다.</div>
+      <div class="syn-status" id="syn-status" hidden></div>
     </div>`;
     enforcePackageEditPolicy();
-    const context=el("syn-profile-context");
+    const context=root.querySelector("#syn-profile-context");
     if(context)context.textContent=syncedBaseline?
       "동기화 계정 "+syncedBaseline.account+" · 노말 "+syncedBaseline.normal+
       " / 하드 "+(syncedBaseline.hard||"미클리어")+
-      " · 실제 전초기지 "+(syncedBaseline.outpostLevel||"확인 불가"):"동기화한 캠페인 정보 없음";
+      " · 실제 전초기지 Lv."+(syncedBaseline.outpostLevel||"확인 불가"):
+      "계정에 동기화된 캠페인 정보가 없습니다.";
     update();
   }
   // Progression-mode starting chapters are estimated from verified synchro milestones.
   function getCampaignStart(mode,current){
-    // Start from the actual imported chapter/position when the current synchro is unchanged.
+    // Preserve the real campaign position for this synchro level, rather than
+    // estimating the stage from a checkpoint.
     const actual=mode==="normal"?syncedBaseline?.normal:syncedBaseline?.hard;
     if(actual && Number(syncedBaseline?.synchroLevel)===current){
       const match=String(actual).match(/^(\d+)-/);
@@ -350,7 +357,7 @@
     const warning=el("syn-outpost-discrepancy");
     if(!warning)return;
     // The outpost level is always entered directly; use the milestone estimate only for this warning.
-    const manualUsed=state.progressMode==="progress"&&calculated.stageDerivedOutpost===null;
+    const manualUsed=calculated.stageDerivedOutpost===null;
     const reference=manualUsed?expectedOutpostForStart(calculated.level):null;
     const typed=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
     const gap=manualUsed?typed-reference:0;
@@ -360,7 +367,6 @@
       `입력한 전초기지 레벨이 싱크로 ${fmt(calculated.level)}레벨 기준 전초기지 예상치 ${fmt(reference)}레벨보다 50레벨 이상 높습니다.\n계산 결과에 오차가 생길 수 있습니다.\n전초기지 레벨과 싱크로 레벨이 정확하다면 이 경고는 무시해도 됩니다.`:"";
   }
   function buildProgressPlan(current,goal){
-    if(state.progressMode!=="progress")return [];
     const starts=getCampaignStarts(current);
     const results=[];
     for(const mode of ["normal","hard"]){
@@ -407,7 +413,7 @@
       progressLog.push({...ev,day,before,outpost:currentOutpost,actualGain:currentOutpost-before});
     }
   }
-  for(let day=1;day<=1500;day++){
+  for(let day=1;day<=MAX_SIM_DAYS;day++){
     // If the current synchro already exceeds a not-yet-cleared boss threshold,
     // complete it once as catch-up, without counting previous clears twice.
     applyReachedCheckpoints(day);
@@ -455,16 +461,14 @@
   }
   return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay,endOutpost:currentOutpost,dailyEnd,progressLog,events,levelReached,inputOutpost,stageDerivedOutpost};
 }
-  function calculate(onlyPackage=null,modeOverride=null){
+  function calculate(onlyPackage=null){
     // null: active selections; -1: free only; index: one package; array: selected package indices.
     const packages=onlyPackage===null?state.packages:state.packages.map((p,i)=>({
       ...p,on:Array.isArray(onlyPackage)?onlyPackage.includes(i):i===onlyPackage
     }));
-    const level=Math.min(999,Math.max(1,Math.trunc(safe(state.current))));
-    const goal=Math.min(1000,Math.max(2,Math.trunc(safe(state.goal))));
+    const level=Math.min(1200,Math.max(1,Math.trunc(safe(state.current))));
+    const goal=Math.min(1200,Math.max(2,Math.trunc(safe(state.goal))));
     const inputOutpost=Math.min(800,Math.max(1,Math.trunc(safe(state.outpost))));
-    const isProgress=(modeOverride||state.progressMode)==="progress";
-    const starts=isProgress?getCampaignStarts(level):null;
     const stageDerivedOutpost=null;
     // Manual starting outpost is independent of the campaign level estimate.
     const outpost=inputOutpost;
@@ -498,37 +502,7 @@
         endOutpost:outpost,dailyEnd:daily,progressLog:[],events:[],levelReached:level,
         inputOutpost,stageDerivedOutpost,invalidGoal:true};
     }
-    if(isProgress)return simulateProgress({level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages,inputOutpost,stageDerivedOutpost});
-    const reached=[null,null,null],acc=[0,0,0],count=packages.map(()=>0);
-    let spent=0,completeDay=null,subExpiry=0;
-    for(let day=1;day<=1500;day++){
-      const previousReached=acc.map((n,j)=>n>=needed[j]);
-      const when=dateByDay(state.date,day);
-      const weekday=when.getUTCDay()||7, monthDay=when.getUTCDate();
-      let subToday=false;
-      for(let k=0;k<packages.length;k++){
-        const p=packages[k], gr=grants[k];if(!p.on)continue;
-        const relevant=gr.some((v,j)=>v>0&&!previousReached[j]);
-        if(p.cycle==="월정액"){
-          if(relevant && day>subExpiry){
-            count[k]++;spent+=safe(p.price);subExpiry=day+Math.max(1,Math.trunc(safe(state.subscriptionDays)))-1;
-          }
-          if(day<=subExpiry)subToday=true;
-          continue;
-        }
-        if(!relevant)continue;
-        const scheduled=p.cycle==="일일"||
-          p.cycle==="주간"&&weekday===safe(state.weeklyDay)||
-          p.cycle==="월간"&&monthDay===safe(state.monthlyDay);
-        if(scheduled){
-          count[k]++;spent+=safe(p.price);for(let j=0;j<3;j++)acc[j]+=gr[j];
-        }
-      }
-      for(let j=0;j<3;j++)acc[j]+=daily[j]+(subToday?grants[8][j]:0);
-      for(let j=0;j<3;j++)if(reached[j]===null && acc[j]>=needed[j]-1e-7)reached[j]=day;
-      if(reached.every(d=>d!==null)){completeDay=day;break;}
-    }
-    return {level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,reached,count,spent,completeDay,endOutpost:outpost,dailyEnd:daily,progressLog:[],events:[],levelReached:completeDay===null?level:goal};
+    return simulateProgress({level,goal,outpost,rate,bands,total,owned,needed,daily,dailyRows,grants,packages,inputOutpost,stageDerivedOutpost});
   }
   function el(id){return document.getElementById(id);}
   // The global target date is determined by the slowest of three resources.
@@ -581,7 +555,7 @@
           :saved<0?`${actual?"선택 효과":"추가 시"} ${fmt(-saved)}일 증가`
           :"전체 목표일 변화 없음";
       }else if(before.completeDay===null&&after.completeDay!==null){
-        impactText="패키지로 1,500일 내 목표 달성 가능";
+        impactText="패키지로 6,000일 내 목표 달성 가능";
       }else impactText="전체 목표일 산정 불가";
       const count=scenario.count[i]||0;
       const estimatedCost=scenario.completeDay!==null?count*safe(p.price):null;
@@ -592,7 +566,7 @@
       target.innerHTML=`
         <div class="syn-package-values">
           <span class="syn-package-value" title="재화별 충족일 단축 합계 ÷ 총 구매비용을 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">가격 효율 <strong>${priceText}</strong></span>
-          <span class="syn-package-value" title="코더·배데·크레딧 각각의 충족일 단축 합계를 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">재화별 단축 효율 <strong>${timeText}</strong></span>
+          <span class="syn-package-value" title="코더·배데·크레딧 각각의 충족일 단축 합계를 월정액 100%와 비교합니다. 전체 목표일 단축과 다를 수 있습니다.">기간 단축 효율 <strong>${timeText}</strong></span>
         </div>
         <div class="syn-package-impact" title="현재 선택 조합에서 이 패키지 하나의 차이를 비교합니다. 0일이면 다른 재화 병목 또는 일 단위 차이 때문일 수 있습니다.">${impactText}</div>
         <div class="syn-package-spend" title="${escape(hint)}">목표까지 예상 구매비용 ${estimatedCost===null?"산정 불가":fmt(estimatedCost)+"원"}</div>`;
@@ -600,19 +574,11 @@
     return free;
   }
   function updateProgressOverview(c){
-  const panel=el("syn-progress-overview"),choices=el("syn-progress-choices");
-  if(choices)choices.hidden=state.progressMode!=="progress";
-  if(!panel)return;
-  panel.hidden=state.progressMode!=="progress";
-  if(panel.hidden)return;
-  const fixed=calculate(null,"fixed");
-  const delta=fixed.completeDay!==null&&c.completeDay!==null?fixed.completeDay-c.completeDay:null;
-  const deltaText=delta===null?"산정 불가":delta>=0?`${fmt(delta)}일 단축`:`${fmt(-delta)}일 증가`;
+  const panel=el("syn-progress-overview");
+  if(!panel||panel.hidden)return;
   el("syn-progress-stats").innerHTML=`
-    <div class="syn-progress-stat"><span>시작 전초기지</span><strong>Lv.${fmt(c.outpost)}${c.stageDerivedOutpost!==null?" (진행 위치 기준)":""}</strong></div>
-    <div class="syn-progress-stat"><span>예상 최종 전초기지</span><strong>Lv.${fmt(c.endOutpost)} (+${fmt(c.endOutpost-c.outpost)})</strong></div>
-    <div class="syn-progress-stat"><span>고정 방식 예상</span><strong>${fixed.completeDay===null?"1,500일 내 미도달":fmt(fixed.completeDay)+"일"}</strong></div>
-    <div class="syn-progress-stat"><span>고정 방식 대비</span><strong>${deltaText}</strong></div>`;
+    <div class="syn-progress-stat"><span>시작 전초기지</span><strong>Lv.${fmt(c.outpost)}</strong></div>
+    <div class="syn-progress-stat"><span>예상 최종 전초기지</span><strong>Lv.${fmt(c.endOutpost)} (+${fmt(c.endOutpost-c.outpost)})</strong></div>`;
   const next=c.events.find(m=>m.requiredLevel>c.level);
   const nextStatus=el("syn-progress-next");
   if(nextStatus){
@@ -627,12 +593,9 @@
   }).join(""):'<tr><td colspan="7">선택한 싱크로 구간에 적용되는 기준이 없습니다.</td></tr>';
 }
   function update(){
-    root.querySelectorAll("[data-progress-mode]").forEach(button=>{
-      const active=button.dataset.progressMode===state.progressMode;
-      button.classList.toggle("active",active);
-      button.setAttribute("aria-pressed",String(active));
-    });
     const c=calculate();
+    const estimatedCostNote=el("syn-cost-estimate");
+    if(estimatedCostNote)estimatedCostNote.hidden=c.goal<=1000;
     const outpostInput=root.querySelector('input[data-key="outpost"]');
     if(outpostInput){
       outpostInput.disabled=false;
@@ -646,7 +609,6 @@
       el("syn-overall-cost").textContent="산정 불가";
       el("syn-overall-jewels").textContent="쥬얼 소모량 산정 불가";
       el("syn-overall-sub").textContent="레벨업 비용 자료는 201레벨부터 제공됩니다.";
-      el("syn-hourly").textContent="싱크로 200레벨 미만에서는 예상 생산량 변화 및 달성일을 계산하지 않습니다.";
       el("syn-resource-cards").innerHTML='<p class="syn-progress-tip">'+notice+'</p>';
       el("syn-band-table").innerHTML='<tr><td colspan="5">싱크로 200레벨 이상부터 필요 재화를 계산합니다.</td></tr>';
       for(let j=0;j<3;j++)el("syn-owned-"+j).textContent="계산 대상 아님";
@@ -661,6 +623,7 @@
       const progressPanel=el("syn-progress-overview");
       if(progressPanel)progressPanel.hidden=true;
       const status=el("syn-status");
+      status.hidden=false;
       status.classList.add("warn");
       status.textContent=notice;
       return;
@@ -675,7 +638,7 @@
     }
     updateProgressOverview(c);
     el("syn-overall-date").textContent=c.invalidGoal?"목표 레벨 확인 필요":
-      c.completeDay===null?"1,500일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
+      c.completeDay===null?"6,000일 내 미도달":dateTxt(dateByDay(state.date,c.completeDay));
     const freeSavings=free.completeDay!==null&&c.completeDay!==null?free.completeDay-c.completeDay:null;
     const compared=freeSavings===null?"":freeSavings>0?`\n무과금 대비 ${fmt(freeSavings)}일 단축`:"\n무과금 대비 기간 변화 없음";
     el("syn-overall-days").textContent=c.invalidGoal?"현재보다 높은 목표 레벨을 입력해 주세요":
@@ -686,10 +649,8 @@
     jewelEl.textContent=c.completeDay===null?"쥬얼 소모량 산정 불가":`쥬얼 소모량 ${fmt(dailyJewels*c.completeDay)}개`;
     jewelEl.title=`단기섬멸 ${Math.trunc(safe(state.sweep))}회/일 · 하루 ${fmt(dailyJewels)}쥬얼 · 1회 무료, 2회부터 회당 비용 적용`;
     el("syn-overall-sub").textContent=c.invalidGoal?"목표 레벨 입력을 확인해 주세요":
-      c.completeDay===null?"1,500일 내 목표 미도달 · 목표 달성 비용 산정 불가":
+      c.completeDay===null?"6,000일 내 목표 미도달 · 목표 달성 비용 산정 불가":
       "활성화된 패키지 구매 기준 · 목표 달성까지 합산";
-    const endRate=SOURCE.rates[c.endOutpost-1];
-    el("syn-hourly").textContent=state.progressMode==="progress"?`시작 전초기지 Lv.${c.outpost} (시간당 코더 ${fmt(c.rate[0],2)}) → 예상 최종 Lv.${c.endOutpost} (시간당 코더 ${fmt(endRate[0],2)}) · 보유 상자는 시작 시점 생산량 적용`:`전초기지 ${c.outpost}레벨 · 시간당 코더 ${fmt(c.rate[0],2)}, 배데 ${fmt(c.rate[1],2)}, 크레딧 ${fmt(c.rate[2],2)}`;
     const finiteGoalDays=c.reached.filter(day=>Number.isFinite(day));
     const latestGoalDay=finiteGoalDays.length?Math.max(...finiteGoalDays):null;
     const hasUnreachedResource=c.reached.some(day=>day===null);
@@ -697,13 +658,13 @@
       '<p class="syn-progress-tip">목표 레벨은 현재 레벨보다 높아야 합니다. 유효한 목표를 입력하면 재화별 예상 날짜가 표시됩니다.</p>':
       names.map((name,j)=>{
       const ratio=c.total[j]>0?Math.min(100,100*c.owned[j]/c.total[j]):100;
-      // A resource missing the 1500-day horizon is slower than any reached resource.
+      // A resource missing the 6000-day horizon is slower than any reached resource.
       const isLatest=hasUnreachedResource?c.reached[j]===null:latestGoalDay!==null&&c.reached[j]===latestGoalDay;
-      return `<article class="syn-resource${isLatest?" syn-latest-goal":""}"><div class="title">${name}</div><div class="date">${c.reached[j]===null?"1500일 내 미도달":dateTxt(dateByDay(state.date,c.reached[j]))}</div>
+      return `<article class="syn-resource${isLatest?" syn-latest-goal":""}"><div class="title">${name}</div><div class="date">${c.reached[j]===null?"6000일 내 미도달":dateTxt(dateByDay(state.date,c.reached[j]))}</div>
         <div class="metric"><span>소요 기간</span><strong>${c.reached[j]===null?"미도달":fmt(c.reached[j])+"일"}</strong></div>
         <div class="metric"><span>총 필요 재화</span><strong>${fmt(c.total[j])}</strong></div>
         <div class="metric"><span>보유 차감 후</span><strong>${fmt(c.needed[j])}</strong></div>
-        <div class="metric"><span>일일 기본 수급</span><strong>${state.progressMode==="progress"?fmt(c.daily[j])+" → "+fmt(c.dailyEnd[j]):fmt(c.daily[j])}</strong></div>
+        <div class="metric"><span>일일 기본 수급</span><strong>${fmt(c.daily[j])+" → "+fmt(c.dailyEnd[j])}</strong></div>
         <div class="syn-progress-caption"><span>보유 재화 충족률</span><strong>${fmt(ratio,1)}%</strong></div>
         <div class="syn-bar" role="progressbar" aria-label="${name} 보유 재화 충족률" aria-valuenow="${Math.round(ratio)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${Math.max(0,ratio)}%"></span></div>
       </article>`;
@@ -714,9 +675,9 @@
     el("syn-band-table").innerHTML=c.bands.filter(b=>b.qty).map(b=>`<tr><td>${b.start}~${b.end}</td><td>${fmt(b.qty)}</td>${[0,1,2].map(j=>`<td>${fmt(b.qty*safe(b.need[j]))}</td>`).join("")}</tr>`).join("")||
       '<tr><td colspan="5">현재 레벨과 목표 레벨을 확인해 주세요.</td></tr>';
     const status=el("syn-status");
-    if(c.invalidGoal){status.classList.add("warn");status.textContent="목표 레벨은 현재 레벨보다 높아야 해요.";}
-    else if(c.completeDay===null){status.classList.add("warn");status.textContent="1500일 이내에 목표에 도달하지 못해요. 기본 수급량이나 패키지 설정을 확인해 주세요.";}
-    else{status.classList.remove("warn");status.textContent="사이트의 인게임 확인 전초기지 시간당 생산량과 원본 시트의 레벨업 비용·일일 수급·패키지 규칙을 반영한 예상 결과입니다. 구매 조건과 재화 수급 가정이 실제 게임과 다르면 결과도 달라질 수 있어요.";}
+    if(c.invalidGoal){status.hidden=false;status.classList.add("warn");status.textContent="목표 레벨은 현재 레벨보다 높아야 해요.";}
+    else if(c.completeDay===null){status.hidden=false;status.classList.add("warn");status.textContent="6000일 이내에 목표에 도달하지 못해요. 기본 수급량이나 패키지 설정을 확인해 주세요.";}
+    else{status.hidden=true;status.classList.remove("warn");status.textContent="";}
 
   }
   function onEdit(e){
@@ -724,7 +685,7 @@
     if(x.dataset.key){
       const k=x.dataset.key;
       if(!editableKeys.has(k))return;
-      state[k]=x.type==="checkbox"?Boolean(x.checked):(x.type==="date"||k==="progressMode")?x.value:safe(x.value);
+      state[k]=x.type==="checkbox"?Boolean(x.checked):x.type==="date"?x.value:safe(x.value);
       if(["current","goal"].includes(k))state[k]=Math.trunc(state[k]);
     }else if(x.dataset.ownedBox!==undefined){
       const j=Number(x.dataset.ownedBox),duration=Number(x.dataset.duration);
@@ -747,8 +708,8 @@
       else return;
     }else return;
     if(e.type==="change"){
-      if(x.dataset.key==="current")x.value=state.current=Math.min(999,Math.max(1,Math.trunc(state.current)));
-      if(x.dataset.key==="goal")x.value=state.goal=Math.min(1000,Math.max(2,Math.trunc(state.goal)));
+      if(x.dataset.key==="current")x.value=state.current=Math.min(1200,Math.max(1,Math.trunc(state.current)));
+      if(x.dataset.key==="goal")x.value=state.goal=Math.min(1200,Math.max(2,Math.trunc(state.goal)));
       if(x.dataset.key==="outpost")x.value=state.outpost=Math.min(800,Math.max(1,Math.trunc(state.outpost)));
       if(x.dataset.key==="sweep")x.value=state.sweep=Math.min(11,Math.max(1,Math.trunc(state.sweep)));
       if(["normalStartChapter","hardStartChapter"].includes(x.dataset.key))state[x.dataset.key]=Math.min(50,Math.max(0,Math.trunc(state[x.dataset.key])));
@@ -761,17 +722,6 @@
   root.addEventListener("input",onEdit);
   root.addEventListener("change",onEdit);
   root.addEventListener("click",e=>{
-    const modeButton=e.target.closest("button[data-progress-mode]");
-    if(modeButton){
-      const mode=modeButton.dataset.progressMode;
-      if(!["fixed","progress"].includes(mode))return;
-      if(state.progressMode!==mode){
-        state.progressMode=mode;
-        try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
-        update();
-      }
-      return;
-    }
     const bulk=e.target.closest("[data-bulk-target][data-bulk-set]");
     if(bulk){
       const target=bulk.dataset.bulkTarget,checked=bulk.dataset.bulkSet==="all";
@@ -785,7 +735,10 @@
     }
     if(e.target.id==="syn-profile-reset"){
       const b=readProfile();
-      if(!b?.normal){alert("현재 계정의 동기화된 스테이지 정보가 없습니다. 계정을 먼저 동기화해 주세요.");return;}
+      if(!b?.normal){
+        alert("현재 계정에 동기화된 스테이지가 없습니다. 먼저 계정 동기화를 진행해 주세요.");
+        return;
+      }
       applyProfileBaseline(b,true,true);
       return;
     }
@@ -794,15 +747,16 @@
       state=defaults();
       try{
         localStorage.removeItem(storageKey);
-        // Respect a deliberate full reset on reload until the next sync or information reset.
+        // A deliberate input reset must not be silently undone on next refresh.
         const b=readProfile();
         localStorage.setItem(PROFILE_APPLIED_KEY,b?b.account+"|"+(b.syncedAt||"no-profile"):"");
-      }catch(e){}
+      }catch(_){}
       render();
     }
   });
   window.addEventListener("message",event=>{
-    if(event.origin!==location.origin||event.source!==parent||event.data?.type!=="nikke-gm-account-progress")return;
+    if(event.origin!==location.origin||event.source!==parent||
+       event.data?.type!=="nikke-gm-account-progress")return;
     const b=event.data.baseline||{account:String(event.data.account||"계정1"),baselineMissing:true};
     applyProfileBaseline(b,false,true);
   });
