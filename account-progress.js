@@ -12,14 +12,18 @@
     }catch(_){return null;}
   };
   const stageList=()=>typeof OUTPOST_CHAPTER_STAGES!=='undefined'?OUTPOST_CHAPTER_STAGES:[];
+  // Use the site's stage catalogue, not a numeric guess. API labels can include
+  // STAGE/BOSS prefixes or suffixes and optional branch identifiers.
   function stageName(raw){
     if(!raw)return null;
-    const str=String(raw).replace(/\s+STAGE\s*$/i,'').trim();
-    const match=str.match(/^(\d+)-/);
+    const input=String(raw).trim().toUpperCase();
+    const match=input.match(/(\d{1,2})\s*-\s*(\d+(?:[AB](?:-\d+)?)?)/i);
     if(!match)return null;
-    const list=stageList()[Number(match[1])]||[];
-    const normalize=s=>String(s).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,'').replace(/\s+/g,'');
-    return list.find(s=>normalize(s)===normalize(str))||null;
+    const chapter=Number(match[1]),suffix=match[2].toUpperCase();
+    const list=stageList()[chapter]||[];
+    const wanted=String(chapter)+'-'+suffix;
+    const clean=s=>String(s).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,'').replace(/\s+/g,'');
+    return list.find(s=>clean(s)===wanted)||null;
   }
   function stageMatches(b){
     const n=document.getElementById('outpostNormalStage')?.value||'';
@@ -65,10 +69,21 @@
     hCh.value=b.hard?b.hard.split('-')[0]:'0';
     if(typeof updateOutpostStageOptions==='function')updateOutpostStageOptions();
     if(typeof updateOutpostHardStageOptions==='function')updateOutpostHardStageOptions();
+    // The browser silently refuses a select value if no matching option exists.
+    // Only report success after verifying both actual DOM selections.
     nSt.value=b.normal;
     hSt.value=b.hard||'';
+    const applied=stageMatches(b)&&
+      nCh.value===b.normal.split('-')[0]&&
+      hCh.value===(b.hard?b.hard.split('-')[0]:'0');
+    if(!applied){
+      console.warn('[NIKKE GM] stage selection was rejected by the dropdowns',
+        {expected:{normal:b.normal,hard:b.hard},actual:{normal:nSt.value,hard:hSt.value}});
+      return false;
+    }
     if(typeof updateOutpostCalculator==='function')updateOutpostCalculator();
     if(typeof persistOutpostStageSelection==='function')persistOutpostStageSelection();
+    displayActualLevel();
     return true;
   }
   function sendToIframe(name,b){
@@ -142,30 +157,43 @@
   }
   function accept(payload,name){
     const p=payload?.accountProgress;
-    if(!p||!name)return false;
+    if(!p||!name)return {saved:false,applied:false,reason:'계정 진행도 응답 없음'};
     const normal=stageName(p.normal);
     const hard=stageName(p.hard);
     const level=Number(p.outpostLevel),synchro=Number(p.synchroLevel);
     const actualLevel=p.outpostLevel!=null&&Number.isInteger(level)&&level>=1&&level<=800?level:null;
     const actualSynchro=p.synchroLevel!=null&&Number.isInteger(synchro)&&synchro>=1&&synchro<=1200?synchro:null;
-    // Outpost metadata is included in the roster even if campaign lookup is unavailable.
-    if(!normal&&actualLevel===null&&actualSynchro===null)return false;
+    if(!normal&&actualLevel===null&&actualSynchro===null)
+      return {saved:false,applied:false,reason:p.progressError||'API에서 진행도·레벨을 받을 수 없음'};
     const old=read(name);
-    const sameServer=old&&Number(old.areaId)===Number(p.areaId);
+    // Never reuse a different profile's saved stage just because it has the same region.
+    const sameProfile=old&&Number(old.areaId)===Number(p.areaId)&&
+      old.profileId&&p.profileId&&old.profileId===p.profileId;
     const b={
-      account:name,areaId:Number(p.areaId)||null,
-      // Preserve last known campaign only when it belongs to the same server.
-      normal:normal||(sameServer?old.normal:null)||null,
-      hard:normal?(hard||''):(sameServer?(old.hard||''):''),
+      account:name,areaId:Number(p.areaId)||null,profileId:p.profileId||null,
+      normal:normal||(sameProfile?old.normal:null)||null,
+      hard:normal?(hard||''):(sameProfile?(old.hard||''):''),
       stageStale:!normal,
       outpostLevel:actualLevel,
       synchroLevel:actualSynchro,
       syncedAt:new Date().toISOString()
     };
     try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}
-    catch(e){console.warn('계정 진행도 저장 실패',e);return false;}
-    if(account()===name)activate(name);
-    return true;
+    catch(e){console.warn('[NIKKE GM] save stage data',e);return {saved:false,applied:false,reason:'브라우저 저장 실패'};}
+    const isCurrent=account()===name;
+    const applied=isCurrent&&!!normal?!!applyStages(b):false;
+    if(isCurrent){
+      try{localStorage.setItem(ACTIVE,JSON.stringify(b));}catch(_){}
+      renderCampaignStatus(b);
+      sendToIframe(name,b);
+    }
+    return {
+      saved:true,stageResolved:!!normal,applied,active:isCurrent,
+      normal:b.normal,hard:b.hard,
+      reason:!normal?(p.progressError||'노말 스테이지를 받지 못함'):
+        !isCurrent?'동기화한 계정이 현재 선택된 계정과 다름':
+        !applied?'스테이지 선택칸에 일치하는 항목이 없음':null
+    };
   }
   window.__NIKKE_GM_ACCOUNT_PROGRESS__=Object.freeze({accept,activate,resetOutpost});
   const previousSwitch=window.switchAccount;
