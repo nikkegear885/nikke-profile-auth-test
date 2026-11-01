@@ -94,6 +94,7 @@
       // Campaign chapter is a one-based catalog index; use the displayed stage string instead.
       progress:{
         areaId:Number(info.areaId)||null,
+        profileId:String(info.intlOpenId||'')||null,
         normal:normalStage,
         hard:hardStage,
         normalStageId:p.campaign?.normal?.stageId??null,
