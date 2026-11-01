@@ -366,8 +366,11 @@
         if(!available.some(function(a){return a.area_id===areaId;}))
           throw new Error('선택한 서버가 공개 프로필의 보유 목록에 없습니다.');
         var info={username:'',avatar:''};
+        var profileLookupError='';
         try{info=await engine.getProfile(url,areaId);}catch(error){
-          console.warn('[NIKKE GM] optional profile metadata unavailable',String(error&&error.message||error));
+          profileLookupError=String(error&&error.message||error||'프로필 조회 실패').slice(0,250);
+          console.warn('[NIKKE GM] campaign profile lookup failed',profileLookupError);
+          info.progressError=profileLookupError;
         }
         var payload=engine.convert(roster,areaId,info);
         pendingRoster=null;
@@ -408,9 +411,17 @@
         if(regionPicker) regionPicker.hidden = true;
         if(regionSelect) regionSelect.innerHTML = '<option value="">지역 선택…</option>';
         primary.textContent = '동기화 시작';
-        status.className = 'bl-direct-status success';
-        status.textContent = '동기화가 완료되었습니다. 지역: ' + regionLabel(payload.area_id) + '.' +
-          (progressSaved?' 캠페인·전초기지 정보도 반영했습니다.':' 캠페인 진행도는 조회되지 않아 기존 계산기 값을 유지했습니다.');
+        var stageImported=Boolean(payload.accountProgress?.normal)&&progressSaved;
+        var partialImported=Boolean(progressSaved)&&!stageImported;
+        var detail=profileLookupError||payload.accountProgress?.progressError||
+          '외부 API가 노말 캠페인 스테이지를 제공하지 않았습니다.';
+        status.className=stageImported?'bl-direct-status success':'bl-direct-status';
+        status.textContent='장비·스킬 동기화 완료 · '+regionLabel(payload.area_id)+'. '+
+          (stageImported
+            ? '노말·하드 스테이지와 전초기지·싱크로 정보를 반영했습니다.'
+            : (partialImported?'싱크로·전초기지 정보는 저장했습니다. ':'')+
+              '스테이지 자동 입력 실패: '+String(detail).slice(0,250)+
+              ' (전초기지 생산량의 정보 리셋은 마지막으로 확인된 스테이지만 복원합니다.)');
       }catch(err){
         status.className = 'bl-direct-status error';
         status.textContent = text(err && err.message || err || '동기화에 실패했습니다.');
