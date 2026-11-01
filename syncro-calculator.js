@@ -160,7 +160,7 @@
       <div id="syn-output">
         <div class="syn-top-grid">
           <section class="syn-box syn-input-panel">
-            <div class="syn-box-head">1. 정보입력</div>
+            <div class="syn-box-head syn-input-head"><span>1. 정보입력</span><button class="syn-apply-my-synchro" id="syn-apply-my-synchro" type="button" title="현재 선택한 계정의 동기화된 싱크로 레벨을 입력합니다">내 싱크로 적용</button></div>
             <div class="syn-box-body">
               <div class="syn-form">
                 ${field("현재 싱크로 레벨","current",1,1200)}
@@ -652,6 +652,16 @@
   root.addEventListener("input",onEdit);
   root.addEventListener("change",onEdit);
   root.addEventListener("click",e=>{
+    if(e.target.closest("#syn-apply-my-synchro")){
+      const note=el("syn-level-sync-status");
+      if(note)note.textContent="현재 계정의 싱크로 레벨을 확인하는 중…";
+      if(parent!==window){
+        parent.postMessage({type:"nikke-gm-request-my-synchro"},location.origin);
+      }else if(note){
+        note.textContent="계정 화면에서 계산기를 열면 싱크로 레벨을 적용할 수 있습니다.";
+      }
+      return;
+    }
     const bulk=e.target.closest("[data-bulk-target][data-bulk-set]");
     if(bulk){
       const target=bulk.dataset.bulkTarget,checked=bulk.dataset.bulkSet==="all";
@@ -709,6 +719,28 @@
   }
   window.addEventListener("message",event=>{
     if(parent===window||event.origin!==location.origin||event.source!==parent)return;
+    if(event.data?.type==="nikke-gm-my-synchro"){
+      const level=validImportedLevel(event.data.synchroLevel,1200);
+      const note=el("syn-level-sync-status");
+      if(level===null){
+        if(note)note.textContent=String(event.data.message||"동기화된 싱크로 레벨이 없습니다. 먼저 계정을 동기화해 주세요.");
+        return;
+      }
+      state.current=level;
+      const input=root.querySelector('input[data-key="current"]');
+      if(input)input.value=String(level);
+      try{
+        localStorage.setItem(storageKey,JSON.stringify(state));
+        localStorage.setItem(accountLevelScopeKey,JSON.stringify({
+          account:String(event.data.account||""),
+          areaId:event.data.areaId,
+          profileId:event.data.profileId
+        }));
+      }catch(_){}
+      update();
+      if(note)note.textContent="계정 "+String(event.data.account||"")+" · 싱크로 Lv."+level+" 적용 완료 (다른 입력값 유지)";
+      return;
+    }
     if(event.data?.type!=="nikke-gm-calculator-levels")return;
     applyImportedLevels(event.data);
   });
