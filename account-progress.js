@@ -199,6 +199,12 @@
       if(!Array.isArray(available))available=[];
     }catch(_){}
     sel.innerHTML='';
+    if(area===null){
+      const placeholder=document.createElement('option');
+      placeholder.value='';
+      placeholder.textContent='조회 서버 선택…';
+      sel.appendChild(placeholder);
+    }
     for(const code of [81,82,83,84,85]){
       const option=document.createElement('option');
       option.value=String(code);
@@ -206,7 +212,7 @@
         (available.includes(code)?' · 계정 확인됨':' · 확인 안 됨');
       sel.appendChild(option);
     }
-    sel.value=String(area??83);
+    sel.value=area===null?'':String(area);
   }
   function activate(name,clearUnknown=false){
     renderRegionSelector(name);
