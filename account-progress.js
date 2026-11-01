@@ -171,7 +171,27 @@
     note.textContent=[baseline,status?.message].filter(Boolean).join(' | ');
     note.hidden=!note.textContent;
   }
+  function renderRegionSelector(name){
+    const sel=document.getElementById('outpost-account-region');
+    if(!sel)return;
+    const area=regionOf(name);
+    let available=[];
+    try{
+      available=JSON.parse(localStorage.getItem(REGION_LIST_PREFIX+encodeURIComponent(name))||'[]');
+      if(!Array.isArray(available))available=[];
+    }catch(_){}
+    sel.innerHTML='';
+    for(const code of [81,82,83,84,85]){
+      const option=document.createElement('option');
+      option.value=String(code);
+      option.textContent=REGION_CODES[code]+
+        (available.includes(code)?' · 계정 확인됨':' · 확인 안 됨');
+      sel.appendChild(option);
+    }
+    sel.value=String(area??83);
+  }
   function activate(name,clearUnknown=false){
+    renderRegionSelector(name);
     const b=read(name);
     try{
       if(b)localStorage.setItem(ACTIVE,JSON.stringify(b));
@@ -203,11 +223,7 @@
       return false;
     }
     const old=read(name);
-    let areaId=old?.areaId||null;
-    try{
-      const linked=JSON.parse(localStorage.getItem('nikkeBlSyncMeta_'+encodeURIComponent(name))||'null');
-      if([81,82,83,84,85].includes(Number(linked?.areaId)))areaId=Number(linked.areaId);
-    }catch(_){}
+    const areaId=regionOf(name);
     const sameArea=old&&Number(old.areaId)===Number(areaId);
     const b={
       account:name,areaId,profileId:sameArea?(old.profileId||null):null,
@@ -225,6 +241,58 @@
     if(typeof toast==='function')toast(name+' · 노말 '+normal+' / 하드 '+(hard||'미클리어')+' 기준 저장');
     return true;
   }
+  // Import all regions returned by the roster separately. Campaign data is
+  // assigned only to its explicitly verified response region. Other regions
+  // retain their own manual stages and receive the roster's outpost levels.
+  function registerAreas(payload,name){
+    if(!name)return [];
+    const rows=Array.isArray(payload?.regionRoster)?payload.regionRoster:[];
+    const profiles=Array.isArray(payload?.crossRegionProfiles)?payload.crossRegionProfiles:[];
+    const ids=new Set();
+    const link=profileLinkId(name);
+    const sources=[...rows,...profiles.filter(x=>!rows.some(r=>Number(r.areaId)===Number(x.areaId)))];
+    for(const row of sources){
+      const area=Number(row?.areaId);
+      if(!REGION_CODES[area])continue;
+      ids.add(area);
+      const previous=readRegion(name,area)||
+        (Number(legacy(name)?.areaId)===area?legacy(name):null);
+      const same=!!previous&&(
+        (previous.profileLink&&link&&previous.profileLink===link)||
+        (previous.profileId&&row.profileId&&previous.profileId===row.profileId));
+      const fromProfile=profiles.find(p=>Number(p.areaId)===area);
+      const normal=stageName(fromProfile?.normal),hard=stageName(fromProfile?.hard);
+      const rosterLevel=Number(row.outpostLevel);
+      const rosterSynchro=Number(row.synchroLevel);
+      const profileLevel=Number(fromProfile?.outpostLevel);
+      const profileSynchro=Number(fromProfile?.synchroLevel);
+      const valid=(n,max)=>Number.isInteger(n)&&n>=1&&n<=max?n:null;
+      const outpostLevel=valid(rosterLevel,800)??valid(profileLevel,800)??(same?previous.outpostLevel:null);
+      const synchroLevel=valid(rosterSynchro,1200)??valid(profileSynchro,1200)??(same?previous.synchroLevel:null);
+      const keepOld=same&&!!previous?.normal;
+      const b={
+        account:name,areaId:area,
+        profileId:row.profileId||fromProfile?.profileId||previous?.profileId||null,
+        profileLink:link,
+        normal:normal||(keepOld?previous.normal:null),
+        hard:normal?(hard||''):(keepOld?previous.hard||'':''),
+        stageSource:normal?'api':keepOld?previous.stageSource||'previous':'unknown',
+        stageStale:!normal&&(!keepOld||previous.stageSource!=='manual'),
+        progressError:normal?null:keepOld?previous.progressError||null:'캠페인 API 조회 불가',
+        outpostLevel,synchroLevel,
+        syncedAt:new Date().toISOString()
+      };
+      saveRegion(name,b);
+    }
+    try{
+      const old=JSON.parse(localStorage.getItem(REGION_LIST_PREFIX+encodeURIComponent(name))||'[]');
+      if(Array.isArray(old))for(const area of old)if(REGION_CODES[area])ids.add(Number(area));
+      localStorage.setItem(REGION_LIST_PREFIX+encodeURIComponent(name),
+        JSON.stringify([...ids].sort((a,b)=>a-b)));
+    }catch(_){}
+    if(account()===name)renderRegionSelector(name);
+    return [...ids];
+  }
   let refreshing=false;
   async function refreshFromApi(){
     if(refreshing)return;
@@ -232,7 +300,7 @@
     let url='',area=null;
     try{
       url=localStorage.getItem('nikke_bl_profile_url_'+encodeURIComponent(name))||'';
-      area=Number(JSON.parse(localStorage.getItem('nikkeBlSyncMeta_'+encodeURIComponent(name))||'null')?.areaId);
+      area=regionOf(name);
     }catch(_){}
     if(!url||![81,82,83,84,85].includes(area)){
       recordStatus(name,'저장된 프로필 링크 또는 서버 정보가 없습니다. 먼저 계정 동기화를 한 번 실행해 주세요.');
@@ -248,6 +316,7 @@
       if(!api.allowExternalRequest())throw new Error('외부 API 이용에 동의하지 않았습니다.');
       const info=await api.getProfile(url,area);
       const progress=info?.progress;
+      registerAreas({crossRegionProfiles:info?.crossRegionProfiles||[]},name);
       if(!progress?.normal)throw new Error(progress?.progressError||
         'API에서 해당 계정의 노말 캠페인 진행도를 보내지 않았습니다.');
       // Never overwrite whichever other account the user selected during the await.
