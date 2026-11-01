@@ -68,7 +68,15 @@
     const p=info.profile||{};
     return {
       username:String(p.nickname||''),
-      avatar:String(p.icon?.image||'')
+      avatar:String(p.icon?.image||''),
+      // Campaign chapter is a one-based catalog index; use the displayed stage string instead.
+      progress:{
+        areaId:Number(info.areaId)||null,
+        normal:p.campaign?.normal?.stage||null,
+        hard:p.campaign?.hard?.stage||null,
+        outpostLevel:info.outpost?.outpostBattleLevel??null,
+        synchroLevel:info.outpost?.synchroLevel??null
+      }
     };
   }
   function number(v,min,max){
@@ -162,7 +170,13 @@
       profile:{username:String(profileInfo?.username||''),avatar:String(profileInfo?.avatar||'')},
       areaId:area,area_id:area,
       character_count:characters.length,detail_count:details.length,detailCount:details.length,
-      ownedNames,updates,unresolved
+      ownedNames,updates,unresolved,
+      // Never import another server's campaign/outpost metadata into the selected account.
+      accountProgress:profileInfo?.progress &&
+        (profileInfo.progress.areaId===area ||
+          (profileInfo.progress.areaId===null && available.length===1))
+        ? {...profileInfo.progress,areaId:area}
+        : null
     };
   }
   window.__NIKKE_GM_EXTERNAL_SYNC__=Object.freeze({
