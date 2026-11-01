@@ -2,7 +2,13 @@
 (function(){
   'use strict';
 
-  var API = 'https://nikke-profile-verify.nikke-profile-verify.workers.dev';
+  // Keep the existing modal layout; only its test-site sync provider changes.
+  var pendingRoster = null;
+  function externalApi(){
+    var api=window.__NIKKE_GM_EXTERNAL_SYNC__;
+    if(!api)throw new Error('외부 API 동기화 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.');
+    return api;
+  }
   var overlay = null;
   var targetAccount = '';
   var working = false;
@@ -42,15 +48,20 @@
   }
 
   async function requestSessionCheck(url){
-    var response = await fetch(API + '/session-check', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({profile_url:url}),
-      cache:'no-store',
-      credentials:'omit'
-    });
-    var payload = await response.json().catch(function(){ return {}; });
-    return {responseOk:response.ok,payload:payload};
+    var api=externalApi();
+    if(!api.allowExternalRequest())throw new Error('외부 API 이용 동의가 취소되었습니다.');
+    var roster=await api.getRoster(url);
+    var areas=api.candidates(roster);
+    if(!areas.length)throw new Error('공개 프로필에서 보유 니케가 확인되는 서버를 찾지 못했습니다.');
+    return {
+      responseOk:true,
+      payload:{
+        ok:true,
+        message:'외부 NIKKE API가 공개 프로필의 보유 니케를 정상적으로 조회했습니다. 계정 데이터는 변경하지 않았습니다.'+
+          (areas.length>1?' 여러 서버가 있으므로 동기화 시 서버를 선택해야 합니다.':''),
+        checked_area:areas.length===1?areas[0].area_id:null
+      }
+    };
   }
 
   function regionLabel(areaId){
@@ -170,9 +181,9 @@
             '<button type="button" class="bl-direct-primary">동기화 시작</button>' +
             '<button type="button" class="bl-direct-secondary">닫기</button>' +
           '</div>' +
-          '<button type="button" class="bl-direct-check">서비스 세션 유효성 확인 · 계정 데이터 변경 없음</button>' +
+          '<button type="button" class="bl-direct-check">외부 API 조회 확인 · 계정 데이터 변경 없음</button>' +
           '<div class="bl-direct-status" id="blDirectStatus"></div>' +
-          '<div class="bl-direct-note">비밀번호·Cookie·game_token은 이 사이트에 입력하지 않습니다. 사이트의 동기화 서버가 별도 서비스 세션으로 공개 프로필을 조회합니다.</div>' +
+          '<div class="bl-direct-note">비밀번호·Cookie·game_token은 입력하지 않습니다. 공개 프로필 ID를 제3자 운영 NIKKE API로 전송해 조회합니다. 첫 사용 시 한 번 동의를 받습니다.</div>' +
           '<div class="bl-direct-profile" id="blDirectProfile" hidden>' +
             '<img id="blDirectAvatar" alt="">' +
             '<div><div class="bl-direct-profile-name" id="blDirectName"></div><div class="bl-direct-profile-sub" id="blDirectSub"></div></div>' +
@@ -231,7 +242,7 @@
       checkButton.disabled = true;
       primary.disabled = true;
       status.className = 'bl-direct-status';
-      status.textContent = '서비스 세션을 갱신하고 NIKKE API 인증을 읽기 전용으로 확인하는 중…';
+      status.textContent = '외부 NIKKE API의 공개 프로필 조회를 확인하는 중…';
 
       try{
         var checkResult = await requestSessionCheck(url);
@@ -240,7 +251,7 @@
           throw new Error((payload && payload.message) || '세션 유효성 확인에 실패했습니다.');
         }
         status.className = 'bl-direct-status success';
-        status.textContent = payload.message || '세션과 NIKKE API 인증이 정상입니다. 계정 데이터는 변경하지 않았습니다.';
+        status.textContent = payload.message || '외부 API 조회가 정상입니다. 계정 데이터는 변경하지 않았습니다.';
         if(payload.checked_area){
           status.textContent += ' 확인 지역: ' + regionLabel(payload.checked_area) + '.';
         }
@@ -261,6 +272,7 @@
       if(picker) picker.hidden = true;
       if(select) select.innerHTML = '<option value="">지역 선택…</option>';
       if(primary) primary.textContent = '동기화 시작';
+      pendingRoster=null;
     });
 
     overlay.querySelector('.bl-direct-primary').addEventListener('click', async function(){
@@ -297,43 +309,65 @@
         return;
       }
 
+      var engine;
+      try{
+        engine=externalApi();
+        if(!engine.allowExternalRequest()){
+          status.className='bl-direct-status error';
+          status.textContent='외부 API 이용 동의가 취소되었습니다.';
+          return;
+        }
+      }catch(err){
+        status.className='bl-direct-status error';
+        status.textContent=text(err&&err.message||err);
+        return;
+      }
       working = true;
       primary.disabled = true;
       card.hidden = true;
       status.className = 'bl-direct-status';
-      status.textContent = '프로필과 NIKKE 장비 정보를 조회하는 중…';
+      status.textContent = requestedAreaId===null
+        ? '외부 API로 모든 서버의 보유·스킬·장비를 조회하는 중…'
+        : '선택한 서버의 보유·스킬·장비 정보를 처리하는 중…';
 
       try{
-        var response = await fetch(API + '/sync', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify(requestedAreaId === null ? {profile_url:url} : {profile_url:url,area_id:requestedAreaId}),
-          cache: 'no-store',
-          credentials: 'omit'
-        });
-
-        var payload = await response.json().catch(function(){ return {}; });
-        if(!response.ok || payload.ok !== true){
-          if(payload.sync_type === 'multiple_rosters' && Array.isArray(payload.candidates) && payload.candidates.length > 1){
-            if(regionSelect){
-              regionSelect.innerHTML = '<option value="">지역 선택…</option>';
-              payload.candidates.forEach(function(candidate){
-                var areaId = Number(candidate && candidate.area_id);
-                if(![81,82,83,84,85].includes(areaId)) return;
-                var option = document.createElement('option');
-                option.value = String(areaId);
-                option.textContent = regionLabel(areaId) + ' · ' + String(Number(candidate.character_count)||0) + '명';
-                regionSelect.appendChild(option);
-              });
-            }
-            if(regionPicker) regionPicker.hidden = false;
-            primary.textContent = '선택한 지역으로 동기화';
-            status.className = 'bl-direct-status error';
-            status.textContent = '여러 지역에서 보유 니케가 확인되었습니다. 올바른 지역을 선택한 다음 아래 버튼을 다시 눌러 주세요.';
-            return;
-          }
-          throw new Error(payload.message || 'BlaBlaLink 동기화에 실패했습니다.');
+        var roster;
+        if(requestedAreaId!==null){
+          if(!pendingRoster || pendingRoster.url!==url)
+            throw new Error('서버 선택 정보가 만료되었습니다. 다시 조회해 주세요.');
+          roster=pendingRoster.roster;
+        }else{
+          roster=await engine.getRoster(url);
         }
+        var available=engine.candidates(roster);
+        if(!available.length)
+          throw new Error('보유 니케가 있는 서버를 찾지 못했습니다. 프로필 공개 설정을 확인해 주세요.');
+        if(requestedAreaId===null && available.length>1){
+          pendingRoster={url:url,roster:roster};
+          if(regionSelect){
+            regionSelect.innerHTML='<option value="">지역 선택…</option>';
+            available.forEach(function(candidate){
+              var option=document.createElement('option');
+              option.value=String(candidate.area_id);
+              option.textContent=regionLabel(candidate.area_id)+' · '+candidate.character_count+'명';
+              regionSelect.appendChild(option);
+            });
+          }
+          if(regionPicker)regionPicker.hidden=false;
+          primary.textContent='선택한 지역으로 동기화';
+          status.className='bl-direct-status';
+          status.textContent='여러 서버에서 보유 니케가 확인되었습니다. 사용할 서버를 선택해 주세요.';
+          return;
+        }
+        var areaId=requestedAreaId===null?available[0].area_id:requestedAreaId;
+        if(!available.some(function(a){return a.area_id===areaId;}))
+          throw new Error('선택한 서버가 공개 프로필의 보유 목록에 없습니다.');
+        var info={username:'',avatar:''};
+        try{info=await engine.getProfile(url);}catch(error){
+          console.warn('[NIKKE GM] optional profile metadata unavailable',String(error&&error.message||error));
+        }
+        var payload=engine.convert(roster,areaId,info);
+        pendingRoster=null;
 
         var apply = window.__NIKKE_GM_APPLY_SYNC__;
         if(typeof apply !== 'function'){
