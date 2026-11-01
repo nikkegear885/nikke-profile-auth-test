@@ -147,6 +147,44 @@
       '최신 스테이지 조회에 실패해 마지막으로 확인한 스테이지를 복원했습니다.':
       '동기화한 스테이지와 실제 전초기지 레벨로 복원했습니다.');
   }
+  let refreshing=false;
+  async function refreshFromApi(){
+    if(refreshing)return;
+    const name=account();
+    let url='',area=null;
+    try{
+      url=localStorage.getItem('nikke_bl_profile_url_'+encodeURIComponent(name))||'';
+      area=Number(JSON.parse(localStorage.getItem('nikkeBlSyncMeta_'+encodeURIComponent(name))||'null')?.areaId);
+    }catch(_){}
+    if(!url||![81,82,83,84,85].includes(area)){
+      recordStatus(name,'저장된 프로필 링크 또는 서버 정보가 없습니다. 먼저 계정 동기화를 한 번 실행해 주세요.');
+      return;
+    }
+    const button=document.getElementById('outpost-profile-refresh');
+    refreshing=true;
+    if(button){button.disabled=true;button.textContent='조회 중…';}
+    recordStatus(name,'저장된 프로필 링크로 캠페인 진행도를 조회하는 중…');
+    try{
+      const api=window.__NIKKE_GM_EXTERNAL_SYNC__;
+      if(!api?.getProfile)throw new Error('외부 API 모듈이 로드되지 않았습니다.');
+      if(!api.allowExternalRequest())throw new Error('외부 API 이용에 동의하지 않았습니다.');
+      const info=await api.getProfile(url,area);
+      const progress=info?.progress;
+      if(!progress?.normal)throw new Error(progress?.progressError||
+        'API에서 해당 계정의 노말 캠페인 진행도를 보내지 않았습니다.');
+      // Never overwrite whichever other account the user selected during the await.
+      const result=accept({accountProgress:progress},name);
+      if(!result.applied){
+        if(!result.saved||!result.stageResolved)throw new Error(result.reason||'스테이지 정보 저장 실패');
+        recordStatus(name,'스테이지는 저장됐지만 현재 계정 선택칸에 적용되지 않았습니다: '+result.reason);
+      }
+    }catch(error){
+      recordStatus(name,'계정 스테이지 재조회 실패: '+String(error?.message||error).slice(0,220));
+    }finally{
+      refreshing=false;
+      if(button){button.disabled=false;button.textContent='계정 정보 새로고침';}
+    }
+  }
   function ensureButton(){
     if(document.getElementById('outpost-profile-reset'))return;
     const label=document.querySelector('#outpostPanel .outpost-calc-section-label-with-action');
@@ -159,6 +197,14 @@
     button.title='현재 계정에서 마지막으로 동기화한 노말·하드 진행도 및 전초기지 레벨 복원';
     button.addEventListener('click',resetOutpost);
     label.appendChild(button);
+    const refresh=document.createElement('button');
+    refresh.id='outpost-profile-refresh';
+    refresh.type='button';
+    refresh.className='outpost-final-stage-btn';
+    refresh.textContent='계정 정보 새로고침';
+    refresh.title='장비·스킬 재동기화 없이 마지막으로 연결한 계정의 노말·하드 진행도와 전초기지·싱크로 레벨 다시 조회';
+    refresh.addEventListener('click',refreshFromApi);
+    label.appendChild(refresh);
     const note=document.createElement('div');
     note.id='outpost-account-progress-status';
     note.style.cssText='font-size:12px;line-height:1.5;flex-basis:100%;width:100%;margin-top:5px;color:var(--muted,#728391)';
@@ -238,7 +284,7 @@
     return false;
   }
   window.__NIKKE_GM_ACCOUNT_PROGRESS__=Object.freeze({
-    accept,activate,resetOutpost,refreshOutpost
+    accept,activate,resetOutpost,refreshOutpost,refreshFromApi
   });
   const previousSwitch=window.switchAccount;
   if(typeof previousSwitch==='function'){
