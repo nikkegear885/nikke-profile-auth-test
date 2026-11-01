@@ -1,4 +1,4 @@
-/* NIKKE Gear Manager TEST: production 1.534 calculator + test-only linked profile baseline */
+/* NIKKE Gear Manager production site: Synchro level calculator */
 (function syncroCalculatorApp(){
   "use strict";
   const SOURCE=window.NIKKE_SYNCRO_SOURCE;
@@ -7,16 +7,6 @@
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v4";
-  // Account-linked defaults are exclusively test-site behavior.
-  const PROFILE_ACTIVE_KEY="nikke_gm_progress_active_v1";
-  const PROFILE_APPLIED_KEY="nikke_gm_syncro_applied_v1";
-  let syncedBaseline=null;
-  const readProfile=()=>{
-    try{
-      const b=JSON.parse(localStorage.getItem(PROFILE_ACTIVE_KEY)||"null");
-      return b&&typeof b.account==="string"?b:null;
-    }catch(_){return null;}
-  };
   // Exact stage list copied from the site's existing OUTPOST_CHAPTER_STAGES table.
   // This includes A/B branches. One completed entry = one cleared stage.
   const campaignStages=SOURCE.campaignStages;
@@ -135,52 +125,6 @@
   state.ownedHours=state.ownedBoxes.map(ownedBoxHours);
   // Replace legacy editable non-yellow data with fixed source values.
   try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}
-  // Restore only the player's current level and the actual outpost/stage,
-  // leaving paid packages, owned resources, sweep count and target level alone.
-  function applyProfileBaseline(b,force=false,repaint=false){
-    const next=b&&typeof b.account==="string"?b:null;
-    syncedBaseline=next?.normal||next?.outpostLevel||next?.synchroLevel?next:null;
-    if(!next){if(repaint)render();return;}
-    const signature=next.account+"|"+(next.syncedAt||"no-profile");
-    let applied="";
-    try{applied=localStorage.getItem(PROFILE_APPLIED_KEY)||"";}catch(_){}
-    if(!force&&signature===applied){if(repaint)render();return;}
-    if(next.normal||next.outpostLevel!=null||next.synchroLevel!=null){
-      const current=Number(next.synchroLevel),outpost=Number(next.outpostLevel);
-      if(Number.isInteger(current)&&current>=1&&current<=1200)state.current=current;
-      else if(applied && !applied.startsWith(next.account+"|"))state.current=defaults().current;
-      if(Number.isInteger(outpost)&&outpost>=1&&outpost<=800)state.outpost=outpost;
-      else if(applied && !applied.startsWith(next.account+"|"))state.outpost=defaults().outpost;
-      if(state.goal<=state.current)state.goal=Math.min(1200,state.current+1);
-      const progress=raw=>{
-        const m=String(raw||"").match(/^(\d+)-/);
-        if(!m)return {chapter:0,stage:0};
-        const chapter=Number(m[1]),stages=campaignStages[chapter]||[];
-        const normalize=v=>String(v).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,"").replace(/\s+/g,"");
-        const index=stages.findIndex(v=>normalize(v)===normalize(raw));
-        return {chapter,stage:index>=0?index+1:0};
-      };
-      if(next.normal){
-        const n=progress(next.normal),h=progress(next.hard);
-        state.normalStartChapter=n.chapter;state.normalStartStage=n.stage;
-        state.hardStartChapter=h.chapter;state.hardStartStage=h.stage;
-      }else if(applied && !applied.startsWith(next.account+"|")){
-        state.normalStartChapter=0;state.normalStartStage=0;
-        state.hardStartChapter=0;state.hardStartStage=0;
-      }
-    }else if(applied && !applied.startsWith(next.account+"|")){
-      // A newly selected account has no linked profile: do not show the previous player's levels.
-      state.current=defaults().current;
-      state.outpost=defaults().outpost;
-      state.normalStartChapter=0;state.normalStartStage=0;
-      state.hardStartChapter=0;state.hardStartStage=0;
-    }
-    try{
-      localStorage.setItem(PROFILE_APPLIED_KEY,signature);
-      localStorage.setItem(storageKey,JSON.stringify(state));
-    }catch(_){}
-    if(repaint)render();
-  }
   const field=(caption,key,min,max,step="1")=>`<label class="syn-field">${caption}<input data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${safe(state[key])}"></label>`;
   function pkgGrantH(p){
     if(safe(p.choice)>=0 && p.choice!==-1 && Number.isInteger(+p.choice)){
@@ -210,9 +154,8 @@
     <div class="syn-wrap">
       <h1 class="syn-sr-only">싱크로 레벨업 계산기</h1>
       <div class="syn-utility">
-        <div class="syn-actions"><button class="syn-btn" id="syn-profile-reset" type="button" title="마지막으로 동기화한 현재 계정의 싱크로·전초기지·스테이지 복원">정보 리셋</button><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button><a class="syn-btn syn-source-link" href="https://gall.dcinside.com/mgallery/board/view/?id=gov&amp;no=6384055&amp;fcno=31685265&amp;fpno=31617879" target="_blank" rel="noopener noreferrer">참고한 자료</a></div>
+        <div class="syn-actions"><button class="syn-btn" id="syn-reset" type="button">입력값 초기화</button><a class="syn-btn syn-source-link" href="https://gall.dcinside.com/mgallery/board/view/?id=gov&amp;no=6384055&amp;fcno=31685265&amp;fpno=31617879" target="_blank" rel="noopener noreferrer">참고한 자료</a></div>
       </div>
-      <p class="syn-profile-context" id="syn-profile-context" style="padding:0 8px;margin:0 0 10px;color:var(--muted,#8796ad);font-size:12px"></p>
       <div id="syn-output">
         <div class="syn-top-grid">
           <section class="syn-box syn-input-panel">
@@ -318,30 +261,10 @@
       <div class="syn-status" id="syn-status" hidden></div>
     </div>`;
     enforcePackageEditPolicy();
-    const context=root.querySelector("#syn-profile-context");
-    if(context)context.textContent=syncedBaseline?
-      "동기화 계정 "+syncedBaseline.account+" · 노말 "+(syncedBaseline.normal||"조회 불가")+
-      (syncedBaseline.stageStale?" (이전 기록)":"")+
-      " / 하드 "+(syncedBaseline.hard||"조회 불가")+
-      " · 실제 전초기지 Lv."+(syncedBaseline.outpostLevel||"확인 불가"):
-      "계정에 동기화된 캠페인 정보가 없습니다.";
     update();
   }
   // Progression-mode starting chapters are estimated from verified synchro milestones.
   function getCampaignStart(mode,current){
-    // Preserve the real campaign position for this synchro level, rather than
-    // estimating the stage from a checkpoint.
-    const actual=mode==="normal"?syncedBaseline?.normal:syncedBaseline?.hard;
-    if(actual && !syncedBaseline?.stageStale && Number(syncedBaseline?.synchroLevel)===current){
-      const match=String(actual).match(/^(\d+)-/);
-      const chapter=Number(match?.[1]);
-      const stages=campaignStages[chapter]||[];
-      const normalize=v=>String(v).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,"").replace(/\s+/g,"");
-      const index=stages.findIndex(v=>normalize(v)===normalize(actual));
-      if(Number.isInteger(chapter)&&index>=0)
-        return {mode,chapter,stage:index+1,completed:index+1,
-          absolute:chapterPosition(chapter)+index+1,manual:true};
-    }
     const checkpoints=activeMilestones().filter(m=>m.mode===mode).sort((a,b)=>a.level-b.level);
     const reached=checkpoints.filter(m=>m.level<=current).at(-1);
     const chapter=reached?reached.chapter:checkpoints[0].chapter-2;
@@ -738,36 +661,11 @@
       update();
       return;
     }
-    if(e.target.id==="syn-profile-reset"){
-      const b=readProfile();
-      if(!b?.normal){
-        alert("현재 계정에 동기화된 스테이지가 없습니다. 먼저 계정 동기화를 진행해 주세요.");
-        return;
-      }
-      applyProfileBaseline(b,true,true);
-      return;
-    }
     if(e.target.id==="syn-reset"){
       if(!confirm("싱크로 계산기의 입력값과 체크 상태를 원본 시트 기본값으로 초기화할까요?"))return;
-      state=defaults();
-      try{
-        localStorage.removeItem(storageKey);
-        // A deliberate input reset must not be silently undone on next refresh.
-        const b=readProfile();
-        localStorage.setItem(PROFILE_APPLIED_KEY,b?b.account+"|"+(b.syncedAt||"no-profile"):"");
-      }catch(_){}
+      state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}
       render();
     }
   });
-  window.addEventListener("message",event=>{
-    if(event.origin!==location.origin||event.source!==parent||
-       event.data?.type!=="nikke-gm-account-progress")return;
-    const b=event.data.baseline||{account:String(event.data.account||"계정1"),baselineMissing:true};
-    applyProfileBaseline(b,false,true);
-  });
-  window.addEventListener("storage",event=>{
-    if(event.key===PROFILE_ACTIVE_KEY)applyProfileBaseline(readProfile(),false,true);
-  });
-  applyProfileBaseline(readProfile(),false,false);
   render();
 })();
