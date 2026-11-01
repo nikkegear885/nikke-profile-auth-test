@@ -167,8 +167,13 @@
            '싱크로 '+(b.synchroLevel??'조회 불가')+
            ' / 실제 전초기지 '+(b.outpostLevel??'조회 불가'))
         : (b.normal?'동기화 계정 · 노말 '+b.normal+' / 하드 '+(b.hard||'미클리어')+
-           ' · 실제 전초기지 '+(b.outpostLevel??'조회 불가'):'');
-    note.textContent=[baseline,status?.message].filter(Boolean).join(' | ');
+           ' · 실제 전초기지 '+(b.outpostLevel??'조회 불가'):
+         b?'서버별 싱크로 '+(b.synchroLevel??'조회 불가')+
+           ' / 전초기지 '+(b.outpostLevel??'조회 불가')+
+           ' · 캠페인 스테이지는 해당 서버에서 조회 불가':'');
+    const code=regionOf(account());
+    const region=REGION_CODES[code]||'서버 미선택';
+    note.textContent=[region,baseline,status?.message].filter(Boolean).join(' | ');
     note.hidden=!note.textContent;
   }
   function renderRegionSelector(name){
@@ -234,8 +239,11 @@
       synchroLevel:sameArea?(old.synchroLevel??null):null,
       syncedAt:new Date().toISOString()
     };
-    try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}
-    catch(_){alert('현재 계정의 스테이지 기준값을 저장하지 못했습니다.');return false;}
+    if(!saveRegion(name,b)){
+      alert('현재 계정·서버의 스테이지 기준값을 저장하지 못했습니다.');
+      return false;
+    }
+    try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}catch(_){}
     activate(name);
     recordStatus(name,'외부 API의 서버별 스테이지 조회가 지원되지 않아 현재 선택값을 수동 기준으로 저장했습니다.');
     if(typeof toast==='function')toast(name+' · 노말 '+normal+' / 하드 '+(hard||'미클리어')+' 기준 저장');
@@ -353,6 +361,32 @@
     refresh.addEventListener('click',refreshFromApi);
     label.appendChild(refresh);
     const grid=document.querySelector('#outpostPanel .outpost-calc-grid');
+    if(grid&&!document.getElementById('outpost-account-region')){
+      const wrap=document.createElement('label');
+      wrap.id='outpost-region-chooser';
+      wrap.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px';
+      const text=document.createElement('span');
+      text.textContent='조회 서버 (전초기지 전용)';
+      text.style.cssText='font-weight:700;white-space:nowrap';
+      const select=document.createElement('select');
+      select.id='outpost-account-region';
+      select.className='outpost-calc-select';
+      select.style.cssText='flex:1;min-width:120px';
+      select.addEventListener('change',()=>{
+        const region=Number(select.value);
+        if(!REGION_CODES[region])return;
+        const name=account();
+        try{localStorage.setItem(REGION_SELECTED_PREFIX+encodeURIComponent(name),String(region));}catch(_){}
+        activate(name,true);
+        recordStatus(name,read(name)?.normal?
+          '선택한 서버에 저장된 스테이지를 표시합니다.':
+          '이 서버의 캠페인 스테이지는 조회되지 않았습니다. 인게임 진행도를 선택해 수동 저장할 수 있습니다.');
+      });
+      wrap.appendChild(text);
+      wrap.appendChild(select);
+      grid.insertBefore(wrap,grid.firstChild);
+      renderRegionSelector(account());
+    }
     if(grid&&!document.getElementById('outpost-manual-stage-save')){
       const manual=document.createElement('button');
       manual.id='outpost-manual-stage-save';
@@ -388,7 +422,14 @@
       recordStatus(name,'스테이지 입력 실패: '+reason);
       return {saved:false,applied:false,reason};
     }
-    const old=read(name);
+    const area=Number(p.areaId);
+    if(!REGION_CODES[area]){
+      recordStatus(name,'API에서 유효한 서버 번호를 받지 못했습니다.');
+      return {saved:false,applied:false,reason:'서버 번호 누락'};
+    }
+    try{localStorage.setItem(REGION_SELECTED_PREFIX+encodeURIComponent(name),String(area));}catch(_){}
+    const old=readRegion(name,area)||
+      (Number(legacy(name)?.areaId)===area?legacy(name):null);
     // Never reuse a different profile's saved stage just because it has the same region.
     const currentLink=profileLinkId(name);
     const sameProfile=old&&Number(old.areaId)===Number(p.areaId)&&
@@ -407,13 +448,13 @@
       synchroLevel:actualSynchro,
       syncedAt:new Date().toISOString()
     };
-    try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}
-    catch(e){
-      console.warn('[NIKKE GM] save stage data',e);
+    if(!saveRegion(name,b)){
       recordStatus(name,'스테이지 저장 실패: 브라우저 저장소 오류');
       return {saved:false,applied:false,reason:'브라우저 저장 실패'};
     }
+    try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}catch(_){}
     const isCurrent=account()===name;
+    if(isCurrent)renderRegionSelector(name);
     const applied=isCurrent&&!!normal?!!applyStages(b):false;
     if(isCurrent){
       try{localStorage.setItem(ACTIVE,JSON.stringify(b));}catch(_){}
@@ -449,7 +490,7 @@
     return false;
   }
   window.__NIKKE_GM_ACCOUNT_PROGRESS__=Object.freeze({
-    accept,activate,resetOutpost,refreshOutpost,refreshFromApi,saveManualStages
+    accept,activate,resetOutpost,refreshOutpost,refreshFromApi,saveManualStages,registerAreas
   });
   const previousSwitch=window.switchAccount;
   if(typeof previousSwitch==='function'){
