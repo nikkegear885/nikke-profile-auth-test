@@ -81,8 +81,12 @@
         areaId:Number(info.areaId)||null,
         normal:p.campaign?.normal?.stage||null,
         hard:p.campaign?.hard?.stage||null,
+        normalStageId:p.campaign?.normal?.stageId??null,
+        hardStageId:p.campaign?.hard?.stageId??null,
         outpostLevel:info.outpost?.outpostBattleLevel??null,
-        synchroLevel:info.outpost?.synchroLevel??null
+        synchroLevel:info.outpost?.synchroLevel??null,
+        // API can successfully return roster data without an accessible campaign profile.
+        campaignAvailable:!!p.campaign?.normal?.stage
       }
     };
   }
@@ -179,11 +183,25 @@
       character_count:characters.length,detail_count:details.length,detailCount:details.length,
       ownedNames,updates,unresolved,
       // Never import another server's campaign/outpost metadata into the selected account.
-      accountProgress:profileInfo?.progress &&
-        (profileInfo.progress.areaId===area ||
-          (profileInfo.progress.areaId===null && available.length===1))
-        ? {...profileInfo.progress,areaId:area}
-        : null
+      accountProgress:(()=>{
+        // This same-region roster always contains whatever nonprivate outpost levels
+        // the API returned, even if /api/user's optional profile endpoint failed.
+        const outpost=selected.outpost&&typeof selected.outpost==='object'?selected.outpost:{};
+        const fromProfile=profileInfo?.progress &&
+          profileInfo.progress.areaId===area ? profileInfo.progress : null;
+        const valid=(v)=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))&&Number(v)>0?Number(v):null;
+        const outpostLevel=valid(fromProfile?.outpostLevel)??valid(outpost.outpost_battle_level);
+        const synchroLevel=valid(fromProfile?.synchroLevel)??valid(outpost.synchro_level);
+        return {
+          areaId:area,
+          normal:fromProfile?.normal||null,
+          hard:fromProfile?.hard||null,
+          normalStageId:fromProfile?.normalStageId??null,
+          hardStageId:fromProfile?.hardStageId??null,
+          outpostLevel,synchroLevel,
+          campaignAvailable:!!fromProfile?.normal
+        };
+      })()
     };
   }
   window.__NIKKE_GM_EXTERNAL_SYNC__=Object.freeze({
