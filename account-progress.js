@@ -42,7 +42,9 @@
     if(progress)progress.textContent='동기화된 실제 전초기지 Lv.'+level;
     document.querySelectorAll('#outpostProgressBars .outpost-progress-bar').forEach(bar=>bar.classList.remove('active'));
     if(help)help.textContent='노말 '+b.normal+' · 하드 '+(b.hard||'미클리어')+
-      (b.stageStale?' · 스테이지는 마지막으로 확인된 이전 기록입니다.':' · API에서 조회한 실제 전초기지 레벨입니다.');
+      (b.stageSource==='manual'?' · 스테이지는 현재 계정에 직접 저장한 값입니다.':
+       b.stageStale?' · 스테이지는 마지막으로 확인된 이전 기록입니다.':
+       ' · API에서 조회한 실제 전초기지 레벨입니다.');
     if(typeof updateOutpostCurrentProduction==='function')updateOutpostCurrentProduction(level);
     if(typeof outpostStageToCount==='function'){
       const nc=outpostStageToCount(Number(b.normal.split('-')[0]),b.normal);
@@ -116,13 +118,17 @@
     if(!note)return;
     let status=null;
     try{status=JSON.parse(localStorage.getItem(STATUS_PREFIX+encodeURIComponent(account()))||'null');}catch(_){}
-    const baseline=!b?'':b.stageStale
-      ? ('스테이지 최신 조회 실패 · '+
-         (b.normal?'이전 스테이지 '+b.normal+' · ':'')+
-         '싱크로 '+(b.synchroLevel??'조회 불가')+
-         ' / 실제 전초기지 '+(b.outpostLevel??'조회 불가'))
-      : (b.normal?'동기화 계정 · 노말 '+b.normal+' / 하드 '+(b.hard||'미클리어')+
-         ' · 실제 전초기지 '+(b.outpostLevel??'조회 불가'):'');
+    const baseline=!b?'':b.stageSource==='manual'
+      ? ('수동 저장한 '+b.account+' 스테이지 · 노말 '+b.normal+
+        ' / 하드 '+(b.hard||'미클리어')+
+        ' · 전초기지 Lv.'+(b.outpostLevel??'조회 불가'))
+      : b.stageStale
+        ? ('스테이지 최신 조회 실패 · '+
+           (b.normal?'이전 스테이지 '+b.normal+' · ':'')+
+           '싱크로 '+(b.synchroLevel??'조회 불가')+
+           ' / 실제 전초기지 '+(b.outpostLevel??'조회 불가'))
+        : (b.normal?'동기화 계정 · 노말 '+b.normal+' / 하드 '+(b.hard||'미클리어')+
+           ' · 실제 전초기지 '+(b.outpostLevel??'조회 불가'):'');
     note.textContent=[baseline,status?.message].filter(Boolean).join(' | ');
     note.hidden=!note.textContent;
   }
@@ -146,6 +152,37 @@
     if(typeof toast==='function')toast(b.stageStale?
       '최신 스테이지 조회에 실패해 마지막으로 확인한 스테이지를 복원했습니다.':
       '동기화한 스테이지와 실제 전초기지 레벨로 복원했습니다.');
+  }
+  function saveManualStages(){
+    const name=account();
+    const normal=stageName(document.getElementById('outpostNormalStage')?.value);
+    const hardRaw=document.getElementById('outpostHardStage')?.value||'';
+    const hard=hardRaw?stageName(hardRaw):'';
+    if(!normal||Number(normal.split('-')[0])===0||hardRaw&&!hard){
+      alert('전초기지 생산량에서 유효한 노말·하드 스테이지를 먼저 선택해 주세요.');
+      return false;
+    }
+    const old=read(name);
+    let areaId=old?.areaId||null;
+    try{
+      const linked=JSON.parse(localStorage.getItem('nikkeBlSyncMeta_'+encodeURIComponent(name))||'null');
+      if([81,82,83,84,85].includes(Number(linked?.areaId)))areaId=Number(linked.areaId);
+    }catch(_){}
+    const sameArea=old&&Number(old.areaId)===Number(areaId);
+    const b={
+      account:name,areaId,profileId:sameArea?(old.profileId||null):null,
+      normal,hard:hard||'',stageSource:'manual',stageStale:false,
+      progressError:null,
+      outpostLevel:sameArea?(old.outpostLevel??null):null,
+      synchroLevel:sameArea?(old.synchroLevel??null):null,
+      syncedAt:new Date().toISOString()
+    };
+    try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}
+    catch(_){alert('현재 계정의 스테이지 기준값을 저장하지 못했습니다.');return false;}
+    activate(name);
+    recordStatus(name,'외부 API의 서버별 스테이지 조회가 지원되지 않아 현재 선택값을 수동 기준으로 저장했습니다.');
+    if(typeof toast==='function')toast(name+' · 노말 '+normal+' / 하드 '+(hard||'미클리어')+' 기준 저장');
+    return true;
   }
   let refreshing=false;
   async function refreshFromApi(){
@@ -205,6 +242,18 @@
     refresh.title='장비·스킬 재동기화 없이 마지막으로 연결한 계정의 노말·하드 진행도와 전초기지·싱크로 레벨 다시 조회';
     refresh.addEventListener('click',refreshFromApi);
     label.appendChild(refresh);
+    const grid=document.querySelector('#outpostPanel .outpost-calc-grid');
+    if(grid&&!document.getElementById('outpost-manual-stage-save')){
+      const manual=document.createElement('button');
+      manual.id='outpost-manual-stage-save';
+      manual.type='button';
+      manual.className='outpost-final-stage-btn';
+      manual.textContent='현재 스테이지를 이 계정의 기준값으로 저장';
+      manual.title='API가 다른 서버의 스테이지를 반환할 때 현재 선택한 노말·하드 스테이지를 이 계정에만 저장합니다.';
+      manual.addEventListener('click',saveManualStages);
+      manual.style.cssText='justify-self:stretch;width:100%;min-width:0;white-space:normal;font-size:12px;min-height:36px';
+      grid.appendChild(manual);
+    }
     const note=document.createElement('div');
     note.id='outpost-account-progress-status';
     note.style.cssText='font-size:12px;line-height:1.5;flex-basis:100%;width:100%;margin-top:5px;color:var(--muted,#728391)';
@@ -233,11 +282,13 @@
     // Never reuse a different profile's saved stage just because it has the same region.
     const sameProfile=old&&Number(old.areaId)===Number(p.areaId)&&
       old.profileId&&p.profileId&&old.profileId===p.profileId;
+    const manualRetained=!normal&&sameProfile&&old?.stageSource==='manual'&&!!old.normal;
     const b={
       account:name,areaId:Number(p.areaId)||null,profileId:p.profileId||null,
       normal:normal||(sameProfile?old.normal:null)||null,
       hard:normal?(hard||''):(sameProfile?(old.hard||''):''),
-      stageStale:!normal,
+      stageSource:normal?'api':manualRetained?'manual':'previous',
+      stageStale:!normal&&!manualRetained,
       progressError:p.progressError||null,
       outpostLevel:actualLevel,
       synchroLevel:actualSynchro,
@@ -263,7 +314,8 @@
       : !applied?'노말/하드 선택칸이 API 진행도를 적용하지 못함':null;
     recordStatus(name,normal
       ? (applied?'API 스테이지 화면 적용 확인':('스테이지 저장됨 · '+reason))
-      : ('최신 스테이지 조회 실패 · '+reason));
+      : (manualRetained?'API 스테이지는 조회되지 않았지만 이 계정의 수동 저장값을 유지했습니다.':
+         '최신 스테이지 조회 실패 · '+reason));
     return {
       saved:true,stageResolved:!!normal,applied,active:isCurrent,
       normal:b.normal,hard:b.hard,reason
@@ -284,7 +336,7 @@
     return false;
   }
   window.__NIKKE_GM_ACCOUNT_PROGRESS__=Object.freeze({
-    accept,activate,resetOutpost,refreshOutpost,refreshFromApi
+    accept,activate,resetOutpost,refreshOutpost,refreshFromApi,saveManualStages
   });
   const previousSwitch=window.switchAccount;
   if(typeof previousSwitch==='function'){
