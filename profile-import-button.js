@@ -401,27 +401,33 @@
         }
 
         apply(payload, targetAccount);
-        var progressSaved=false;
+        var progressResult={saved:false,applied:false,stageResolved:false};
         try{
-          progressSaved=Boolean(window.__NIKKE_GM_ACCOUNT_PROGRESS__?.accept(payload,targetAccount));
+          progressResult=window.__NIKKE_GM_ACCOUNT_PROGRESS__?.accept(payload,targetAccount)||
+            progressResult;
         }catch(progressError){
+          progressResult.reason=String(progressError&&progressError.message||progressError);
           console.warn('[NIKKE GM] profile campaign import failed',progressError);
         }
 
         if(regionPicker) regionPicker.hidden = true;
         if(regionSelect) regionSelect.innerHTML = '<option value="">지역 선택…</option>';
         primary.textContent = '동기화 시작';
-        var stageImported=Boolean(payload.accountProgress?.normal)&&progressSaved;
-        var partialImported=Boolean(progressSaved)&&!stageImported;
-        var detail=profileLookupError||payload.accountProgress?.progressError||
-          '외부 API가 노말 캠페인 스테이지를 제공하지 않았습니다.';
-        status.className=stageImported?'bl-direct-status success':'bl-direct-status';
+        var stageImported=progressResult.applied===true;
+        var stageSaved=progressResult.saved===true&&progressResult.stageResolved===true;
+        var partialImported=progressResult.saved===true&&!stageSaved;
+        var detail=progressResult.reason||profileLookupError||
+          payload.accountProgress?.progressError||'API에서 스테이지 정보를 찾지 못했습니다.';
+        status.className=stageImported?'bl-direct-status success':'bl-direct-status error';
         status.textContent='장비·스킬 동기화 완료 · '+regionLabel(payload.area_id)+'. '+
           (stageImported
-            ? '노말·하드 스테이지와 전초기지·싱크로 정보를 반영했습니다.'
-            : (partialImported?'싱크로·전초기지 정보는 저장했습니다. ':'')+
-              '스테이지 자동 입력 실패: '+String(detail).slice(0,250)+
-              ' (전초기지 생산량의 정보 리셋은 마지막으로 확인된 스테이지만 복원합니다.)');
+            ? '전초기지 생산량에 노말 '+progressResult.normal+' / 하드 '+
+              (progressResult.hard||'미클리어')+' 자동 입력 확인.'
+            : stageSaved
+              ? '스테이지 저장됨, 화면 적용 실패: '+String(detail).slice(0,250)
+              : (partialImported?'싱크로·전초기지 레벨은 저장했습니다. ':'')+
+                '스테이지 자동 입력 실패: '+String(detail).slice(0,250)+
+                ' · API에서 스테이지가 미공개이거나 누락된 경우 자동 입력할 수 없습니다.');
       }catch(err){
         status.className = 'bl-direct-status error';
         status.textContent = text(err && err.message || err || '동기화에 실패했습니다.');
