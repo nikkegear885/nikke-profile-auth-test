@@ -124,17 +124,25 @@
     if(!p||!name)return false;
     const normal=stageName(p.normal);
     const hard=stageName(p.hard);
-    const level=Number(p.outpostLevel);
-    const synchro=Number(p.synchroLevel);
-    if(!normal)return false;
+    const level=Number(p.outpostLevel),synchro=Number(p.synchroLevel);
+    const actualLevel=p.outpostLevel!=null&&Number.isInteger(level)&&level>=1&&level<=800?level:null;
+    const actualSynchro=p.synchroLevel!=null&&Number.isInteger(synchro)&&synchro>=1&&synchro<=1200?synchro:null;
+    // Outpost metadata is included in the roster even if campaign lookup is unavailable.
+    if(!normal&&actualLevel===null&&actualSynchro===null)return false;
+    const old=read(name);
+    const sameServer=old&&Number(old.areaId)===Number(p.areaId);
     const b={
       account:name,areaId:Number(p.areaId)||null,
-      normal,hard:hard||'',
-      outpostLevel:Number.isInteger(level)&&level>=1&&level<=800?level:null,
-      synchroLevel:Number.isInteger(synchro)&&synchro>=1&&synchro<=999?synchro:null,
+      // Preserve last known campaign only when it belongs to the same server.
+      normal:normal||(sameServer?old.normal:null)||null,
+      hard:normal?(hard||''):(sameServer?(old.hard||''):''),
+      stageStale:!normal,
+      outpostLevel:actualLevel,
+      synchroLevel:actualSynchro,
       syncedAt:new Date().toISOString()
     };
-    try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}catch(e){console.warn('계정 진행도 저장 실패',e);return false;}
+    try{localStorage.setItem(PREFIX+encodeURIComponent(name),JSON.stringify(b));}
+    catch(e){console.warn('계정 진행도 저장 실패',e);return false;}
     if(account()===name)activate(name);
     return true;
   }
