@@ -276,6 +276,7 @@
       var accounts = getAccounts();
 
       targetAccount = targetAccount || accounts[0] || '계정1';
+      var selectedTargetAccount = targetAccount;
 
       if(regionPicker && !regionPicker.hidden){
         var selectedAreaValue = regionSelect ? String(regionSelect.value || '').trim() : '';
@@ -341,7 +342,7 @@
         }
 
         try{
-          localStorage.setItem('nikke_bl_profile_url_' + encodeURIComponent(targetAccount), url);
+          localStorage.setItem('nikke_bl_profile_url_' + encodeURIComponent(selectedTargetAccount), url);
         }catch(_){}
 
         var profile = payload.profile || {};
@@ -360,12 +361,12 @@
             String(payload.character_count || 0) + '명 · 상세 ' + String(payload.detail_count || 0) + '건';
         }
 
-        apply(payload, targetAccount);
+        apply(payload, selectedTargetAccount);
         var levelMessage = '';
         if(typeof window.__NIKKE_GM_SYNC_LEVELS__ === 'function'){
           status.textContent = '장비·스킬 동기화 완료 · 싱크로·전초기지 레벨 조회 중…';
           try{
-            levelMessage = await window.__NIKKE_GM_SYNC_LEVELS__(payload, targetAccount, url);
+            levelMessage = await window.__NIKKE_GM_SYNC_LEVELS__(payload, selectedTargetAccount, url);
           }catch(levelError){
             levelMessage = '레벨 조회 실패: ' + text(levelError?.message || levelError);
           }
