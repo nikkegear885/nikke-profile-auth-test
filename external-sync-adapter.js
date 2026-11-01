@@ -82,13 +82,17 @@
       {base:API,path:'/api/user/'+param+'?area='+area,label:'기본 API 대체 경로'}
     ];
     let info=null, matchingWithoutStage=null;
-    const mismatch=[],failures=[];
+    const mismatch=[],failures=[],otherRegions=new Map();
     for(const attempt of attempts){
       try{
         const candidate=await getJson(attempt.path,attempt.base,30000);
         const returned=Number(candidate?.areaId);
         if(returned!==area){
           mismatch.push(attempt.label+'의 반환 서버 '+(Number.isFinite(returned)&&returned>0?returned:'확인 불가'));
+          // Keep only explicitly identified profile metadata for its OWN region.
+          // Never attach a default-region campaign to the selected area.
+          if([81,82,83,84,85].includes(returned) && candidate?.profile?.campaign)
+            otherRegions.set(returned,candidate);
           continue;
         }
         if(!candidate?.profile||typeof candidate.profile!=='object'){
@@ -108,14 +112,15 @@
       }
     }
     info??=matchingWithoutStage;
-    if(!info){
-      const region=({81:'일본(JP)',82:'북미(NA)',83:'한국(KR)',84:'글로벌',85:'동남아'})[area]||String(area);
-      const details=[...new Set(mismatch),...failures];
-      throw new Error('선택한 '+region+' 서버의 프로필을 확인하지 못했습니다. '+
-        details.join(' / ').slice(0,320)+
-        '. 서버 선택은 정상이며, 다른 서버의 스테이지는 안전을 위해 적용하지 않았습니다.');
-    }
-    const p=info.profile||{};
+    const differentRegion= !info;
+    const region=({81:'일본(JP)',82:'북미(NA)',83:'한국(KR)',84:'글로벌',85:'동남아'})[area]||String(area);
+    const details=[...new Set(mismatch),...failures].join(' / ').slice(0,230);
+    const diagnostic=differentRegion
+      ? ('선택한 '+region+' 서버의 캠페인 조회 불가. 외부 API 응답: '+details)
+      : null;
+    // A missing matching profile is NOT a fatal gear-sync error. The roster
+    // remains correctly scoped to selectedArea and provides per-region levels.
+    const p=info?.profile||{};
     // Some API builds return stageId only if their stage table does not resolve it.
     // Recover a named stage from /api/stages/:id when available, without guessing.
     async function namedStage(record){
@@ -131,13 +136,28 @@
       namedStage(p.campaign?.normal),
       namedStage(p.campaign?.hard)
     ]);
+    const crossRegionProfiles=[];
+    for(const [otherArea,other] of otherRegions){
+      const pp=other.profile||{};
+      const [otherNormal,otherHard]=await Promise.all([
+        namedStage(pp.campaign?.normal),namedStage(pp.campaign?.hard)
+      ]);
+      crossRegionProfiles.push({
+        areaId:otherArea,
+        profileId:String(other.intlOpenId||'')||null,
+        normal:otherNormal,hard:otherHard,
+        outpostLevel:other.outpost?.outpostBattleLevel??null,
+        synchroLevel:other.outpost?.synchroLevel??null
+      });
+    }
     return {
       username:String(p.nickname||''),
       avatar:String(p.icon?.image||''),
+      crossRegionProfiles,
       // Campaign chapter is a one-based catalog index; use the displayed stage string instead.
       progress:{
-        areaId:Number(info.areaId)||null,
-        profileId:String(info.intlOpenId||'')||null,
+        areaId:area,
+        profileId:String(info?.intlOpenId||crossRegionProfiles[0]?.profileId||'')||null,
         normal:normalStage,
         hard:hardStage,
         normalStageId:p.campaign?.normal?.stageId??null,
@@ -146,11 +166,11 @@
         synchroLevel:info.outpost?.synchroLevel??null,
         // API can successfully return roster data without an accessible campaign profile.
         campaignAvailable:!!normalStage,
-        progressError:normalStage?null:(
+        progressError:normalStage?null:(diagnostic||(
           p.campaign?.normal?.stageId
             ? 'API가 노말 스테이지 ID '+String(p.campaign.normal.stageId)+'의 이름을 제공하지 못했습니다.'
             : '외부 API 프로필 응답에 노말 캠페인 진행도가 없습니다. 프로필 공개 설정을 확인해 주세요.'
-        )
+        ))
       }
     };
   }
@@ -247,6 +267,15 @@
       character_count:characters.length,detail_count:details.length,detailCount:details.length,
       ownedNames,updates,unresolved,
       // Never import another server's campaign/outpost metadata into the selected account.
+      regionRoster:(raw.areas||[])
+        .filter(x=>[81,82,83,84,85].includes(Number(x?.area))&&Array.isArray(x.characters)&&x.characters.length>0)
+        .map(x=>({
+          areaId:Number(x.area),characterCount:x.characters.length,
+          profileId:String(raw.intlOpenId||'')||null,
+          outpostLevel:x.outpost?.outpost_battle_level??null,
+          synchroLevel:x.outpost?.synchro_level??null
+        })),
+      crossRegionProfiles:profileInfo?.crossRegionProfiles||[],
       accountProgress:(()=>{
         // This same-region roster always contains whatever nonprivate outpost levels
         // the API returned, even if /api/user's optional profile endpoint failed.
