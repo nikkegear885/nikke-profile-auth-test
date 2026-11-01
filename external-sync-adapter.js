@@ -62,9 +62,16 @@
       Array.isArray(a.characters)&&a.characters.length>0)
       .map(a=>({area_id:Number(a.area),character_count:a.characters.length}));
   }
-  async function getProfile(profileUrl){
+  async function getProfile(profileUrl,selectedArea){
     const id=profileId(profileUrl);
-    const info=await getJson('/api/user?blablaid='+encodeURIComponent(id));
+    const area=Number(selectedArea);
+    // The roster scans all regions, whereas /api/user otherwise resolves a default
+    // region. Always fetch nickname/campaign/outpost from the same selected region.
+    if(![81,82,83,84,85].includes(area))
+      throw new Error('프로필을 조회할 서버가 지정되지 않았습니다.');
+    const info=await getJson('/api/user?blablaid='+encodeURIComponent(id)+'&area='+area);
+    if(Number(info.areaId)!==area)
+      throw new Error('프로필 조회 서버가 선택한 서버와 일치하지 않습니다.');
     const p=info.profile||{};
     return {
       username:String(p.nickname||''),
