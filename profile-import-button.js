@@ -422,6 +422,7 @@
         var partialImported=progressResult.saved===true&&!stageSaved;
         var detail=progressResult.reason||profileLookupError||
           payload.accountProgress?.progressError||'API에서 스테이지 정보를 찾지 못했습니다.';
+        var otherRegion=/(반환 서버|서버의 프로필을 확인하지 못했습니다|다른 서버의 스테이지)/.test(detail);
         status.className=stageImported?'bl-direct-status success':'bl-direct-status error';
         status.textContent='장비·스킬 동기화 완료 · '+regionLabel(payload.area_id)+'. '+
           (stageImported
@@ -431,7 +432,9 @@
               ? '스테이지 저장됨, 화면 적용 실패: '+String(detail).slice(0,250)
               : (partialImported?'싱크로·전초기지 레벨은 저장했습니다. ':'')+
                 '스테이지 자동 입력 실패: '+String(detail).slice(0,250)+
-                ' · API에서 스테이지가 미공개이거나 누락된 경우 자동 입력할 수 없습니다.');
+                (otherRegion
+                  ? ' · 선택은 정상입니다. 외부 API가 현재 다른 서버의 캠페인 정보를 반환합니다. 전초기지 생산량에서 실제 스테이지를 선택하고 계정 기준값으로 저장할 수 있습니다.'
+                  : ' · API에서 스테이지가 미공개이거나 누락된 경우 자동 입력할 수 없습니다.'));
       }catch(err){
         status.className = 'bl-direct-status error';
         status.textContent = text(err && err.message || err || '동기화에 실패했습니다.');
