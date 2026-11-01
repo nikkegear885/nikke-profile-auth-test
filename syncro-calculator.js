@@ -146,10 +146,10 @@
     state.outpost=Number.isInteger(outpost)&&outpost>=1&&outpost<=800?outpost:defaults().outpost;
     if(state.goal<=state.current)state.goal=Math.min(1000,state.current+1);
     const parseStage=raw=>{
-      const match=String(raw||"").match(/^(\\d+)-/);
+      const match=String(raw||"").match(/^(\d+)-/);
       if(!match)return {chapter:0,index:0};
       const chapter=Number(match[1]),list=campaignStages[chapter]||[];
-      const normalize=v=>String(v).toUpperCase().replace(/\\s*(STAGE|BOSS)\\s*$/,"").replace(/\\s+/g,"");
+      const normalize=v=>String(v).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,"").replace(/\s+/g,"");
       const i=list.findIndex(v=>normalize(v)===normalize(raw));
       return {chapter,index:i>=0?i+1:0};
     };
@@ -321,10 +321,10 @@
     // Start from the actual imported chapter/position when the current synchro is unchanged.
     const actual=mode==="normal"?syncedBaseline?.normal:syncedBaseline?.hard;
     if(actual && Number(syncedBaseline?.synchroLevel)===current){
-      const match=String(actual).match(/^(\\d+)-/);
+      const match=String(actual).match(/^(\d+)-/);
       const chapter=Number(match?.[1]);
       const stages=campaignStages[chapter]||[];
-      const normalize=v=>String(v).toUpperCase().replace(/\\s*(STAGE|BOSS)\\s*$/,"").replace(/\\s+/g,"");
+      const normalize=v=>String(v).toUpperCase().replace(/\s*(STAGE|BOSS)\s*$/,"").replace(/\s+/g,"");
       const index=stages.findIndex(v=>normalize(v)===normalize(actual));
       if(Number.isInteger(chapter)&&index>=0)
         return {mode,chapter,stage:index+1,completed:index+1,
