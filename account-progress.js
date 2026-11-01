@@ -195,7 +195,23 @@
         !applied?'스테이지 선택칸에 일치하는 항목이 없음':null
     };
   }
-  window.__NIKKE_GM_ACCOUNT_PROGRESS__=Object.freeze({accept,activate,resetOutpost});
+  // Reconcile a dropdown rebuilt by the production outpost view on navigation.
+  // Only restore when its saved selection still equals the synced baseline:
+  // intentional manual stage edits are never overridden.
+  function refreshOutpost(){
+    const b=read(account());
+    if(!b?.normal)return false;
+    if(stageMatches(b)){displayActualLevel();return true;}
+    let current=null;
+    try{current=JSON.parse(localStorage.getItem(STAGE_KEY)||'null');}catch(_){}
+    if(current?.normal===b.normal&&current?.hard===(b.hard||'')){
+      return applyStages(b);
+    }
+    return false;
+  }
+  window.__NIKKE_GM_ACCOUNT_PROGRESS__=Object.freeze({
+    accept,activate,resetOutpost,refreshOutpost
+  });
   const previousSwitch=window.switchAccount;
   if(typeof previousSwitch==='function'){
     window.switchAccount=function(){
