@@ -395,12 +395,19 @@
         }
 
         apply(payload, targetAccount);
+        var progressSaved=false;
+        try{
+          progressSaved=Boolean(window.__NIKKE_GM_ACCOUNT_PROGRESS__?.accept(payload,targetAccount));
+        }catch(progressError){
+          console.warn('[NIKKE GM] profile campaign import failed',progressError);
+        }
 
         if(regionPicker) regionPicker.hidden = true;
         if(regionSelect) regionSelect.innerHTML = '<option value="">지역 선택…</option>';
         primary.textContent = '동기화 시작';
         status.className = 'bl-direct-status success';
-        status.textContent = '동기화가 완료되었습니다. 지역: ' + regionLabel(payload.area_id) + '.';
+        status.textContent = '동기화가 완료되었습니다. 지역: ' + regionLabel(payload.area_id) + '.' +
+          (progressSaved?' 캠페인·전초기지 정보도 반영했습니다.':' 캠페인 진행도는 조회되지 않아 기존 계산기 값을 유지했습니다.');
       }catch(err){
         status.className = 'bl-direct-status error';
         status.textContent = text(err && err.message || err || '동기화에 실패했습니다.');
