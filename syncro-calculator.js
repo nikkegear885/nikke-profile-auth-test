@@ -7,6 +7,7 @@
   const names=["코어더스트","배틀데이터","크레딧"];
   const currencyNames=["코더","배데","크레딧"];
   const storageKey="nikke-syncro-calc-test-v4";
+  const accountLevelScopeKey="nikke-syncro-calc-test-level-scope-v1";
   // Exact stage list copied from the site's existing OUTPOST_CHAPTER_STAGES table.
   // This includes A/B branches. One completed entry = one cleared stage.
   const campaignStages=SOURCE.campaignStages;
@@ -168,6 +169,7 @@
                 ${field("단기섬멸 횟수 / 일","sweep",1,11)}
                 <label class="syn-field">시작 날짜<input type="date" data-key="date" value="${escape(state.date)}"></label>
               </div>
+              <p id="syn-level-sync-status" class="syn-hint" role="status"></p>
               <p id="syn-cost-estimate" class="syn-hint" hidden>1001~1200레벨 구간의 배틀데이터·크레딧 비용은 공개된 1,000개 단위 자료를 적용한 추정값입니다.</p>
               <p id="syn-outpost-discrepancy" class="syn-outpost-discrepancy" role="alert" hidden></p>
             </div>
@@ -666,6 +668,49 @@
       state=defaults();try{localStorage.removeItem(storageKey);}catch(e){}
       render();
     }
+  });
+  function validImportedLevel(v,max){
+    if(v===null||v===undefined||v==='')return null;
+    const n=Number(v);
+    return Number.isInteger(n)&&n>=1&&n<=max?n:null;
+  }
+  function applyImportedLevels(data){
+    const name=String(data.account||'');
+    if(!name)return;
+    let prior=null;
+    try{prior=JSON.parse(localStorage.getItem(accountLevelScopeKey)||'null');}catch(_){}
+    const b=data.baseline;
+    const importedCurrent=validImportedLevel(b?.synchroLevel,1200);
+    const importedOutpost=validImportedLevel(b?.outpostLevel,800);
+    if(!b||b.account!==name||(importedCurrent===null&&importedOutpost===null)){
+      // Do not carry a previously synced account's levels into an unlinked slot.
+      if(prior?.account&&prior.account!==name){
+        const basic=defaults();
+        state.current=basic.current;
+        state.outpost=basic.outpost;
+        try{localStorage.setItem(accountLevelScopeKey,JSON.stringify({account:name}));}catch(_){}
+        try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}
+        render();
+      }
+      const note=el("syn-level-sync-status");
+      if(note)note.textContent="현재 계정의 동기화된 레벨이 없습니다. 직접 입력할 수 있습니다.";
+      return;
+    }
+    if(importedCurrent!==null)state.current=importedCurrent;
+    if(importedOutpost!==null)state.outpost=importedOutpost;
+    if(state.goal<=state.current)state.goal=Math.min(1200,state.current+1);
+    try{
+      localStorage.setItem(accountLevelScopeKey,JSON.stringify({account:name,areaId:b.areaId,profileId:b.profileId}));
+      localStorage.setItem(storageKey,JSON.stringify(state));
+    }catch(_){}
+    render();
+    const note=el("syn-level-sync-status");
+    if(note)note.textContent="계정 "+name+" · 자동 입력: 싱크로 "+(importedCurrent??"미공개")+" / 전초기지 "+(importedOutpost??"미공개")+" (캠페인 진행도 자동 조회 없음)";
+  }
+  window.addEventListener("message",event=>{
+    if(parent===window||event.origin!==location.origin||event.source!==parent)return;
+    if(event.data?.type!=="nikke-gm-calculator-levels")return;
+    applyImportedLevels(event.data);
   });
   render();
 })();
