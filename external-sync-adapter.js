@@ -73,20 +73,40 @@
     if(Number(info.areaId)!==area)
       throw new Error('프로필 조회 서버가 선택한 서버와 일치하지 않습니다.');
     const p=info.profile||{};
+    // Some API builds return stageId only if their stage table does not resolve it.
+    // Recover a named stage from /api/stages/:id when available, without guessing.
+    async function namedStage(record){
+      if(record?.stage)return String(record.stage);
+      const id=Number(record?.stageId);
+      if(!Number.isInteger(id)||id<=0)return null;
+      try{
+        const lookup=await getJson('/api/stages/'+encodeURIComponent(id));
+        return typeof lookup?.name==='string'&&lookup.name.trim()?lookup.name.trim():null;
+      }catch(_){return null;}
+    }
+    const [normalStage,hardStage]=await Promise.all([
+      namedStage(p.campaign?.normal),
+      namedStage(p.campaign?.hard)
+    ]);
     return {
       username:String(p.nickname||''),
       avatar:String(p.icon?.image||''),
       // Campaign chapter is a one-based catalog index; use the displayed stage string instead.
       progress:{
         areaId:Number(info.areaId)||null,
-        normal:p.campaign?.normal?.stage||null,
-        hard:p.campaign?.hard?.stage||null,
+        normal:normalStage,
+        hard:hardStage,
         normalStageId:p.campaign?.normal?.stageId??null,
         hardStageId:p.campaign?.hard?.stageId??null,
         outpostLevel:info.outpost?.outpostBattleLevel??null,
         synchroLevel:info.outpost?.synchroLevel??null,
         // API can successfully return roster data without an accessible campaign profile.
-        campaignAvailable:!!p.campaign?.normal?.stage
+        campaignAvailable:!!normalStage,
+        progressError:normalStage?null:(
+          p.campaign?.normal?.stageId
+            ? 'API가 노말 스테이지 ID '+String(p.campaign.normal.stageId)+'의 이름을 제공하지 못했습니다.'
+            : '외부 API 프로필 응답에 노말 캠페인 진행도가 없습니다. 프로필 공개 설정을 확인해 주세요.'
+        )
       }
     };
   }
@@ -199,7 +219,9 @@
           normalStageId:fromProfile?.normalStageId??null,
           hardStageId:fromProfile?.hardStageId??null,
           outpostLevel,synchroLevel,
-          campaignAvailable:!!fromProfile?.normal
+          campaignAvailable:!!fromProfile?.normal,
+          progressError:fromProfile?.progressError||profileInfo?.progressError||
+            (!fromProfile?.normal?'캠페인 프로필 정보를 불러오지 못했습니다.':null)
         };
       })()
     };
