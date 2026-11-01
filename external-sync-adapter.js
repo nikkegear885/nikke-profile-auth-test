@@ -102,7 +102,7 @@
     if(!detail)return {corporation_type:null,tier:null,level:null};
     const key=slot+'_equip_';
     const tid=number(detail[key+'tid'],0,999999999);
-    const tier=number(detail[key+'tier'],0,20);
+    const tier=number(detail[key+'tier']??detail[key+'lv_tier'],0,20);
     const level=number(detail[key+'lv'],0,20);
     // 0/unrecognized tier cannot be interpreted as equipped T9/T10.
     const equipped=tid!==null&&tid>0;
