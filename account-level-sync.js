@@ -9,7 +9,7 @@
   const PREFIX='nikke_gm_calculator_levels_v1_';
   const ACTIVE_KEY='nikke_active_account_v1';
   const REGIONS=new Set([81,82,83,84,85]);
-  const TIMEOUT_MS=30000;
+  const TIMEOUT_MS=90000;
   const key=name=>PREFIX+encodeURIComponent(name);
   const currentAccount=()=>{
     try{return localStorage.getItem(ACTIVE_KEY)||'계정1';}catch(_){return '계정1';}
@@ -86,7 +86,7 @@
     const timeout=setTimeout(()=>controller.abort(),TIMEOUT_MS);
     let raw;
     try{
-      const response=await fetch(BASE+'/api/user/roster?blablaid='+encodeURIComponent(id),{
+      const response=await fetch(BASE+'/api/user/roster?blablaid='+encodeURIComponent(id)+'&area='+region,{
         method:'GET',
         credentials:'omit',
         cache:'no-store',
