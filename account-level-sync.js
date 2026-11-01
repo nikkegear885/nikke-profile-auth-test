@@ -48,10 +48,44 @@
       baseline:read(name)
     },location.origin);
   }
+  function replyMySynchro(name,message){
+    if(currentAccount()!==name)return;
+    const frame=document.getElementById('syncroIframe');
+    if(!frame?.contentWindow)return;
+    const b=read(name);
+    frame.contentWindow.postMessage({
+      type:'nikke-gm-my-synchro',
+      account:name,
+      synchroLevel:num(b?.synchroLevel,1200),
+      areaId:b?.areaId??null,
+      profileId:b?.profileId??null,
+      message:message||null
+    },location.origin);
+  }
   window.addEventListener('message',event=>{
     const frame=document.getElementById('syncroIframe');
     if(!frame||event.origin!==location.origin||event.source!==frame.contentWindow)return;
-    if(event.data?.type==='nikke-syncro-ready')send(currentAccount());
+    if(event.data?.type==='nikke-syncro-ready'){send(currentAccount());return;}
+    if(event.data?.type!=='nikke-gm-request-my-synchro')return;
+    const name=currentAccount();
+    const cached=read(name);
+    if(num(cached?.synchroLevel,1200)!==null){
+      replyMySynchro(name);
+      return;
+    }
+    let url='',area=null;
+    try{
+      url=localStorage.getItem('nikke_bl_profile_url_'+encodeURIComponent(name))||'';
+      const meta=JSON.parse(localStorage.getItem('nikkeBlSyncMeta_'+encodeURIComponent(name))||'null');
+      area=Number(meta?.areaId);
+    }catch(_){}
+    if(!url||!REGIONS.has(area)){
+      replyMySynchro(name,'현재 계정의 동기화 정보가 없습니다. 장비·스킬 계정 동기화를 먼저 진행해 주세요.');
+      return;
+    }
+    window.__NIKKE_GM_SYNC_LEVELS__({area_id:area},name,url,{silent:true})
+      .then(message=>replyMySynchro(name,message))
+      .catch(error=>replyMySynchro(name,'싱크로 레벨 조회 실패: '+String(error?.message||error)));
   });
   // Account switching must use account-scoped records, not the last imported account.
   const previousSwitch=window.switchAccount;
@@ -64,7 +98,7 @@
     };
   }
   let requestSequence=0;
-  window.__NIKKE_GM_SYNC_LEVELS__=async function(payload,name,url){
+  window.__NIKKE_GM_SYNC_LEVELS__=async function(payload,name,url,options){
     const account=String(name||'');
     const region=Number(payload?.area_id??payload?.areaId);
     if(!account||!REGIONS.has(region))return '서버 정보가 없어 레벨을 적용하지 않았습니다.';
@@ -119,7 +153,7 @@
     };
     try{localStorage.setItem(key(account),JSON.stringify(record));}
     catch(_){return '레벨은 조회했지만 브라우저 저장에 실패했습니다.';}
-    if(currentAccount()===account)send(account);
+    if(currentAccount()===account&&!options?.silent)send(account);
     return '싱크로 '+(record.synchroLevel??'미공개')+' / 전초기지 '+(record.outpostLevel??'미공개')+' · 계산기에 반영했습니다.';
   };
   // The iframe may be lazily initialized after the sync is complete.
