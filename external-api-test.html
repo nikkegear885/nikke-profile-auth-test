@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>NIKKE 외부 API 연결 테스트 · 독립 실험</title>
+<title>NIKKE 외부 API 장비 검증 · 독립 실험 v2</title>
 <style>
 :root{font-family:system-ui,"Malgun Gothic",sans-serif;color-scheme:dark;background:#090f1d;color:#f1f4fd}
 *{box-sizing:border-box}body{margin:0;padding:26px 16px 80px;background:radial-gradient(circle at 72% 0,#19284b 0,transparent 52%),#090f1d}
@@ -20,12 +20,15 @@ button{background:#8a79f5;color:#fff;border:0;border-radius:10px;padding:11px 16
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat{background:#0d1628;border-radius:11px;padding:15px}.stat strong{display:block;font-size:24px;margin-top:6px}.stat span{font-size:11px;color:#afc0da}
 .table-wrap{overflow:auto;border:1px solid #2b3d60;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}th{text-align:left;background:#1a2b46;color:#bfd1e9;position:sticky;top:0}th,td{padding:10px 11px;border-bottom:1px solid #2b3d60}tr:last-child td{border-bottom:0}tr:nth-child(2n){background:#111e34}
 td.good{color:#8aebc9}td.diff{color:#ffb2b2}td.mute{color:#a8b6c8}code{color:#d3dff1}
+details.gear{min-width:260px;white-space:normal}details.gear summary{cursor:pointer;font-weight:700;color:#a6caff;white-space:nowrap}details.gear[open]{min-width:470px}details.gear .detail-content{padding:12px 0;white-space:normal}details.gear table{white-space:nowrap;font-size:11px;min-width:450px}details.gear th,details.gear td{padding:8px}
+details.gear pre{white-space:pre-wrap;word-break:break-all;font:11px/1.5 ui-monospace,monospace;background:#081221;border:1px solid #304562;padding:10px;border-radius:8px;max-height:230px;overflow:auto}
+details.gear button{font-size:11px;padding:8px 10px;margin:8px 0}details.gear .response{white-space:normal;font-size:11px;color:#b6c6dc;line-height:1.6}.info-warning{font-size:12px;color:#ffca99;line-height:1.7;margin-top:10px}
 @media(max-width:620px){.grid,.stats{grid-template-columns:1fr 1fr}.panel{padding:15px}.stat strong{font-size:21px}}
 </style>
 </head>
 <body><main>
 <div class="eyebrow">NIKKE GEAR MANAGER / ISOLATED API EXPERIMENT</div>
-<h1>외부 NIKKE API 연결 테스트</h1>
+<h1>외부 NIKKE API 장비 상세 검증 <span class="tag">v2</span></h1>
 <p>기존 공용 Cloudflare Worker, 본섭, 위시리스트를 변경하지 않고 <b>외부 API가 공개 프로필 데이터를 실제로 읽을 수 있는지</b> 확인하는 독립 실험 페이지입니다. 결과를 사이트 계정에 적용하거나 저장하지 않습니다.</p>
 <div class="notice"><b>외부 서비스 이용 안내</b><br>조회 버튼을 누르면 공개 BlaBlaLink 프로필의 openid가 <b>제3자가 운영하는 NIKKE API 서버</b>로 전달됩니다. 게임 로그인 쿠키나 비밀번호는 전송하지 않습니다. 외부 서버가 데이터를 조회할 수 없는 경우 결과만 표시하고 기존 계정 데이터는 수정하지 않습니다.</div>
 <section class="panel">
@@ -51,12 +54,13 @@ td.good{color:#8aebc9}td.diff{color:#ffb2b2}td.mute{color:#a8b6c8}code{color:#d3
 <div class="stats">
 <div class="stat"><span>보유 니케</span><strong id="countOwned">—</strong></div>
 <div class="stat"><span>스킬 정보 수신</span><strong id="countSkills">—</strong></div>
-<div class="stat"><span>장비 정보 수신</span><strong id="countGear">—</strong></div>
+<div class="stat"><span>장비 장착 확인</span><strong id="countGear">—</strong></div>
 <div class="stat"><span>테섭 데이터 불일치</span><strong id="countDiff">—</strong></div>
 </div>
 <p id="summary" class="dim"></p>
-<div class="table-wrap"><table><thead><tr><th>니케</th><th>name_code</th><th>돌파</th><th>코강</th><th>스킬 1/2/B</th><th>장비 부위</th><th>테섭 저장값 비교</th></tr></thead><tbody id="rows"></tbody></table></div>
-<p class="dim">표는 원본 응답을 읽기 전용으로 요약한 것입니다. 장비 옵션별 수치는 원본 응답에 포함될 수 있지만 이번 연결 테스트에서는 데이터 변경·가져오기를 수행하지 않습니다. 스킬 누락은 오류가 아닌 미제공 데이터일 수도 있습니다.</p>
+<div id="gearDiagnostic" class="info-warning" role="status"></div>
+<div class="table-wrap"><table><thead><tr><th>니케</th><th>name_code</th><th>돌파</th><th>코강</th><th>스킬 1/2/B</th><th>장비 상세 (클릭)</th><th>테섭 저장값 비교</th></tr></thead><tbody id="rows"></tbody></table></div>
+<p class="dim">각 니케의 <b>장비 상세</b>를 누르면 머리·몸통·장갑·다리의 장비 ID, 티어, 강화 레벨, 기업, 옵션 ID를 볼 수 있습니다. 원본에 장비 필드가 아예 없으면 <b>미수신</b>, ID가 0으로 명시돼 있으면 <b>미장착</b>으로 구분합니다. <b>정규화 상세 API 확인</b> 버튼으로 해당 니케의 장비 이름과 옵션 값을 별도로 조회할 수도 있습니다. 결과는 저장되지 않습니다.</p>
 </section>
 <p class="dim">이 페이지는 독립 테스트 파일입니다. 기존 <a href="./">테섭</a> 및 <a href="https://nikkegear885.github.io/nikke-/">본섭</a>의 동기화 설정에는 영향을 주지 않습니다.</p>
 </main>
@@ -125,10 +129,111 @@ function evaluate(remote,local,name){
  const mismatch=tests.filter(([field,a,b])=>asNumber(a)!==null&&asNumber(b)!==null&&asNumber(a)!==asNumber(b)).map(v=>v[0]);
  return mismatch.length?{label:"불일치: "+mismatch.join(", "),className:"diff",different:true}:{label:"비교 가능한 값 일치",className:"good",different:false};
 }
-function renderResult(body,area,local){
+
+const GEAR_SLOTS=Object.freeze([["head","머리"],["torso","몸통"],["arm","장갑"],["leg","다리"]]);
+function hasOwn(obj,key){return !!obj&&Object.prototype.hasOwnProperty.call(obj,key);}
+function getEquipInfo(detail,slot){
+ const prefix=slot+"_equip_";
+ const fields=Object.keys(detail||{}).filter(key=>key.startsWith(prefix));
+ const tidField=prefix+"tid";
+ const tid=hasOwn(detail,tidField)?asNumber(detail[tidField]):null;
+ let status="정보 미수신";
+ if(hasOwn(detail,tidField))status=tid!==null&&tid>0?"장착 확인":tid===0?"미장착":"장비 ID 불명";
+ else if(fields.length)status="ID 미수신 (기타 필드 있음)";
+ const optionIds=[1,2,3].map(n=>detail?.[prefix+"option"+n+"_id"]).filter(x=>x!==undefined&&x!==null&&String(x)!==""&&Number(x)!==0);
+ return {slot,fields,hasTid:hasOwn(detail,tidField),tid,status,
+  tier:asNumber(detail?.[prefix+"tier"]),
+  level:asNumber(detail?.[prefix+"lv"]),
+  corp:detail?.[prefix+"corporation_type"]??null,optionIds};
+}
+function gearRecord(detail){
+ const gear=GEAR_SLOTS.map(([slot,label])=>({...getEquipInfo(detail,slot),label}));
+ return {gear,attached:gear.filter(x=>x.status==="장착 확인").length,
+  known:gear.filter(x=>x.hasTid).length,
+  keys:Object.keys(detail||{}).filter(k=>/(equip|gear|option)/i.test(k)).sort()};
+}
+function makeEquipmentTable(gear){
+ const table=document.createElement("table");
+ const head=document.createElement("thead");const titles=document.createElement("tr");
+ for(const title of ["부위","조회 상태","장비 ID","티어","강화 레벨","기업 코드","옵션 ID (1~3)"]){
+  const th=document.createElement("th");textNode(th,title);titles.appendChild(th);
+ }
+ head.appendChild(titles);table.appendChild(head);
+ const body=document.createElement("tbody");
+ for(const g of gear){
+  const tr=document.createElement("tr");
+  for(const v of [g.label,g.status,g.tid??"—",g.tier??"—",g.level??"—",g.corp??"—",g.optionIds.length?g.optionIds.join(" / "):"—"])cell(tr,v);
+  body.appendChild(tr);
+ }
+ table.appendChild(body);return table;
+}
+function normalizedGearTable(equipment){
+ const rows=[["head","머리"],["body","몸통"],["arm","장갑"],["leg","다리"]];
+ const wrap=document.createElement("div");
+ const table=document.createElement("table");
+ const title=document.createElement("thead"),thr=document.createElement("tr");
+ for(const x of ["부위","장비 이름","티어","강화","기업","옵션 / 수치"]){const th=document.createElement("th");textNode(th,x);thr.appendChild(th);}
+ title.appendChild(thr);table.appendChild(title);
+ const tbody=document.createElement("tbody");
+ for(const [key,label] of rows){
+  const g=equipment?.[key];
+  const name=typeof g?.name==="string"?g.name:g?.name?.ko??g?.name?.en??"ID "+String(g?.tid??"");
+  const opts=Array.isArray(g?.options)?g.options.map(o=>{
+   const title=typeof o.name==="string"?o.name:o.name?.ko??String(o.id??"?");
+   const val=o.value?.value!==undefined?String(o.value.value)+(o.value.unit||""):"";
+   return title+(val?" "+val:"")+(o.rank!==undefined?" [등급 "+o.rank+"]":"");
+  }):[];
+  const tr=document.createElement("tr");
+  for(const v of [label,g?name:"미장착",g?.tier??"—",g?.level??"—",g?.corporation??"—",opts.length?opts.join(" / "):"—"])cell(tr,v);
+  tbody.appendChild(tr);
+ }
+ table.appendChild(tbody);wrap.appendChild(table);return wrap;
+}
+function addEquipmentDetail(td,rec,openid){
+ const d=document.createElement("details");d.className="gear";
+ const sum=document.createElement("summary");
+ textNode(sum,!rec.detail?"상세 데이터 미수신":
+   rec.equipment.known===0?"장비 ID 필드 미수신":
+   rec.equipment.known<4?"장착 "+rec.equipment.attached+"/4 · 일부 필드 누락":
+   "장착 "+rec.equipment.attached+"/4 · 상세 보기");
+ d.appendChild(sum);
+ const inner=document.createElement("div");inner.className="detail-content";
+ if(!rec.detail){
+  const note=document.createElement("p");textNode(note,"원본 로스터에서 이 니케의 상세 데이터가 매칭되지 않았습니다. 미장착으로 판단할 수 없습니다.");inner.appendChild(note);
+ }else{
+  inner.appendChild(makeEquipmentTable(rec.equipment.gear));
+  const diagnostic=document.createElement("p");diagnostic.className="dim";
+  textNode(diagnostic,"장비 관련 원본 필드: "+(rec.equipment.keys.length?rec.equipment.keys.join(", "):"(없음)"));
+  inner.appendChild(diagnostic);
+ }
+ const button=document.createElement("button");button.type="button";button.className="secondary";
+ textNode(button,"정규화 상세 API 확인");
+ const response=document.createElement("div");response.className="response";response.setAttribute("aria-live","polite");
+ button.addEventListener("click",async()=>{
+  button.disabled=true;textNode(response,"외부 API에서 선택한 니케의 장비 이름과 옵션을 추가 조회하는 중…");
+  const u=new URL(API+"/api/user/nikke/"+encodeURIComponent(rec.code));
+  u.searchParams.set("blablaid",openid);
+  try{
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+   let res;try{res=await fetch(u,{cache:"no-store",credentials:"omit",signal:controller.signal,referrerPolicy:"no-referrer"});}finally{clearTimeout(timer);}
+   const json=await res.json().catch(()=>null);
+   if(!res.ok)throw Error("HTTP "+res.status+" · "+String(json?.error||json?.message||"API 조회 실패").slice(0,120));
+   const detail=json?.equipment?json:(Array.isArray(json?.nikkes)?json.nikkes.find(n=>String(n?.character?.nameCode)===rec.code):null);
+   if(!detail?.equipment){textNode(response,"정규화 API에서도 장비 세부 데이터를 찾지 못했습니다. 응답 형태가 바뀌었거나 상세 정보가 제공되지 않는 상태입니다.");return;}
+   response.replaceChildren();
+   const msg=document.createElement("p");
+   textNode(msg,"정규화 상세 API 응답 수신 · 각 부위의 장비명, 기업, 옵션과 수치를 확인하세요.");
+   response.appendChild(msg);
+   response.appendChild(normalizedGearTable(detail.equipment));
+  }catch(e){textNode(response,"정규화 조회 실패: "+String(e?.message||e));}
+  finally{button.disabled=false;}
+ });
+ inner.appendChild(button);inner.appendChild(response);d.appendChild(inner);td.appendChild(d);
+}
+function renderResult(body,area,local,openid){
  const areas=Array.isArray(body?.areas)?body.areas:[];
  if(!areas.length)throw Error("외부 API가 서버 목록을 반환하지 않았습니다.");
- const records=[];let skillCount=0,equipCount=0,unknownCount=0,diffCount=0;
+ const records=[];let skillCount=0,equipCount=0,unknownCount=0,diffCount=0,detailCount=0,idFieldCount=0;
  for(const current of areas){
   const detailsByCode=new Map((current.details||[]).map(d=>[String(d?.name_code??""),d]));
   for(const char of current.characters||[]){
@@ -136,10 +241,12 @@ function renderResult(body,area,local){
    const detail=detailsByCode.get(code)||null;
    const name=NAME_CODES[code]||("미매칭 코드 "+code);
    if(!NAME_CODES[code])unknownCount++;
+   if(detail)detailCount++;
    const hasSkill=detail&&["skill1_lv","skill2_lv","burst_skill_lv","burst_lv"].some(k=>asNumber(detail[k])!==null);
    if(hasSkill)skillCount++;
-   const equipParts=["head","torso","arm","leg"].filter(part=>detail&&asNumber(detail[part+"_equip_tid"])>0);
-   if(equipParts.length)equipCount++;
+   const equipment=gearRecord(detail);
+   if(equipment.attached)equipCount++;
+   if(equipment.known)idFieldCount++;
    const remote={
     grade:asNumber(char.grade),core:asNumber(char.core),detail,
     skill1:detail?asNumber(detail.skill1_lv):null,
@@ -148,7 +255,7 @@ function renderResult(body,area,local){
    };
    const compare=evaluate(remote,local,name);
    if(compare.different)diffCount++;
-   records.push({code,name,area:current.area,...remote,gear:equipParts.length,compare});
+   records.push({code,name,area:current.area,...remote,equipment,compare});
   }
  }
  $("results").hidden=false;
@@ -156,7 +263,13 @@ function renderResult(body,area,local){
  textNode($("countSkills"),skillCount);
  textNode($("countGear"),equipCount);
  textNode($("countDiff"),local?diffCount:"—");
- textNode($("summary"),"조회 서버: "+areas.map(a=>a.area).join(", ")+" · 상세 수신: "+areas.reduce((sum,a)=>sum+(a.details||[]).length,0)+"건 · 이름 미매칭: "+unknownCount+"명 · 원본 결과는 저장하지 않았습니다."+(local?" · 비교 결과는 이 브라우저의 테섭 저장값 기준입니다.":""));
+ textNode($("summary"),"조회 서버: "+areas.map(a=>a.area).join(", ")+" · 상세 일치: "+detailCount+"/"+records.length+"명 · 원본 상세 건수: "+areas.reduce((sum,a)=>sum+(a.details||[]).length,0)+"건 · 이름 미매칭: "+unknownCount+"명 · 결과는 저장하지 않았습니다.");
+ const warning=idFieldCount===0?
+  "장비 ID 필드가 확인된 니케가 0명입니다. 이전 화면의 0/4는 실제 미장착을 뜻하지 않을 수 있습니다. 아래에서 니케를 눌러 원본 필드를 확인하고 정규화 상세 API 조회도 실행해 보세요.":
+  idFieldCount<detailCount?
+  "상세를 받은 "+detailCount+"명 중 장비 ID 필드가 확인된 니케는 "+idFieldCount+"명입니다. 원본 필드가 없는 니케는 미장착이 아니라 미수신으로 구분합니다.":
+  "장비 ID 필드 확인: "+idFieldCount+"명. 장착 여부는 각 니케의 상세 보기를 눌러 확인할 수 있습니다.";
+ textNode($("gearDiagnostic"),warning);
  const tbody=$("rows");tbody.replaceChildren();const frag=document.createDocumentFragment();
  for(const x of records){
   const row=document.createElement("tr");
@@ -165,7 +278,7 @@ function renderResult(body,area,local){
   cell(row,x.grade??"—");
   cell(row,x.core??"—");
   cell(row,[x.skill1??"?",x.skill2??"?",x.burst??"?"].join(" / "));
-  cell(row,x.gear+" / 4");
+  const td=document.createElement("td");addEquipmentDetail(td,x,openid);row.appendChild(td);
   cell(row,x.compare.label,x.compare.className);
   frag.appendChild(row);
  }
@@ -194,7 +307,7 @@ async function run(event){
    const code=data?.code?" · code="+data.code:"";
    throw Error("HTTP "+response.status+": "+reason.slice(0,180)+code+(data?.reason==="private"?" (프로필 공개 설정 확인 필요)":""));
   }
-  renderResult(data,$("area").value,local);
+  renderResult(data,$("area").value,local,openid);
   textNode(status,"조회 완료 · 사이트 데이터 변경 없음");
  }catch(e){
   const msg=e?.name==="AbortError"?"API 응답 시간이 초과되었습니다.":String(e?.message||e);
