@@ -156,7 +156,8 @@
       throw new Error('이름이 확인된 니케의 상세 응답이 부족하여 동기화를 중단했습니다.');
     return {
       ok:true,
-      worker_version:'외부 NIKKE API (시험 적용)',
+      syncProvider:'external-nikke-api',
+      worker_version:'external-nikke-api',
       nickname:String(profileInfo?.username||''),
       profile:{username:String(profileInfo?.username||''),avatar:String(profileInfo?.avatar||'')},
       areaId:area,area_id:area,
