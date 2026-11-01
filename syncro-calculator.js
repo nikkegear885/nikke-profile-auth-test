@@ -139,14 +139,13 @@
   // leaving paid packages, owned resources, sweep count and target level alone.
   function applyProfileBaseline(b,force=false,repaint=false){
     const next=b&&typeof b.account==="string"?b:null;
-    const priorAccount=syncedBaseline?.account||null;
-    syncedBaseline=next?.normal?next:null;
+    syncedBaseline=next?.normal||next?.outpostLevel||next?.synchroLevel?next:null;
     if(!next){if(repaint)render();return;}
     const signature=next.account+"|"+(next.syncedAt||"no-profile");
     let applied="";
     try{applied=localStorage.getItem(PROFILE_APPLIED_KEY)||"";}catch(_){}
     if(!force&&signature===applied){if(repaint)render();return;}
-    if(next.normal){
+    if(next.normal||next.outpostLevel!=null||next.synchroLevel!=null){
       const current=Number(next.synchroLevel),outpost=Number(next.outpostLevel);
       if(Number.isInteger(current)&&current>=1&&current<=1200)state.current=current;
       else if(applied && !applied.startsWith(next.account+"|"))state.current=defaults().current;
@@ -161,9 +160,14 @@
         const index=stages.findIndex(v=>normalize(v)===normalize(raw));
         return {chapter,stage:index>=0?index+1:0};
       };
-      const n=progress(next.normal),h=progress(next.hard);
-      state.normalStartChapter=n.chapter;state.normalStartStage=n.stage;
-      state.hardStartChapter=h.chapter;state.hardStartStage=h.stage;
+      if(next.normal){
+        const n=progress(next.normal),h=progress(next.hard);
+        state.normalStartChapter=n.chapter;state.normalStartStage=n.stage;
+        state.hardStartChapter=h.chapter;state.hardStartStage=h.stage;
+      }else if(applied && !applied.startsWith(next.account+"|")){
+        state.normalStartChapter=0;state.normalStartStage=0;
+        state.hardStartChapter=0;state.hardStartStage=0;
+      }
     }else if(applied && !applied.startsWith(next.account+"|")){
       // A newly selected account has no linked profile: do not show the previous player's levels.
       state.current=defaults().current;
@@ -316,8 +320,9 @@
     enforcePackageEditPolicy();
     const context=root.querySelector("#syn-profile-context");
     if(context)context.textContent=syncedBaseline?
-      "동기화 계정 "+syncedBaseline.account+" · 노말 "+syncedBaseline.normal+
-      " / 하드 "+(syncedBaseline.hard||"미클리어")+
+      "동기화 계정 "+syncedBaseline.account+" · 노말 "+(syncedBaseline.normal||"조회 불가")+
+      (syncedBaseline.stageStale?" (이전 기록)":"")+
+      " / 하드 "+(syncedBaseline.hard||"조회 불가")+
       " · 실제 전초기지 Lv."+(syncedBaseline.outpostLevel||"확인 불가"):
       "계정에 동기화된 캠페인 정보가 없습니다.";
     update();
@@ -327,7 +332,7 @@
     // Preserve the real campaign position for this synchro level, rather than
     // estimating the stage from a checkpoint.
     const actual=mode==="normal"?syncedBaseline?.normal:syncedBaseline?.hard;
-    if(actual && Number(syncedBaseline?.synchroLevel)===current){
+    if(actual && !syncedBaseline?.stageStale && Number(syncedBaseline?.synchroLevel)===current){
       const match=String(actual).match(/^(\d+)-/);
       const chapter=Number(match?.[1]);
       const stages=campaignStages[chapter]||[];
