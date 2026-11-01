@@ -2,6 +2,7 @@
 'use strict';
 const SOURCE_URL='https://www.blablalink.com/shiftyspad/nikke-list';
 const DATA_URL='assets/nikke-pedia-master.json?v=1048';
+const PEDIA_API_STATUS='API 자동 갱신';
 const esc=(v)=>String(v??'').replace(/[&<>'"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 function injectStyle(){
@@ -128,6 +129,105 @@ async function loadPediaSkillData(){
 function normalizePediaName(v){
   return String(v??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"`\-–—()\[\]{}]/g,'');
 }
+const PEDIA_API='https://nikke-api-edge.leegunwoo0325-5e6.workers.dev';
+const PEDIA_API_TIMEOUT=12000;
+const API_NAME_ALIASES=new Map([
+  ['마스트로맨틱메이드','마스트로망틱메이드'],
+  ['사쿠라스즈하라','사쿠라']
+]);
+function normalizedPediaApiName(name){
+  const clean=normalizePediaName(name);
+  return API_NAME_ALIASES.get(clean)||clean;
+}
+function localizedName(v){
+  return String(typeof v==='string'?v:(v?.ko||v?.en||'')).trim();
+}
+function safeApiImage(url){
+  try{
+    const p=new URL(String(url||''));
+    return p.protocol==='https:'&&p.hostname==='sg-tools-cdn.blablalink.com'?p.href:'';
+  }catch(_){return '';}
+}
+function apiPediaMeta(c){
+  const companies={ELYSION:'엘리시온',MISSILIS:'미실리스',TETRA:'테트라',PILGRIM:'필그림',ABNORMAL:'어브노멀'};
+  const classes={Attacker:'화력형',Defender:'방어형',Supporter:'지원형'};
+  const elements={Electronic:'전격',Iron:'철갑',Fire:'작열',Wind:'풍압',Water:'수냉'};
+  const burst={I:'1',II:'2',III:'3',All:''};
+  return {
+    company:companies[String(c.corporation||'').toUpperCase()]||'',
+    className:classes[c.class]||'',
+    weapon:String(c.weapon?.type||'').toUpperCase(),
+    element:elements[c.element]||'',
+    rarity:['SSR','SR','R'].includes(String(c.rarity).toUpperCase())?String(c.rarity).toUpperCase():'',
+    burst:burst[c.burst]||''
+  };
+}
+async function requestPediaApi(path){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),PEDIA_API_TIMEOUT);
+  try{
+    const response=await fetch(PEDIA_API+path,{method:'GET',cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',headers:{Accept:'application/json'},signal:controller.signal});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    return await response.json();
+  }finally{clearTimeout(timeout);}
+}
+let pediaApiLoading=null;
+let pediaApiChecked=false;
+function pediaApiStatus(text,isError=false){
+  const node=document.getElementById('pediaApiStatus');
+  if(node){node.textContent=text;node.classList.toggle('error',Boolean(isError));}
+}
+function mergePediaApiCatalog(payload){
+  if(!Array.isArray(payload?.characters)||payload.characters.length<80)throw new Error('API 캐릭터 목록이 불완전합니다.');
+  if(Number(payload.count)>payload.characters.length)throw new Error('API 목록이 일부만 반환되었습니다.');
+  const existing=new Set(pediaItems.map(x=>normalizedPediaApiName(x.name)));
+  const fresh=[];
+  const seen=new Set();
+  for(const c of payload.characters){
+    const name=localizedName(c?.name);
+    const id=Number(c?.id);
+    const normalized=normalizedPediaApiName(name);
+    if(!name||name.length>90||!Number.isSafeInteger(id)||id<=0||!normalized||existing.has(normalized)||seen.has(normalized))continue;
+    const image=safeApiImage(c?.images?.icon)||safeApiImage(c?.images?.medium);
+    if(!image)continue;
+    seen.add(normalized);
+    fresh.push({name,image,apiId:id,apiMeta:apiPediaMeta(c)});
+  }
+  // Protect the manually curated catalog from divergent translations and schema regressions.
+  if(fresh.length>10)throw new Error('API와 기존 도감의 이름 차이가 많아 자동 추가를 중단했습니다 ('+fresh.length+'건).');
+  if(!fresh.length)return 0;
+  pediaItems=[...pediaItems,...fresh];
+  if(pediaFilterMeta){
+    for(const item of fresh)pediaFilterMeta.set(item.name,item.apiMeta);
+  }
+  return fresh.length;
+}
+async function updatePediaFromApi(force=false){
+  if(pediaApiLoading)return pediaApiLoading;
+  if(pediaApiChecked&&!force)return;
+  pediaApiStatus('신규 니케 확인 중…');
+  pediaApiLoading=(async()=>{
+    try{
+      const data=await requestPediaApi('/api/nikkes?limit=500&fields=id,name,rarity,class,burst,corporation,element,weapon,images');
+      const added=mergePediaApiCatalog(data);
+      pediaApiChecked=true;
+      pediaApiStatus(added?'API 신규 니케 '+added+'명 추가':'API 확인 완료 · 신규 니케 없음');
+      renderPedia(document.getElementById('pediaSearch')?.value||'');
+    }catch(error){
+      console.warn('[pedia] API 자동 갱신 실패',error);
+      pediaApiStatus('API 조회 실패 · 기존 도감 유지',true);
+    }finally{pediaApiLoading=null;}
+  })();
+  return pediaApiLoading;
+}
+function addPediaApiStyle(){
+  if(document.getElementById('pedia-api-auto-style'))return;
+  const style=document.createElement('style');
+  style.id='pedia-api-auto-style';
+  style.textContent='.pedia-api-status{font-size:10px;color:#5d8397;font-weight:800;white-space:nowrap}.pedia-api-status.error{color:#ba6d45}.pedia-api-new{position:absolute;left:6px;top:6px;padding:3px 6px;border-radius:5px;background:#2d7fa0;color:#fff;font-size:9px;font-weight:900;z-index:4}.pedia-card.pedia-api-entry{border-color:#75a9c2}html.dark-theme .pedia-api-status{color:#a1bdd5}html.dark-theme .pedia-api-status.error{color:#ffb4a0}';
+  document.head.appendChild(style);
+}
+
 const OVERSPEC_PEDIA_NAMES = new Set([
   "라피 : 레드 후드",
   "네온 : 비전 아이",
@@ -269,7 +369,29 @@ function renderPediaSkills(name,data){
 async function openPediaSkill(name,id){
   const modal=ensureSkillModal();modal.classList.add('open');const body=modal.querySelector('#pediaSkillBody');
   body.innerHTML='<div class="pedia-skill-loading">사이트에 저장된 '+escText(name)+'의 스킬 정보를 불러오는 중…</div>';
-  try{const all=await loadPediaSkillData();const aliases={'사쿠라 스즈하라':'사쿠라'};const data=findPediaSkillData(all,aliases[name]||name,id);if(!data)throw new Error(name+'의 스킬 정보가 없습니다.');renderPediaSkills(name,data);}catch(err){console.error('[pedia] skill load failed',err);body.innerHTML='<div class="pedia-skill-status error">'+escText(err?.message||'스킬 데이터를 불러오지 못했습니다.')+'</div>';}
+  try{
+    let data=null;
+    try{
+      const all=await loadPediaSkillData();
+      const aliases={'사쿠라 스즈하라':'사쿠라'};
+      data=findPediaSkillData(all,aliases[name]||name,id);
+    }catch(err){console.warn('[pedia] internal skill data unavailable',err);}
+    if(data){renderPediaSkills(name,data);return;}
+    const apiItem=pediaItems.find(item=>item.apiId&&Number(item.apiId)===Number(id)&&normalizePediaName(item.name)===normalizePediaName(name));
+    if(!apiItem)throw new Error(name+'의 저장된 스킬 정보가 없습니다.');
+    const detail=await requestPediaApi('/api/nikkes/'+encodeURIComponent(apiItem.apiId)+'?fields=id,name,details.skills');
+    const skills=detail?.details?.skills;
+    if(!Array.isArray(skills)||!skills.length)throw new Error('API에 이 니케의 스킬 정보가 없습니다.');
+    modal.querySelector('#pediaSkillTitle').textContent=name+' · 스킬 정보';
+    modal.querySelector('#pediaSkillMeta').textContent='외부 NIKKE API · 최대 레벨 기준';
+    const labels={skill1:'스킬 1',skill2:'스킬 2',burst:'버스트'};
+    body.innerHTML=skills.map(skill=>{
+      const title=localizedName(skill.name);
+      const desc=localizedName(skill.descriptions)||'설명 없음';
+      const cooltime=Number(skill.cooltime);
+      return '<section class="pedia-skill-card"><div class="pedia-skill-card-head"><span class="pedia-skill-card-title">'+escText(labels[skill.slot]||'스킬')+' · '+escText(title)+'</span><span class="pedia-skill-card-meta">'+(Number.isFinite(cooltime)&&cooltime>0?'쿨타임 '+cooltime+'s':'')+'</span></div><div class="pedia-skill-desc" style="padding:12px;white-space:pre-wrap">'+escText(desc)+'</div></section>';
+    }).join('');
+  }catch(err){console.error('[pedia] skill load failed',err);body.innerHTML='<div class="pedia-skill-status error">'+escText(err?.message||'스킬 데이터를 불러오지 못했습니다.')+'</div>';}
 }
 
 function ensureNav(){const nav=document.querySelector('.nav');if(!nav||nav.querySelector('[data-view="pedia"]'))return;const btn=document.createElement('button');btn.type='button';btn.className='main-view-nav';btn.dataset.view='pedia';btn.textContent='도감';btn.addEventListener('click',()=>window.switchMainView?.('pedia'));nav.appendChild(btn);}
@@ -277,7 +399,7 @@ function ensurePanel(){
   if(document.getElementById('pediaPanel'))return;
   const main=document.querySelector('main.main');if(!main)return;
   const panel=document.createElement('section');panel.id='pediaPanel';panel.hidden=true;
-  panel.innerHTML='<div class="pedia-head"><div class="pedia-head-row"><div><h3>니케 도감</h3><p>캐릭터 이미지는 실제 원본 파일만 등록합니다. 임의 생성 이미지는 사용하지 않습니다.</p></div><a class="pedia-source-btn" href="'+SOURCE_URL+'" target="_blank" rel="noopener noreferrer">BlablaLink 원본 보기 ↗</a></div></div><div class="pedia-toolbar"><input id="pediaSearch" class="pedia-search" type="search" placeholder="니케 이름 검색…"><span id="pediaCount" class="pedia-count"></span><div class="pedia-filter-row-v1044"><select id="pediaFilterCompany" class="pedia-filter-v1044"><option value="">기업 전체</option><option>엘리시온</option><option>미실리스</option><option>테트라</option><option>필그림</option><option>어브노멀</option></select><select id="pediaFilterClass" class="pedia-filter-v1044"><option value="">클래스 전체</option><option>화력형</option><option>방어형</option><option>지원형</option></select><select id="pediaFilterWeapon" class="pedia-filter-v1044"><option value="">무기군 전체</option><option>AR</option><option>SMG</option><option>SG</option><option>SR</option><option>RL</option><option>MG</option></select><select id="pediaFilterElement" class="pedia-filter-v1044"><option value="">속성 전체</option><option>철갑</option><option>풍압</option><option>전격</option><option>작열</option><option>수냉</option></select><select id="pediaFilterRarity" class="pedia-filter-v1044"><option value="">등급 전체</option><option>SSR</option><option>SR</option><option>R</option></select><select id="pediaFilterBurst" class="pedia-filter-v1044"><option value="">버스트 전체</option><option value="1">버스트 1</option><option value="2">버스트 2</option><option value="3">버스트 3</option></select></div></div><div id="pediaGrid" class="pedia-grid"></div>';
+  panel.innerHTML='<div class="pedia-head"><div class="pedia-head-row"><div><h3>니케 도감</h3><p>캐릭터 이미지는 실제 원본 파일만 등록합니다. 임의 생성 이미지는 사용하지 않습니다.</p></div><a class="pedia-source-btn" href="'+SOURCE_URL+'" target="_blank" rel="noopener noreferrer">BlablaLink 원본 보기 ↗</a></div></div><div class="pedia-toolbar"><input id="pediaSearch" class="pedia-search" type="search" placeholder="니케 이름 검색…"><span id="pediaCount" class="pedia-count"></span><span id="pediaApiStatus" class="pedia-api-status" role="status">${PEDIA_API_STATUS}</span><div class="pedia-filter-row-v1044"><select id="pediaFilterCompany" class="pedia-filter-v1044"><option value="">기업 전체</option><option>엘리시온</option><option>미실리스</option><option>테트라</option><option>필그림</option><option>어브노멀</option></select><select id="pediaFilterClass" class="pedia-filter-v1044"><option value="">클래스 전체</option><option>화력형</option><option>방어형</option><option>지원형</option></select><select id="pediaFilterWeapon" class="pedia-filter-v1044"><option value="">무기군 전체</option><option>AR</option><option>SMG</option><option>SG</option><option>SR</option><option>RL</option><option>MG</option></select><select id="pediaFilterElement" class="pedia-filter-v1044"><option value="">속성 전체</option><option>철갑</option><option>풍압</option><option>전격</option><option>작열</option><option>수냉</option></select><select id="pediaFilterRarity" class="pedia-filter-v1044"><option value="">등급 전체</option><option>SSR</option><option>SR</option><option>R</option></select><select id="pediaFilterBurst" class="pedia-filter-v1044"><option value="">버스트 전체</option><option value="1">버스트 1</option><option value="2">버스트 2</option><option value="3">버스트 3</option></select></div></div><div id="pediaGrid" class="pedia-grid"></div>';
   const first=main.querySelector('#soleScorePanel,#outpostPanel,#characterPanel');if(first)main.insertBefore(panel,first);else main.appendChild(panel);
 }
 let pediaItems=[];
@@ -295,7 +417,7 @@ async function loadPediaFilterMeta(){
     const raw=(Number.isFinite(id)&&byId.get(id))||byName.get(normalizePediaName(name))||{};
     const burst=String(raw?.['버스트']??'').replace(/[^0-9]/g,'')||String(skill?.b??'').replace(/[^0-9]/g,'');
     const company=isOverspecPediaName(name)?'필그림':String(raw?.['기업']??skill?.co??'').trim();
-    pediaFilterMeta.set(name,{company,className:String(raw?.['클래스']??skill?.c??'').trim(),weapon:String(raw?.['무기']??'').trim(),element:String(raw?.['속성']??skill?.e??'').trim(),rarity:String(skill?.r??'').trim().toUpperCase(),burst});
+    pediaFilterMeta.set(name,item.apiMeta||{company,className:String(raw?.['클래스']??skill?.c??'').trim(),weapon:String(raw?.['무기']??'').trim(),element:String(raw?.['속성']??skill?.e??'').trim(),rarity:String(skill?.r??'').trim().toUpperCase(),burst});
   });
   return pediaFilterMeta;
 }
@@ -318,14 +440,18 @@ function renderPedia(text){
   });
   count.textContent=list.length+' / '+pediaItems.length+'명';
   if(!list.length){grid.innerHTML='<div class="pedia-empty">조건에 맞는 니케가 없습니다.</div>';return;}
-  grid.innerHTML=list.map(item=>{const image=String(item.image||'').trim(),id=item.id??item.i??'';const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';const isOverspec=isOverspecPediaName(item.name);const isLimited=LIMITED_PEDIA_NAMES.has(normalizePediaName(item.name));const isDistribution=DISTRIBUTION_PEDIA_NAMES.has(normalizePediaName(item.name));const badges=(isOverspec||isLimited||isDistribution)?'<div class="pedia-status-badges">'+(isOverspec?'<span class="pedia-overspec-badge">오버스펙</span>':'')+(isLimited?'<span class="pedia-limited-badge">한정</span>':'')+(isDistribution?'<span class="pedia-distribution-badge">배포</span>':'')+'</div>':'';return '<article class="pedia-card" data-pedia-name="'+esc(item.name)+'" data-pedia-id="'+esc(id)+'" title="클릭하면 저장된 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+badges+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><span class="pedia-skill-badge">스킬 보기</span></article>';}).join('');
-  grid.querySelectorAll('.pedia-card').forEach(card=>card.addEventListener('click',()=>openPediaSkill(card.dataset.pediaName||'',card.dataset.pediaId||'')));
+  grid.innerHTML=list.map(item=>{const image=String(item.image||'').trim(),id=item.id??item.i??'';const media=image?'<img loading="lazy" src="'+esc(image)+'" alt="'+esc(item.name)+'">':'<div class="pedia-placeholder">실제 원본 이미지<br>등록 전</div>';const isOverspec=isOverspecPediaName(item.name);const isLimited=LIMITED_PEDIA_NAMES.has(normalizePediaName(item.name));const isDistribution=DISTRIBUTION_PEDIA_NAMES.has(normalizePediaName(item.name));const badges=(isOverspec||isLimited||isDistribution)?'<div class="pedia-status-badges">'+(isOverspec?'<span class="pedia-overspec-badge">오버스펙</span>':'')+(isLimited?'<span class="pedia-limited-badge">한정</span>':'')+(isDistribution?'<span class="pedia-distribution-badge">배포</span>':'')+'</div>':'';const extra=item.apiId?' pedia-api-entry'+(item.apiMeta?.rarity?' pedia-rarity-'+item.apiMeta.rarity:''):'';
+  const apiAttrs=item.apiId?' data-pedia-api-id="'+esc(item.apiId)+'"':'';
+  const newMarker=item.apiId?'<span class="pedia-api-new">API 신규</span>':'';
+  const burstMark=item.apiId&&item.apiMeta?.burst?'<span class="pedia-burst-badge">버스트 '+esc(item.apiMeta.burst)+'</span>':'';
+  return '<article class="pedia-card'+extra+'" data-pedia-name="'+esc(item.name)+'" data-pedia-id="'+esc(id)+'"'+apiAttrs+' title="클릭하면 스킬 정보를 봅니다."><div class="pedia-image-box">'+media+newMarker+badges+'</div><div class="pedia-name" title="'+esc(item.name)+'">'+esc(item.name)+'</div><div class="pedia-card-actions"><span class="pedia-skill-badge">스킬 보기</span>'+burstMark+'</div></article>';}).join('');
+  grid.querySelectorAll('.pedia-card').forEach(card=>card.addEventListener('click',()=>openPediaSkill(card.dataset.pediaName||'',card.dataset.pediaApiId||card.dataset.pediaId||'')));
 }
-async function showPedia(){const panel=document.getElementById('pediaPanel');if(!panel)return;panel.hidden=false;document.body.classList.remove('outpost-view','sole-view','drop-rate-view');document.body.classList.add('pedia-view');document.getElementById('kpis')?.setAttribute('hidden','');document.getElementById('outpostPanel')?.setAttribute('hidden','');document.getElementById('soleScorePanel')?.classList.remove('active');document.getElementById('characterPanel')?.setAttribute('hidden','');document.querySelectorAll('.main-view-nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.view==='pedia'));const title=document.getElementById('pageTitle');if(title)title.textContent='니케 도감';try{window.closeSidebar?.()}catch(_){}await loadPediaData();await loadPediaFilterMeta();renderPedia(document.getElementById('pediaSearch')?.value||'');}
+async function showPedia(){const panel=document.getElementById('pediaPanel');if(!panel)return;panel.hidden=false;document.body.classList.remove('outpost-view','sole-view','drop-rate-view');document.body.classList.add('pedia-view');document.getElementById('kpis')?.setAttribute('hidden','');document.getElementById('outpostPanel')?.setAttribute('hidden','');document.getElementById('soleScorePanel')?.classList.remove('active');document.getElementById('characterPanel')?.setAttribute('hidden','');document.querySelectorAll('.main-view-nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.view==='pedia'));const title=document.getElementById('pageTitle');if(title)title.textContent='니케 도감';try{window.closeSidebar?.()}catch(_){}await loadPediaData();await loadPediaFilterMeta();renderPedia(document.getElementById('pediaSearch')?.value||'');updatePediaFromApi();}
 function hidePedia(){const panel=document.getElementById('pediaPanel');if(panel)panel.hidden=true;document.body.classList.remove('pedia-view');document.getElementById('characterPanel')?.removeAttribute('hidden');}
 function patchMainViewSwitch(){if(typeof window.switchMainView!=='function'||window.switchMainView.__pediaPatched)return;const original=window.switchMainView;const wrapped=function(view){if(view==='pedia'){showPedia();return;}hidePedia();return original.apply(this,arguments);};wrapped.__pediaPatched=true;wrapped.__pediaOriginal=original;window.switchMainView=wrapped;}
 function init(){
-  injectStyle();ensureNav();ensurePanel();
+  injectStyle();addPediaApiStyle();ensureNav();ensurePanel();
   document.getElementById('pediaSearch')?.addEventListener('input',e=>renderPedia(e.target.value));
   ['Company','Class','Weapon','Element','Rarity','Burst'].forEach(k=>document.getElementById('pediaFilter'+k)?.addEventListener('change',()=>renderPedia(document.getElementById('pediaSearch')?.value||'')));
   patchMainViewSwitch();
