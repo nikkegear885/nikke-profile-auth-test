@@ -828,8 +828,6 @@
         '#wishlistRulebookOverlay .wlr-table td{padding:10px 12px;overflow-wrap:anywhere;word-break:keep-all}',
         '#wishlistRulebookOverlay .wlr-lead{margin:0 0 14px;padding:10px 12px;border:1px solid #d5e4f4;border-radius:9px;background:#eff7ff;font-weight:850}',
         '#wishlistRulebookOverlay .wlr-footnote{margin:12px 0;color:#64748b;font-size:12px;line-height:1.65}',
-        '#wishlistPanel .wl-rulebook-button{flex:none;padding:8px 12px;border:1px solid #93b9d0;border-radius:7px;background:#e8f6ff;color:#166c96;font-size:11px;font-weight:1000;cursor:pointer}',
-        '#wishlistPanel .wl-rulebook-button:hover{background:#d7efff}',
         '@media(max-width:620px){#wishlistRulebookOverlay{padding:7px}#wishlistRulebookOverlay .wlr-dialog{max-height:calc(100vh - 14px)}#wishlistRulebookOverlay .wlr-head{padding:11px}#wishlistRulebookOverlay .wlr-head h2{font-size:17px}#wishlistRulebookOverlay .wlr-tabs{padding:7px}#wishlistRulebookOverlay .wlr-tab{padding:7px 9px;font-size:11px}#wishlistRulebookOverlay .wlr-content{padding:10px}#wishlistRulebookOverlay .wlr-table th{width:98px;padding:8px 6px;font-size:11px}#wishlistRulebookOverlay .wlr-table td{padding:8px 7px;font-size:11px}}',
         'html.dark-theme #wishlistRulebookOverlay .wlr-dialog{background:#111d2e;border-color:#3a4a63;color:#e6eefb}',
         'html.dark-theme #wishlistRulebookOverlay .wlr-head,html.dark-theme #wishlistRulebookOverlay .wlr-tabs{background:#19273c;border-color:#364862}',
@@ -841,7 +839,6 @@
         'html.dark-theme #wishlistRulebookOverlay .wlr-table tr{border-color:#36445b}',
         'html.dark-theme #wishlistRulebookOverlay .wlr-table th{background:#223650}',
         'html.dark-theme #wishlistRulebookOverlay .wlr-lead{background:#1b344c;border-color:#385775}',
-        'html.dark-theme #wishlistPanel .wl-rulebook-button{background:#203f54;color:#b6e9ff;border-color:#3e7694}'
       ].join('');
       document.head.appendChild(style);
     }
@@ -1724,6 +1721,9 @@
       '#wishlistPanel .wl-auto-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;padding:2px 8px 4px}',
       '#wishlistPanel .wl-auto-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:32px;padding:7px 14px;border:1px solid #1597ca;border-radius:7px;background:linear-gradient(180deg,#19b5ed,#079bd7);color:#fff;font-size:12px;font-weight:1000;cursor:pointer;box-shadow:0 2px 4px rgba(0,110,160,.15)}',
       '#wishlistPanel .wl-auto-button:hover{filter:brightness(1.04);transform:translateY(-1px)}',
+      '#wishlistPanel .wl-rulebook-button{flex:none;padding:8px 12px;border:1px solid #93b9d0;border-radius:7px;background:#e8f6ff;color:#166c96;font-size:11px;font-weight:1000;cursor:pointer}',
+      '#wishlistPanel .wl-rulebook-button:hover{background:#d7efff}',
+      'html.dark-theme #wishlistPanel .wl-rulebook-button{background:#203f54;color:#b6e9ff;border-color:#3e7694}',
       '#wishlistPanel .wl-auto-note{flex-basis:100%;text-align:center;color:#7a8490;font-size:9px;line-height:1.35}',
       '#wishlistPanel .wl-status{flex:none;padding:0 12px 6px;text-align:right;color:#80858b;font-size:9px}',
       '#wishlistPanel .wl-footer{display:flex;justify-content:center;gap:16px;flex:none;padding:5px 12px 6px;border-top:1px solid #dedede;background:#f8f8f8}',
