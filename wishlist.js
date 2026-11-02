@@ -157,7 +157,7 @@
   const PVP_LOWEST_WISHLIST_NAMES = new Set(['라플라스'].map(norm));
   // Split the former mixed "Solo Raid = PVP" list into distinct priority categories.
   const SOLO_RAID_WISHLIST_NAMES = new Set([
-    'D : 킬러 와이프','밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
+    '밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','아르카나','D : 킬러 와이프','델타 : 닌자 시프',
     '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
     '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르',
     '볼륨','퀀시 : 이스케이프 퀸'
@@ -171,7 +171,7 @@
     {rank:4, label:'PVP 우선', names:['베스티 : 택티컬 업','트리나','자칼','센티','라플라스','비스킷','루마니','노이즈','블랑','소다','베이']},
     {rank:5, label:'애장품 솔레캐', names:['프리바티','팬텀','미란다','슈가','로산나']},
     {rank:6, label:'솔레', names:[
-      'D : 킬러 와이프','밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','델타 : 닌자 시프','아르카나',
+      '밀크 : 블루밍 바니','에이드 : 에이전트 바니','솔린 : 프로스트 티켓','아르카나 : 포츈 메이트','아르카나','D : 킬러 와이프','델타 : 닌자 시프',
       '길티 : 마이티 바니','드레이크 : 그레이트 빌런','신 : 스위프트 바니',
       '브래디','소다 : 트윙클링 바니','루주','앨리스','벨벳','아크레인저 블랙','누아르',
       '퀀시 : 이스케이프 퀸'
@@ -256,8 +256,22 @@
     }));
     return positions;
   })();
+  // D: Killer Wife depends on Red Hood Rapi and D ownership in the active account.
+  // No Red Hood Rapi: unowned D is general, owned D is solo.
+  // With Rapi: unowned D is solo, owned D is namecard.
+  const KILLER_WIFE_NAME = 'D : 킬러 와이프';
+  function getKillerWifePriority(unowned){
+    if(isMarkedUnowned('라피 : 레드 후드')) return unowned ? 3 : 6;
+    return unowned ? 6 : 8;
+  }
   function getWishlistPerformancePosition(name){
     const key = norm(name);
+    if(key === norm(KILLER_WIFE_NAME)){
+      const rank = getKillerWifePriority(isMarkedUnowned(name));
+      if(rank === 3) return {rank:3,tierOrder:2,index:998}; // end of general tier
+      if(rank === 8) return {rank:8,tierOrder:6,index:2.5}; // immediately after Zwei
+      return WISHLIST_PERFORMANCE_POSITION.get(key); // just before Delta in solo tier
+    }
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)){
       return {rank:1,tierOrder:0,index:997};
     }
@@ -376,6 +390,7 @@
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
+    if(key === norm(KILLER_WIFE_NAME)) return getKillerWifePriority(isMarkedUnowned(name));
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 1;
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key) && isMarkedUnowned(name)){
@@ -415,6 +430,10 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
+    if(key === norm(KILLER_WIFE_NAME)){
+      const rank = getKillerWifePriority(unowned);
+      return rank === 3 ? (unowned ? 3 : 13) : (rank === 6 ? 6 : 18);
+    }
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)){
       if(!unowned) return 16;
@@ -450,6 +469,10 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
+    if(key === norm(KILLER_WIFE_NAME)){
+      const rank = getKillerWifePriority(unowned);
+      return rank === 3 ? (unowned ? 3 : 13) : (rank === 6 ? 6 : 18);
+    }
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && unowned) return 1;
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && unowned) return 3;
     if(WISHLIST_UNOWNED_GENERAL_LAST_NAMES.has(key)){
@@ -2352,6 +2375,15 @@
         const aGroup = getWishlistAutoBuildPriority(aName,copyPriority,aBreakthrough,aUnowned);
         const bGroup = getWishlistAutoBuildPriority(bName,copyPriority,bBreakthrough,bUnowned);
         if(aGroup !== bGroup) return aGroup - bGroup;
+
+        // Keep D: Killer Wife immediately before Delta in solo rank, even when D is owned.
+        if(aGroup === 6 && bGroup === 6 &&
+          (norm(aName) === norm(KILLER_WIFE_NAME) || norm(bName) === norm(KILLER_WIFE_NAME))){
+          const aPos = getWishlistPerformancePosition(aName);
+          const bPos = getWishlistPerformancePosition(bName);
+          if(aPos && bPos && aPos.rank === 6 && bPos.rank === 6 &&
+             aPos.index !== bPos.index) return aPos.index - bPos.index;
+        }
 
         // Preserve the original treasure-target and owned-copy breakthrough tiebreakers in O mode.
         // Under 160-wall X, breakthrough ranking is handled explicitly by Rule 4 above; do not
