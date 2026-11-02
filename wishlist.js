@@ -1721,6 +1721,10 @@
       '#wishlistPanel .wl-auto-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;padding:2px 8px 4px}',
       '#wishlistPanel .wl-auto-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:32px;padding:7px 14px;border:1px solid #1597ca;border-radius:7px;background:linear-gradient(180deg,#19b5ed,#079bd7);color:#fff;font-size:12px;font-weight:1000;cursor:pointer;box-shadow:0 2px 4px rgba(0,110,160,.15)}',
       '#wishlistPanel .wl-auto-button:hover{filter:brightness(1.04);transform:translateY(-1px)}',
+      '#wishlistPanel .wl-manual-account-tool{display:flex;padding:4px 8px 6px}',
+      '#wishlistPanel .wl-manual-account-open{display:block;width:100%;padding:9px 12px;border:1px solid #94b7cc;border-radius:7px;background:#ecf7fc;color:#176783;font-size:11px;font-weight:1000;cursor:pointer}',
+      '#wishlistPanel .wl-manual-account-open:hover{border-color:#4b98bb;background:#d9effb}',
+      'html.dark-theme #wishlistPanel .wl-manual-account-open{border-color:#44728c;background:#1c384a;color:#a8e7ff}',
       '#wishlistPanel .wl-rulebook-button{flex:none;padding:8px 12px;border:1px solid #93b9d0;border-radius:7px;background:#e8f6ff;color:#166c96;font-size:11px;font-weight:1000;cursor:pointer}',
       '#wishlistPanel .wl-rulebook-button:hover{background:#d7efff}',
       'html.dark-theme #wishlistPanel .wl-rulebook-button{background:#203f54;color:#b6e9ff;border-color:#3e7694}',
@@ -1768,7 +1772,7 @@
       if(!button) return;
       const account = button.dataset.wlAccount;
       const allowed=(Array.isArray(ACCOUNTS)&&ACCOUNTS.includes(account))||
-        ([PRESET_TEST_ACCOUNT_NAME,TEST_ACCOUNT_NAME].includes(account)&&
+        ([PRESET_TEST_ACCOUNT_NAME,TEST_ACCOUNT_NAME,MANUAL_WISHLIST_TEST_ACCOUNT_NAME].includes(account)&&
           !!localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(account)));
       if(!account||!allowed)return;
       if(typeof window.switchAccount === 'function') window.switchAccount(account);
@@ -1784,7 +1788,7 @@
     const switcher = ensureAccountSwitcher();
     if(!switcher) return;
     const accounts = Array.isArray(ACCOUNTS) && ACCOUNTS.length ? ACCOUNTS.slice(0,2) : ['계정1','계정2'];
-    for(const testName of [PRESET_TEST_ACCOUNT_NAME,TEST_ACCOUNT_NAME]){
+    for(const testName of [PRESET_TEST_ACCOUNT_NAME,TEST_ACCOUNT_NAME,MANUAL_WISHLIST_TEST_ACCOUNT_NAME]){
       try{if(localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(testName)))accounts.push(testName);}catch(_){}
     }
     const current = typeof activeAccount !== 'undefined' ? activeAccount : accounts[0];
@@ -1991,6 +1995,9 @@
             '<div class="wl-random-derived-chance"><span>남는 확률은 0돌에 자동 배정</span><strong data-wl-random-zero-chance>60%</strong></div>' +
           '</div>' +
         '</details>' +
+        '<div class="wl-manual-account-tool">' +
+          '<button type="button" class="wl-manual-account-open" data-wl-manual-account-open>✎ 보유 캐릭터 직접 선택 · 임시 계정 만들기</button>' +
+        '</div>' +
         '<div class="wl-auto-toolbar">' +
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 추천 위시리스트 확인</button>' +
           '<button type="button" class="wl-rulebook-button" data-wl-rulebook-open>전체 추천 규칙 보기</button>' +
@@ -2356,6 +2363,193 @@
       ownedHtml;
   }
 
+
+
+  // Test-only manual account editor: only current Wishlist-eligible SSR characters can be selected.
+  async function openManualWishlistAccountModal(){
+    if(document.getElementById('wishlistManualAccountOverlay')) return;
+    if(typeof window.createManualWishlistTestAccount !== 'function'){
+      alert('임시 계정 생성 기능을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    if(!await ensureRarityData()){
+      alert('위시리스트 SSR 캐릭터 정보를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    const companyRows = new Map(COMPANIES.map(company=>[company,getCharactersForCompany(company)]));
+    const allRows = COMPANIES.flatMap(company=>companyRows.get(company).map(row=>({
+      name:String(row['이름']||'').trim(),
+      company
+    })));
+    const eligibleNames = [...new Set(allRows.map(row=>row.name))];
+    const eligibleSet = new Set(eligibleNames.map(norm));
+    const chosen = new Map();
+    const accountName = MANUAL_WISHLIST_TEST_ACCOUNT_NAME;
+    const accountKey = ACCOUNT_STORAGE_PREFIX + encodeURIComponent(accountName);
+    let savedRows = null;
+    let savedOwned = null;
+    try{
+      savedRows = JSON.parse(localStorage.getItem(accountKey)||'null');
+      savedOwned = JSON.parse(localStorage.getItem(SYNCED_OWNED_STORAGE_PREFIX+encodeURIComponent(accountName))||'null');
+    }catch(_){}
+    if(Array.isArray(savedRows)){
+      const byName = new Map(savedRows.map(row=>[norm(String(row&&row['이름']||'')),row]));
+      const savedOwnedSet = Array.isArray(savedOwned) ? new Set(savedOwned.map(norm)) : null;
+      eligibleNames.forEach(name=>{
+        const row = byName.get(norm(name));
+        if(!row) return;
+        const owned = savedOwnedSet ? savedOwnedSet.has(norm(name)) : row.__nikkeSyncedOwned === true;
+        if(owned){
+          const rawStage = Number(row['돌파']);
+          chosen.set(name,Number.isInteger(rawStage)?Math.max(0,Math.min(3,rawStage)):0);
+        }
+      });
+    }
+
+    const overlay=document.createElement('div');
+    overlay.id='wishlistManualAccountOverlay';
+    overlay.innerHTML =
+      '<section class="wlma-dialog" role="dialog" aria-modal="true" aria-labelledby="wlma-title">' +
+      '<header class="wlma-head"><div><h2 id="wlma-title">직접 선택 임시 계정</h2>' +
+      '<p>위시리스트에서 모집할 수 있는 니케만 선택할 수 있습니다. 다른 계정은 변경되지 않습니다.</p></div>' +
+      '<button type="button" data-wlma-close class="wlma-close" aria-label="닫기">닫기 ×</button></header>' +
+      '<div class="wlma-controls">' +
+        '<input type="search" data-wlma-search placeholder="니케 이름 검색" aria-label="임시 계정 니케 검색" autocomplete="off">' +
+        '<span class="wlma-count" data-wlma-count>0명 보유</span>' +
+        '<button type="button" data-wlma-clear class="wlma-clear">전체 미보유</button>' +
+      '</div>' +
+      '<nav class="wlma-tabs" aria-label="기업 선택">' +
+        ['전체',...COMPANIES].map(company=>'<button type="button" class="wlma-tab" data-wlma-company="' +
+          esc(company) + '" aria-pressed="false">' + esc(company) + '</button>').join('') +
+      '</nav>' +
+      '<div class="wlma-list" data-wlma-list></div>' +
+      '<footer class="wlma-foot"><span>캐릭터 클릭: 미보유 ↔ 명함 · 선택란: 0~3돌 설정</span>' +
+      '<button type="button" data-wlma-save class="wlma-save">' +
+       (Array.isArray(savedRows)?'설정 저장하고 계정 적용':'임시 계정 생성 및 적용') + '</button></footer>' +
+      '</section>';
+    if(!document.getElementById('wishlist-manual-account-style')){
+      const style=document.createElement('style');
+      style.id='wishlist-manual-account-style';
+      style.textContent=[
+        '#wishlistManualAccountOverlay{position:fixed;inset:0;z-index:31000;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(12,22,38,.69);backdrop-filter:blur(2px)}',
+        '#wishlistManualAccountOverlay *{box-sizing:border-box}',
+        '#wishlistManualAccountOverlay .wlma-dialog{display:flex;flex-direction:column;width:min(1100px,100%);max-height:calc(100vh - 28px);overflow:hidden;border:1px solid #cfddea;border-radius:14px;background:#f8fbff;color:#213348;box-shadow:0 22px 65px rgba(0,0,0,.3)}',
+        '#wishlistManualAccountOverlay .wlma-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 17px;background:#fff;border-bottom:1px solid #dce6ee}',
+        '#wishlistManualAccountOverlay .wlma-head h2{font-size:20px;font-weight:1000;margin:0}',
+        '#wishlistManualAccountOverlay .wlma-head p{font-size:12px;color:#65758b;line-height:1.5;margin:4px 0 0}',
+        '#wishlistManualAccountOverlay .wlma-close{flex:none;border:1px solid #cbd7e5;border-radius:8px;padding:8px 12px;background:#f4f7fa;color:#34465b;font-weight:900;cursor:pointer}',
+        '#wishlistManualAccountOverlay .wlma-controls{display:flex;align-items:center;gap:9px;padding:10px 16px}',
+        '#wishlistManualAccountOverlay .wlma-controls input{min-width:0;flex:1;max-width:350px;padding:9px 10px;border:1px solid #cbd7e5;border-radius:8px;background:#fff;color:#213348}',
+        '#wishlistManualAccountOverlay .wlma-count{margin-left:auto;white-space:nowrap;color:#27769a;font-size:12px;font-weight:1000}',
+        '#wishlistManualAccountOverlay .wlma-clear{flex:none;border:1px solid #d0dbe5;border-radius:7px;padding:8px 10px;background:#f6f8fa;color:#536276;font-size:11px;font-weight:900;cursor:pointer}',
+        '#wishlistManualAccountOverlay .wlma-tabs{display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;border-bottom:1px solid #dfe6ef}',
+        '#wishlistManualAccountOverlay .wlma-tab{flex:none;padding:7px 13px;border:1px solid #d1dbe8;border-radius:7px;background:#fff;color:#54647c;font-size:12px;font-weight:900;cursor:pointer}',
+        '#wishlistManualAccountOverlay .wlma-tab[aria-pressed="true"]{border-color:#2692c3;background:#e2f4ff;color:#096f9d}',
+        '#wishlistManualAccountOverlay .wlma-list{min-height:0;overflow:auto;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(auto-fill,minmax(174px,1fr));align-content:start;gap:8px;padding:14px 16px 18px}',
+        '#wishlistManualAccountOverlay .wlma-card{display:flex;flex-direction:column;gap:5px;min-width:0;border:1px solid #dce4ec;border-radius:9px;padding:7px;background:#fff}',
+        '#wishlistManualAccountOverlay .wlma-card.is-owned{border-color:#36a2d6;background:#eef9ff;box-shadow:inset 0 0 0 1px rgba(54,162,214,.17)}',
+        '#wishlistManualAccountOverlay .wlma-toggle{display:flex;align-items:center;gap:7px;min-width:0;width:100%;border:0;padding:0;background:transparent;color:inherit;text-align:left;cursor:pointer}',
+        '#wishlistManualAccountOverlay .wlma-photo{flex:none;position:relative;width:52px;height:52px;border-radius:6px;overflow:hidden;background:#dde6ee}',
+        '#wishlistManualAccountOverlay .wlma-photo img{width:100%;height:100%;object-fit:cover;display:block}',
+        '#wishlistManualAccountOverlay .wlma-card:not(.is-owned) .wlma-photo img{filter:grayscale(1);opacity:.60}',
+        '#wishlistManualAccountOverlay .wlma-placeholder{display:grid;place-items:center;width:100%;height:100%;color:#56667a;font-weight:1000}',
+        '#wishlistManualAccountOverlay .wlma-identity{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere}',
+        '#wishlistManualAccountOverlay .wlma-name{font-size:12px;font-weight:950;line-height:1.4}',
+        '#wishlistManualAccountOverlay .wlma-sub{font-size:10px;color:#6b7a8d}',
+        '#wishlistManualAccountOverlay .wlma-card select{display:block;width:100%;padding:6px 8px;border:1px solid #d0dce9;border-radius:6px;background:#fff;color:#24364b;font-size:11px;font-weight:900;cursor:pointer}',
+        '#wishlistManualAccountOverlay .wlma-empty{grid-column:1/-1;padding:32px 10px;text-align:center;color:#69788c;font-size:13px}',
+        '#wishlistManualAccountOverlay .wlma-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid #dce6f0;background:#fff}',
+        '#wishlistManualAccountOverlay .wlma-foot span{font-size:11px;color:#6f7d91;line-height:1.4}',
+        '#wishlistManualAccountOverlay .wlma-save{flex:none;padding:10px 16px;border:1px solid #087bab;border-radius:8px;background:#159ed3;color:#fff;font-size:12px;font-weight:1000;cursor:pointer}',
+        '#wishlistManualAccountOverlay .wlma-save:hover{background:#0c89b9}',
+        '@media(max-width:640px){#wishlistManualAccountOverlay{padding:6px}#wishlistManualAccountOverlay .wlma-dialog{max-height:calc(100vh - 12px)}#wishlistManualAccountOverlay .wlma-head{padding:10px}#wishlistManualAccountOverlay .wlma-head h2{font-size:16px}#wishlistManualAccountOverlay .wlma-controls{padding:7px;gap:5px;flex-wrap:wrap}#wishlistManualAccountOverlay .wlma-count{margin-left:0}#wishlistManualAccountOverlay .wlma-tabs{padding:0 7px 7px}#wishlistManualAccountOverlay .wlma-list{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px;gap:6px}#wishlistManualAccountOverlay .wlma-card{padding:5px}#wishlistManualAccountOverlay .wlma-photo{width:43px;height:43px}#wishlistManualAccountOverlay .wlma-name{font-size:10px}#wishlistManualAccountOverlay .wlma-foot{padding:8px;flex-direction:column;align-items:stretch}#wishlistManualAccountOverlay .wlma-save{width:100%}}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-dialog{background:#111d2e;border-color:#3d526e;color:#e8f2ff}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-head,html.dark-theme #wishlistManualAccountOverlay .wlma-foot{background:#19283c;border-color:#354862}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-head p,html.dark-theme #wishlistManualAccountOverlay .wlma-foot span,html.dark-theme #wishlistManualAccountOverlay .wlma-sub{color:#aebbd0}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-card{background:#1a2a41;border-color:#394d69}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-card.is-owned{background:#193c55;border-color:#3ea7d6}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-controls input,html.dark-theme #wishlistManualAccountOverlay .wlma-card select{background:#20334c;border-color:#445b79;color:#e7f3ff}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-close,html.dark-theme #wishlistManualAccountOverlay .wlma-clear,html.dark-theme #wishlistManualAccountOverlay .wlma-tab{background:#263951;border-color:#46607c;color:#e6f1ff}',
+        'html.dark-theme #wishlistManualAccountOverlay .wlma-tab[aria-pressed="true"]{background:#204860;color:#b0e8ff}'
+      ].join('');
+      document.head.appendChild(style);
+    }
+    document.body.appendChild(overlay);
+    const grid=overlay.querySelector('[data-wlma-list]');
+    const search=overlay.querySelector('[data-wlma-search]');
+    const count=overlay.querySelector('[data-wlma-count]');
+    let selectedCompany='전체';
+    const render=()=>{
+      const query=norm(search.value);
+      overlay.querySelectorAll('[data-wlma-company]').forEach(button=>{
+        button.setAttribute('aria-pressed',String(button.dataset.wlmaCompany===selectedCompany));
+      });
+      count.textContent='보유 '+chosen.size+'명 / 선택 가능 '+eligibleNames.length+'명';
+      const filtered=allRows.filter(row=>
+        (selectedCompany==='전체'||row.company===selectedCompany) &&
+        (!query||norm(row.name).includes(query))
+      );
+      grid.innerHTML=filtered.length?filtered.map(row=>{
+        const owned=chosen.has(row.name);
+        const stage=owned?chosen.get(row.name):-1;
+        const image=findImage(row.name);
+        return '<article class="wlma-card'+(owned?' is-owned':'')+'">' +
+          '<button type="button" class="wlma-toggle" data-wlma-toggle="'+esc(row.name)+
+          '" aria-pressed="'+String(owned)+'" aria-label="'+esc(row.name+(owned?', 보유':', 미보유')+'. 누르면 상태 전환')+'">' +
+          '<span class="wlma-photo">'+(image?'<img src="'+esc(image)+'" alt="" loading="lazy">':
+            '<span class="wlma-placeholder">'+esc(row.name.slice(0,1))+'</span>')+'</span>' +
+          '<span class="wlma-identity"><span class="wlma-name">'+esc(row.name)+'</span>' +
+          '<span class="wlma-sub">'+esc(row.company)+' · '+(owned?'보유':'미보유')+'</span></span></button>' +
+          '<select data-wlma-stage="'+esc(row.name)+'" aria-label="'+esc(row.name)+' 보유 및 돌파 단계">' +
+            [['-1','미보유'],['0','명함 (0돌)'],['1','1돌'],['2','2돌'],['3','3돌']].map(option=>
+              '<option value="'+option[0]+'"'+(Number(option[0])===stage?' selected':'')+'>'+option[1]+'</option>').join('') +
+          '</select></article>';
+      }).join(''):'<p class="wlma-empty">해당 기업 또는 검색어에 맞는 위시리스트 캐릭터가 없습니다.</p>';
+    };
+    const activeFocus=document.activeElement;
+    const close=()=>{
+      document.removeEventListener('keydown',onKeydown);
+      overlay.remove();
+      if(activeFocus&&activeFocus.isConnected&&typeof activeFocus.focus==='function')activeFocus.focus();
+    };
+    const onKeydown=event=>{if(event.key==='Escape')close();};
+    overlay.addEventListener('click',event=>{
+      if(event.target===overlay||event.target.closest('[data-wlma-close]'))return close();
+      const tab=event.target.closest('[data-wlma-company]');
+      if(tab){selectedCompany=tab.dataset.wlmaCompany;render();return;}
+      const toggle=event.target.closest('[data-wlma-toggle]');
+      if(toggle){
+        const name=toggle.dataset.wlmaToggle;
+        if(!eligibleSet.has(norm(name)))return;
+        if(chosen.has(name))chosen.delete(name);else chosen.set(name,0);
+        render();return;
+      }
+      if(event.target.closest('[data-wlma-clear]')){
+        if(chosen.size && !confirm('선택한 보유 캐릭터를 모두 미보유로 바꿀까요?'))return;
+        chosen.clear();render();return;
+      }
+      if(event.target.closest('[data-wlma-save]')){
+        const entries=[...chosen].map(([name,breakthrough])=>({name,breakthrough}));
+        const success=window.createManualWishlistTestAccount(entries,eligibleNames);
+        if(success){close();renderAccountSwitcher();}
+      }
+    });
+    overlay.addEventListener('change',event=>{
+      const select=event.target.closest('[data-wlma-stage]');
+      if(!select)return;
+      const name=select.dataset.wlmaStage;
+      if(!eligibleSet.has(norm(name)))return;
+      const stage=Number(select.value);
+      if(stage===-1)chosen.delete(name);
+      else if(Number.isInteger(stage)&&stage>=0&&stage<=3)chosen.set(name,stage);
+      render();
+    });
+    search.addEventListener('input',render);
+    document.addEventListener('keydown',onKeydown);
+    render();
+    loadImageMap().then(()=>{if(overlay.isConnected)render();});
+    search.focus({preventScroll:true});
+  }
 
   const RANDOM_ACCOUNT_RULES_STORAGE_KEY = 'nikke_random_test_account_rules_v1';
   const RANDOM_ACCOUNT_RULE_DEFAULTS = {
@@ -2900,6 +3094,12 @@
   }
 
   function onPanelClick(event){
+    const manualAccountButton = event.target.closest && event.target.closest('[data-wl-manual-account-open]');
+    if(manualAccountButton){
+      event.preventDefault();
+      openManualWishlistAccountModal();
+      return;
+    }
     const rulebookButton = event.target.closest && event.target.closest('[data-wl-rulebook-open]');
     if(rulebookButton){
       event.preventDefault();
