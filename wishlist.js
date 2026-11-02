@@ -652,6 +652,237 @@
     document.addEventListener('keydown', onKeydown);
     if(closeButton) closeButton.focus();
   }
+
+  // Test-only rulebook: read the same tier and account-state data used by auto-build.
+  function rulebookTable(rows){
+    return '<table class="wlr-table"><tbody>' + rows.map(row =>
+      '<tr><th scope="row">' + esc(row[0]) + '</th><td>' + esc(row[1]) + '</td></tr>'
+    ).join('') + '</tbody></table>';
+  }
+
+  function rulebookCommon(){
+    const copyLabel = wallStatus === 'X'
+      ? ['성능캐 돌파우선(주의)','과금유저용','추천'][copyPriority]
+      : ['성능캐 돌파우선','균형','도감작 우선'][copyPriority];
+    const pvpLabel = ({pvp:'PVP 우선',solo:'솔레 우선',exclude:'PVP 제외'})[pvpPriority] || '솔레 우선';
+    return '<div class="wlr-lead">현재 계정 설정: 160벽 ' + esc(wallStatus) +
+      ' / 돌파 ' + esc(copyLabel) + ' / ' + esc(pvpLabel) + '</div>' +
+      '<h3>기본 분류 및 자동 편성 순서</h3>' +
+      rulebookTable([
+        ['1 · 필수캐','가장 먼저 검토. 돌파 선호도 1단계에서는 보유 캐릭터도 포함 가능'],
+        ['2 · 애장품 필수','애장품 효율 우선. 160벽 X에서는 미보유 상태일 때 강제 포함 대상'],
+        ['3 · 범용캐','미보유 명함 확보에 우선순위 부여. 보유 시 일반적으로 후순위'],
+        ['4 · PVP 우선','PVP 선호도 1단계: 4 / 2단계: 5.5 / 3단계: 7'],
+        ['5 · 애장품 솔레','2돌 미만일 때 우대하며, 이후 돌파는 후순위로 조정'],
+        ['6 · 솔로 레이드','명함 미보유일 때 우선. 보유 캐릭터는 대개 뒤로 이동'],
+        ['8 · 명함 추천','츠바이·율리아는 2돌 미만까지 별도 우선순위'],
+        ['10 · 도감작','돌파 선호도 3단계에서 주로 추천 후보에 포함']
+      ]) +
+      '<h3>160벽 돌파 상태별 규칙</h3>' +
+      rulebookTable([
+        ['160벽 O','성능·명함·보유 돌파를 돌파 선호도에 따라 조합. 일부 조건에서 필수캐 보유 시 추가 돌파 제외'],
+        ['160벽 X · 최우선','티아·나가·리타·헬름·앨리스 중 3돌 미만을 우선 편성. 단, 드레이크 미보유·미제외 시 티아를 드레이크로 교체'],
+        ['160벽 X · 필수','기업 필수캐/애장품 필수캐는 미보유 시 우선 포함하며, 3돌 달성 시 제외'],
+        ['160벽 X · 돌파','실마 대상 보유 캐릭터의 1~2돌과, 일반 캐릭터의 2돌을 돌파 우선으로 고려'],
+        ['160벽 X · 일반 제외','3돌 이상은 제외. 최우선 대상 또는 미보유 필수 대상이 한 기업에서 5명 초과하면 경고하고 편성 중단'],
+        ['돌파 1단계','성능캐 돌파 우선. 160벽 X일 때는 비추천 경고 표시'],
+        ['돌파 2단계','균형(O) / 과금유저용(X). X에서는 실마 목록의 2돌 캐릭터를 추가 후보로 허용'],
+        ['돌파 3단계','도감작 우선(O) / 추천(X). 도감용 명함 획득도 후보에 포함']
+      ]) +
+      '<h3>PVP / 보유 / 수동 선택</h3>' +
+      rulebookTable([
+        ['PVP 우선','PVP 대상이 솔레보다 앞에 배치. 필그림 홍련·라푼젤은 노아 바로 뒤로 이동'],
+        ['솔레 우선','PVP 대상이 솔레 일부보다 뒤로 이동'],
+        ['PVP 제외','PVP 대상을 최후순위 쪽으로 이동하며, 완전히 제거하지는 않음'],
+        ['보유 상태','연동 계정의 실제 보유 목록으로 판단. 명함 보유와 돌파 수를 분리하여 계산'],
+        ['제외 설정','수동 제외한 캐릭터는 자동 추천하지 않음. 기본 → 제외 → 애정캐 → 기본 순환'],
+        ['애정캐','동일 추천 그룹 안에서 우선 정렬. 5명을 초과하면 경고; 모든 상위 그룹을 제치고 강제 포함시키는 방식은 아님'],
+        ['코어 강화 +7','기본적으로 자동 제외. 160벽 X 강제 우선 대상은 예외 분기가 있음'],
+        ['위시리스트 한도','엘리시온·미실리스·테트라·필그림 각각 5칸. 기본적으로 SSR만 선택하고 한정·배포 제외 목록 적용']
+      ]) +
+      '<p class="wlr-footnote">표는 실제 코드의 그룹 규칙을 설명합니다. 160벽 X의 최우선·돌파 우대 정렬과 보유 상태가 개별 캐릭터의 기본 순위보다 먼저 적용될 수 있습니다.</p>';
+  }
+
+  function rulebookCompany(company){
+    const eligible = getCharactersForCompany(company);
+    const eligibleKeys = new Set(eligible.map(row => norm(row['이름'])));
+    const activeSpecial = company === '엘리시온' ? [
+      ['D : 킬러 와이프','라피 : 레드 후드 미보유 + D 미보유 → 3 범용 / 라피 미보유 + D 보유 → 6 솔레(델타 바로 앞) / 라피 보유 + D 미보유 → 6 솔레(델타 바로 앞) / 둘 다 보유 → 8 명함(츠바이 뒤)'],
+      ['아르카나','솔레에서 아르카나 : 포츈 메이트 뒤, D : 킬러 와이프와 델타 : 닌자 시프 앞'],
+      ['프리바티','2돌 미만이면 애장품 필수로 상승. 2돌 이상이면 애장품 솔레 기본 규칙'],
+      ['베스티 : 택티컬 업','미보유이면 범용캐로 상승. 보유 시 PVP 선호도 적용'],
+      ['미란다','160벽 O에서 2돌 이상 자동 제외. 160벽 X에서는 3돌부터 제외'],
+      ['츠바이','2돌 미만이면 명함 추천 최상위로 유지. 2돌 이상은 후순위']
+    ] : company === '미실리스' ? [
+      ['플로라 · 토브','애장품 필수. 160벽 X에서 미보유이면 우선 포함'],
+      ['드레이크','범용캐 최우선. 160벽 X에서 드레이크 미보유 시 티아보다 우선되며 티아를 추천 후보에서 제외'],
+      ['센티','2돌 미만일 때 애장품 솔레 순위로 상승. 이후 PVP 선호도 적용'],
+      ['라플라스','PVP 내 최후순위. 2돌 미만 동안 PVP 우선 그룹 유지'],
+      ['아인','범용캐 3순위']
+    ] : [
+      ['목단','애장품 필수. 160벽 X 미보유 시 우선 포함'],
+      ['루주','명함 미보유 + 아니스 : 스타·볼륨 모두 미보유 → 범용캐 맨 뒤. 하나라도 보유 → 솔레(에이드 : 에이전트 바니 뒤)'],
+      ['볼륨','미보유 → 솔레 첫 번째. 명함 보유 후에는 명함 추천 그룹'],
+      ['율리아','2돌 미만일 때 츠바이 다음의 명함 추천 우선 대상. 2돌 이후 후순위'],
+      ['루마니·노이즈·블랑·소다·베이','PVP 선호도에 따라 추천 순위 조정'],
+      ['슈가·로산나','애장품 솔레 그룹. 2돌 미만일 때 돌파 우대']
+    ];
+    const tiers = WISHLIST_PERFORMANCE_TIERS.map(tier => {
+      const names = tier.names.filter(name => eligibleKeys.has(norm(name)));
+      return names.length ? [String(tier.rank) + ' · ' + tier.label,names.join(' → ')] : null;
+    }).filter(Boolean);
+    if(!eligible.length){
+      return '<p class="wlr-lead">캐릭터 SSR 목록을 불러오지 못했습니다. 페이지를 새로고침한 후 확인해 주세요.</p>';
+    }
+    let currentNote = '';
+    if(company === '엘리시온'){
+      const rapi = isMarkedUnowned('라피 : 레드 후드') ? '미보유' : '보유';
+      const d = isMarkedUnowned(KILLER_WIFE_NAME) ? '미보유' : '보유';
+      const rank = getKillerWifePriority(isMarkedUnowned(KILLER_WIFE_NAME));
+      currentNote = '<div class="wlr-lead">현재 계정: 라피 : 레드 후드 ' + rapi +
+        ' / D : 킬러 와이프 ' + d + ' → D 적용 분류 ' + rank + '순위</div>';
+    }
+    return currentNote +
+      '<p class="wlr-footnote">아래 표는 코드의 기본 우선순위입니다. 보유 여부·돌파·160벽·PVP 설정에 의한 변동은 특수조건에 별도로 표시합니다. 화살표는 같은 그룹 내부 등록 순서를 뜻합니다.</p>' +
+      '<h3>' + esc(company) + ' 기본 캐릭터 우선도 · ' + eligible.length + '명</h3>' +
+      rulebookTable(tiers) +
+      '<h3>캐릭터별 특수조건</h3>' + rulebookTable(activeSpecial) +
+      '<p class="wlr-footnote">같은 그룹에서도 미보유 우선, 돌파 수, 실마 대상 여부, 애정캐 및 제외 여부에 따라 최종 5칸은 달라집니다.</p>';
+  }
+
+  function rulebookPilgrim(){
+    const allowed = new Set(getCharactersForCompany(PILGRIM_COMPANY).map(row => norm(row['이름'])));
+    const priority = getPilgrimWishlistPriorityNames().filter(name => allowed.has(norm(name)));
+    const list = priority.map((name,i) => [String(i + 1),name]);
+    return '<div class="wlr-lead">필그림은 엘리시온·미실리스·테트라와 별도 추천 순서를 적용합니다. 아래는 현재 PVP 설정을 반영한 순서입니다.</div>' +
+      '<h3>필그림 명함 우선순위</h3>' + rulebookTable(list) +
+      '<h3>필그림 특수 규칙</h3>' + rulebookTable([
+        ['미보유 우선','아직 보유하지 않은 캐릭터를 목록 순서대로 채우고, 5칸이 부족할 경우 보유 캐릭터로 채움'],
+        ['160벽 O/X','필그림 고유 추천 순서를 공유. 타 기업의 160벽 강제 포함 규칙과 분리'],
+        ['돌파 선호도 1단계','스노우 화이트(일반)까지의 추천 순서만 대상으로 사용'],
+        ['돌파 선호도 2·3단계','전체 명함 순서를 사용'],
+        ['PVP 선호도 1단계','홍련·라푼젤을 노아 바로 뒤에 배치'],
+        ['PVP 선호도 2·3단계','홍련·라푼젤을 순서 마지막에 배치'],
+        ['제외','수동 제외 또는 코어 강화 +7인 캐릭터는 추천에서 제외']
+      ]) +
+      '<p class="wlr-footnote">오버스펙(라피 : 레드 후드 등)은 위시리스트 내부에서 필그림 대상으로 재분류합니다.</p>';
+  }
+
+  function rulebookMileage(){
+    const lists = CLUE_LISTS.map(list => [list.title,list.names.join(' · ')]);
+    const excluded = getAllCharacters().map(row => String(row['이름'] || '').trim())
+      .filter(name => name && isWishlistExcluded(name));
+    return '<h3>실마 상점 스페어바디 전체 목록</h3>' +
+      rulebookTable(lists) +
+      '<p class="wlr-footnote">실마 스페어바디는 명함을 획득하는 수단이 아니며 돌파 재료입니다. 160벽 X에서 보유 1~2돌의 추가 돌파 우선 판정에 사용됩니다.</p>' +
+      '<h3>선택 대상에서 제외되는 캐릭터</h3>' +
+      '<p class="wlr-lead">' + esc(excluded.join(' · ') || '등록된 제외 캐릭터 없음') + '</p>' +
+      '<p class="wlr-footnote">현재 사이트 캐릭터 DB에 등록된 제외 대상입니다. SSR이 아닌 캐릭터도 기본 선택 대상이 아닙니다. 오버스펙 4명은 필그림 추천으로 분류됩니다.</p>' +
+      '<h3>계정별 제외 / 애정캐 처리</h3>' + rulebookTable([
+        ['수동 제외','계정별로 저장. 해당 캐릭터를 추천 후보에서 제거'],
+        ['애정캐','계정별로 저장. 후보 정렬에서 우대하며 한 기업 5명 초과 시 경고'],
+        ['자동 제외','코어 강화 7, 160벽 X 3돌 이상, 미란다(O 상태 2돌 이상) 등의 조건을 적용'],
+        ['조건 판단','현재 선택한 계정의 동기화된 보유·돌파 정보를 기준으로 판정']
+      ]);
+  }
+
+  async function openWishlistRulebook(){
+    if(document.getElementById('wishlistRulebookOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'wishlistRulebookOverlay';
+    const titles = [
+      ['common','공통 규칙'],['엘리시온','엘리시온'],['미실리스','미실리스'],
+      ['테트라','테트라'],['pilgrim','필그림'],['mileage','실마·제외']
+    ];
+    overlay.innerHTML =
+      '<section class="wlr-dialog" role="dialog" aria-modal="true" aria-labelledby="wlRulebookTitle">' +
+        '<header class="wlr-head"><div><h2 id="wlRulebookTitle">위시리스트 추천 전체 규칙</h2>' +
+          '<p>테스트 서버 전용 · 추천 코드 기반</p></div>' +
+          '<button type="button" class="wlr-close" data-wlr-close aria-label="규칙 창 닫기">닫기 ×</button></header>' +
+        '<nav class="wlr-tabs" aria-label="추천 규칙 분류">' +
+          titles.map(item => '<button type="button" class="wlr-tab" data-wlr-tab="' +
+            esc(item[0]) + '" aria-pressed="false">' + esc(item[1]) + '</button>').join('') +
+        '</nav>' +
+        '<div class="wlr-content" data-wlr-content tabindex="0" aria-live="polite">규칙을 불러오는 중...</div>' +
+      '</section>';
+    if(!document.getElementById('wishlist-rulebook-style')){
+      const style = document.createElement('style');
+      style.id = 'wishlist-rulebook-style';
+      style.textContent = [
+        '#wishlistRulebookOverlay{position:fixed;inset:0;z-index:30000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(9,19,35,.68);backdrop-filter:blur(2px)}',
+        '#wishlistRulebookOverlay *{box-sizing:border-box}',
+        '#wishlistRulebookOverlay .wlr-dialog{display:flex;flex-direction:column;width:min(1040px,100%);max-height:min(850px,calc(100vh - 32px));overflow:hidden;border:1px solid #d1dae8;border-radius:14px;background:#f8fbff;color:#253449;box-shadow:0 20px 70px rgba(0,0,0,.26)}',
+        '#wishlistRulebookOverlay .wlr-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;border-bottom:1px solid #dfe5f0;background:#fff}',
+        '#wishlistRulebookOverlay .wlr-head h2{margin:0;font-size:21px;font-weight:1000}',
+        '#wishlistRulebookOverlay .wlr-head p{margin:3px 0 0;font-size:12px;color:#64748b}',
+        '#wishlistRulebookOverlay .wlr-close{flex:none;padding:8px 12px;border:1px solid #cfdae7;border-radius:8px;background:#f2f5fa;color:#34465e;font-weight:900;cursor:pointer}',
+        '#wishlistRulebookOverlay .wlr-tabs{display:flex;gap:5px;padding:10px 14px;overflow-x:auto;border-bottom:1px solid #dfe5f0;background:#f8fafc}',
+        '#wishlistRulebookOverlay .wlr-tab{flex:none;padding:9px 12px;border:1px solid #d2deeb;border-radius:8px;background:#fff;color:#54657a;font-size:13px;font-weight:900;cursor:pointer}',
+        '#wishlistRulebookOverlay .wlr-tab[aria-pressed="true"]{border-color:#299acb;background:#e5f5ff;color:#126d9e}',
+        '#wishlistRulebookOverlay .wlr-content{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:18px 20px 24px;font-size:13px;line-height:1.6}',
+        '#wishlistRulebookOverlay .wlr-content h3{margin:22px 0 10px;font-size:16px;font-weight:1000;color:#21638d}',
+        '#wishlistRulebookOverlay .wlr-content h3:first-child{margin-top:0}',
+        '#wishlistRulebookOverlay .wlr-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}',
+        '#wishlistRulebookOverlay .wlr-table tr{border-bottom:1px solid #e5eaf1}',
+        '#wishlistRulebookOverlay .wlr-table th{width:185px;padding:10px 11px;text-align:left;vertical-align:top;background:#eef4fb;font-size:12px;font-weight:900;overflow-wrap:anywhere}',
+        '#wishlistRulebookOverlay .wlr-table td{padding:10px 12px;overflow-wrap:anywhere;word-break:keep-all}',
+        '#wishlistRulebookOverlay .wlr-lead{margin:0 0 14px;padding:10px 12px;border:1px solid #d5e4f4;border-radius:9px;background:#eff7ff;font-weight:850}',
+        '#wishlistRulebookOverlay .wlr-footnote{margin:12px 0;color:#64748b;font-size:12px;line-height:1.65}',
+        '#wishlistPanel .wl-rulebook-button{flex:none;padding:8px 12px;border:1px solid #93b9d0;border-radius:7px;background:#e8f6ff;color:#166c96;font-size:11px;font-weight:1000;cursor:pointer}',
+        '#wishlistPanel .wl-rulebook-button:hover{background:#d7efff}',
+        '@media(max-width:620px){#wishlistRulebookOverlay{padding:7px}#wishlistRulebookOverlay .wlr-dialog{max-height:calc(100vh - 14px)}#wishlistRulebookOverlay .wlr-head{padding:11px}#wishlistRulebookOverlay .wlr-head h2{font-size:17px}#wishlistRulebookOverlay .wlr-tabs{padding:7px}#wishlistRulebookOverlay .wlr-tab{padding:7px 9px;font-size:11px}#wishlistRulebookOverlay .wlr-content{padding:10px}#wishlistRulebookOverlay .wlr-table th{width:98px;padding:8px 6px;font-size:11px}#wishlistRulebookOverlay .wlr-table td{padding:8px 7px;font-size:11px}}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-dialog{background:#111d2e;border-color:#3a4a63;color:#e6eefb}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-head,html.dark-theme #wishlistRulebookOverlay .wlr-tabs{background:#19273c;border-color:#364862}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-head p,html.dark-theme #wishlistRulebookOverlay .wlr-footnote{color:#a9b9d0}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-close,html.dark-theme #wishlistRulebookOverlay .wlr-tab{background:#24354d;border-color:#3e5570;color:#d6e3f5}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-tab[aria-pressed="true"]{background:#214763;border-color:#5ca9d5;color:#b9ebff}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-content h3{color:#8ed5ff}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-table{background:#17253a}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-table tr{border-color:#36445b}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-table th{background:#223650}',
+        'html.dark-theme #wishlistRulebookOverlay .wlr-lead{background:#1b344c;border-color:#385775}',
+        'html.dark-theme #wishlistPanel .wl-rulebook-button{background:#203f54;color:#b6e9ff;border-color:#3e7694}'
+      ].join('');
+      document.head.appendChild(style);
+    }
+    document.body.appendChild(overlay);
+    const container = overlay.querySelector('[data-wlr-content]');
+    let current = 'common';
+    const draw = () => {
+      overlay.querySelectorAll('[data-wlr-tab]').forEach(button => {
+        button.setAttribute('aria-pressed',String(button.getAttribute('data-wlr-tab') === current));
+      });
+      if(current === 'common') container.innerHTML = rulebookCommon();
+      else if(current === 'pilgrim') container.innerHTML = rulebookPilgrim();
+      else if(current === 'mileage') container.innerHTML = rulebookMileage();
+      else container.innerHTML = rulebookCompany(current);
+      container.scrollTop = 0;
+    };
+    const close = () => {
+      document.removeEventListener('keydown',onKeydown);
+      overlay.remove();
+    };
+    const onKeydown = event => {if(event.key === 'Escape') close();};
+    overlay.addEventListener('click',event => {
+      if(event.target === overlay || (event.target.closest && event.target.closest('[data-wlr-close]'))){
+        close();
+        return;
+      }
+      const tab = event.target.closest && event.target.closest('[data-wlr-tab]');
+      if(tab){
+        current = tab.getAttribute('data-wlr-tab');
+        draw();
+      }
+    });
+    document.addEventListener('keydown',onKeydown);
+    refreshSyncedOwnedRoster(true);
+    await ensureRarityData();
+    if(!overlay.isConnected) return;
+    draw();
+    const closeButton = overlay.querySelector('[data-wlr-close]');
+    if(closeButton) closeButton.focus();
+  }
+
   const blankWishlist = () => Object.fromEntries(COMPANIES.map(company => [
     company, Array(5).fill('')
   ]));
@@ -1762,6 +1993,7 @@
         '</details>' +
         '<div class="wl-auto-toolbar">' +
           '<button type="button" class="wl-auto-button" data-wl-auto-build>✦ 추천 위시리스트 확인</button>' +
+          '<button type="button" class="wl-rulebook-button" data-wl-rulebook-open>전체 추천 규칙 보기</button>' +
         '</div>' +
         '<div class="wl-company-list" id="wishlistCompanyList"></div>' +
         '<div class="wl-status" id="wishlistSavedStatus">변경 사항 없음</div>' +
@@ -2668,6 +2900,12 @@
   }
 
   function onPanelClick(event){
+    const rulebookButton = event.target.closest && event.target.closest('[data-wl-rulebook-open]');
+    if(rulebookButton){
+      event.preventDefault();
+      openWishlistRulebook();
+      return;
+    }
     const clueOpenButton = event.target.closest && event.target.closest('[data-wl-clue-open]');
     if(clueOpenButton){
       event.preventDefault();
