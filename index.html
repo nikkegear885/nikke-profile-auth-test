@@ -4726,6 +4726,7 @@ const ACCOUNT_NAMES_STORAGE='nikke_account_names_v1';
 /* TEST-SITE-ONLY TOOL: keep this isolated and do not port to production. */
 const TEST_ACCOUNT_NAME='랜덤 테스트 계정';
 const PRESET_TEST_ACCOUNT_NAME='지정 테스트 계정';
+const MANUAL_WISHLIST_TEST_ACCOUNT_NAME='직접 선택 임시 계정';
 // TEST-SITE-ONLY: six-character wishlist fixture. Never alter the two real accounts or the random test account.
 const PRESET_TEST_ROSTER=new Map([
   ['마스트 : 로망틱 메이드',0],
@@ -4870,7 +4871,8 @@ try{
   const hasSavedTestAccount=!!localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(TEST_ACCOUNT_NAME));
   const hasPresetTestAccount=!!localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(PRESET_TEST_ACCOUNT_NAME));
   const hasImageTempAccount=!!localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(IMAGE_TEMP_ACCOUNT_NAME));
-  if(ACCOUNTS.includes(savedAccount)||(savedAccount===TEST_ACCOUNT_NAME&&hasSavedTestAccount)||(savedAccount===PRESET_TEST_ACCOUNT_NAME&&hasPresetTestAccount)||(savedAccount===IMAGE_TEMP_ACCOUNT_NAME&&hasImageTempAccount)) activeAccount=savedAccount;
+  const hasManualWishlistTestAccount=!!localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(MANUAL_WISHLIST_TEST_ACCOUNT_NAME));
+  if(ACCOUNTS.includes(savedAccount)||(savedAccount===TEST_ACCOUNT_NAME&&hasSavedTestAccount)||(savedAccount===PRESET_TEST_ACCOUNT_NAME&&hasPresetTestAccount)||(savedAccount===IMAGE_TEMP_ACCOUNT_NAME&&hasImageTempAccount)||(savedAccount===MANUAL_WISHLIST_TEST_ACCOUNT_NAME&&hasManualWishlistTestAccount)) activeAccount=savedAccount;
 }catch(e){}
 function accountStorageKey(prefix,account){return prefix+encodeURIComponent(account);}
 function normalizeAccountData(saved,account){
@@ -7064,6 +7066,85 @@ function createRandomTestAccount(){
   }
   toast('랜덤 테스트 계정 생성 완료 · 보유 '+ownedCount+'명 / 미보유 '+unownedNames.length+'명');
 }
+
+/* TEST-SITE-ONLY: dedicated, manually selected wishlist account.
+   Its storage keys are separate from random/preset/real accounts. */
+function createManualWishlistTestAccount(entries,eligibleNames){
+  if(!Array.isArray(entries)||!Array.isArray(eligibleNames))return false;
+  const whitelist=new Set(eligibleNames.map(name=>String(name||'').trim()).filter(Boolean));
+  const validNames=new Set(RAW.map(row=>String(row&&row['이름']||'').trim()).filter(Boolean));
+  const chosen=new Map();
+  entries.forEach(entry=>{
+    const name=String(entry&&entry.name||'').trim();
+    const stage=Number(entry&&entry.breakthrough);
+    if(whitelist.has(name)&&validNames.has(name)&&Number.isInteger(stage)&&stage>=0&&stage<=3){
+      chosen.set(name,stage);
+    }
+  });
+  const account=MANUAL_WISHLIST_TEST_ACCOUNT_NAME;
+  const key=ACCOUNT_STORAGE_PREFIX+encodeURIComponent(account);
+  try{
+    if(localStorage.getItem(key)&&!confirm('기존 직접 선택 임시 계정의 보유·돌파 정보를 현재 선택으로 교체할까요?'))return false;
+  }catch(e){return false;}
+
+  // Persist the previous account first; never change its ownership or equipment.
+  save();saveSelectedCharacters();saveUnusedCharacters();
+  const mock=structuredClone(RAW),owned=[],unowned=[];
+  const parts=['머리','몸통','장갑','다리'];
+  mock.forEach(row=>{
+    const name=String(row&&row['이름']||'').trim();
+    if(!name)return;
+    const isOwned=chosen.has(name);
+    if(isOwned)owned.push(name);else unowned.push(name);
+    row.__nikkeSyncedOwned=isOwned;
+    row['돌파']=isOwned?chosen.get(name):0;
+    row['코강']=0;
+    row['전투력']=isOwned?35000:0;
+    row['협투력']=isOwned?2500:0;
+    row['호감도']=isOwned?1:0;
+    row['스킬1']=isOwned?1:0;
+    row['스킬2']=isOwned?1:0;
+    row['버스트스킬']=isOwned?1:0;
+    row['큐브']=null;row['큐브_레벨']=0;row['소장품']=null;
+    for(const field of Object.keys(row)){
+      if(field.startsWith('콘솔_')||['우코(%)','공증(%)','장탄(%)','크확(%)','크댐(%)','명중(%)','차댐(%)','차속(%)','방어(%)'].includes(field))row[field]=0;
+    }
+    parts.forEach(part=>{
+      row[part+'_티어']=0;row[part+'_레벨']=0;
+      for(const slot of [1,2,3]){
+        row[part+'_옵'+slot]=null;row[part+'_옵'+slot+'값']=null;
+      }
+      row[part+'_기업장비']=false;
+    });
+  });
+  try{
+    localStorage.setItem(key,JSON.stringify(mock));
+    localStorage.setItem(ACCOUNT_SELECTION_PREFIX+encodeURIComponent(account),JSON.stringify([]));
+    localStorage.setItem(ACCOUNT_UNUSED_PREFIX+encodeURIComponent(account),JSON.stringify([]));
+    localStorage.setItem(ACCOUNT_UNOWNED_PREFIX+encodeURIComponent(account),JSON.stringify(unowned));
+    localStorage.setItem(ACCOUNT_SYNCED_OWNED_PREFIX+encodeURIComponent(account),JSON.stringify(owned));
+  }catch(error){
+    alert('직접 선택 임시 계정을 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
+    return false;
+  }
+  if(activeAccount!==account){
+    switchAccount(account);
+  }else{
+    data=readAccountData(account);
+    selectedCharacters=loadAccountSelection(account);
+    unusedCharacters=loadAccountUnused(account);
+    unownedCharacters=loadAccountUnowned(account);
+    filters={선택:new Set(),이름:new Set(),기업:new Set(),속성:new Set(),클래스:new Set(),무기:new Set(),버스트:new Set(),큐브:new Set(),장비부위별:{머리:new Set(),몸통:new Set(),장갑:new Set(),다리:new Set()}};
+    renderHeader();renderTable();
+    updateUnusedViewButton();updateUnownedViewButton();updateCompletionFilterUI();updateDetailColumnButton();updateAccountButtons();
+  }
+  if(typeof window.renderWishlist==='function'&&document.body.classList.contains('wishlist-view')){
+    window.renderWishlist();
+  }
+  toast('직접 선택 임시 계정 저장 완료 · 보유 '+owned.length+'명 / 미보유 '+unowned.length+'명');
+  return true;
+}
+
 function updateAccountButtons(){
   document.querySelectorAll('.account-switch-btn').forEach((b,i)=>{
     b.dataset.account=ACCOUNTS[i]||'';
@@ -7075,7 +7156,7 @@ function updateAccountButtons(){
 }
 function switchAccount(account){
   closeSettingsMenu();
-  const isTest=name=>name===TEST_ACCOUNT_NAME||name===PRESET_TEST_ACCOUNT_NAME||name===IMAGE_TEMP_ACCOUNT_NAME;
+  const isTest=name=>name===TEST_ACCOUNT_NAME||name===PRESET_TEST_ACCOUNT_NAME||name===IMAGE_TEMP_ACCOUNT_NAME||name===MANUAL_WISHLIST_TEST_ACCOUNT_NAME;
   if((!ACCOUNTS.includes(account)&&!isTest(account))||account===activeAccount)return;
   if(isTest(account)&&!localStorage.getItem(ACCOUNT_STORAGE_PREFIX+encodeURIComponent(account)))return;
   const enteringTest=isTest(account)&&!isTest(activeAccount);
@@ -7112,7 +7193,7 @@ try{
     ensureRandomTestAccountSwitchButton();
   }
 }catch(e){}
-if(activeAccount===TEST_ACCOUNT_NAME||activeAccount===PRESET_TEST_ACCOUNT_NAME||activeAccount===IMAGE_TEMP_ACCOUNT_NAME)enableRandomTestAccountVisibility();
+if(activeAccount===TEST_ACCOUNT_NAME||activeAccount===PRESET_TEST_ACCOUNT_NAME||activeAccount===IMAGE_TEMP_ACCOUNT_NAME||activeAccount===MANUAL_WISHLIST_TEST_ACCOUNT_NAME)enableRandomTestAccountVisibility();
 document.getElementById('search').addEventListener('input',renderTable);document.getElementById('drawer').addEventListener('click',e=>{if(e.target.id==='drawer')closeDrawer()});switchMainView('characters');renderHeader();renderTable();loadNikkePediaImages();updateHideTargetButtons();updateUnusedViewButton();updateUnownedViewButton();updateCompletionFilterUI();updateDetailColumnButton();updateAccountButtons();
 
 
