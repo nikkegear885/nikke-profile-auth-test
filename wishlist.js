@@ -331,8 +331,7 @@
   );
   // 160-wall X rule 2: prioritize these characters whenever they are below 3 breakthroughs.
   const WISHLIST_160_WALL_X_PRIORITY_NAMES = new Set(['티아','나가','리타','헬름','앨리스'].map(norm));
-  // 160벽 X only: Drake substitutes for Tia only if neither Flora nor Tove is owned
-  // or manually excluded, and Drake is eligible. Exclusions restore Tia.
+  // 160-wall X: unowned Drake takes Tia's priority slot. Owned/excluded Drake restores Tia.
   function is160WallXPriorityName(name, drakeInsteadOfTia){
     const key = norm(name);
     if(key === norm('티아')) return !drakeInsteadOfTia;
@@ -2239,15 +2238,12 @@
       alert('캐릭터 데이터를 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
       return;
     }
-    // Drake substitutes for Tia only when both Flora and Tove are unowned,
-    // neither is manually excluded, and Drake himself is eligible.
-    // Excluding either unowned character returns the priority slot to Tia.
+    // On 160-wall X, an unowned Drake takes priority over Tia regardless
+    // of Flora or Tove's ownership/exclusion status.
     const drakeInsteadOfTia160WallX = wallStatus === 'X' &&
-      isMarkedUnowned('플로라') && isMarkedUnowned('토브') &&
-      !isManuallyExcludedCharacter('플로라') &&
-      !isManuallyExcludedCharacter('토브') &&
+      isMarkedUnowned('드레이크') &&
       !isManuallyExcludedCharacter('드레이크') &&
-      getBreakthrough('드레이크') < 3 && getCoreEnhancement('드레이크') < 7;
+      getCoreEnhancement('드레이크') < 7;
     const overLimitFavorites = STANDARD_PRIORITY_COMPANIES.map(company => ({
       company,
       names: getCharactersForCompany(company)
