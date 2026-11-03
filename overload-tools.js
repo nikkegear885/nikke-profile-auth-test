@@ -101,6 +101,9 @@ const css=[
   '#overloadPanel .ol-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}',
   '#overloadPanel .ol-targets label{display:block;font-size:12px;font-weight:900;margin-bottom:6px}',
   '#overloadPanel .ol-targets select{width:100%;padding:10px;border:1px solid #c6d9e9;border-radius:8px;background:#fff;color:#273e52}',
+  '#overloadPanel .ol-tier-inputs{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:12px 0}',
+  '#overloadPanel .ol-tier-inputs label{display:flex;flex-direction:column;gap:6px;min-width:140px;font-size:12px;font-weight:900}',
+  '#overloadPanel .ol-tier-inputs select{min-height:39px;border:1px solid #c6d9e9;border-radius:8px;padding:6px;background:#fff;color:#273e52}',
   '#overloadPanel .ol-alt{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}',
   '#overloadPanel .ol-alt label{padding:7px 9px;border:1px solid #d6e2ec;border-radius:8px;background:#f7fbff;font-size:12px;display:inline-flex;align-items:center;gap:5px}',
   '#overloadPanel .ol-output{padding:15px;border-radius:10px;background:#eef9ff;border:1px solid #b9d9ee;margin-top:13px}',
@@ -119,7 +122,7 @@ const css=[
   'html.dark-theme #overloadPanel .ol-tab[aria-selected=true],html.dark-theme #overloadPanel .ol-output{background:#173b54;border-color:#427eab;color:#dbf2ff}',
   'html.dark-theme #overloadPanel .ol-btn.primary{background:#116e9b;color:#fff}',
   'html.dark-theme #overloadPanel .ol-line.locked{background:#3b3326;border-color:#927749}',
-  'html.dark-theme #overloadPanel .ol-targets select{background:#22364e;border-color:#475f78;color:#eaf3ff}',
+  'html.dark-theme #overloadPanel .ol-targets select,html.dark-theme #overloadPanel .ol-tier-inputs select{background:#22364e;border-color:#475f78;color:#eaf3ff}',
   'html.dark-theme #overloadPanel .ol-alert{background:#332c1d;color:#ffe0a3;border-color:#806e44}',
   '@media(max-width:650px){#overloadPanel{padding:0 5px}#overloadPanel .ol-head h2{font-size:22px}#overloadPanel .ol-card{padding:11px}#overloadPanel .ol-targets{grid-template-columns:1fr}#overloadPanel .ol-line{grid-template-columns:32px minmax(0,1fr) 63px 72px;gap:3px;padding:8px 5px}#overloadPanel .ol-line strong,#overloadPanel .ol-line .ol-val{font-size:11px}#overloadPanel .ol-lock{font-size:9px;padding:8px 2px}#overloadPanel .ol-grid{grid-template-columns:1fr 1fr}}'
 ].join('\n');
@@ -146,7 +149,11 @@ panel.innerHTML=[
   '<p class="ol-muted" data-ol-goal-label="c">세 번째 조건: 체크한 옵션 중 하나라도 있으면 성공 (선택하지 않으면 세 번째 조건 없음)</p><div class="ol-alt" data-ol-alts></div>',
   '<div class="ol-actions"><button class="ol-btn" data-ol-preset="triple">우코 + 공증 + (장탄/크확/크뎀)</button><button class="ol-btn" data-ol-preset="double">우코 + 공증</button><button class="ol-btn" data-ol-preset="clear">모두 해제</button></div>',
   '<button class="ol-btn primary" data-ol-calculate>모듈 기대값 계산</button><div data-ol-calculation aria-live="polite"></div>',
-  '<p class="ol-muted">줄 지정 모드에서는 첫 번째 필수 옵션=1줄, 두 번째=2줄, 세 번째 선택 그룹=3줄입니다. 줄 위치 무관 모드에서는 3종을 서로 다른 줄에서 찾습니다.</p></article></div>',
+  '<p class="ol-muted">줄 지정 모드에서는 첫 번째 필수 옵션=1줄, 두 번째=2줄, 세 번째 선택 그룹=3줄입니다. 줄 위치 무관 모드에서는 3종을 서로 다른 줄에서 찾습니다.</p></article>',
+  '<article class="ol-card"><h3>수치 재설정(T단계) 기대값</h3><p class="ol-muted">원하는 효과는 이미 갖고 있고 그 줄의 T단계만 높이는 경우입니다. 이전 수치와 완전히 같은 결과가 재등장하지 않는 2026년 규칙을 적용합니다.</p>',
+  '<div class="ol-tier-inputs"><label>현재 수치 단계<select data-ol-current-tier></select></label><label>목표 최소 단계<select data-ol-target-tier></select></label><label>다른 줄 잠금 수<select data-ol-tier-locks><option value="0">0줄 (1모듈/회)</option><option value="1">1줄 (2모듈/회)</option><option value="2">2줄 (3모듈/회)</option></select></label></div>',
+  '<div class="ol-actions"><button class="ol-btn primary" data-ol-tier-calc>수치작 기대값 계산</button></div><div data-ol-tier-result aria-live="polite"></div>',
+  '<p class="ol-muted">수치 재설정 시 다른 잠금 옵션의 수치는 유지됩니다. 이미 목표 수치 이상이면 추가 비용은 0개로 계산합니다. 신규 잠금 비용은 제외합니다.</p></article></div>',
   '<div data-ol-page="rules" hidden><article class="ol-card"><h3>계산 기준 · 참고사항</h3>',
   '<div class="ol-alert">게임 내 공지된 확률과 비용이 변경되면 실제 게임 값을 우선하세요. 기대값은 평균적인 수학 모델이며 결과를 보장하지 않습니다.</div>',
   '<p class="ol-muted"><b>줄 등장:</b> 1줄 100% · 2줄 50% · 3줄 30%. 각각 독립적으로 등장합니다. 정확히 1줄 35% / 2줄 50% / 3줄 15%.</p>',
@@ -163,6 +170,8 @@ const one=sel=>panel.querySelector(sel);
 const all=sel=>Array.from(panel.querySelectorAll(sel));
 function optionHtml(){return '<option value="">지정 안 함</option>'+effects.map(e=>'<option value="'+e.k+'">'+e.n+' ('+e.w+'%)</option>').join('')}
 all('[data-ol-goal]').forEach(s=>s.innerHTML=optionHtml());
+all('[data-ol-current-tier],[data-ol-target-tier]').forEach(select=>{select.innerHTML=tiers.map((_,i)=>'<option value="'+(i+1)+'">T'+(i+1)+'</option>').join('')});
+one('[data-ol-current-tier]').value='5';one('[data-ol-target-tier]').value='11';
 one('[data-ol-goal="a"]').value='ele';
 one('[data-ol-goal="b"]').value='atk';
 one('[data-ol-alts]').innerHTML=effects.map(e=>
@@ -309,6 +318,25 @@ function calculate(){
       '<p class="ol-muted">이 계산은 옵션 종류만 목표로 합니다. T단계 최소치, 잠금 방식의 전역 최적화는 포함되지 않습니다.</p></div>';
   }catch(e){output.innerHTML='<div class="ol-alert">'+esc(e.message||'계산 실패')+'</div>'}
 }
+function calculateTier(){
+  const output=one('[data-ol-tier-result]');
+  const current=Number(one('[data-ol-current-tier]').value);
+  const minimum=Number(one('[data-ol-target-tier]').value);
+  const nLocked=Number(one('[data-ol-tier-locks]').value);
+  if(current>=minimum){
+    output.innerHTML='<div class="ol-output"><h3>0개</h3><p class="ol-muted">현재 수치가 이미 목표 단계 이상입니다.</p></div>';return;
+  }
+  // Under the 2026 duplicate-result rule, repeating the exact previous tier is excluded.
+  const chance=tiers.slice(minimum-1).reduce((a,b)=>a+b,0)/(100-tiers[current-1]);
+  const expectedRolls=1/chance;
+  const expectedModules=expectedRolls*(1+nLocked);
+  output.innerHTML='<div class="ol-output"><h3>'+fmt(expectedModules)+'개</h3>'+
+    '<p class="ol-muted">다른 줄 '+nLocked+'줄 잠금 유지 · 매번 T'+minimum+' 이상이 나올 때까지 수치 재설정</p>'+
+    '<div class="ol-grid">'+metric('1회 성공 확률',(chance*100).toFixed(3)+'%')+
+    metric('평균 재설정 횟수',fmt(expectedRolls)+'회')+
+    metric('평균 모듈',fmt(expectedModules)+'개')+'</div>'+
+    '<p class="ol-muted">현재 T'+current+'을 다시 뽑을 확률을 제거한 조건부 확률이며, 결과가 불리하면 기존 수치를 유지한다고 가정합니다.</p></div>';
+}
 function preset(key){
   one('[data-ol-goal="a"]').value=key==='clear'?'':'ele';
   one('[data-ol-goal="b"]').value=key==='clear'?'':'atk';
@@ -340,6 +368,7 @@ panel.addEventListener('click',ev=>{
   }
   if(btn.hasAttribute('data-ol-preset')){preset(btn.dataset.olPreset);return}
   if(btn.hasAttribute('data-ol-calculate')){calculate();return}
+  if(btn.hasAttribute('data-ol-tier-calc')){calculateTier();return}
 });
 panel.addEventListener('change',ev=>{
   if(ev.target.name!=='ol-target-mode')return;
