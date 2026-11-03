@@ -254,7 +254,7 @@ function bestMatches(rows,goal,m){
       return;
     }
     search(j+1);
-    for(let i=0;i<3;i++)if(!used.has(i)&&rows[i].k&&groups[j].includes(rows[i].k)){
+    for(let i=0;i<3;i++)if((m!=='fixed'||i===j)&&!used.has(i)&&rows[i].k&&groups[j].includes(rows[i].k)){
       used.add(i);choices.push(i);search(j+1);choices.pop();used.delete(i);
     }
   }
