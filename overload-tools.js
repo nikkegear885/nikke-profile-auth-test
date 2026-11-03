@@ -39,7 +39,7 @@ function activatePart(name){
   saveActivePart();
   activePart=name;
   ({gear,paid,candidate,modules,attempts}=partStates[activePart]);
-  render();
+  if(!arguments[1])render();
 }
 
 const nav=document.querySelector('.sidebar .nav');
@@ -152,6 +152,24 @@ const css=[
   'html.dark-theme #overloadPanel .ol-line.locked{background:#3b3326;border-color:#927749}',
   'html.dark-theme #overloadPanel .ol-targets select,html.dark-theme #overloadPanel .ol-tier-inputs select{background:#22364e;border-color:#475f78;color:#eaf3ff}',
   'html.dark-theme #overloadPanel .ol-alert{background:#332c1d;color:#ffe0a3;border-color:#806e44}',
+  '#overloadPanel{max-width:1500px}',
+  '#overloadPanel .ol-piece-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}',
+  '#overloadPanel .ol-piece{min-width:0;margin:0;padding:12px}',
+  '#overloadPanel .ol-piece-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}',
+  '#overloadPanel .ol-piece-head h3{margin:0;font-size:18px}',
+  '#overloadPanel .ol-piece-summary{font-size:11px;color:#73869b;font-weight:800;text-align:right}',
+  '#overloadPanel .ol-piece-stats{display:flex;justify-content:space-between;gap:5px;padding:7px 9px;background:#f0f7fc;border-radius:7px;font-size:11px;margin-bottom:9px;flex-wrap:wrap}',
+  '#overloadPanel .ol-piece .ol-line{grid-template-columns:30px minmax(0,1fr) 65px 67px;gap:4px;padding:7px 6px}',
+  '#overloadPanel .ol-piece .ol-line strong{font-size:11px}',
+  '#overloadPanel .ol-piece .ol-line .ol-val{font-size:11px}',
+  '#overloadPanel .ol-piece .ol-line .ol-num{font-size:11px}',
+  '#overloadPanel .ol-piece .ol-lock{font-size:10px;padding:6px 3px}',
+  '#overloadPanel .ol-piece .ol-actions{gap:5px;margin:9px 0 0}',
+  '#overloadPanel .ol-piece .ol-btn{font-size:11px;padding:8px 9px}',
+  '#overloadPanel .ol-piece [data-ol-proposal-wrap] h4{font-size:12px;margin:10px 0 7px}',
+  'html.dark-theme #overloadPanel .ol-piece-stats{background:#20354b;color:#d4e5f6}',
+  '@media(max-width:1050px){#overloadPanel .ol-piece-grid{grid-template-columns:1fr}}',
+  '@media(max-width:650px){#overloadPanel .ol-piece .ol-line{grid-template-columns:28px minmax(0,1fr) 58px 61px}#overloadPanel .ol-piece .ol-btn{font-size:10px;padding:7px 6px}}',
   '@media(max-width:650px){#overloadPanel{padding:0 5px}#overloadPanel .ol-head h2{font-size:22px}#overloadPanel .ol-card{padding:11px}#overloadPanel .ol-part-picker{gap:4px}#overloadPanel .ol-part{padding:9px 3px;font-size:12px}#overloadPanel .ol-part small{font-size:9px}#overloadPanel .ol-targets{grid-template-columns:1fr}#overloadPanel .ol-line{grid-template-columns:32px minmax(0,1fr) 63px 72px;gap:3px;padding:8px 5px}#overloadPanel .ol-line strong,#overloadPanel .ol-line .ol-val{font-size:11px}#overloadPanel .ol-lock{font-size:9px;padding:8px 2px}#overloadPanel .ol-grid{grid-template-columns:1fr 1fr}}'
 ].join('\n');
 const style=document.createElement('style');style.id='ol-test-style';style.textContent=css;document.head.appendChild(style);
@@ -164,17 +182,13 @@ const panel=document.createElement('section');panel.id='overloadPanel';panel.hid
 panel.innerHTML=[
   '<header class="ol-head"><h2>오버로드 연구실 <span style="font-size:12px;color:#2284ae">TEST</span></h2><p class="ol-lead">오버로드 옵션을 직접 굴리고 목표 옵션의 평균 커스텀 모듈 비용을 계산합니다. 게임 계정 장비 데이터에는 반영되지 않습니다.</p></header>',
   '<nav class="ol-nav"><button class="ol-tab" data-ol-page-btn="sim" aria-selected="true">오버로드 시뮬레이터</button><button class="ol-tab" data-ol-page-btn="calc" aria-selected="false">모듈 기대값 계산기</button><button class="ol-tab" data-ol-page-btn="rules" aria-selected="false">확률·안내</button></nav>',
-  '<div data-ol-page="sim"><article class="ol-card"><h3>4부위 오버로드 시뮬레이터</h3><p class="ol-muted">머리·갑옷·장갑·신발을 각각 선택해 독립적으로 오버작할 수 있습니다. 다른 부위로 이동해도 옵션·잠금·변경 후보가 유지됩니다.</p>',
-  '<div class="ol-part-picker" role="group" aria-label="시뮬레이터 장비 부위">'+partNames.map(name=>
-    '<button type="button" class="ol-part" data-ol-part="'+name+'" aria-pressed="false"><span>'+name+'</span><small data-ol-part-info="'+name+'">미개조</small></button>'
-  ).join('')+'</div>',
-  '<div class="ol-total"><span>4부위 누적 모듈 <strong data-ol-total-modules>0개</strong></span><span>전체 시도 <strong data-ol-total-attempts>0회</strong></span></div>',
-  '<p class="ol-muted">선택 중인 부위: <b data-ol-active-part>머리</b></p>',
-  '<div class="ol-stats"><div class="ol-stat"><small>사용 모듈</small><strong data-ol-modules>0개</strong></div><div class="ol-stat"><small>진행 횟수</small><strong data-ol-attempts>0회</strong></div><div class="ol-stat"><small>다음 변경 비용</small><strong data-ol-next>1개</strong></div></div>',
-  '<div class="ol-lines" data-ol-lines></div>',
-  '<div class="ol-actions"><button class="ol-btn primary" data-ol-first>최초 개조 · 1모듈</button><button class="ol-btn primary" data-ol-effects>효과 변경</button><button class="ol-btn" data-ol-values>수치 재설정</button><button class="ol-btn danger" data-ol-reset>초기화</button></div>',
-  '<div data-ol-proposal-wrap hidden><h3 style="margin-top:18px">변경 후보 옵션</h3><div class="ol-lines" data-ol-proposal></div><div class="ol-actions"><button class="ol-btn primary" data-ol-accept>새 옵션 적용</button><button class="ol-btn" data-ol-reject>기존 옵션 유지</button></div></div>',
-  '<p class="ol-muted">2026년 9월 변경 규칙: 잠금 버튼은 예약이며, 실제 모듈은 다음 효과 변경·수치 재설정 시 차감됩니다. 새 옵션을 거절하더라도 변경 모듈은 소비됩니다. 같은 효과·같은 단계가 재등장하면 수치를 재추첨합니다.</p></article></div>',
+  '<div data-ol-page="sim"><div class="ol-total"><span>4부위 누적 모듈 <strong data-ol-total-modules>0개</strong></span><span>전체 시도 <strong data-ol-total-attempts>0회</strong></span></div><p class="ol-muted">네 부위를 각각 독립적으로 조작합니다. 각 부위의 옵션·잠금·후보·모듈 기록은 다른 부위에 영향을 주지 않습니다.</p><div class="ol-piece-grid">'+partNames.map(name=>
+    '<article class="ol-card ol-piece" data-ol-piece="'+name+'"><div class="ol-piece-head"><h3>'+name+'</h3><span class="ol-piece-summary" data-ol-piece-summary>미개조 · 0개</span></div>'+
+    '<div class="ol-piece-stats"><span>모듈 <b data-ol-modules>0개</b></span><span>시도 <b data-ol-attempts>0회</b></span><span>다음 비용 <b data-ol-next>1개</b></span></div>'+
+    '<div class="ol-lines" data-ol-lines></div>'+
+    '<div class="ol-actions"><button class="ol-btn primary" data-ol-first>최초 개조</button><button class="ol-btn primary" data-ol-effects>효과 변경</button><button class="ol-btn" data-ol-values>수치 재설정</button><button class="ol-btn danger" data-ol-reset>초기화</button></div>'+
+    '<div data-ol-proposal-wrap hidden><h4>변경 후보 옵션</h4><div class="ol-lines" data-ol-proposal></div><div class="ol-actions"><button class="ol-btn primary" data-ol-accept>새 옵션 적용</button><button class="ol-btn" data-ol-reject>기존 옵션 유지</button></div></div></article>'
+  ).join('')+'</div><p class="ol-muted">잠금은 예약 후 다음 변경 시 차감됩니다. 새 옵션을 거절해도 변경 모듈은 소비됩니다. 효과·T단계 규칙은 확률·안내에서 확인할 수 있습니다.</p></div>',
   '<div data-ol-page="calc" hidden><article class="ol-card"><h3>목표 옵션 · 모듈 기대값</h3>',
   '<div class="ol-controls"><label><input type="checkbox" data-ol-use-current> 현재 선택 부위(<b data-ol-calculator-part>머리</b>)의 장비·잠금을 기준으로 계산</label><label>동일 목표 장비 부위 <select data-ol-piece-count><option value="1">1부위</option><option value="2">2부위</option><option value="3">3부위</option><option value="4">4부위 (12줄)</option></select></label></div>',
   '<div class="ol-controls"><label><input type="radio" name="ol-target-mode" value="any" checked> 옵션 순서 무관</label><label><input type="radio" name="ol-target-mode" value="fixed"> 1·2·3번 줄 위치 지정</label></div>',
@@ -226,27 +240,26 @@ function lineHtml(rows,controls){
 }
 function render(){
   saveActivePart();
-  for(const name of partNames){
-    const state=partStates[name];
-    const partButton=one('[data-ol-part="'+name+'"]');
-    partButton.classList.toggle('active',name===activePart);
-    partButton.setAttribute('aria-pressed',String(name===activePart));
-    const info=partButton.querySelector('[data-ol-part-info]');
-    info.textContent=(state.candidate?'변경 검토 중':state.gear[0].k?'개조 완료':'미개조')+' · '+fmt(state.modules)+'개';
-  }
-  one('[data-ol-active-part]').textContent=activePart;
-  one('[data-ol-calculator-part]').textContent=activePart;
+  const focusPart=activePart;
   one('[data-ol-total-modules]').textContent=fmt(partNames.reduce((sum,name)=>sum+partStates[name].modules,0))+'개';
   one('[data-ol-total-attempts]').textContent=fmt(partNames.reduce((sum,name)=>sum+partStates[name].attempts,0))+'회';
-  one('[data-ol-modules]').textContent=fmt(modules)+'개';
-  one('[data-ol-attempts]').textContent=fmt(attempts)+'회';
-  one('[data-ol-next]').textContent=fmt(1+locks()+pendingLockCosts())+'개';
-  one('[data-ol-lines]').innerHTML=lineHtml(gear,true);
-  one('[data-ol-proposal-wrap]').hidden=!candidate;
-  if(candidate)one('[data-ol-proposal]').innerHTML=lineHtml(candidate,false);
-  one('[data-ol-first]').disabled=!!candidate;
-  one('[data-ol-effects]').disabled=!!candidate||!gear[0].k||locks()>=3;
-  one('[data-ol-values]').disabled=!!candidate||!gear[0].k||locks()>=3;
+  for(const name of partNames){
+    activatePart(name,true);
+    const card=one('[data-ol-piece="'+name+'"]');
+    const find=sel=>card.querySelector(sel);
+    find('[data-ol-piece-summary]').textContent=(candidate?'변경 검토 중':gear[0].k?'개조 완료':'미개조')+' · '+fmt(modules)+'개';
+    find('[data-ol-modules]').textContent=fmt(modules)+'개';
+    find('[data-ol-attempts]').textContent=fmt(attempts)+'회';
+    find('[data-ol-next]').textContent=fmt(1+locks()+pendingLockCosts())+'개';
+    find('[data-ol-lines]').innerHTML=lineHtml(gear,true);
+    find('[data-ol-proposal-wrap]').hidden=!candidate;
+    if(candidate)find('[data-ol-proposal]').innerHTML=lineHtml(candidate,false);
+    find('[data-ol-first]').disabled=!!candidate;
+    find('[data-ol-effects]').disabled=!!candidate||!gear[0].k||locks()>=3;
+    find('[data-ol-values]').disabled=!!candidate||!gear[0].k||locks()>=3;
+  }
+  activatePart(focusPart,true);
+  one('[data-ol-calculator-part]').textContent=activePart;
 }
 function doRoll(kind){
   if(!gear[0].k||candidate)return;
@@ -397,11 +410,11 @@ function preset(key){
 }
 panel.addEventListener('click',ev=>{
   const btn=ev.target.closest('button');if(!btn)return;
-  const selectedPart=btn.dataset.olPart;
-  if(selectedPart){
-    activatePart(selectedPart);
-    one('[data-ol-calculation]').innerHTML='';
-    return;
+  const piece=btn.closest('[data-ol-piece]');
+  if(piece){
+    const before=activePart;
+    activatePart(piece.dataset.olPiece,true);
+    if(before!==activePart)one('[data-ol-calculation]').innerHTML='';
   }
   const page=btn.dataset.olPageBtn;
   if(page){all('[data-ol-page]').forEach(node=>node.hidden=node.dataset.olPage!==page);all('[data-ol-page-btn]').forEach(node=>node.setAttribute('aria-selected',String(node.dataset.olPageBtn===page)));return}
