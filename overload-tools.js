@@ -129,8 +129,8 @@ function restoreSettings(){
       }
     }
     const goal=saved.goal||{};
-    if(byKey.has(goal.a))one('[data-ol-goal="a"]').value=goal.a;
-    if(byKey.has(goal.b))one('[data-ol-goal="b"]').value=goal.b;
+    if(goal.a===''||byKey.has(goal.a))one('[data-ol-goal="a"]').value=goal.a;
+    if(goal.b===''||byKey.has(goal.b))one('[data-ol-goal="b"]').value=goal.b;
     if(Array.isArray(goal.alts))all('[data-ol-alt]').forEach(ch=>ch.checked=goal.alts.includes(ch.dataset.olAlt));
     if(goal.mode==='fixed')one('[name="ol-target-mode"][value="fixed"]').checked=true;
   }catch(_){}
