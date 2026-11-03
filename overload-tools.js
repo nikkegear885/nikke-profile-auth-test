@@ -307,10 +307,11 @@ function calculate(){
     const p=exactProbability(goal,mode,start);
     const currentLocks=start.filter(r=>r.lock).length;
     const expected=already?0:p?(1+currentLocks)/p:Infinity;
-    const trial=already?{success:1600,mean:0,median:0,p95:0}:p>0?automaticLockEstimate(goal,mode,start,1600):null;
+    const trialCount=p<.001?300:p<.01?700:1600;
+    const trial=already?{success:trialCount,mean:0,median:0,p95:0}:p>0?automaticLockEstimate(goal,mode,start,trialCount):null;
     const percent=(100*p).toFixed(p<.0001?6:p<.001?4:2)+'%';
     const totalExpected=expected*pieces;
-    const completedAll=trial && trial.success===1600;
+    const completedAll=trial && trial.success===trialCount;
     output.innerHTML='<div class="ol-output"><h3>'+(already?'현재 목표 달성':p?fmt(totalExpected)+'개':'달성 불가')+'</h3>'+
       '<p class="ol-muted">각 장비에 동일 목표를 적용한 '+pieces+'부위 기대 모듈 합계입니다. 현재 잠금 유지 전략이며 신규 잠금·최초 개조 비용 제외.</p>'+
       '<div class="ol-grid">'+metric('1회 목표 달성 확률',percent)+metric('평균 시도 횟수',fmt(already?0:p?pieces/p:Infinity)+'회')+
@@ -318,7 +319,7 @@ function calculate(){
       (trial?'<h3 style="font-size:15px;margin:17px 0 8px">성공 옵션 자동 잠금 · 시뮬레이션</h3>'+
         '<div class="ol-grid">'+metric('추정 합계 평균',completedAll?fmt(trial.mean*pieces)+'개':'산출 보류')+
         metric('1부위 중앙값',fmt(trial.median)+'개')+metric('1부위 95% 완료',fmt(trial.p95)+'개')+'</div>'+
-        '<p class="ol-muted">1,600회 중 '+trial.success+'회 완료. '+(completedAll?'동일 목표 부위 수에 비례한 예상 평균입니다. ':'미완료 표본이 있으므로 평균은 표시하지 않습니다. ')+'옵션 자동 잠금의 단순 시뮬레이션으로 잠금 비용 포함 · 최적 전략 아님.</p>':
+        '<p class="ol-muted">'+fmt(trialCount)+'회 중 '+trial.success+'회 완료. '+(completedAll?'동일 목표 부위 수에 비례한 예상 평균입니다. ':'미완료 표본이 있으므로 평균은 표시하지 않습니다. ')+'옵션 자동 잠금의 단순 시뮬레이션으로 잠금 비용 포함 · 최적 전략 아님.</p>':
         '<p class="ol-alert">잠긴 옵션이 목표와 충돌하거나 목표 달성이 불가능합니다. 현재 잠금과 줄 조건을 바꿔 보세요.</p>')+
       '<p class="ol-muted">이 계산은 옵션 종류만 목표로 합니다. T단계 최소치, 잠금 방식의 전역 최적화는 포함되지 않습니다.</p></div>';
   }catch(e){output.innerHTML='<div class="ol-alert">'+esc(e.message||'계산 실패')+'</div>'}
