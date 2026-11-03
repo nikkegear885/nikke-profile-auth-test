@@ -22,7 +22,7 @@ const blank=()=>({k:null,t:null,lock:false});
 const copy=rows=>rows.map(r=>({...r}));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Number.isFinite(n)?n.toLocaleString('ko-KR',{maximumFractionDigits:n<10?2:1}):'불가';
-let gear=[blank(),blank(),blank()],paid=new Set(),candidate=null,modules=0,attempts=0,mode='any';
+let gear=[blank(),blank(),blank()],candidate=null,modules=0,attempts=0,mode='any';
 const nav=document.querySelector('.sidebar .nav');
 const main=document.querySelector('main.main')||document.querySelector('main');
 if(!nav||!main||typeof window.switchMainView!=='function')return;
@@ -141,9 +141,9 @@ panel.innerHTML=[
   '<div class="ol-lines" data-ol-lines></div>',
   '<div class="ol-actions"><button class="ol-btn primary" data-ol-first>최초 개조 · 1모듈</button><button class="ol-btn primary" data-ol-effects>효과 변경</button><button class="ol-btn" data-ol-values>수치 재설정</button><button class="ol-btn danger" data-ol-reset>초기화</button></div>',
   '<div data-ol-proposal-wrap hidden><h3 style="margin-top:18px">변경 후보 옵션</h3><div class="ol-lines" data-ol-proposal></div><div class="ol-actions"><button class="ol-btn primary" data-ol-accept>새 옵션 적용</button><button class="ol-btn" data-ol-reject>기존 옵션 유지</button></div></div>',
-  '<p class="ol-muted">잠금 예약은 다음 재설정 시 모듈을 소모합니다. 새 옵션을 거절하더라도 변경 모듈은 소비됩니다. 같은 효과·같은 단계가 재등장하면 수치를 재추첨합니다.</p></article></div>',
+  '<p class="ol-muted">잠금 버튼을 누르는 즉시 모듈이 차감되며 해제해도 환급되지 않습니다. 새 옵션을 거절하더라도 변경 모듈은 소비됩니다. 같은 효과·같은 단계가 재등장하면 수치를 재추첨합니다.</p></article></div>',
   '<div data-ol-page="calc" hidden><article class="ol-card"><h3>목표 옵션 · 모듈 기대값</h3>',
-  '<div class="ol-controls"><label><input type="checkbox" data-ol-use-current> 현재 시뮬레이터 장비·잠금을 기준으로 계산</label></div>',
+  '<div class="ol-controls"><label><input type="checkbox" data-ol-use-current> 현재 시뮬레이터 장비·잠금을 기준으로 계산</label><label>동일 목표 장비 부위 <select data-ol-piece-count><option value="1">1부위</option><option value="2">2부위</option><option value="3">3부위</option><option value="4">4부위 (12줄)</option></select></label></div>',
   '<div class="ol-controls"><label><input type="radio" name="ol-target-mode" value="any" checked> 옵션 순서 무관</label><label><input type="radio" name="ol-target-mode" value="fixed"> 1·2·3번 줄 위치 지정</label></div>',
   '<div class="ol-targets"><div><label data-ol-goal-label="a">필수 옵션 1</label><select data-ol-goal="a"></select></div><div><label data-ol-goal-label="b">필수 옵션 2</label><select data-ol-goal="b"></select></div></div>',
   '<p class="ol-muted" data-ol-goal-label="c">세 번째 조건: 체크한 옵션 중 하나라도 있으면 성공 (선택하지 않으면 세 번째 조건 없음)</p><div class="ol-alt" data-ol-alts></div>',
@@ -161,7 +161,7 @@ panel.innerHTML=[
   '<p class="ol-muted"><b>옵션 수치:</b> T1~5 각 12%, T6~10 각 7%, T11~15 각 1%. 최초 개조는 11단계 고정.</p>',
   '<p class="ol-muted"><b>모듈 비용:</b> 최초 개조 1개. 잠금 0/1/2줄의 효과 변경·수치 재설정 1/2/3개. 영구 잠금 첫 줄 2개·둘째 줄 3개(예약한 잠금은 변경 시 비용 소모).</p>',
   '<p class="ol-muted"><b>정확한 기대값:</b> 현재 잠금 상태를 그대로 유지하며, 목표 옵션이 한 번에 모두 등장할 때까지 반복한다고 가정. 새 잠금 비용은 제외합니다.</p>',
-  '<p class="ol-muted"><b>자동 잠금 추정:</b> 목표 옵션을 발견하면 영구 잠금하는 단순 전략의 몬테카를로 평균. 최초 개조비·수치 T단계 목표는 제외하고, 새 잠금 비용을 포함합니다. 최적 전략 보장은 없습니다.</p>',
+  '<p class="ol-muted"><b>자동 잠금 추정:</b> 목표 옵션을 발견하면 영구 잠금하는 단순 전략의 몬테카를로 평균. 최초 개조비·수치 T단계 목표는 제외하고, 새 잠금 비용을 포함합니다. 2~4부위는 동일 목표를 반복한다고 가정합니다. 최적 전략 보장은 없습니다.</p>',
   '<p class="ol-muted ol-sources">참고: <a href="https://www.prydwen.gg/nikke/guides/overload-gear-reroll" target="_blank" rel="noopener noreferrer">Prydwen</a> · <a href="https://nikke-optimizer.pages.dev/" target="_blank" rel="noopener noreferrer">Overload Optimizer</a> · <a href="https://nikke.beomtachi.com/guides/overload-gear/" target="_blank" rel="noopener noreferrer">2026 개편 설명</a></p>',
   '</article></div>'
 ].join('');
@@ -177,23 +177,19 @@ one('[data-ol-goal="b"]').value='atk';
 one('[data-ol-alts]').innerHTML=effects.map(e=>
   '<label><input type="checkbox" data-ol-alt="'+e.k+'"'+(['ammo','crit','critd'].includes(e.k)?' checked':'')+'> '+e.n+'</label>').join('');
 function locks(){return gear.filter(r=>r.lock).length}
-function pendingLockCosts(){
-  const unpaid=gear.map((r,i)=>r.lock&&!paid.has(i)?i:-1).filter(i=>i>=0);
-  let n=locks()-unpaid.length;
-  return unpaid.reduce(sum=>{const price=2+n;n++;return sum+price},0);
-}
+
 function lineHtml(rows,controls){
   return rows.map((r,i)=>'<div class="ol-line'+(r.lock?' locked':'')+'"><span class="ol-num">'+(i+1)+'줄</span>'+
    '<div><strong>'+(r.k?esc(byKey.get(r.k).n):'옵션 없음')+'</strong><small>'+(r.k?'T'+r.t+' · '+byKey.get(r.k).w+'%':'등장 확률 '+rates[i]*100+'%')+'</small></div>'+
    '<div class="ol-val">'+val(r)+'</div>'+
    (controls?'<button type="button" class="ol-lock" data-ol-lock="'+i+'"'+(!r.k||candidate?' disabled':'')+'>'+
-     (r.lock?(paid.has(i)?'잠금 해제':'예약 취소'):'잠금')+'</button>':
+     (r.lock?'잠금 해제':'잠금')+'</button>':
      '<span style="font-size:11px;text-align:center">'+(r.lock?'유지':'변경')+'</span>')+'</div>').join('');
 }
 function render(){
   one('[data-ol-modules]').textContent=fmt(modules)+'개';
   one('[data-ol-attempts]').textContent=fmt(attempts)+'회';
-  one('[data-ol-next]').textContent=fmt(1+locks()+pendingLockCosts())+'개';
+  one('[data-ol-next]').textContent=fmt(1+locks())+'개';
   one('[data-ol-lines]').innerHTML=lineHtml(gear,true);
   one('[data-ol-proposal-wrap]').hidden=!candidate;
   if(candidate)one('[data-ol-proposal]').innerHTML=lineHtml(candidate,false);
@@ -203,8 +199,7 @@ function render(){
 }
 function doRoll(kind){
   if(!gear[0].k||candidate)return;
-  modules+=1+locks()+pendingLockCosts();attempts++;
-  gear.forEach((r,i)=>{if(r.lock)paid.add(i)});
+  modules+=1+locks();attempts++;
   candidate=kind==='effect'?rerollEffects(gear,false):rerollValues(gear);
   render();
 }
@@ -298,6 +293,8 @@ function calculate(){
   try{
     const goal=targets();
     const withCurrent=one('[data-ol-use-current]').checked;
+    const pieces=Number(one('[data-ol-piece-count]').value)||1;
+    if(withCurrent&&pieces!==1)throw Error('현재 장비 옵션과 잠금을 이용한 기대값은 1부위에서만 계산할 수 있습니다.');
     if(withCurrent&&(candidate||!gear[0].k))throw Error('현재 장비를 기준으로 계산하려면 먼저 효과 변경 결과를 확정한 개조 장비가 필요합니다.');
     const start=withCurrent?copy(gear):[blank(),blank(),blank()];
     const already=withCurrent&&valid(start,goal,mode);
@@ -306,14 +303,16 @@ function calculate(){
     const expected=already?0:p?(1+currentLocks)/p:Infinity;
     const trial=already?{success:1600,mean:0,median:0,p95:0}:p>0?automaticLockEstimate(goal,mode,start,1600):null;
     const percent=(100*p).toFixed(p<.0001?6:p<.001?4:2)+'%';
-    output.innerHTML='<div class="ol-output"><h3>'+(already?'현재 목표 달성':p?fmt(expected)+'개':'달성 불가')+'</h3>'+
-      '<p class="ol-muted">현재 잠금 상태를 유지하며 모든 목표가 동시에 나올 때까지 반복한 정확한 기대 모듈. 새 잠금 비용·최초 개조 비용 제외.</p>'+
-      '<div class="ol-grid">'+metric('1회 목표 달성 확률',percent)+metric('평균 시도 횟수',fmt(already?0:p?1/p:Infinity)+'회')+
-        metric('잠금 유지 기대 모듈',fmt(expected)+'개')+'</div>'+
+    const totalExpected=expected*pieces;
+    const completedAll=trial && trial.success===1600;
+    output.innerHTML='<div class="ol-output"><h3>'+(already?'현재 목표 달성':p?fmt(totalExpected)+'개':'달성 불가')+'</h3>'+
+      '<p class="ol-muted">각 장비에 동일 목표를 적용한 '+pieces+'부위 기대 모듈 합계입니다. 현재 잠금 유지 전략이며 신규 잠금·최초 개조 비용 제외.</p>'+
+      '<div class="ol-grid">'+metric('1회 목표 달성 확률',percent)+metric('평균 시도 횟수',fmt(already?0:p?pieces/p:Infinity)+'회')+
+        metric('잠금 유지 기대 모듈',fmt(totalExpected)+'개')+'</div>'+
       (trial?'<h3 style="font-size:15px;margin:17px 0 8px">성공 옵션 자동 잠금 · 시뮬레이션</h3>'+
-        '<div class="ol-grid">'+metric('평균 모듈',fmt(trial.mean)+'개')+
-        metric('중앙값',fmt(trial.median)+'개')+metric('95% 완료',fmt(trial.p95)+'개')+'</div>'+
-        '<p class="ol-muted">1,600회 중 '+trial.success+'회 완료. 성공 옵션을 즉시 영구 잠그는 단순 전략이며, 새 잠금 비용 포함. 최적 전략은 아닙니다.</p>':
+        '<div class="ol-grid">'+metric('추정 합계 평균',completedAll?fmt(trial.mean*pieces)+'개':'산출 보류')+
+        metric('1부위 중앙값',fmt(trial.median)+'개')+metric('1부위 95% 완료',fmt(trial.p95)+'개')+'</div>'+
+        '<p class="ol-muted">1,600회 중 '+trial.success+'회 완료. '+(completedAll?'동일 목표 부위 수에 비례한 예상 평균입니다. ':'미완료 표본이 있으므로 평균은 표시하지 않습니다. ')+'옵션 자동 잠금의 단순 시뮬레이션으로 잠금 비용 포함 · 최적 전략 아님.</p>':
         '<p class="ol-alert">잠긴 옵션이 목표와 충돌하거나 목표 달성이 불가능합니다. 현재 잠금과 줄 조건을 바꿔 보세요.</p>')+
       '<p class="ol-muted">이 계산은 옵션 종류만 목표로 합니다. T단계 최소치, 잠금 방식의 전역 최적화는 포함되지 않습니다.</p></div>';
   }catch(e){output.innerHTML='<div class="ol-alert">'+esc(e.message||'계산 실패')+'</div>'}
@@ -350,21 +349,21 @@ panel.addEventListener('click',ev=>{
   if(btn.hasAttribute('data-ol-first')){
     if(candidate)return;
     if(gear[0].k&&!confirm('기존 옵션을 버리고 장비를 다시 최초 개조할까요?'))return;
-    gear=rerollEffects([blank(),blank(),blank()],true);paid.clear();modules++;attempts++;render();return;
+    gear=rerollEffects([blank(),blank(),blank()],true);modules++;attempts++;render();return;
   }
   if(btn.hasAttribute('data-ol-effects')){doRoll('effect');return}
   if(btn.hasAttribute('data-ol-values')){doRoll('values');return}
   if(btn.hasAttribute('data-ol-lock')){
     if(candidate)return;
     const i=Number(btn.dataset.olLock);if(!gear[i]||!gear[i].k)return;
-    if(gear[i].lock){gear[i].lock=false;paid.delete(i)}else if(locks()<2)gear[i].lock=true;
+    if(gear[i].lock){gear[i].lock=false}else if(locks()<2){modules+=2+locks();gear[i].lock=true;}
     render();return;
   }
   if(btn.hasAttribute('data-ol-accept')){if(candidate){gear=candidate;candidate=null;render()}return}
   if(btn.hasAttribute('data-ol-reject')){candidate=null;render();return}
   if(btn.hasAttribute('data-ol-reset')){
     if(modules&&!confirm('시뮬레이션 사용 모듈과 현재 장비를 모두 초기화할까요?'))return;
-    gear=[blank(),blank(),blank()];paid.clear();candidate=null;modules=0;attempts=0;render();return;
+    gear=[blank(),blank(),blank()];candidate=null;modules=0;attempts=0;render();return;
   }
   if(btn.hasAttribute('data-ol-preset')){preset(btn.dataset.olPreset);return}
   if(btn.hasAttribute('data-ol-calculate')){calculate();return}
