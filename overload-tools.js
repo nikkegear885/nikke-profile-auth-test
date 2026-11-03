@@ -187,8 +187,8 @@ panel.innerHTML=[
     '<div class="ol-piece-stats"><span>모듈 <b data-ol-modules>0개</b></span><span>시도 <b data-ol-attempts>0회</b></span><span>다음 비용 <b data-ol-next>1개</b></span></div>'+
     '<div class="ol-lines" data-ol-lines></div>'+
     '<div class="ol-actions"><button class="ol-btn primary" data-ol-first>최초 개조</button><button class="ol-btn primary" data-ol-effects>효과 변경</button><button class="ol-btn" data-ol-values>수치 재설정</button><button class="ol-btn danger" data-ol-reset>초기화</button></div>'+
-    '<div data-ol-proposal-wrap hidden><h4>변경 후보 옵션</h4><div class="ol-lines" data-ol-proposal></div><div class="ol-actions"><button class="ol-btn primary" data-ol-accept>새 옵션 적용</button><button class="ol-btn" data-ol-reject>기존 옵션 유지</button></div></div></article>'
-  ).join('')+'</div><p class="ol-muted">잠금은 예약 후 다음 변경 시 차감됩니다. 새 옵션을 거절해도 변경 모듈은 소비됩니다. 효과·T단계 규칙은 확률·안내에서 확인할 수 있습니다.</p></div>',
+    '<div data-ol-proposal-wrap hidden><h4>수치 재설정 결과</h4><div class="ol-lines" data-ol-proposal></div><div class="ol-actions"><button class="ol-btn primary" data-ol-accept>새 수치 적용</button><button class="ol-btn" data-ol-reject>기존 수치 유지</button></div></div></article>'
+  ).join('')+'</div><p class="ol-muted">잠금은 예약 후 다음 변경 시 차감됩니다. 효과 변경은 새 옵션이 즉시 적용됩니다. 수치 재설정은 새 수치 적용 또는 기존 수치 유지를 선택할 수 있으며, 유지해도 사용한 모듈은 소비됩니다. 효과·T단계 규칙은 확률·안내에서 확인할 수 있습니다.</p></div>',
   '<div data-ol-page="calc" hidden><article class="ol-card"><h3>목표 옵션 · 모듈 기대값</h3>',
   '<div class="ol-controls"><label><input type="checkbox" data-ol-use-current> 현재 선택 부위(<b data-ol-calculator-part>머리</b>)의 장비·잠금을 기준으로 계산</label><label>동일 목표 장비 부위 <select data-ol-piece-count><option value="1">1부위</option><option value="2">2부위</option><option value="3">3부위</option><option value="4">4부위 (12줄)</option></select></label></div>',
   '<div class="ol-controls"><label><input type="radio" name="ol-target-mode" value="any" checked> 옵션 순서 무관</label><label><input type="radio" name="ol-target-mode" value="fixed"> 1·2·3번 줄 위치 지정</label></div>',
@@ -265,7 +265,13 @@ function doRoll(kind){
   if(!gear[0].k||candidate)return;
   modules+=1+locks()+pendingLockCosts();attempts++;
   gear.forEach((r,i)=>{if(r.lock)paid.add(i)});
-  candidate=kind==='effect'?rerollEffects(gear,false):rerollValues(gear);
+  if(kind==='effect'){
+    // Effect rerolls are final immediately. Only value rerolls offer keep/apply review.
+    gear=rerollEffects(gear,false);
+    candidate=null;
+  }else{
+    candidate=rerollValues(gear);
+  }
   render();
 }
 function targets(){
