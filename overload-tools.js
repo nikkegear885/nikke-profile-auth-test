@@ -244,9 +244,15 @@ function exactProbability(goal,m,lockedRows){
 }
 function bestMatches(rows,goal,m){
   const groups=m==='fixed'?goal.slots:goal.groups;
-  let best=[],choices=[],used=new Set();
+  let best=[],bestScore=-1,choices=[],used=new Set();
   function search(j){
-    if(j>=groups.length){if(choices.length>best.length)best=choices.slice();return}
+    if(j>=groups.length){
+      // Preserve already-locked matches when an OR group contains several options.
+      // Otherwise a second option from the same group could be locked, making the goal impossible.
+      const score=choices.length*10+choices.filter(i=>rows[i].lock).length;
+      if(score>bestScore){best=choices.slice();bestScore=score}
+      return;
+    }
     search(j+1);
     for(let i=0;i<3;i++)if(!used.has(i)&&rows[i].k&&groups[j].includes(rows[i].k)){
       used.add(i);choices.push(i);search(j+1);choices.pop();used.delete(i);
