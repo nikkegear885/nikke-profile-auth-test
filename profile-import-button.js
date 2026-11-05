@@ -117,6 +117,13 @@
       'html.dark-theme .bl-direct-personal{background:#123044;border-color:#367ca9;color:#b9e5ff}',
       '.bl-direct-personal-note{font-size:11px;line-height:1.55;color:#58768a;margin:5px 0 11px}',
       'html.dark-theme .bl-direct-personal-note{color:#abc1d3}',
+      '.bl-direct-installfree{display:block;width:100%;margin-top:12px;padding:14px 10px;border:1px solid #168f79;border-radius:10px;background:#e7faf2;color:#12624f;font-size:13px;font-weight:900;cursor:pointer}',
+      '.bl-direct-installfree:disabled{opacity:.55;cursor:not-allowed}',
+      '.bl-direct-installfree:hover:not(:disabled){background:#d5f5e9}',
+      'html.dark-theme .bl-direct-installfree{background:#143a30;border-color:#297f6b;color:#b8f4df}',
+      '.bl-direct-external-area{display:flex;align-items:center;gap:8px;margin-top:8px}',
+      '.bl-direct-external-area label{font-size:11px;font-weight:800;white-space:nowrap}',
+      '.bl-direct-external-area select{flex:1;min-width:0;border:1px solid #bbcfdc;border-radius:7px;padding:7px 9px;background:transparent;color:inherit;font-size:11px}',
       '.bl-direct-check{display:block;width:100%;margin-top:8px;padding:8px 10px;border:1px solid #8dc6ad;border-radius:8px;background:#effaf4;color:#247552;font-size:11px;font-weight:900;cursor:pointer}',
       '.bl-direct-check:hover:not(:disabled){background:#e0f5e9;border-color:#65ae8d}',
       '.bl-direct-check:disabled{opacity:.55;cursor:not-allowed}',
@@ -151,7 +158,7 @@
     overlay.innerHTML =
       '<div class="bl-direct-modal" role="dialog" aria-modal="true" aria-labelledby="blDirectTitle">' +
         '<div class="bl-direct-head">' +
-          '<div><h3 id="blDirectTitle">BlaBlaLink 계정 동기화</h3><small>공용 서비스 세션 방식과 내 계정 로그인 방식 중 선택할 수 있습니다.</small></div>' +
+          '<div><h3 id="blDirectTitle">BlaBlaLink 계정 동기화</h3><small>공개 프로필 URL만 있으면 별도 스크립트 설치 없이 동기화할 수 있습니다.</small></div>' +
           '<div style="display:flex;align-items:center;gap:8px;margin-left:auto">' +
             '<a class="bl-direct-help-link" href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5423342" target="_blank" rel="noopener noreferrer">블라링크 계정주소 확인법</a>' +
 
@@ -166,7 +173,10 @@
             '<button type="button" class="bl-direct-account" data-slot="1"><b id="blDirectA2">계정2</b><span>이 계정에 동기화</span></button>' +
           '</div>' +
           '<div style="margin-top:6px;font-size:10px;color:#71828f;text-align:center">계정명은 우측 톱니 아이콘을 눌러 변경가능합니다</div>' +
-          '<button type="button" class="bl-direct-personal">공용 서비스 세션 없이 동기화 (내 BlaBlaLink 로그인)</button>' +
+          '<button type="button" class="bl-direct-installfree">설치 없이 장비·스킬 동기화 (외부 API)</button>' +
+          '<div class="bl-direct-external-area"><label for="blExternalArea">서버</label><select id="blExternalArea"><option value="">자동 조회</option><option value="81">일본 (JP)</option><option value="82">북미 (NA)</option><option value="83">한국 (KR)</option><option value="84">글로벌</option><option value="85">동남아</option></select></div>' +
+          '<p class="bl-direct-personal-note">별도 설치 없이 이용합니다. 비공식 외부 API(nikke-api.pages.dev)에 공개 프로필의 openid만 전달해 보유 니케·돌파·장비·스킬을 조회합니다. 외부 서비스도 자체 로그인 인증을 사용하므로, 세션 만료나 공개 설정 제한 시 실패할 수 있습니다. 개인정보·토큰은 입력하지 마세요.</p>' +
+          '<button type="button" class="bl-direct-personal">고급 대체 방식: 내 로그인으로 동기화 (스크립트 설치 필요)</button>' +
           '<p class="bl-direct-personal-note">내 브라우저의 BlaBlaLink 로그인 세션으로 공식 API를 조회합니다. 최초 1회 동기화 스크립트 설치가 필요하며, 서버의 공용 서비스 세션은 사용하지 않습니다. 계정 비밀번호나 토큰을 이 사이트에 입력하지 않습니다.</p>' +
           '<div class="bl-direct-personal-note" style="border-top:1px solid #c7d9e5;padding-top:9px;margin-top:9px">기존 방식: 아래 공개 프로필 URL 동기화는 공용 서비스 세션이 정상일 때만 작동합니다.</div>' +
           '<div class="bl-direct-region-picker" id="blDirectRegionPicker" hidden>' +
@@ -175,12 +185,12 @@
             '<div class="bl-direct-region-hint">같은 프로필에서 여러 지역의 로스터가 발견되었습니다. 실제로 플레이하는 지역을 선택해야 다른 서버의 보유·돌파·코강 정보가 섞이지 않습니다.</div>' +
           '</div>' +
           '<div class="bl-direct-actions">' +
-            '<button type="button" class="bl-direct-primary">동기화 시작</button>' +
+            '<button type="button" class="bl-direct-primary">기존 공용 서버로 동기화</button>' +
             '<button type="button" class="bl-direct-secondary">닫기</button>' +
           '</div>' +
           '<button type="button" class="bl-direct-check">서비스 세션 유효성 확인 · 계정 데이터 변경 없음</button>' +
           '<div class="bl-direct-status" id="blDirectStatus"></div>' +
-          '<div class="bl-direct-note">비밀번호·Cookie·game_token은 이 사이트에 입력하지 않습니다. 사이트의 동기화 서버가 별도 서비스 세션으로 공개 프로필을 조회합니다.</div>' +
+          '<div class="bl-direct-note">기존 공용 서버 방식은 서버 세션이 유효할 때만 이용할 수 있습니다. 외부 API 방식은 상단 버튼을 선택하세요.</div>' +
           '<div class="bl-direct-profile" id="blDirectProfile" hidden>' +
             '<img id="blDirectAvatar" alt="">' +
             '<div><div class="bl-direct-profile-name" id="blDirectName"></div><div class="bl-direct-profile-sub" id="blDirectSub"></div></div>' +
@@ -216,6 +226,50 @@
         });
         btn.classList.add('active');
       });
+    });
+
+    overlay.querySelector('.bl-direct-installfree').addEventListener('click', async function(){
+      if(working)return;
+      var status=overlay.querySelector('#blDirectStatus');
+      var input=overlay.querySelector('#blDirectUrl');
+      var start=overlay.querySelector('.bl-direct-installfree');
+      var primary=overlay.querySelector('.bl-direct-primary');
+      var checker=overlay.querySelector('.bl-direct-check');
+      var personal=overlay.querySelector('.bl-direct-personal');
+      var account=targetAccount||getAccounts()[0]||'계정1';
+      var url;
+      try{url=validateProfileUrl(input.value.trim())}
+      catch(err){status.className='bl-direct-status error';status.textContent=text(err&&err.message||err);return}
+      if(typeof window.__NIKKE_GM_SCRIPTLESS_SYNC__!=='function'){
+        status.className='bl-direct-status error';
+        status.textContent='외부 API 모듈을 불러오지 못했습니다. 페이지를 새로고침해 주세요.';
+        return;
+      }
+      working=true;
+      start.disabled=true;primary.disabled=true;checker.disabled=true;personal.disabled=true;
+      status.className='bl-direct-status';
+      status.textContent='외부 API에 공개 프로필 정보를 조회하는 중…';
+      try{
+        var regionSelect=overlay.querySelector('#blExternalArea');
+        var areaId=regionSelect?regionSelect.value:'';
+        var payload=await window.__NIKKE_GM_SCRIPTLESS_SYNC__(url,{
+          areaId:areaId,
+          onProgress:function(message){status.textContent=message;}
+        });
+        var apply=window.__NIKKE_GM_APPLY_SYNC__;
+        if(typeof apply!=='function')throw new Error('사이트 계정 동기화 모듈을 찾지 못했습니다.');
+        // Never write anything until every API page was validated.
+        apply(payload,account);
+        try{localStorage.setItem('nikke_bl_profile_url_'+encodeURIComponent(account),url)}catch(_){}
+        status.className='bl-direct-status success';
+        status.textContent='외부 API 동기화 완료 · '+String(payload.character_count)+'명 조회 · 장비·돌파·스킬 적용. 싱크로·전초기지는 기존 경로와 별도로 관리됩니다.';
+      }catch(err){
+        status.className='bl-direct-status error';
+        status.textContent=text(err&&err.message||err||'외부 API 동기화에 실패했습니다.');
+      }finally{
+        working=false;
+        start.disabled=false;primary.disabled=false;checker.disabled=false;personal.disabled=false;
+      }
     });
 
     overlay.querySelector('.bl-direct-personal').addEventListener('click', function(){
