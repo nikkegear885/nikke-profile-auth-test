@@ -256,7 +256,7 @@
         var slots=0;
         for(var item of result.updates)for(var part of Object.values(item.parts))if(part&&part.tier>0)slots++;
         status.className='bl-direct-status success';
-        status.textContent='조회 테스트 통과 · 보유 니케 '+result.character_count+'명 / 스킬 상세 '+result.detail_count+'명 / 착용 장비 '+slots+'부위 / 데이터 저장 없음. 실제 적용은 아래 동기화 버튼을 누르세요.';
+        status.textContent='조회 테스트 통과 · 사이트 등록 니케 '+result.character_count+'명 / 스킬 상세 '+result.detail_count+'명 / 착용 장비 '+slots+'부위'+(result.skipped_character_count?' / 도감 미등록 '+result.skipped_character_count+'명 제외 ('+result.skipped_character_names.slice(0,3).join(', ')+')':'')+' / 데이터 저장 없음. 실제 적용은 아래 동기화 버튼을 누르세요.';
       }catch(error){
         status.className='bl-direct-status error';
         status.textContent='조회 테스트 실패(저장 데이터 유지): '+text(error&&error.message||error);
@@ -299,7 +299,7 @@
         apply(payload,account);
         try{localStorage.setItem('nikke_bl_profile_url_'+encodeURIComponent(account),url)}catch(_){}
         status.className='bl-direct-status success';
-        status.textContent='외부 API 동기화 완료 · '+String(payload.character_count)+'명 조회 · 장비·돌파·스킬 적용. 싱크로·전초기지는 기존 경로와 별도로 관리됩니다.';
+        status.textContent='외부 API 동기화 완료 · '+String(payload.character_count)+'명 반영'+(payload.skipped_character_count?' · 도감 미등록 '+payload.skipped_character_count+'명 제외 ('+payload.skipped_character_names.slice(0,3).join(', ')+')':'')+' · 장비·돌파·스킬 적용. 싱크로·전초기지는 기존 경로와 별도로 관리됩니다.';
       }catch(err){
         status.className='bl-direct-status error';
         status.textContent=text(err&&err.message||err||'외부 API 동기화에 실패했습니다.');
