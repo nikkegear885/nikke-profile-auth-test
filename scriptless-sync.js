@@ -72,13 +72,20 @@
   }
   function convert(items){
     if(!Array.isArray(items)||items.length===0)throw new Error('외부 API에서 보유 니케 목록을 받지 못했습니다. 프로필 공개 설정을 확인해 주세요.');
-    var updates=[],ownedNames=[],ownedCodes=[],seen=new Set(),details=0,unresolved=0;
+    var updates=[],ownedNames=[],ownedCodes=[],seen=new Set(),details=0,unresolved=0,skipped=[];
+    // Unknown external characters should not block known characters.
+    var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\\s:：·•._'’“”"\\-–—()\\[\\]{}]/g,'');};
+    if(!Array.isArray(window.__NIKKE_RAW)||!window.__NIKKE_RAW.length)
+      throw new Error('사이트 도감을 불러오지 못해 동기화를 중단했습니다. 새로고침 후 다시 시도해 주세요.');
+    var roster=new Set(window.__NIKKE_RAW.map(r=>normalize(r&&r['이름'])));
     var slots={head:'머리',body:'몸통',arm:'장갑',leg:'다리'};
     for(var n of items){
       if(!n||typeof n!=='object')continue;
       var code=codeOf(n),name=nameOf(n);
-      if(!name||!code){unresolved++;continue;}
-      if(seen.has(code))continue;
+      if(!name){unresolved++;continue;}
+      if(!roster.has(normalize(name))){skipped.push(name);continue;}
+      if(!code){unresolved++;continue;}
+      if(seen.has(code))throw new Error('중복된 니케 정보를 받아 동기화를 중단했습니다.');
       seen.add(code);
       ownedNames.push(name);
       ownedCodes.push(code);
@@ -95,18 +102,12 @@
       updates.push({name:name,name_code:code,grade:num(n.grade),core:num(n.core),
         skill1:skill1,skill2:skill2,burstSkill:burst,parts:parts});
     }
-    if(!updates.length)throw new Error('보유 캐릭터를 식별하지 못해 동기화를 취소했습니다.');
+    if(!updates.length)throw new Error('사이트 도감에서 일치하는 니케가 없어 동기화할 데이터가 없습니다. 기존 기록은 유지됩니다.');
     if(details!==updates.length)
       throw new Error('일부 니케의 스킬 상세가 누락되어 기존 데이터 보호를 위해 동기화를 취소했습니다.');
-    if(unresolved>0||updates.length!==items.length)throw new Error('일부 캐릭터 식별에 실패하여 동기화를 취소했습니다. 외부 API 데이터를 확인해 주세요.');
-    // Prevent an incomplete/off-version game database from deleting the user's existing roster.
-    if(Array.isArray(window.__NIKKE_RAW)&&window.__NIKKE_RAW.length){
-      var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g,'');};
-      var roster=new Set(window.__NIKKE_RAW.map(r=>normalize(r&&r['이름'])));
-      var unknown=updates.map(u=>u.name).filter(name=>!roster.has(normalize(name)));
-      if(unknown.length)throw new Error('사이트에 등록되지 않은 니케 '+unknown.length+'명('+unknown.slice(0,3).join(', ')+')이 있어 계정 데이터 보호를 위해 동기화를 취소했습니다.');
-    }
-    return {ok:true,sync_type:'scriptless_external',worker_version:'외부 API (nikke-api.pages.dev)',character_count:updates.length,detail_count:details,detailCount:details,ownedNames:ownedNames,ownedCodes:ownedCodes,updates:updates};
+    // Invalid known-character identities still fail; unsupported new characters are skipped.
+    if(unresolved>0)throw new Error('일부 니케의 식별 정보가 누락되어 동기화를 중단했습니다.');
+    return {ok:true,sync_type:'scriptless_external',worker_version:'외부 API (nikke-api.pages.dev)',character_count:updates.length,external_character_count:items.length,skipped_character_count:skipped.length,skipped_character_names:skipped,detail_count:details,detailCount:details,ownedNames:ownedNames,ownedCodes:ownedCodes,updates:updates};
   }
 
   async function requestJson(url){
