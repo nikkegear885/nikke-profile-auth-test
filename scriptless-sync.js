@@ -150,8 +150,10 @@
       offset+=list.length;
       if(offset>=count)break;
     }
-    if(count===null||count===0||all.length!==count)
-      throw new Error('보유 니케 데이터를 일부만 받아왔습니다. 기존 기록을 변경하지 않았습니다.');
+    if(count===null||count===0)
+      throw new Error('외부 API가 보유 니케 수를 0명 또는 누락된 값으로 응답했습니다. 기존 기록을 변경하지 않았습니다.');
+    if(all.length!==count)
+      throw new Error('외부 API 수신 불완전 · 전체 '+count+'명 중 '+all.length+'명 수신 · 다음 요청 시작 '+offset+'명째 · 기존 기록을 변경하지 않았습니다.');
     var result=convert(all);
     result.external_provider=BASE;
     return result;
