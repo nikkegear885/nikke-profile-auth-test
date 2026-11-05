@@ -76,7 +76,7 @@
     if(!Array.isArray(items)||items.length===0)throw new Error('외부 API에서 보유 니케 목록을 받지 못했습니다. 프로필 공개 설정을 확인해 주세요.');
     var updates=[],ownedNames=[],ownedCodes=[],seen=new Set(),details=0,unresolved=0,skipped=[];
     // Unknown external characters should not block known characters.
-    var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\\s:：·•._'’“”"\\-–—()\\[\\]{}]/g,'');};
+    var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');};
     if(!Array.isArray(window.__NIKKE_RAW)||!window.__NIKKE_RAW.length)
       throw new Error('사이트 도감을 불러오지 못해 동기화를 중단했습니다. 새로고침 후 다시 시도해 주세요.');
     var roster=new Set(window.__NIKKE_RAW.map(r=>normalize(r&&r['이름'])));
