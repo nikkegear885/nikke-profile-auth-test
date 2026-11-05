@@ -127,6 +127,7 @@
       '.bl-direct-external-area{display:flex;align-items:center;gap:8px;margin-top:8px}',
       '.bl-direct-external-area label{font-size:11px;font-weight:800;white-space:nowrap}',
       '.bl-direct-external-area select{flex:1;min-width:0;border:1px solid #bbcfdc;border-radius:7px;padding:7px 9px;background:transparent;color:inherit;font-size:11px}',
+      '.bl-direct-primary[hidden],.bl-direct-check[hidden]{display:none!important}',
       '.bl-direct-check{display:block;width:100%;margin-top:8px;padding:8px 10px;border:1px solid #8dc6ad;border-radius:8px;background:#effaf4;color:#247552;font-size:11px;font-weight:900;cursor:pointer}',
       '.bl-direct-check:hover:not(:disabled){background:#e0f5e9;border-color:#65ae8d}',
       '.bl-direct-check:disabled{opacity:.55;cursor:not-allowed}',
@@ -182,19 +183,19 @@
           '<p class="bl-direct-personal-note">별도 설치 없이 이용합니다. 비공식 외부 API(nikke-api.pages.dev)에 공개 프로필의 openid만 전달해 보유 니케·돌파·장비·스킬을 조회합니다. 외부 서비스도 자체 로그인 인증을 사용하므로, 세션 만료나 공개 설정 제한 시 실패할 수 있습니다. 개인정보·토큰은 입력하지 마세요.</p>' +
           '<button type="button" class="bl-direct-personal">고급 대체 방식: 내 로그인으로 동기화 (스크립트 설치 필요)</button>' +
           '<p class="bl-direct-personal-note">내 브라우저의 BlaBlaLink 로그인 세션으로 공식 API를 조회합니다. 최초 1회 동기화 스크립트 설치가 필요하며, 서버의 공용 서비스 세션은 사용하지 않습니다. 계정 비밀번호나 토큰을 이 사이트에 입력하지 않습니다.</p>' +
-          '<div class="bl-direct-personal-note" style="border-top:1px solid #c7d9e5;padding-top:9px;margin-top:9px">기존 방식: 아래 공개 프로필 URL 동기화는 공용 서비스 세션이 정상일 때만 작동합니다.</div>' +
+          '<div class="bl-direct-personal-note" style="border-top:1px solid #c7d9e5;padding-top:9px;margin-top:9px">테섭에서는 만료된 공용 서비스 세션 방식이 비활성화되어 있습니다. 위의 외부 API 조회 테스트 또는 설치 없는 동기화 버튼을 사용하세요.</div>' +
           '<div class="bl-direct-region-picker" id="blDirectRegionPicker" hidden>' +
             '<label class="bl-direct-region-label" for="blDirectRegionSelect">동기화할 NIKKE 지역 선택</label>' +
             '<select class="bl-direct-region-select" id="blDirectRegionSelect"><option value="">지역 선택…</option></select>' +
             '<div class="bl-direct-region-hint">같은 프로필에서 여러 지역의 로스터가 발견되었습니다. 실제로 플레이하는 지역을 선택해야 다른 서버의 보유·돌파·코강 정보가 섞이지 않습니다.</div>' +
           '</div>' +
           '<div class="bl-direct-actions">' +
-            '<button type="button" class="bl-direct-primary">기존 공용 서버로 동기화</button>' +
+            '<button type="button" class="bl-direct-primary" hidden>기존 공용 서버로 동기화</button>' +
             '<button type="button" class="bl-direct-secondary">닫기</button>' +
           '</div>' +
-          '<button type="button" class="bl-direct-check">서비스 세션 유효성 확인 · 계정 데이터 변경 없음</button>' +
+          '<button type="button" class="bl-direct-check" hidden>서비스 세션 유효성 확인 · 계정 데이터 변경 없음</button>' +
           '<div class="bl-direct-status" id="blDirectStatus"></div>' +
-          '<div class="bl-direct-note">기존 공용 서버 방식은 서버 세션이 유효할 때만 이용할 수 있습니다. 외부 API 방식은 상단 버튼을 선택하세요.</div>' +
+          '<div class="bl-direct-note">테섭에서는 공용 서버의 세션 만료 오류가 반복되지 않도록 해당 버튼을 숨겼습니다. 외부 API 방식만 사용하세요.</div>' +
           '<div class="bl-direct-profile" id="blDirectProfile" hidden>' +
             '<img id="blDirectAvatar" alt="">' +
             '<div><div class="bl-direct-profile-name" id="blDirectName"></div><div class="bl-direct-profile-sub" id="blDirectSub"></div></div>' +
