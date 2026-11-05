@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.536';
+  var EMBEDDED_VERSION='1.537';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -5889,10 +5889,13 @@ function renderKpis(){
 function getFiltered(){
   const searchEl=document.getElementById('search');
   const q=(searchEl?.value||'').trim().toLowerCase();
+  const normalizedQuery=q.normalize('NFKC').replace(/[^\p{L}\p{N}]/gu,'');
   let arr=data.map((r,i)=>({r,i})).filter(({r,i})=>{
     if(q){
       const hay=[r['이름'],r['무기'],r['스킬1'],r['스킬2'],r['버스트스킬']].map(x=>String(x??'').toLowerCase()).join(' ');
-      if(!hay.includes(q)) return false;
+      // Search should locate a character even if spaces or punctuation differ.
+      const normalizedName=String(r['이름']??'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+      if(!hay.includes(q) && !(normalizedQuery && normalizedName.includes(normalizedQuery))) return false;
     }
     if(filters.이름.size&&!filters.이름.has(String(r['이름']??''))) return false;
     if(filters.기업.size&&!filters.기업.has(normalizedFilterValue(r['기업']))) return false;
@@ -5904,7 +5907,7 @@ function getFiltered(){
     const g=gearState(r);
     if(filters.선택.has('selected') && !selectedCharacters.has(i)) return false;
     if(completionFilters.hideUnused && isUnusedCharacter(i,r)) return false;
-    if(completionFilters.hideUnowned && isUnownedCharacter(i,r)) return false;
+    if(completionFilters.hideUnowned && !q && isUnownedCharacter(i,r)) return false;
     if(completionFilters.hideFullOverload && g.overload===4) return false;
     if(completionFilters.hideFullCompany && g.parts.every(x=>x.category==='overload'||(x.category==='company'&&!x.mismatch))) return false;
     const activeGearParts=gearParts.filter(p=>(filters.장비부위별[p]||new Set()).size>0);
@@ -5959,8 +5962,11 @@ function renderTable(){
   renderDropRatePanel();
   let arr=getFiltered();
   if(completionFilters.hideUnused) arr=arr.filter(({r,i})=>!isUnusedCharacter(i,r));
-  if(completionFilters.hideUnowned) arr=arr.filter(({r,i})=>!isUnownedCharacter(i,r));
-  document.getElementById('countText').textContent=`${arr.length} / ${data.length}명`;
+  const explicitSearch=!!document.getElementById('search')?.value.trim();
+  // An explicit character lookup can reveal hidden unowned characters for inspection.
+  if(completionFilters.hideUnowned&&!explicitSearch) arr=arr.filter(({r,i})=>!isUnownedCharacter(i,r));
+  document.getElementById('countText').textContent=`${arr.length} / ${data.length}명`+
+    (explicitSearch&&completionFilters.hideUnowned?' · 검색 시 미보유 포함':'');
   document.getElementById('tbody').innerHTML=arr.map(({r,i})=>{
     const g=gearState(r);
     const opts=['우코(%)','공증(%)','장탄(%)','크확(%)','크댐(%)','명중(%)','차댐(%)','차속(%)','방어(%)'].filter(k=>num(r[k])>0).length;
@@ -7651,7 +7657,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="account-level-sync.js?v=1.512"></script><script src="scriptless-sync.js?v=1.4"></script><script src="profile-import-button.js?v=1.516"></script><script src="pedia.js?v=1056"></script><script src="wishlist.js?v=3.18"></script><script src="stage-deck.js?v=1.425"></script><script src="skill-status.js?v=1.12"></script><style id="character-image-column-v004">
+</style><script src="account-level-sync.js?v=1.512"></script><script src="scriptless-sync.js?v=1.5"></script><script src="profile-import-button.js?v=1.516"></script><script src="pedia.js?v=1056"></script><script src="wishlist.js?v=3.18"></script><script src="stage-deck.js?v=1.425"></script><script src="skill-status.js?v=1.12"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
