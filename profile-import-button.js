@@ -112,6 +112,11 @@
       '.bl-direct-region-hint{margin-top:6px;font-size:10px;line-height:1.45;color:#8a6b30}',
       'html.dark-theme .bl-direct-region-hint{color:#d1b675}',
       '.bl-direct-actions{display:flex;gap:8px;margin-top:14px}',
+      '.bl-direct-personal{display:block;width:100%;margin-top:12px;padding:13px 10px;border:1px solid #388bca;border-radius:9px;background:#e7f5ff;color:#175a89;font-size:12px;font-weight:900;cursor:pointer}',
+      '.bl-direct-personal:hover{background:#d9efff}',
+      'html.dark-theme .bl-direct-personal{background:#123044;border-color:#367ca9;color:#b9e5ff}',
+      '.bl-direct-personal-note{font-size:11px;line-height:1.55;color:#58768a;margin:5px 0 11px}',
+      'html.dark-theme .bl-direct-personal-note{color:#abc1d3}',
       '.bl-direct-check{display:block;width:100%;margin-top:8px;padding:8px 10px;border:1px solid #8dc6ad;border-radius:8px;background:#effaf4;color:#247552;font-size:11px;font-weight:900;cursor:pointer}',
       '.bl-direct-check:hover:not(:disabled){background:#e0f5e9;border-color:#65ae8d}',
       '.bl-direct-check:disabled{opacity:.55;cursor:not-allowed}',
@@ -146,7 +151,7 @@
     overlay.innerHTML =
       '<div class="bl-direct-modal" role="dialog" aria-modal="true" aria-labelledby="blDirectTitle">' +
         '<div class="bl-direct-head">' +
-          '<div><h3 id="blDirectTitle">BlaBlaLink 계정 동기화</h3><small>공개 프로필 URL만 입력하면 장비 현황을 불러옵니다.</small></div>' +
+          '<div><h3 id="blDirectTitle">BlaBlaLink 계정 동기화</h3><small>공용 서비스 세션 방식과 내 계정 로그인 방식 중 선택할 수 있습니다.</small></div>' +
           '<div style="display:flex;align-items:center;gap:8px;margin-left:auto">' +
             '<a class="bl-direct-help-link" href="https://gall.dcinside.com/mgallery/board/view?id=gov&no=5423342" target="_blank" rel="noopener noreferrer">블라링크 계정주소 확인법</a>' +
 
@@ -161,6 +166,9 @@
             '<button type="button" class="bl-direct-account" data-slot="1"><b id="blDirectA2">계정2</b><span>이 계정에 동기화</span></button>' +
           '</div>' +
           '<div style="margin-top:6px;font-size:10px;color:#71828f;text-align:center">계정명은 우측 톱니 아이콘을 눌러 변경가능합니다</div>' +
+          '<button type="button" class="bl-direct-personal">공용 서비스 세션 없이 동기화 (내 BlaBlaLink 로그인)</button>' +
+          '<p class="bl-direct-personal-note">내 브라우저의 BlaBlaLink 로그인 세션으로 공식 API를 조회합니다. 최초 1회 동기화 스크립트 설치가 필요하며, 서버의 공용 서비스 세션은 사용하지 않습니다. 계정 비밀번호나 토큰을 이 사이트에 입력하지 않습니다.</p>' +
+          '<div class="bl-direct-personal-note" style="border-top:1px solid #c7d9e5;padding-top:9px;margin-top:9px">기존 방식: 아래 공개 프로필 URL 동기화는 공용 서비스 세션이 정상일 때만 작동합니다.</div>' +
           '<div class="bl-direct-region-picker" id="blDirectRegionPicker" hidden>' +
             '<label class="bl-direct-region-label" for="blDirectRegionSelect">동기화할 NIKKE 지역 선택</label>' +
             '<select class="bl-direct-region-select" id="blDirectRegionSelect"><option value="">지역 선택…</option></select>' +
@@ -208,6 +216,20 @@
         });
         btn.classList.add('active');
       });
+    });
+
+    overlay.querySelector('.bl-direct-personal').addEventListener('click', function(){
+      if(working) return;
+      // The existing official-site userscript runs API calls under the user's own BlablaLink login.
+      // Show its dedicated installation/login guide; never send cookies or credentials to this site.
+      var legacy = document.getElementById('blsyncModal');
+      if(!legacy) return;
+      overlay.classList.remove('open');
+      legacy.hidden = false;
+      var title = legacy.querySelector('#blsyncTitle');
+      if(title) title.textContent = '내 로그인으로 API 동기화 (공용 서비스 세션 불필요)';
+      var info = legacy.querySelector('.blsync-head-title div');
+      if(info) info.textContent = '현재 BlaBlaLink에 로그인한 본인 계정의 보유·돌파·코강·장비·스킬을 불러옵니다.';
     });
 
     overlay.querySelector('.bl-direct-check').addEventListener('click', async function(){
