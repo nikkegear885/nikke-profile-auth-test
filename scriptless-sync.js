@@ -44,7 +44,7 @@
     return n===null?null:Math.max(0,Math.min(10,Math.floor(n)));
   }
   function optionName(value){
-    var k=ko(value).normalize('NFKC').replace(/[\\s\\[\\]()]/g,'');
+    var k=ko(value).normalize('NFKC').replace(/[\s\[\]()]/g,'');
     if(/우월코드/.test(k))return '우코';
     if(/최대장탄|장탄수/.test(k))return '장탄';
     if(/크리티컬확률|크리확률/.test(k))return '크확';
@@ -101,7 +101,7 @@
     if(unresolved>0||updates.length!==items.length)throw new Error('일부 캐릭터 식별에 실패하여 동기화를 취소했습니다. 외부 API 데이터를 확인해 주세요.');
     // Prevent an incomplete/off-version game database from deleting the user's existing roster.
     if(Array.isArray(window.__NIKKE_RAW)&&window.__NIKKE_RAW.length){
-      var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\\s:：·•._'’“”"\\-–—()\\[\\]{}]/g,'');};
+      var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g,'');};
       var roster=new Set(window.__NIKKE_RAW.map(r=>normalize(r&&r['이름'])));
       var unknown=updates.map(u=>u.name).filter(name=>!roster.has(normalize(name)));
       if(unknown.length)throw new Error('사이트에 등록되지 않은 니케 '+unknown.length+'명('+unknown.slice(0,3).join(', ')+')이 있어 계정 데이터 보호를 위해 동기화를 취소했습니다.');
