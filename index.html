@@ -5170,6 +5170,14 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   );
   const normalizeRosterName=name=>String(name??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g,'');
   const byName=new Map(targetData.map((r,i)=>[normalizeRosterName(r?.['이름']),i]));
+  if(p.sync_type==='scriptless_external'){
+    // Check every external ID against a unique local roster entry BEFORE clearing any stored values.
+    const keys=(Array.isArray(p.updates)?p.updates:[]).map(u=>normalizeRosterName(canonicalSyncCharacterName(u?.name,u?.name_code??u?.nameCode)));
+    if(!keys.length || keys.some(k=>!byName.has(k)) || new Set(keys).size!==keys.length ||
+       !Array.isArray(p.ownedNames) || keys.length!==p.ownedNames.length){
+      throw new Error('외부 API의 캐릭터 정보를 사이트 데이터와 일치시킬 수 없어 저장하지 않았습니다.');
+    }
+  }
   let matched=0,changed=0,skillDataCount=0,gearDataCount=0;
   const syncedIndices=new Set();
   // Clear skill values first so only levels actually returned by the API are shown.
@@ -5191,7 +5199,21 @@ function applyBlablalinkSyncPayload(p,targetAccount){
       const rawCorp=normalizeSyncCorp(raw);
       const tier=normalizeSyncNumber(raw&&typeof raw==='object'?(raw.tier??raw.equip_tier):null);
       const level=normalizeSyncNumber(raw&&typeof raw==='object'?(raw.level??raw.equip_lv):null);
-      if(rawCorp){
+      if(p.sync_type==='scriptless_external' && raw && typeof raw==='object'){
+        // Null corporation and empty equipment slots must clear stale equipment state.
+        const corpKey=part+'_기업장비', val=rawCorp||'';
+        if(String(r[corpKey]??'')!==val){r[corpKey]=val;changed++}
+        if(!Array.isArray(raw.options))throw new Error('장비 옵션을 확인하지 못했습니다. 저장을 취소했습니다.');
+        for(let k=0;k<3;k++){
+          const option=raw.options[k]||null;
+          const nameKey=part+'_옵'+(k+1),valueKey=nameKey+'값';
+          const optionName=option?option.name:null,optionValue=option?option.value:null;
+          if(r[nameKey]!==optionName){r[nameKey]=optionName;changed++}
+          if(r[valueKey]!==optionValue){r[valueKey]=optionValue;changed++}
+        }
+        hasGearData=true;
+      }
+      if(rawCorp && p.sync_type!=='scriptless_external'){
         hasGearData=true;
         const key=part+'_기업장비';
         if(String(r[key]??'')!==rawCorp){r[key]=rawCorp;changed++}
@@ -5208,6 +5230,19 @@ function applyBlablalinkSyncPayload(p,targetAccount){
       }
     }
 
+    if(p.sync_type==='scriptless_external'){
+      const keys={'우코':'우코(%)','공증':'공증(%)','장탄':'장탄(%)','크확':'크확(%)','크댐':'크댐(%)','명중':'명중(%)','차댐':'차댐(%)','차속':'차속(%)','방어':'방어(%)'};
+      const totals=Object.fromEntries(Object.values(keys).map(k=>[k,0]));
+      for(const part of gearParts){
+        for(const opt of u.parts[part].options){
+          const k=keys[opt.name];
+          if(k)totals[k]+=Number(opt.value);
+        }
+      }
+      for(const [key,value] of Object.entries(totals)){
+        if(Number(r[key])!==value){r[key]=value;changed++}
+      }
+    }
     if(hasGearData)gearDataCount++;
     // 상세 API가 반환한 돌파(grade)와 코어 강화(core)를 계정 데이터에 반영합니다.
     const gradeRaw=u?.grade;
