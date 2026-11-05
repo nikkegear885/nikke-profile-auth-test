@@ -56,6 +56,38 @@
   function regionLabel(areaId){
     return ({'81':'일본 (JP)','82':'북미 (NA)','83':'한국 (KR)','84':'글로벌 (Global)','85':'동남아 (SEA)'})[String(areaId)] || ('지역 ' + String(areaId));
   }
+  function preferredAreaStorageKey(account,url){
+    var u=new URL(url);
+    return 'nikke_external_region_v1_'+encodeURIComponent(account)+'_'+encodeURIComponent(u.searchParams.get('openid')||'');
+  }
+  function getPreferredArea(account,url){
+    try{
+      var v=Number(localStorage.getItem(preferredAreaStorageKey(account,url)));
+      return [81,82,83,84,85].includes(v)?v:'';
+    }catch(_){return '';}
+  }
+  function rememberPreferredArea(account,url,area){
+    if(![81,82,83,84,85].includes(Number(area)))return;
+    try{localStorage.setItem(preferredAreaStorageKey(account,url),String(area));}catch(_){}
+  }
+  function offerAreaCandidates(error){
+    if(!error||error.code!=='multiple_areas'||!Array.isArray(error.candidates))return;
+    var sel=overlay&&overlay.querySelector('#blExternalArea');
+    if(!sel)return;
+    sel.innerHTML='';
+    var prompt=document.createElement('option');
+    prompt.value='';prompt.textContent='서버 직접 선택 필요';
+    sel.appendChild(prompt);
+    error.candidates.forEach(function(info){
+      var area=Number(info.area_id);
+      if(![81,82,83,84,85].includes(area))return;
+      var opt=document.createElement('option');
+      opt.value=String(area);
+      opt.textContent=regionLabel(area)+' · '+Number(info.character_count||0)+'명';
+      sel.appendChild(opt);
+    });
+    sel.value='';
+  }
 
   function injectStyle(){
     if(document.getElementById('bl-direct-sync-style')) return;
@@ -179,7 +211,7 @@
           '<div style="margin-top:6px;font-size:10px;color:#71828f;text-align:center">계정명은 우측 톱니 아이콘을 눌러 변경가능합니다</div>' +
           '<button type="button" class="bl-direct-preview">외부 API 조회 테스트 (저장하지 않음)</button>' +
           '<button type="button" class="bl-direct-installfree">설치 없이 장비·스킬 동기화 (외부 API)</button>' +
-          '<div class="bl-direct-external-area"><label for="blExternalArea">서버</label><select id="blExternalArea"><option value="">자동 조회</option><option value="81">일본 (JP)</option><option value="82">북미 (NA)</option><option value="83">한국 (KR)</option><option value="84">글로벌</option><option value="85">동남아</option></select></div>' +
+          '<div class="bl-direct-external-area"><label for="blExternalArea">서버</label><select id="blExternalArea"><option value="">자동 조회 (보유 서버 확인)</option><option value="81">일본 (JP)</option><option value="82">북미 (NA)</option><option value="83">한국 (KR)</option><option value="84">글로벌</option><option value="85">동남아</option></select></div>' +
           '<p class="bl-direct-personal-note">별도 설치 없이 이용합니다. 비공식 외부 API(nikke-api.pages.dev)에 공개 프로필의 openid만 전달해 보유 니케·돌파·장비·스킬을 조회합니다. 외부 서비스도 자체 로그인 인증을 사용하므로, 세션 만료나 공개 설정 제한 시 실패할 수 있습니다. 개인정보·토큰은 입력하지 마세요.</p>' +
           '<button type="button" class="bl-direct-personal">고급 대체 방식: 내 로그인으로 동기화 (스크립트 설치 필요)</button>' +
           '<p class="bl-direct-personal-note">내 브라우저의 BlaBlaLink 로그인 세션으로 공식 API를 조회합니다. 최초 1회 동기화 스크립트 설치가 필요하며, 서버의 공용 서비스 세션은 사용하지 않습니다. 계정 비밀번호나 토큰을 이 사이트에 입력하지 않습니다.</p>' +
@@ -251,13 +283,15 @@
         var area=overlay.querySelector('#blExternalArea');
         var result=await window.__NIKKE_GM_SCRIPTLESS_SYNC__(url,{
           areaId:area?area.value:'',
+          preferredAreaId:getPreferredArea(targetAccount||getAccounts()[0]||'계정1',url),
           onProgress:function(msg){status.textContent=msg}
         });
         var slots=0;
         for(var item of result.updates)for(var part of Object.values(item.parts))if(part&&part.tier>0)slots++;
         status.className='bl-direct-status success';
-        status.textContent='조회 테스트 통과 · 사이트 등록 니케 '+result.character_count+'명 / 스킬 상세 '+result.detail_count+'명 / 착용 장비 '+slots+'부위'+(result.skipped_character_count?' / 도감 미등록 '+result.skipped_character_count+'명 제외 ('+result.skipped_character_names.slice(0,3).join(', ')+')':'')+' / 데이터 저장 없음. 실제 적용은 아래 동기화 버튼을 누르세요.';
+        status.textContent='조회 테스트 통과 · '+regionLabel(result.area_id)+' 서버 ('+(result.area_selection_mode==='manual'?'직접 선택':result.area_selection_mode==='remembered'?'이전 선택 적용':'자동 확인')+') · 사이트 등록 니케 '+result.character_count+'명 / 스킬 상세 '+result.detail_count+'명 / 착용 장비 '+slots+'부위'+(result.skipped_character_count?' / 도감 미등록 '+result.skipped_character_count+'명 제외 ('+result.skipped_character_names.slice(0,3).join(', ')+')':'')+' / 데이터 저장 없음. 실제 적용은 아래 동기화 버튼을 누르세요.';
       }catch(error){
+        offerAreaCandidates(error);
         status.className='bl-direct-status error';
         status.textContent='조회 테스트 실패(저장 데이터 유지): '+text(error&&error.message||error);
       }finally{
@@ -291,16 +325,20 @@
         var areaId=regionSelect?regionSelect.value:'';
         var payload=await window.__NIKKE_GM_SCRIPTLESS_SYNC__(url,{
           areaId:areaId,
+          preferredAreaId:getPreferredArea(account,url),
           onProgress:function(message){status.textContent=message;}
         });
         var apply=window.__NIKKE_GM_APPLY_SYNC__;
         if(typeof apply!=='function')throw new Error('사이트 계정 동기화 모듈을 찾지 못했습니다.');
         // Never write anything until every API page was validated.
         apply(payload,account);
+        // Only persist an explicit server choice after validated data was applied.
+        if(areaId!=='')rememberPreferredArea(account,url,payload.area_id);
         try{localStorage.setItem('nikke_bl_profile_url_'+encodeURIComponent(account),url)}catch(_){}
         status.className='bl-direct-status success';
-        status.textContent='외부 API 동기화 완료 · '+String(payload.character_count)+'명 반영'+(payload.skipped_character_count?' · 도감 미등록 '+payload.skipped_character_count+'명 제외 ('+payload.skipped_character_names.slice(0,3).join(', ')+')':'')+' · 장비·돌파·스킬 적용. 싱크로·전초기지는 기존 경로와 별도로 관리됩니다.';
+        status.textContent='외부 API 동기화 완료 · '+regionLabel(payload.area_id)+' 서버 ('+(payload.area_selection_mode==='manual'?'직접 선택':payload.area_selection_mode==='remembered'?'이전 선택 적용':'자동 확인')+') · '+String(payload.character_count)+'명 반영'+(payload.skipped_character_count?' · 도감 미등록 '+payload.skipped_character_count+'명 제외 ('+payload.skipped_character_names.slice(0,3).join(', ')+')':'')+' · 장비·돌파·스킬 적용. 싱크로·전초기지는 기존 경로와 별도로 관리됩니다.';
       }catch(err){
+        offerAreaCandidates(err);
         status.className='bl-direct-status error';
         status.textContent=text(err&&err.message||err||'외부 API 동기화에 실패했습니다.');
       }finally{
