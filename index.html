@@ -4384,7 +4384,7 @@ html.dark-theme .name-cell-image{
 (function(){
   // Keep the visible build label in sync with the version embedded in this page.
   // Do not redirect/reload the page based on a separately cached VERSION file.
-  var EMBEDDED_VERSION='1.537';
+  var EMBEDDED_VERSION='1.538';
   function applyVersion(){
     var el=document.getElementById('siteVersionCorner');
     if(el) el.textContent='VERSION '+EMBEDDED_VERSION;
@@ -5044,7 +5044,7 @@ async function loadNikkePediaImages(){
   if(NIKKE_PEDIA_IMAGES_LOADED)return;
   NIKKE_PEDIA_IMAGES_LOADED=true;
   try{
-    const res=await fetch('assets/nikke-pedia-master.json?v=1047',{cache:'no-store'});
+    const res=await fetch('assets/nikke-pedia-master.json?v=1049',{cache:'no-store'});
     if(!res.ok)throw new Error('pedia http '+res.status);
     const list=await res.json();
     if(!Array.isArray(list))throw new Error('invalid pedia data');
@@ -7657,7 +7657,7 @@ html.dark-theme #outpostPanel .outpost-final-stage-btn{
   object-position:center;
   border-radius:50%;
 }
-</style><script src="account-level-sync.js?v=1.512"></script><script src="scriptless-sync.js?v=1.5"></script><script src="profile-import-button.js?v=1.516"></script><script src="pedia.js?v=1056"></script><script src="wishlist.js?v=3.18"></script><script src="stage-deck.js?v=1.425"></script><script src="skill-status.js?v=1.12"></script><style id="character-image-column-v004">
+</style><script src="account-level-sync.js?v=1.512"></script><script src="scriptless-sync.js?v=1.5"></script><script src="profile-import-button.js?v=1.516"></script><script src="pedia.js?v=1057"></script><script src="wishlist.js?v=3.18"></script><script src="stage-deck.js?v=1.425"></script><script src="skill-status.js?v=1.12"></script><style id="character-image-column-v004">
 /* v1.013: 니케 사진을 이름과 분리된 고정 폭 열로 표시 */
 #characterPanel th[data-column-key="사진"],
 #characterPanel td.character-image-column-cell{
