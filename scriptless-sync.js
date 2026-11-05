@@ -8,6 +8,8 @@
   var BASE = 'https://nikke-api.pages.dev';
   var PAGE_SIZE = 80;
   var MAX_PAGES = 8;
+  var AREA_IDS = [81,82,83,84,85];
+  function areaLabel(area){return ({81:'일본 (JP)',82:'북미 (NA)',83:'한국 (KR)',84:'글로벌',85:'동남아'})[area]||String(area);}
 
   function profileId(profileUrl){
     var u;
@@ -128,19 +130,55 @@
     }finally{clearTimeout(timer)}
   }
 
+  // Resolve the actual owned roster once, and pin every builds page to that region.
+  async function detectOwnedArea(id,options){
+    var onProgress=typeof options.onProgress==='function'?options.onProgress:function(){};
+    onProgress('보유 니케가 있는 서버를 확인하는 중…');
+    var response;
+    try{
+      response=await requestJson(BASE+'/api/user/'+encodeURIComponent(id)+'/roster');
+    }catch(err){
+      throw new Error('서버 자동 확인에 실패했습니다. 외부 API 조회 오류: '+String(err&&err.message||err)+'. 서버를 직접 선택해 다시 시도할 수 있습니다.');
+    }
+    if(!response||!Array.isArray(response.areas))
+      throw new Error('서버 자동 확인 응답에 지역 목록이 없습니다. 서버를 직접 선택해 주세요.');
+    var found=[],seen=new Set();
+    for(var record of response.areas){
+      var area=Number(record&&record.area);
+      if(!AREA_IDS.includes(area)||seen.has(area)||!Array.isArray(record.characters)||record.characters.length===0)continue;
+      seen.add(area);
+      found.push({area_id:area,character_count:record.characters.length});
+    }
+    if(!found.length)throw new Error('보유 니케가 있는 서버를 확인하지 못했습니다. 프로필 공개 설정을 확인하거나 서버를 직접 선택해 주세요.');
+    if(found.length===1)return {areaId:found[0].area_id,mode:'auto',candidates:found};
+    var preferred=Number(options.preferredAreaId);
+    if(AREA_IDS.includes(preferred)&&found.some(x=>x.area_id===preferred))
+      return {areaId:preferred,mode:'remembered',candidates:found};
+    var error=new Error('여러 서버에 보유 니케가 있습니다: '+found.map(x=>areaLabel(x.area_id)+' '+x.character_count+'명').join(', ')+'. 서버를 직접 선택해 주세요. 계정마다 선택한 서버는 동기화 완료 후 기억합니다.');
+    error.code='multiple_areas';
+    error.candidates=found;
+    throw error;
+  }
+
   async function fetchExternal(profileUrl,options){
     options=options||{};
     var id=profileId(profileUrl);
-    var area=options.areaId;
-    if(area!=null&&area!=='' && ![81,82,83,84,85].includes(Number(area)))throw new Error('지원하지 않는 지역 코드입니다.');
-    var base=BASE+'/api/user/'+encodeURIComponent(id)+'/nikke-builds?all=1&limit='+PAGE_SIZE;
-    if(area!=null&&area!=='')base+='&area='+encodeURIComponent(String(area));
+    var selected=options.areaId;
+    if(selected!=null&&selected!==''&&!AREA_IDS.includes(Number(selected)))throw new Error('지원하지 않는 지역 코드입니다.');
+    var auto=selected==null||selected==='';
+    var areaSelection=auto
+      ? await detectOwnedArea(id,options)
+      : {areaId:Number(selected),mode:'manual',candidates:[]};
+    var area=areaSelection.areaId;
+    var base=BASE+'/api/user/'+encodeURIComponent(id)+'/nikke-builds?all=1&limit='+PAGE_SIZE+'&area='+encodeURIComponent(String(area));
     var all=[],count=null,offset=0,onProgress=typeof options.onProgress==='function'?options.onProgress:function(){};
     for(var page=0;page<MAX_PAGES;page++){
-      onProgress('외부 API에서 보유 니케 상세를 조회하는 중… ('+all.length+'명)');
+      onProgress(areaLabel(area)+' 서버에서 보유 니케 상세를 조회하는 중… ('+all.length+'/'+(count===null?'?':count)+'명)');
       var body=await requestJson(base+'&offset='+offset);
       var list=body.nikkes;
       if(!Array.isArray(list))throw new Error('외부 API에서 니케 상세 목록을 반환하지 않았습니다.');
+      if(body.offset!=null&&Number(body.offset)!==offset)
+        throw new Error('조회 페이지 위치가 변경되어 저장하지 않았습니다. 요청 '+offset+' / 응답 '+body.offset);
       var total=num(body.count);
       if(total===null||total<0||total>600)throw new Error('외부 API의 전체 캐릭터 수가 올바르지 않습니다.');
       if(count!==null&&count!==total)throw new Error('조회 중 목록이 변경되어 저장하지 않았습니다. 다시 시도해 주세요.');
@@ -156,6 +194,9 @@
       throw new Error('외부 API 수신 불완전 · 전체 '+count+'명 중 '+all.length+'명 수신 · 다음 요청 시작 '+offset+'명째 · 기존 기록을 변경하지 않았습니다.');
     var result=convert(all);
     result.external_provider=BASE;
+    result.area_id=area;
+    result.area_selection_mode=areaSelection.mode;
+    result.area_candidates=areaSelection.candidates;
     return result;
   }
   window.__NIKKE_GM_SCRIPTLESS_SYNC__=fetchExternal;
