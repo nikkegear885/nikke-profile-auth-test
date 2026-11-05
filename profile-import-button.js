@@ -117,6 +117,9 @@
       'html.dark-theme .bl-direct-personal{background:#123044;border-color:#367ca9;color:#b9e5ff}',
       '.bl-direct-personal-note{font-size:11px;line-height:1.55;color:#58768a;margin:5px 0 11px}',
       'html.dark-theme .bl-direct-personal-note{color:#abc1d3}',
+      '.bl-direct-preview{display:block;width:100%;margin-top:12px;padding:11px 9px;border:1px solid #92a9c1;border-radius:9px;background:#f4f8fc;color:#415c71;font-size:12px;font-weight:900;cursor:pointer}',
+      '.bl-direct-preview:disabled{opacity:.55;cursor:not-allowed}',
+      'html.dark-theme .bl-direct-preview{background:#253348;border-color:#60738e;color:#d0e4f3}',
       '.bl-direct-installfree{display:block;width:100%;margin-top:12px;padding:14px 10px;border:1px solid #168f79;border-radius:10px;background:#e7faf2;color:#12624f;font-size:13px;font-weight:900;cursor:pointer}',
       '.bl-direct-installfree:disabled{opacity:.55;cursor:not-allowed}',
       '.bl-direct-installfree:hover:not(:disabled){background:#d5f5e9}',
@@ -173,6 +176,7 @@
             '<button type="button" class="bl-direct-account" data-slot="1"><b id="blDirectA2">계정2</b><span>이 계정에 동기화</span></button>' +
           '</div>' +
           '<div style="margin-top:6px;font-size:10px;color:#71828f;text-align:center">계정명은 우측 톱니 아이콘을 눌러 변경가능합니다</div>' +
+          '<button type="button" class="bl-direct-preview">외부 API 조회 테스트 (저장하지 않음)</button>' +
           '<button type="button" class="bl-direct-installfree">설치 없이 장비·스킬 동기화 (외부 API)</button>' +
           '<div class="bl-direct-external-area"><label for="blExternalArea">서버</label><select id="blExternalArea"><option value="">자동 조회</option><option value="81">일본 (JP)</option><option value="82">북미 (NA)</option><option value="83">한국 (KR)</option><option value="84">글로벌</option><option value="85">동남아</option></select></div>' +
           '<p class="bl-direct-personal-note">별도 설치 없이 이용합니다. 비공식 외부 API(nikke-api.pages.dev)에 공개 프로필의 openid만 전달해 보유 니케·돌파·장비·스킬을 조회합니다. 외부 서비스도 자체 로그인 인증을 사용하므로, 세션 만료나 공개 설정 제한 시 실패할 수 있습니다. 개인정보·토큰은 입력하지 마세요.</p>' +
@@ -226,6 +230,38 @@
         });
         btn.classList.add('active');
       });
+    });
+
+    overlay.querySelector('.bl-direct-preview').addEventListener('click',async function(){
+      if(working)return;
+      var status=overlay.querySelector('#blDirectStatus');
+      var input=overlay.querySelector('#blDirectUrl');
+      var preview=overlay.querySelector('.bl-direct-preview');
+      var installfree=overlay.querySelector('.bl-direct-installfree');
+      var url;
+      try{url=validateProfileUrl(input.value.trim())}
+      catch(error){status.className='bl-direct-status error';status.textContent=text(error&&error.message||error);return}
+      if(typeof window.__NIKKE_GM_SCRIPTLESS_SYNC__!=='function'){
+        status.className='bl-direct-status error';status.textContent='외부 API 모듈을 불러오지 못했습니다.';return;
+      }
+      working=true;preview.disabled=true;installfree.disabled=true;
+      status.className='bl-direct-status';status.textContent='외부 API 접속과 데이터 완전성을 검사하는 중…';
+      try{
+        var area=overlay.querySelector('#blExternalArea');
+        var result=await window.__NIKKE_GM_SCRIPTLESS_SYNC__(url,{
+          areaId:area?area.value:'',
+          onProgress:function(msg){status.textContent=msg}
+        });
+        var slots=0;
+        for(var item of result.updates)for(var part of Object.values(item.parts))if(part&&part.tier>0)slots++;
+        status.className='bl-direct-status success';
+        status.textContent='조회 테스트 통과 · 보유 니케 '+result.character_count+'명 / 스킬 상세 '+result.detail_count+'명 / 착용 장비 '+slots+'부위 / 데이터 저장 없음. 실제 적용은 아래 동기화 버튼을 누르세요.';
+      }catch(error){
+        status.className='bl-direct-status error';
+        status.textContent='조회 테스트 실패(저장 데이터 유지): '+text(error&&error.message||error);
+      }finally{
+        working=false;preview.disabled=false;installfree.disabled=false;
+      }
     });
 
     overlay.querySelector('.bl-direct-installfree').addEventListener('click', async function(){
