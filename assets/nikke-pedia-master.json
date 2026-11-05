@@ -810,5 +810,17 @@
   {
     "name": "N102",
     "image": "https://raw.githubusercontent.com/Mi2O-nikke/Nikke-db/main/public/assets/images/sprite/si_c120_00_s.png"
+  },
+  {
+    "name": "마리안 : 퀸",
+    "image": "https://npc-jail.pages.dev/assets/nikke/sprite/si_c019_00_s.webp"
+  },
+  {
+    "name": "라푼젤 : 생츄어리",
+    "image": "https://npc-jail.pages.dev/assets/nikke/sprite/si_c473_00_s.webp"
+  },
+  {
+    "name": "홍련 : 신살",
+    "image": "https://npc-jail.pages.dev/assets/nikke/sprite/si_c472_00_s.webp"
   }
 ]
