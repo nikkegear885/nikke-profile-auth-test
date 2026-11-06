@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const PEDIA_URL = 'assets/nikke-pedia-master.json?v=1049';
+  const PEDIA_URL = 'assets/nikke-pedia-master.json?v=1051';
   const SKILLS_URL = 'assets/nikke-skills.json?v=1048';
   const STORAGE_KEY = 'nikke_stage_deck_v1';
   const SHOW_UNOWNED_STORAGE_KEY = 'nikke_stage_deck_show_unowned_v1';
