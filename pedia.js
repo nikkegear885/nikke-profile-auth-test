@@ -132,7 +132,8 @@ const PEDIA_API='https://nikke-api-edge.leegunwoo0325-5e6.workers.dev';
 const PEDIA_API_TIMEOUT=12000;
 const API_NAME_ALIASES=new Map([
   ['마스트로맨틱메이드','마스트로망틱메이드'],
-  ['사쿠라스즈하라','사쿠라']
+  ['사쿠라스즈하라','사쿠라'],
+  ['스즈하라사쿠라','사쿠라']
 ]);
 function normalizedPediaApiName(name){
   const clean=normalizePediaName(name);
@@ -293,7 +294,7 @@ const DISTRIBUTION_PEDIA_NAMES = new Set([
   "릴리",
   "모리",
   "미사토",
-  "사쿠라 스즈하라",
+  "스즈하라 사쿠라",
   "아비스타",
   "니힐리스타",
   "스노우 화이트 : 이노센트 데이즈",
@@ -352,7 +353,7 @@ function renderPediaSkills(name,data){
   try{
     const wantedId=Number(data?.i);
     const wantedName=String(name||'').trim();
-    const aliases={'사쿠라 스즈하라':'사쿠라'};
+    const aliases={'사쿠라 스즈하라':'스즈하라 사쿠라','스즈하라 사쿠라':'스즈하라 사쿠라'};
     const rawList=Array.isArray(window.__NIKKE_RAW)?window.__NIKKE_RAW:[];
     const raw=rawList.find(x=>Number(x?.['i']??x?.id)===wantedId)
       || rawList.find(x=>String(x?.['이름']??'').trim()===(aliases[wantedName]||wantedName));
@@ -372,7 +373,7 @@ async function openPediaSkill(name,id){
     let data=null;
     try{
       const all=await loadPediaSkillData();
-      const aliases={'사쿠라 스즈하라':'사쿠라'};
+      const aliases={'사쿠라 스즈하라':'사쿠라 (SR)','스즈하라 사쿠라':'사쿠라 (SR)'};
       data=findPediaSkillData(all,aliases[name]||name,id);
     }catch(err){console.warn('[pedia] internal skill data unavailable',err);}
     if(data){renderPediaSkills(name,data);return;}
