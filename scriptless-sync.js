@@ -29,11 +29,38 @@
     var code=String(raw==null?'':raw).trim();
     return /^\d+$/.test(code)?code:'';
   }
+  function normalizeCharacterName(value){
+    return String(value||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+  }
+  // New 4th-anniversary Nikkes may be returned in English, Korean, or
+  // with an outdated Korean label. Do not conflate ordinary Modernia/Marian
+  // with Marian: Queen: the resource-id fallback must also match c019.
+  var NEW_CHARACTER_ALIASES={
+    marianqueen:'마리안 : 퀸',queenmarian:'마리안 : 퀸',
+    moderniaqueen:'마리안 : 퀸',마리안퀸:'마리안 : 퀸',모더니아퀸:'마리안 : 퀸',
+    rapunzelsanctuary:'라푼젤 : 생츄어리',라푼젤생츄어리:'라푼젤 : 생츄어리',
+    scarletgoddeath:'홍련 : 신살',scarletgodslayer:'홍련 : 신살',
+    홍련신살:'홍련 : 신살',홍련신살이:'홍련 : 신살'
+  };
   function nameOf(n){
     var code=codeOf(n);
     if(code==='1012')return '사쿠라';
     if(code==='3015')return '스즈하라 사쿠라';
-    var name=ko(n&&n.character&&n.character.name);
+    var char=n&&n.character||{};
+    var labels=char.name&&typeof char.name==='object'
+      ? [char.name.ko,char.name.en,char.name.ja,char.name['zh-TW']]
+      : [char.name];
+    var names=labels.map(function(label){return String(label||'').trim();}).filter(Boolean);
+    for(var i=0;i<names.length;i++){
+      var resolved=NEW_CHARACTER_ALIASES[normalizeCharacterName(names[i])];
+      if(resolved)return resolved;
+    }
+    var resource=String(char.resourceId??char.resource_id??'').trim().toLowerCase();
+    var isMarian=names.some(function(label){
+      return ['마리안','marian','modernia','모더니아'].includes(normalizeCharacterName(label));
+    });
+    if(isMarian && /^(?:c0*19|0*19)$/.test(resource))return '마리안 : 퀸';
+    var name=ko(char.name);
     if(name==='사쿠라 (SR)'||name==='사쿠라 스즈하라')return '스즈하라 사쿠라';
     return name;
   }
