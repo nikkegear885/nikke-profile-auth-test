@@ -129,7 +129,10 @@
           list.forEach(function (item) {
             const name = String(item && item.name || '').trim();
             const image = String(item && item.image || '').trim();
-            if (name && /^https?:\/\//i.test(image)) imageMap[normalizeName(name)] = image;
+            if (name && /^https?:\/\//i.test(image)) {
+              imageMap[normalizeName(name)] = image;
+              if (name === '사쿠라 스즈하라') imageMap[normalizeName('스즈하라 사쿠라')] = image;
+            }
           });
         }
       } catch (_) {}
@@ -221,7 +224,7 @@
     const panel = document.createElement('section');
     panel.id = PANEL_ID;
     panel.hidden = true;
-    panel.setAttribute('aria-label', '니케 스킬현황');
+    panel.setAttribute('aria-label', '니케 스킬 현황');
     panel.innerHTML =
       '<div class="skill-status-toolbar">' +
         '<label class="skill-status-filter-description" for="skillStatusFilterLevel">' +
@@ -231,7 +234,7 @@
           '<span>이상 스킬인 니케만 보기</span>' +
         '</label>' +
         '<button type="button" id="skillStatusHideManageToggle" class="skill-status-hide-manage-toggle" aria-pressed="false">숨긴 캐릭터 보기</button>' +
-        '<button type="button" id="skillStatusRestoreAllButton" class="skill-status-restore-all-button">숨긴 캐릭터 취소하기</button>' +
+        '<button type="button" id="skillStatusRestoreAllButton" class="skill-status-restore-all-button">숨기기 취소</button>' +
         '<span id="skillStatusHideState" class="skill-status-hide-state" aria-live="polite"></span>' +
       '</div>' +
       '<div class="skill-status-filter-bar" id="skillStatusFilterBar">' +
@@ -539,7 +542,7 @@
       button.classList.toggle('active', button.dataset.view === 'skillStatus');
     });
     const title = document.getElementById('pageTitle');
-    if (title) title.textContent = '니케 스킬현황';
+    if (title) title.textContent = '니케 스킬 현황';
     renderSkillStatus();
     loadImages().then(renderSkillStatus);
     try { if (typeof closeSidebar === 'function') closeSidebar(); } catch (_) {}
@@ -553,16 +556,32 @@
 
   function ensureNavFallback() {
     const nav = document.querySelector('.nav');
-    if (!nav || nav.querySelector('[data-view="skillStatus"]')) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'main-view-nav';
-    button.dataset.view = 'skillStatus';
-    button.textContent = '니케 스킬현황';
-    button.addEventListener('click', function () {
-      if (typeof window.switchMainView === 'function') window.switchMainView('skillStatus');
-    });
-    nav.appendChild(button);
+    if (!nav) return;
+
+    // Reuse an existing menu item and always place it immediately below equipment status.
+    let button = nav.querySelector('[data-view="skillStatus"]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'main-view-nav';
+      button.dataset.view = 'skillStatus';
+      button.textContent = '니케 스킬 현황';
+      button.addEventListener('click', function () {
+        if (typeof window.switchMainView === 'function') window.switchMainView('skillStatus');
+      });
+    }
+
+    const charactersButton = nav.querySelector('[data-view="characters"]');
+    if (charactersButton) {
+      if (charactersButton.nextElementSibling !== button) {
+        nav.insertBefore(button, charactersButton.nextElementSibling);
+      }
+      return;
+    }
+
+    const pediaButton = nav.querySelector('[data-view="pedia"]');
+    if (pediaButton && button !== pediaButton.previousElementSibling) nav.insertBefore(button, pediaButton);
+    else if (!button.parentNode) nav.appendChild(button);
   }
 
   function installNavigation() {
