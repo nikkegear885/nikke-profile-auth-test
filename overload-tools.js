@@ -57,8 +57,8 @@ panel.innerHTML=[
   '<details class="ol-card"><summary>확률 · 계산 기준</summary><div class="ol-alert">게임 내 공지된 확률과 비용이 다르면 게임 값을 우선하세요. 기대값은 평균일 뿐 결과를 보장하지 않습니다.</div>',
   '<p class="ol-muted"><b>줄 등장:</b> 1줄 100% · 2줄 50% · 3줄 30%, 줄별 독립 등장.</p>',
   '<p class="ol-muted"><b>효과 확률:</b> 우코·공증·크뎀·방어 각 10%, 장탄·명중·차뎀·차속·크확 각 12%. 같은 장비에는 중복 효과가 나오지 않습니다.</p>',
-  '<p class="ol-muted"><b>모듈 비용:</b> 잠금 0/1/2줄의 변경비 1/2/3개, 새 영구 잠금 첫 줄 2개·둘째 줄 3개. 미개조 부위는 최초 개조비 1개 포함.</p>',
-  '<p class="ol-muted"><b>자동 잠금 기대값:</b> 현재 옵션에서 목표와 맞는 줄을 최대 2줄까지 잠그고 나머지를 반복 변경합니다. 신규 잠금비는 포함하고 옵션의 T단계 목표는 제외합니다. 최적 전략 보장은 없습니다.</p>',
+  '<p class="ol-muted"><b>모듈 비용:</b> 잠금 0/1/2줄의 변경비 1/2/3개. 잠금 선택은 무료이며 2026년 9월 개편 이후 실제 효과 변경 시 비용을 소모합니다. 미개조 부위는 최초 개조비 1개 포함.</p>',
+  '<p class="ol-muted"><b>최적 잠금 기대값:</b> 줄별 등장 확률과 목표 효과 가중치를 고려합니다. 나오는 대로 무조건 잠그지 않고, 잠금 없이 다시 돌리는 경우와 비교하여 기대 모듈을 최소화합니다. 옵션 수치 단계는 제외합니다.</p>',
   '<p class="ol-muted"><b>잠금 유지 기대값:</b> 신규 잠금 없이 현재 잠금만 유지하며 반복 변경하는 이론 기대값입니다.</p>',
   '<p class="ol-muted ol-sources">참고: <a href="https://www.prydwen.gg/nikke/guides/overload-gear-reroll" target="_blank" rel="noopener noreferrer">Prydwen</a> · <a href="https://nikke.beomtachi.com/guides/overload-gear/" target="_blank" rel="noopener noreferrer">2026 개편</a></p></details>'
 ].join('');
@@ -247,7 +247,7 @@ function lockTargets(rows,goal,m){
   for(const i of selected){
     const n=result.filter(r=>r.lock).length;
     if(n>=2)break;
-    if(!result[i].lock&&result[i].k){result[i].lock=true;cost+=2+n}
+    if(!result[i].lock&&result[i].k){result[i].lock=true;} // Lock choice is free; reroll costs already reflect locks.
   }
   return {rows:result,cost};
 }
@@ -274,6 +274,108 @@ function expectedAutoLocks(goal,m,start,memo){
   }
   return first.cost+solve(first.rows);
 }
+
+function optimalLockPlan(goal,m,start){
+  const groups=m==='fixed'?goal.slots:goal.groups;
+  const memo=new Map(),key=locks=>locks.map(e=>e.i+':'+e.k).join('|');
+  const allGoalKeys=[...new Set(groups.flat())];
+  function compatible(locks){
+    if(locks.length>Math.min(2,groups.length))return false;
+    const used=new Set();
+    function assign(n){
+      if(n===locks.length)return true;
+      const item=locks[n];
+      for(let i=0;i<groups.length;i++){
+        if(used.has(i)||!groups[i].includes(item.k)||(m==='fixed'&&item.i!==i))continue;
+        used.add(i);if(assign(n+1))return true;used.delete(i);
+      }
+      return false;
+    }
+    return assign(0);
+  }
+  function moves(rows,locks){
+    const indices=[];
+    for(let i=0;i<3;i++)if(!locks.some(x=>x.i===i)&&rows[i].k&&allGoalKeys.includes(rows[i].k))indices.push(i);
+    const list=[];
+    for(let mask=1;mask<(1<<indices.length);mask++){
+      const add=indices.filter((_,j)=>(mask&(1<<j))!==0);
+      if(locks.length+add.length>2)continue;
+      const next=locks.concat(add.map(i=>({i,k:rows[i].k}))).sort((a,b)=>a.i-b.i);
+      if(compatible(next))list.push(next);
+    }
+    return list;
+  }
+  function solve(locks){
+    const state=key(locks);
+    if(memo.has(state))return memo.get(state);
+    const lockedRows=[blank(),blank(),blank()];
+    locks.forEach(({i,k})=>lockedRows[i]={k,t:11,lock:true});
+    let success=0;
+    const transitions=[];
+    enumerateRolls(lockedRows,(rows,p)=>{
+      if(valid(rows,goal,m)){success+=p;return}
+      let best=Infinity;
+      for(const next of moves(rows,locks))best=Math.min(best,solve(next));
+      if(Number.isFinite(best))transitions.push({p,best});
+    });
+    if(!success&&!transitions.length){memo.set(state,Infinity);return Infinity}
+    const perRoll=1+locks.length;
+    let estimate=Infinity;
+    for(let i=0;i<40;i++){
+      let numerator=perRoll,denominator=success;
+      for(const item of transitions)if(item.best<estimate-1e-9){
+        numerator+=item.p*item.best;denominator+=item.p;
+      }
+      const next=denominator>1e-12?numerator/denominator:Infinity;
+      if(Math.abs(next-estimate)<1e-10){estimate=next;break}
+      estimate=next;
+    }
+    memo.set(state,estimate);
+    return estimate;
+  }
+  const unlockedBase=solve([]);
+  if(valid(start,goal,m))return {expected:0,baseline:unlockedBase,chosen:[],done:true,tips:[]};
+  const currentLocks=start.map((r,i)=>r.lock&&r.k?{i,k:r.k}:null).filter(Boolean);
+  let best=Infinity,chosen=[];
+  for(let mask=0;mask<(1<<currentLocks.length);mask++){
+    const kept=currentLocks.filter((_,j)=>(mask&(1<<j))!==0);
+    if(!compatible(kept))continue;
+    for(const candidate of [kept,...moves(start,kept)]){
+      const v=solve(candidate);
+      if(v<best-1e-8 || (Math.abs(v-best)<1e-8&&candidate.length<chosen.length)){
+        best=v;chosen=candidate;
+      }
+    }
+  }
+  const tips=[];
+  for(let i=0;i<3;i++){
+    const useful=allGoalKeys.filter(k=>compatible([{i,k}])&&solve([{i,k}])<unlockedBase-1e-7);
+    tips.push({line:i+1,keys:useful});
+  }
+  return {expected:best,baseline:unlockedBase,chosen,done:false,tips};
+}
+function formatOptimalRoute(goal,m,start,plan){
+  if(plan.done)return '<p class="ol-muted">이미 목표 조건을 달성했으므로 추가 변경이나 잠금이 필요하지 않습니다.</p>';
+  const names={ele:'우코',atk:'공증',ammo:'장탄',crit:'크확',critd:'크뎀'};
+  const short=k=>names[k]||(byKey.get(k)?byKey.get(k).n:k);
+  const current=start.map((r,i)=>r.lock&&r.k?{i,k:r.k}:null).filter(Boolean);
+  const wanted=new Set(plan.chosen.map(x=>x.i+':'+x.k)),old=new Set(current.map(x=>x.i+':'+x.k));
+  const unlock=current.filter(x=>!wanted.has(x.i+':'+x.k));
+  const add=plan.chosen.filter(x=>!old.has(x.i+':'+x.k));
+  const actions=[];
+  if(unlock.length)actions.push(unlock.map(x=>(x.i+1)+'줄 '+short(x.k)).join(', ')+' 잠금 해제');
+  if(add.length)actions.push(add.map(x=>(x.i+1)+'줄 '+short(x.k)).join(', ')+' 잠금');
+  if(!actions.length)actions.push(plan.chosen.length?'현재 잠금 유지':'현재는 잠금 없이 효과 변경');
+  const tip=plan.tips.map(x=>x.keys.length
+    ? x.line+'줄: '+x.keys.map(short).join(' / ')+'가 단독으로 나오면 잠금 유리'
+    : x.line+'줄: 단독 등장만으로는 잠금 비추천').join('<br>');
+  return '<div class="ol-output" style="margin-top:10px"><h3 style="font-size:16px">최적 잠금 경로 안내</h3>'+
+    '<p><b>지금 할 일:</b> '+esc(actions.join(' → '))+' 후 효과 변경</p>'+
+    '<p class="ol-muted">무잠금에서 목표 옵션 <b>한 개만</b> 나왔을 때 기준 (둘 이상이 동시에 나오면 조합별로 달라집니다):</p>'+
+    '<p style="line-height:1.8">'+tip+'</p>'+
+    '<p class="ol-muted">효과 변경 결과가 나오면 왼쪽 현재 옵션과 잠금 상태를 갱신한 뒤 다시 계산하세요. 가장 유리한 다음 줄 잠금을 다시 추천합니다. 잠금 선택에는 별도 모듈을 더하지 않고, 잠금 0/1/2줄의 매회 변경 비용 1/2/3개만 적용했습니다.</p></div>';
+}
+
 function metric(label,value){return '<div class="ol-metric"><small>'+label+'</small><b>'+value+'</b></div>'}
 function calculate(){
   const output=one('[data-ol-calculation]');
@@ -284,12 +386,17 @@ function calculate(){
     const p=exactProbability(goal,m,start);
     const locks=start.filter(r=>r.lock).length;
     const keep=done?0:p?(1+locks)/p:Infinity;
-    const auto=done?0:expectedAutoLocks(goal,m,start,new Map());
+    const greedy=done?0:expectedAutoLocks(goal,m,start,new Map());
+    const plan=optimalLockPlan(goal,m,start);
     const count=n=>Number.isFinite(n)?fmt(n)+'개':'달성 불가';
-    output.innerHTML='<div class="ol-output"><h3>'+count(auto)+'</h3>'+
-      '<p class="ol-muted">'+esc(name)+' 장비 한 부위의 자동 잠금 전략 기준 예상 모듈 수입니다.'+(done?' 현재 목표를 이미 달성했습니다.':'')+'</p>'+
-      '<div class="ol-grid">'+metric('자동 잠금 예상',count(auto))+metric('기존 잠금만 유지',count(keep))+'</div>'+
-      '<p class="ol-muted">신규 잠금비 포함, 목표 T단계 제외. 옵션이 없는 부위는 최초 개조비 1개를 포함합니다. 목표 효과를 순차적으로 잠그는 단순 전략이며, 최적 전략을 보장하지 않습니다.</p></div>';
+    output.innerHTML='<div class="ol-output"><h3>'+count(plan.expected)+'</h3>'+
+      '<p class="ol-muted">'+esc(name)+' 장비 한 부위의 <b>최적 잠금 전략</b> 기준 기대 모듈 수입니다.'+(done?' 현재 목표를 이미 달성했습니다.':'')+'</p>'+
+      '<div class="ol-grid">'+metric('최적 잠금 전략',count(plan.expected))+
+      metric('발견 즉시 잠금 (비최적)',count(greedy))+
+      metric('추가 잠금 없이 반복',count(keep))+
+      metric('무잠금 출발 기준',count(plan.baseline))+'</div>'+
+      '<p class="ol-muted">옵션 종류 기준이며 목표 수치 단계는 별도 계산합니다. 2026년 9월 개편 기준 잠금 선택은 무료이고 효과 변경 1회당 잠금 0/1/2줄 = 모듈 1/2/3개로 계산합니다. 동일 효과·수치 재추첨에 따른 미세한 확률 변화는 제외합니다.</p></div>'+
+      formatOptimalRoute(goal,m,start,plan);
   }catch(e){output.innerHTML='<div class="ol-alert">'+esc(e.message||'계산 실패')+'</div>'}
 }
 function calculateTier(){
