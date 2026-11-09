@@ -27,7 +27,7 @@ const storageKey='nikke-ol-current-goals-v1';
 const nav=document.querySelector('.sidebar .nav');
 const main=document.querySelector('main.main')||document.querySelector('main');
 if(!nav||!main||typeof window.switchMainView!=='function')return;
-const css="\n#overloadPanel[hidden],#overloadPanel [hidden]{display:none!important}\nbody.overload-view .main>:not(#overloadPanel):not(.topbar):not(#settingsPopover){display:none!important}\nbody.overload-view .main>.topbar{display:none!important}\nbody.overload-view #overloadPanel{display:block!important}\n#overloadPanel{box-sizing:border-box;max-width:1450px;width:100%;margin:14px auto 35px;padding:0 12px;color:#273b51}\n#overloadPanel *{box-sizing:border-box}\n#overloadPanel button,#overloadPanel select,#overloadPanel input{font:inherit}\n#overloadPanel button{cursor:pointer}\n#overloadPanel [hidden]{display:none!important}\n#overloadPanel .ol-head h2{font-size:26px;font-weight:1000;margin:0}\n#overloadPanel .ol-lead,#overloadPanel .ol-muted{font-size:12px;color:#70829a;line-height:1.6;margin:7px 0 12px}\n#overloadPanel .ol-layout{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,1fr);gap:13px;align-items:start}\n#overloadPanel .ol-card{background:#fff;border:1px solid #d6e2ed;border-radius:12px;padding:16px;margin-bottom:13px;min-width:0;box-shadow:0 3px 12px rgba(20,50,80,.05)}\n#overloadPanel .ol-card h3{font-size:17px;font-weight:1000;color:#24658e;margin:0 0 9px}\n#overloadPanel .ol-current-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}\n#overloadPanel .ol-piece{border:1px solid #dce7f1;border-radius:9px;background:#f6faff;padding:10px;min-width:0}\n#overloadPanel .ol-piece.is-excluded{opacity:.5}\n#overloadPanel .ol-piece-head{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px}\n#overloadPanel .ol-piece-head label{display:flex;gap:5px;align-items:center;font-size:13px;color:#24658e;font-weight:950}\n#overloadPanel .ol-clear{background:transparent;border:none;color:#647f95;font-size:10px;text-decoration:underline;padding:3px}\n#overloadPanel .ol-input-line{display:grid;grid-template-columns:30px minmax(0,1fr) 48px;align-items:center;gap:4px;margin-bottom:5px}\n#overloadPanel .ol-input-line:last-child{margin-bottom:0}\n#overloadPanel .ol-line-no{font-size:11px;font-weight:900}\n#overloadPanel select{width:100%;min-width:0;border:1px solid #c6d9e9;border-radius:7px;padding:7px 5px;font-size:11px;background:#fff;color:#273e52}\n#overloadPanel .ol-lock-label{display:flex;align-items:center;justify-content:end;gap:2px;font-size:10px;white-space:nowrap}\n#overloadPanel .ol-controls{display:flex;gap:10px;flex-wrap:wrap;margin:11px 0;font-size:12px;font-weight:850}\n#overloadPanel .ol-controls label{display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}\n#overloadPanel .ol-targets label{display:block;font-size:12px;font-weight:900;margin-bottom:6px}\n#overloadPanel .ol-alt{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0}\n#overloadPanel .ol-alt label{padding:7px;background:#f7fbff;border:1px solid #d6e2ec;border-radius:7px;font-size:11px;display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-actions{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}\n#overloadPanel .ol-btn{border:1px solid #bfdae9;background:#f2f9fd;color:#24759d;border-radius:8px;padding:9px 10px;font-size:11px;font-weight:900}\n#overloadPanel .ol-btn.primary{background:#178fc6;border-color:#117ead;color:#fff}\n#overloadPanel .ol-btn.big{width:100%;font-size:14px;padding:12px}\n#overloadPanel .ol-result-area{width:100%;max-width:100%;min-width:0;margin:0 0 13px;overflow-wrap:anywhere}\n#overloadPanel .ol-output{width:100%;max-width:100%;min-width:0;padding:13px;background:#eef9ff;border:1px solid #b9d9ee;border-radius:9px;overflow-wrap:anywhere}\n#overloadPanel .ol-output h3{font-size:23px;font-weight:950;color:#116f9a;margin:0}\n#overloadPanel .ol-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:11px 0}\n#overloadPanel .ol-metric{padding:9px;border:1px solid #d6e6f0;background:#fff;border-radius:8px}\n#overloadPanel .ol-metric small{display:block;color:#72899b;font-size:10px}\n#overloadPanel .ol-metric b{font-size:18px;display:block;margin-top:4px}\n#overloadPanel .ol-table-scroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}\n#overloadPanel .ol-results{width:100%;min-width:350px;table-layout:fixed;border-collapse:collapse;font-size:12px;margin:10px 0}\n#overloadPanel .ol-results th,#overloadPanel .ol-results td{padding:8px 4px;border-bottom:1px solid #cadce9;text-align:right}\n#overloadPanel .ol-results th:first-child,#overloadPanel .ol-results td:first-child{text-align:left}\n#overloadPanel .ol-results tfoot{font-weight:900}\n#overloadPanel .ol-alert{padding:11px;border:1px solid #e7d6a5;background:#fff8e7;color:#795a20;border-radius:9px;font-size:12px;line-height:1.65;margin:10px 0}\n#overloadPanel details>summary{font-size:15px;font-weight:950;color:#24658e;cursor:pointer}\n#overloadPanel .ol-tier-inputs{display:flex;gap:11px;flex-wrap:wrap;margin:12px 0}\n#overloadPanel .ol-tier-inputs label{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1;font-size:11px;font-weight:850}\n#overloadPanel .ol-sources a{color:#147cab;text-decoration:underline}\nhtml.dark-theme #overloadPanel{color:#e7f1ff}\nhtml.dark-theme #overloadPanel .ol-card{background:#16263b;border-color:#3a526c}\nhtml.dark-theme #overloadPanel .ol-card h3,html.dark-theme #overloadPanel details>summary,html.dark-theme #overloadPanel .ol-piece-head label{color:#9cdaff}\nhtml.dark-theme #overloadPanel .ol-lead,html.dark-theme #overloadPanel .ol-muted{color:#abc1d9}\nhtml.dark-theme #overloadPanel .ol-piece,html.dark-theme #overloadPanel .ol-alt label,html.dark-theme #overloadPanel .ol-metric{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel select{background:#22364e;border-color:#475f78;color:#eaf3ff}\nhtml.dark-theme #overloadPanel .ol-output{background:#173b54;border-color:#427eab;color:#dbf2ff}\nhtml.dark-theme #overloadPanel .ol-output h3{color:#a7e2ff}\nhtml.dark-theme #overloadPanel .ol-btn{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel .ol-btn.primary{background:#116e9b;color:#fff}\nhtml.dark-theme #overloadPanel .ol-alert{background:#332c1d;color:#ffe0a3;border-color:#806e44}\n@media(max-width:1050px){#overloadPanel .ol-layout{grid-template-columns:1fr}}\n@media(max-width:600px){#overloadPanel{padding:0 5px}#overloadPanel .ol-head h2{font-size:21px}#overloadPanel .ol-card{padding:10px}#overloadPanel .ol-current-grid{grid-template-columns:1fr}#overloadPanel .ol-targets{grid-template-columns:1fr}#overloadPanel .ol-grid{grid-template-columns:1fr}}\n";
+const css="\n#overloadPanel[hidden],#overloadPanel [hidden]{display:none!important}\nbody.overload-view .main>:not(#overloadPanel):not(.topbar):not(#settingsPopover){display:none!important}\nbody.overload-view .main>.topbar{display:none!important}\nbody.overload-view #overloadPanel{display:block!important}\n#overloadPanel{box-sizing:border-box;max-width:1450px;width:100%;margin:14px auto 35px;padding:0 12px;color:#273b51}\n#overloadPanel *{box-sizing:border-box}\n#overloadPanel button,#overloadPanel select,#overloadPanel input{font:inherit}\n#overloadPanel button{cursor:pointer}\n#overloadPanel [hidden]{display:none!important}\n#overloadPanel .ol-head h2{font-size:26px;font-weight:1000;margin:0}\n#overloadPanel .ol-lead,#overloadPanel .ol-muted{font-size:12px;color:#70829a;line-height:1.6;margin:7px 0 12px}\n#overloadPanel .ol-layout{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,1fr);gap:13px;align-items:start}\n#overloadPanel .ol-card{background:#fff;border:1px solid #d6e2ed;border-radius:12px;padding:16px;margin-bottom:13px;min-width:0;box-shadow:0 3px 12px rgba(20,50,80,.05)}\n#overloadPanel .ol-card h3{font-size:17px;font-weight:1000;color:#24658e;margin:0 0 9px}\n#overloadPanel .ol-current-grid{display:block}\n#overloadPanel .ol-piece{border:1px solid #dce7f1;border-radius:9px;background:#f6faff;padding:10px;min-width:0}\n#overloadPanel .ol-piece.is-excluded{opacity:.5}\n#overloadPanel .ol-piece-head{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px}\n#overloadPanel .ol-piece-head label{display:flex;gap:5px;align-items:center;font-size:13px;color:#24658e;font-weight:950}\n#overloadPanel .ol-clear{background:transparent;border:none;color:#647f95;font-size:10px;text-decoration:underline;padding:3px}\n#overloadPanel .ol-input-line{display:grid;grid-template-columns:30px minmax(0,1fr) 48px;align-items:center;gap:4px;margin-bottom:5px}\n#overloadPanel .ol-input-line:last-child{margin-bottom:0}\n#overloadPanel .ol-line-no{font-size:11px;font-weight:900}\n#overloadPanel select{width:100%;min-width:0;border:1px solid #c6d9e9;border-radius:7px;padding:7px 5px;font-size:11px;background:#fff;color:#273e52}\n#overloadPanel .ol-lock-label{display:flex;align-items:center;justify-content:end;gap:2px;font-size:10px;white-space:nowrap}\n#overloadPanel .ol-controls{display:flex;gap:10px;flex-wrap:wrap;margin:11px 0;font-size:12px;font-weight:850}\n#overloadPanel .ol-controls label{display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}\n#overloadPanel .ol-targets label{display:block;font-size:12px;font-weight:900;margin-bottom:6px}\n#overloadPanel .ol-alt{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0}\n#overloadPanel .ol-alt label{padding:7px;background:#f7fbff;border:1px solid #d6e2ec;border-radius:7px;font-size:11px;display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-actions{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}\n#overloadPanel .ol-btn{border:1px solid #bfdae9;background:#f2f9fd;color:#24759d;border-radius:8px;padding:9px 10px;font-size:11px;font-weight:900}\n#overloadPanel .ol-btn.primary{background:#178fc6;border-color:#117ead;color:#fff}\n#overloadPanel .ol-btn.big{width:100%;font-size:14px;padding:12px}\n#overloadPanel .ol-result-area{width:100%;max-width:100%;min-width:0;margin:0 0 13px;overflow-wrap:anywhere}\n#overloadPanel .ol-output{width:100%;max-width:100%;min-width:0;padding:13px;background:#eef9ff;border:1px solid #b9d9ee;border-radius:9px;overflow-wrap:anywhere}\n#overloadPanel .ol-output h3{font-size:23px;font-weight:950;color:#116f9a;margin:0}\n#overloadPanel .ol-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:11px 0}\n#overloadPanel .ol-metric{padding:9px;border:1px solid #d6e6f0;background:#fff;border-radius:8px}\n#overloadPanel .ol-metric small{display:block;color:#72899b;font-size:10px}\n#overloadPanel .ol-metric b{font-size:18px;display:block;margin-top:4px}\n#overloadPanel .ol-table-scroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}\n#overloadPanel .ol-results{width:100%;min-width:350px;table-layout:fixed;border-collapse:collapse;font-size:12px;margin:10px 0}\n#overloadPanel .ol-results th,#overloadPanel .ol-results td{padding:8px 4px;border-bottom:1px solid #cadce9;text-align:right}\n#overloadPanel .ol-results th:first-child,#overloadPanel .ol-results td:first-child{text-align:left}\n#overloadPanel .ol-results tfoot{font-weight:900}\n#overloadPanel .ol-alert{padding:11px;border:1px solid #e7d6a5;background:#fff8e7;color:#795a20;border-radius:9px;font-size:12px;line-height:1.65;margin:10px 0}\n#overloadPanel details>summary{font-size:15px;font-weight:950;color:#24658e;cursor:pointer}\n#overloadPanel .ol-tier-inputs{display:flex;gap:11px;flex-wrap:wrap;margin:12px 0}\n#overloadPanel .ol-tier-inputs label{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1;font-size:11px;font-weight:850}\n#overloadPanel .ol-sources a{color:#147cab;text-decoration:underline}\nhtml.dark-theme #overloadPanel{color:#e7f1ff}\nhtml.dark-theme #overloadPanel .ol-card{background:#16263b;border-color:#3a526c}\nhtml.dark-theme #overloadPanel .ol-card h3,html.dark-theme #overloadPanel details>summary,html.dark-theme #overloadPanel .ol-piece-head label{color:#9cdaff}\nhtml.dark-theme #overloadPanel .ol-lead,html.dark-theme #overloadPanel .ol-muted{color:#abc1d9}\nhtml.dark-theme #overloadPanel .ol-piece,html.dark-theme #overloadPanel .ol-alt label,html.dark-theme #overloadPanel .ol-metric{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel select{background:#22364e;border-color:#475f78;color:#eaf3ff}\nhtml.dark-theme #overloadPanel .ol-output{background:#173b54;border-color:#427eab;color:#dbf2ff}\nhtml.dark-theme #overloadPanel .ol-output h3{color:#a7e2ff}\nhtml.dark-theme #overloadPanel .ol-btn{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel .ol-btn.primary{background:#116e9b;color:#fff}\nhtml.dark-theme #overloadPanel .ol-alert{background:#332c1d;color:#ffe0a3;border-color:#806e44}\n@media(max-width:1050px){#overloadPanel .ol-layout{grid-template-columns:1fr}}\n@media(max-width:600px){#overloadPanel{padding:0 5px}#overloadPanel .ol-head h2{font-size:21px}#overloadPanel .ol-card{padding:10px}#overloadPanel .ol-current-grid{display:block}#overloadPanel .ol-targets{grid-template-columns:1fr}#overloadPanel .ol-grid{grid-template-columns:1fr}}\n";
 const style=document.createElement('style');style.id='ol-test-style';style.textContent=css;document.head.appendChild(style);
 const button=document.createElement('button');
 button.type='button';button.className='main-view-nav';button.dataset.view='overload';button.textContent='오버로드 기대값 계산기';
@@ -37,18 +37,19 @@ if(anchor)anchor.insertAdjacentElement('afterend',button);else nav.appendChild(b
 const panel=document.createElement('section');panel.id='overloadPanel';panel.hidden=true;
 panel.innerHTML=[
   '<header class="ol-head"><h2>오버로드 모듈 기대값 계산기 <span style="font-size:12px;color:#2284ae">TEST</span></h2><p class="ol-lead">현재 옵션과 잠금을 왼쪽에 입력하고, 오른쪽에 원하는 효과를 선택해 필요한 모듈 기대값을 계산합니다.</p></header>',
-  '<div class="ol-layout"><section class="ol-card"><h3>1. 내 현황</h3><p class="ol-muted">계산할 부위를 체크하세요. 현재 효과가 있는 줄은 옵션을 선택하고, 이미 잠근 줄은 잠금 체크를 합니다. 전부 빈 부위는 최초 개조부터 계산합니다.</p>',
+  '<div class="ol-layout"><section class="ol-card"><h3>1. 내 현황</h3><p class="ol-muted">계산할 장비 부위를 하나 선택하고, 현재 효과가 있는 줄은 옵션을 선택하세요. 이미 잠근 줄은 잠금 체크를 합니다. 전부 빈 부위는 최초 개조부터 계산합니다.</p>',
+  '<div class="ol-tier-inputs"><label>계산할 장비 부위<select data-ol-part-select>'+partNames.map(name=>'<option value="'+name+'">'+name+'</option>').join('')+'</select></label></div>',
   '<div class="ol-current-grid">'+partNames.map(name=>
-     '<div class="ol-piece" data-ol-piece="'+name+'"><div class="ol-piece-head"><label><input type="checkbox" data-ol-include="'+name+'" checked> '+name+'</label><button type="button" class="ol-clear" data-ol-clear="'+name+'">초기화</button></div>'+
+     '<div class="ol-piece" data-ol-piece="'+name+'"><div class="ol-piece-head"><label>'+name+'</label><button type="button" class="ol-clear" data-ol-clear="'+name+'">초기화</button></div>'+
      [0,1,2].map(i=>'<div class="ol-input-line"><span class="ol-line-no">'+(i+1)+'줄</span><select data-ol-current="'+i+'" aria-label="'+name+' '+(i+1)+'줄 효과"></select><label class="ol-lock-label"><input type="checkbox" data-ol-lock="'+i+'" aria-label="'+name+' '+(i+1)+'줄 잠금">잠금</label></div>').join('')+'</div>'
-   ).join('')+'</div><p class="ol-muted">현재 현황은 직접 입력하며, 이 브라우저에 저장됩니다. 계정 장비 데이터는 수정되지 않습니다.</p></section>',
+   ).join('')+'</div><p class="ol-muted">한 번에 한 부위만 계산합니다. 부위별 입력값은 브라우저에 따로 저장되며, 계정 장비 데이터는 수정되지 않습니다.</p></section>',
   '<section class="ol-card"><h3>2. 원하는 효과 목표</h3>',
   '<div class="ol-controls"><label><input type="radio" name="ol-target-mode" value="any" checked> 순서 무관</label><label><input type="radio" name="ol-target-mode" value="fixed"> 줄 위치 지정</label></div>',
   '<div class="ol-targets"><div><label data-ol-goal-label="a">필수 옵션 1</label><select data-ol-goal="a"></select></div><div><label data-ol-goal-label="b">필수 옵션 2</label><select data-ol-goal="b"></select></div></div>',
   '<p class="ol-muted" data-ol-goal-label="c">추가 조건: 아래 효과 중 하나라도 있으면 성공 (선택 사항)</p><div class="ol-alt" data-ol-alts></div>',
   '<div class="ol-actions"><button type="button" class="ol-btn" data-ol-preset="triple">우코 + 공증 + (장탄/크확/크뎀)</button><button type="button" class="ol-btn" data-ol-preset="double">우코 + 공증</button><button type="button" class="ol-btn" data-ol-preset="clear">목표 초기화</button></div>',
   '<button type="button" class="ol-btn primary big" data-ol-calculate>모듈 기대값 계산</button>',
-  '<p class="ol-muted">체크한 모든 부위에 동일한 목표를 적용합니다. 목표 효과가 발견되면 잠그는 전략과 기존 잠금만 유지하는 전략을 비교합니다.</p></section></div>',
+  '<p class="ol-muted">선택한 장비 한 부위에만 목표를 적용합니다. 목표 효과가 발견되면 잠그는 전략과 기존 잠금만 유지하는 전략을 비교합니다.</p></section></div>',
   '<section class="ol-result-area" data-ol-calculation aria-live="polite"></section>',
   '<details class="ol-card"><summary>수치 재설정(T단계) 기대값</summary><p class="ol-muted">원하는 효과를 이미 갖고 있는 상태에서 수치만 높이는 경우의 기대값입니다.</p>',
   '<div class="ol-tier-inputs"><label>현재 수치 단계<select data-ol-current-tier></select></label><label>목표 최소 단계<select data-ol-target-tier></select></label><label>다른 줄 잠금 수<select data-ol-tier-locks><option value="0">0줄 (1모듈/회)</option><option value="1">1줄 (2모듈/회)</option><option value="2">2줄 (3모듈/회)</option></select></label></div>',
@@ -83,11 +84,11 @@ function currentRows(name){
   if(rows.filter(r=>r.lock).length>2)throw Error(name+': 잠금은 최대 2줄입니다.');
   return rows;
 }
-function checkedParts(){return partNames.filter(name=>one('[data-ol-include="'+name+'"]').checked)}
+
 function refreshInputs(){
   partNames.forEach(name=>{
     const node=one('[data-ol-piece="'+name+'"]');
-    node.classList.toggle('is-excluded',!one('[data-ol-include="'+name+'"]').checked);
+    node.hidden=name!==one('[data-ol-part-select]').value;
     for(let i=0;i<3;i++){
       const k=node.querySelector('[data-ol-current="'+i+'"]').value;
       const lock=node.querySelector('[data-ol-lock="'+i+'"]');
@@ -105,23 +106,25 @@ function refreshGoalLabels(){
 function saveSettings(){
   const pieces=Object.fromEntries(partNames.map(name=>{
     const node=one('[data-ol-piece="'+name+'"]');
-    return [name,{include:one('[data-ol-include="'+name+'"]').checked,
+    return [name,{include:name===one('[data-ol-part-select]').value,
       lines:[0,1,2].map(i=>({k:node.querySelector('[data-ol-current="'+i+'"]').value,
         lock:node.querySelector('[data-ol-lock="'+i+'"]').checked}))}];
   }));
   const goal={a:one('[data-ol-goal="a"]').value,b:one('[data-ol-goal="b"]').value,
     alts:all('[data-ol-alt]:checked').map(ch=>ch.dataset.olAlt),
     mode:one('[name="ol-target-mode"]:checked').value};
-  try{localStorage.setItem(storageKey,JSON.stringify({pieces,goal}))}catch(_){}
+  try{localStorage.setItem(storageKey,JSON.stringify({pieces,goal,selectedPart:one('[data-ol-part-select]').value}))}catch(_){}
 }
 function restoreSettings(){
   try{
     const saved=JSON.parse(localStorage.getItem(storageKey)||'null');
     if(!saved||typeof saved!=='object')return;
+    // Keep all saved piece configurations from the previous four-piece UI.
+    one('[data-ol-part-select]').value=partNames.includes(saved.selectedPart)?saved.selectedPart:
+      (partNames.find(name=>saved.pieces&&saved.pieces[name]&&saved.pieces[name].include===true)||partNames[0]);
     for(const name of partNames){
       const info=saved.pieces&&saved.pieces[name];
       if(!info||!Array.isArray(info.lines))continue;
-      one('[data-ol-include="'+name+'"]').checked=info.include!==false;
       const node=one('[data-ol-piece="'+name+'"]');
       for(let i=0;i<3;i++){
         const value=info.lines[i]||{};
@@ -252,24 +255,17 @@ function metric(label,value){return '<div class="ol-metric"><small>'+label+'</sm
 function calculate(){
   const output=one('[data-ol-calculation]');
   try{
-    const goal=targets(),m=one('[name="ol-target-mode"]:checked').value,parts=checkedParts();
-    if(!parts.length)throw Error('왼쪽에서 계산할 장비 부위를 하나 이상 체크해 주세요.');
-    const memo=new Map(),results=[];
-    let autoTotal=0,keepTotal=0;
-    for(const name of parts){
-      const start=currentRows(name),done=valid(start,goal,m);
-      const p=exactProbability(goal,m,start);
-      const locks=start.filter(r=>r.lock).length;
-      const keep=done?0:p?(1+locks)/p:Infinity;
-      const auto=done?0:expectedAutoLocks(goal,m,start,memo);
-      results.push({name,done,auto,keep});
-      autoTotal+=auto;keepTotal+=keep;
-    }
-    const lines=results.map(r=>'<tr><td>'+r.name+(r.done?' (달성)':'')+'</td><td>'+fmt(r.auto)+'개</td><td>'+fmt(r.keep)+'개</td></tr>').join('');
-    output.innerHTML='<div class="ol-output"><h3>'+(Number.isFinite(autoTotal)?fmt(autoTotal)+'개':'달성 불가')+'</h3>'+
-      '<p class="ol-muted">선택한 '+parts.length+'부위의 자동 잠금 전략 기준 예상 모듈 합계입니다. 현재 옵션에 목표가 이미 있다면 해당 부위는 0개입니다.</p>'+
-      '<div class="ol-grid">'+metric('자동 잠금 예상',fmt(autoTotal)+'개')+metric('기존 잠금만 유지',fmt(keepTotal)+'개')+'</div>'+
-      '<div class="ol-table-scroll"><table class="ol-results"><thead><tr><th>부위</th><th>자동 잠금</th><th>잠금 유지</th></tr></thead><tbody>'+lines+'</tbody><tfoot><tr><td>합계</td><td>'+fmt(autoTotal)+'개</td><td>'+fmt(keepTotal)+'개</td></tr></tfoot></table></div>'+
+    const goal=targets(),m=one('[name="ol-target-mode"]:checked').value;
+    const name=one('[data-ol-part-select]').value;
+    const start=currentRows(name),done=valid(start,goal,m);
+    const p=exactProbability(goal,m,start);
+    const locks=start.filter(r=>r.lock).length;
+    const keep=done?0:p?(1+locks)/p:Infinity;
+    const auto=done?0:expectedAutoLocks(goal,m,start,new Map());
+    const count=n=>Number.isFinite(n)?fmt(n)+'개':'달성 불가';
+    output.innerHTML='<div class="ol-output"><h3>'+count(auto)+'</h3>'+
+      '<p class="ol-muted">'+esc(name)+' 장비 한 부위의 자동 잠금 전략 기준 예상 모듈 수입니다.'+(done?' 현재 목표를 이미 달성했습니다.':'')+'</p>'+
+      '<div class="ol-grid">'+metric('자동 잠금 예상',count(auto))+metric('기존 잠금만 유지',count(keep))+'</div>'+
       '<p class="ol-muted">신규 잠금비 포함, 목표 T단계 제외. 옵션이 없는 부위는 최초 개조비 1개를 포함합니다. 목표 효과를 순차적으로 잠그는 단순 전략이며, 최적 전략을 보장하지 않습니다.</p></div>';
   }catch(e){output.innerHTML='<div class="ol-alert">'+esc(e.message||'계산 실패')+'</div>'}
 }
