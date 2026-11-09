@@ -36,7 +36,7 @@ const anchor=nav.querySelector('[data-view="syncro"]');
 if(anchor)anchor.insertAdjacentElement('afterend',button);else nav.appendChild(button);
 const panel=document.createElement('section');panel.id='overloadPanel';panel.hidden=true;
 panel.innerHTML=[
-  '<header class="ol-head"><h2>모듈 기대값 간단체크 <span style="font-size:12px;color:#2284ae">TEST</span></h2><p class="ol-lead">단순한 기대값 확인용으로만 제작되었습니다. 상세한 계산기는 <a href="https://syuen.love/" target="_blank" rel="noopener noreferrer" style="color:#147cab;text-decoration:underline">https://syuen.love/</a> 등 다른사이트를 참고해주세요</p></header>',
+  '<header class="ol-head"><h2>모듈 기대값 간단체크 <span style="font-size:12px;color:#2284ae">TEST</span></h2><p class="ol-lead">단순한 기대값 확인용으로만 제작되었습니다. 상세한 모듈작 가이드는 <a href="https://syuen.love/" target="_blank" rel="noopener noreferrer" style="color:#147cab;text-decoration:underline">https://syuen.love/</a> 등 다른사이트를 참고해주세요</p></header>',
   '<div class="ol-layout"><section class="ol-card"><h3>1. 내 현황</h3><p class="ol-muted">계산할 장비 부위를 하나 선택하고, 현재 효과가 있는 줄은 옵션을 선택하세요. 이미 잠근 줄은 잠금 체크를 합니다. 전부 빈 부위는 최초 개조부터 계산합니다.</p>',
   '<div class="ol-tier-inputs"><label>계산할 장비 부위<select data-ol-part-select>'+partNames.map(name=>'<option value="'+name+'">'+name+'</option>').join('')+'</select></label></div>',
   '<div class="ol-current-grid">'+partNames.map(name=>
