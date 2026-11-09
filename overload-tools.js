@@ -57,7 +57,7 @@ panel.innerHTML=[
   '<details class="ol-card"><summary>확률 · 계산 기준</summary><div class="ol-alert">게임 내 공지된 확률과 비용이 다르면 게임 값을 우선하세요. 기대값은 평균일 뿐 결과를 보장하지 않습니다.</div>',
   '<p class="ol-muted"><b>줄 등장:</b> 1줄 100% · 2줄 50% · 3줄 30%, 줄별 독립 등장.</p>',
   '<p class="ol-muted"><b>효과 확률:</b> 우코·공증·크뎀·방어 각 10%, 장탄·명중·차뎀·차속·크확 각 12%. 같은 장비에는 중복 효과가 나오지 않습니다.</p>',
-  '<p class="ol-muted"><b>모듈 비용:</b> 잠금 0/1/2줄의 변경비 1/2/3개. 잠금 선택은 무료이며 2026년 9월 개편 이후 실제 효과 변경 시 비용을 소모합니다. 미개조 부위는 최초 개조비 1개 포함.</p>',
+  '<p class="ol-muted"><b>모듈 비용:</b> 잠금 0/1/2줄의 변경비 1/2/3개. 잠금 재료는 2026년 9월 개편 이후 실제 효과 변경 시 소모합니다. 첫 잠금 2개·둘째 잠금 3개가 변경비와 별도입니다. 미개조 부위는 최초 개조비 1개 포함.</p>',
   '<p class="ol-muted"><b>최적 잠금 기대값:</b> 줄별 등장 확률과 목표 효과 가중치를 고려합니다. 나오는 대로 무조건 잠그지 않고, 잠금 없이 다시 돌리는 경우와 비교하여 기대 모듈을 최소화합니다. 옵션 수치 단계는 제외합니다.</p>',
   '<p class="ol-muted"><b>잠금 유지 기대값:</b> 신규 잠금 없이 현재 잠금만 유지하며 반복 변경하는 이론 기대값입니다.</p>',
   '<p class="ol-muted ol-sources">참고: <a href="https://www.prydwen.gg/nikke/guides/overload-gear-reroll" target="_blank" rel="noopener noreferrer">Prydwen</a> · <a href="https://nikke.beomtachi.com/guides/overload-gear/" target="_blank" rel="noopener noreferrer">2026 개편</a></p></details>'
@@ -247,7 +247,7 @@ function lockTargets(rows,goal,m){
   for(const i of selected){
     const n=result.filter(r=>r.lock).length;
     if(n>=2)break;
-    if(!result[i].lock&&result[i].k){result[i].lock=true;} // Lock choice is free; reroll costs already reflect locks.
+    if(!result[i].lock&&result[i].k){result[i].lock=true;cost+=2+n;} // Paid at the next reroll, on top of the reroll cost.
   }
   return {rows:result,cost};
 }
@@ -315,7 +315,10 @@ function optimalLockPlan(goal,m,start){
     enumerateRolls(lockedRows,(rows,p)=>{
       if(valid(rows,goal,m)){success+=p;return}
       let best=Infinity;
-      for(const next of moves(rows,locks))best=Math.min(best,solve(next));
+      for(const next of moves(rows,locks)){
+        const lockCost=(next.length===1?2:next.length===2?5:0)-(locks.length===1?2:locks.length===2?5:0);
+        best=Math.min(best,lockCost+solve(next));
+      }
       if(Number.isFinite(best))transitions.push({p,best});
     });
     if(!success&&!transitions.length){memo.set(state,Infinity);return Infinity}
@@ -341,7 +344,8 @@ function optimalLockPlan(goal,m,start){
     const kept=currentLocks.filter((_,j)=>(mask&(1<<j))!==0);
     if(!compatible(kept))continue;
     for(const candidate of [kept,...moves(start,kept)]){
-      const v=solve(candidate);
+      const lockCost=(candidate.length===1?2:candidate.length===2?5:0)-(kept.length===1?2:kept.length===2?5:0);
+      const v=solve(candidate)+lockCost;
       if(v<best-1e-8 || (Math.abs(v-best)<1e-8&&candidate.length<chosen.length)){
         best=v;chosen=candidate;
       }
@@ -381,7 +385,7 @@ function formatOptimalRoute(goal,m,start,plan){
     '<p><b>지금 할 일:</b> '+esc(actions.join(' → '))+' 후 효과 변경</p>'+
     '<p class="ol-muted">무잠금에서 목표 옵션 <b>한 개만</b> 나왔을 때 기준 (둘 이상이 동시에 나오면 조합별로 달라집니다):</p>'+
     '<p style="line-height:1.8">'+tip+'</p>'+example+
-    '<p class="ol-muted">효과 변경 결과가 나오면 왼쪽 현재 옵션과 잠금 상태를 갱신한 뒤 다시 계산하세요. 가장 유리한 다음 줄 잠금을 다시 추천합니다. 잠금 선택에는 별도 모듈을 더하지 않고, 잠금 0/1/2줄의 매회 변경 비용 1/2/3개만 적용했습니다.</p></div>';
+    '<p class="ol-muted">효과 변경 결과가 나오면 왼쪽 현재 옵션과 잠금 상태를 갱신한 뒤 다시 계산하세요. 가장 유리한 다음 줄 잠금을 다시 추천합니다. 잠금 설정 자체는 무료이지만 이후 효과 변경 시 최초 잠금 2개·둘째 잠금 3개를 한 번씩 추가 소모합니다. 이후 잠금 0/1/2줄의 매회 변경 비용은 1/2/3개입니다.</p></div>';
 }
 
 function metric(label,value){return '<div class="ol-metric"><small>'+label+'</small><b>'+value+'</b></div>'}
@@ -403,7 +407,7 @@ function calculate(){
       metric('발견 즉시 잠금 (비최적)',count(greedy))+
       metric('추가 잠금 없이 반복',count(keep))+
       metric('무잠금 출발 기준',count(plan.baseline))+'</div>'+
-      '<p class="ol-muted">옵션 종류 기준이며 목표 수치 단계는 별도 계산합니다. 2026년 9월 개편 기준 잠금 선택은 무료이고 효과 변경 1회당 잠금 0/1/2줄 = 모듈 1/2/3개로 계산합니다. 동일 효과·수치 재추첨에 따른 미세한 확률 변화는 제외합니다.</p></div>'+
+      '<p class="ol-muted">옵션 종류 기준이며 목표 수치 단계는 별도 계산합니다. 2026년 9월 개편 기준 잠금 재료는 효과 변경 시 소모합니다. 첫 잠금에 모듈 2개, 둘째 잠금에 3개가 별도로 필요하며, 변경 1회당 잠금 0/1/2줄 = 모듈 1/2/3개를 추가 적용합니다. 동일 효과·수치 재추첨에 따른 미세한 확률 변화는 제외합니다.</p></div>'+
       formatOptimalRoute(goal,m,start,plan);
   }catch(e){output.innerHTML='<div class="ol-alert">'+esc(e.message||'계산 실패')+'</div>'}
 }
