@@ -27,7 +27,11 @@ const storageKey='nikke-ol-current-goals-v1';
 const nav=document.querySelector('.sidebar .nav');
 const main=document.querySelector('main.main')||document.querySelector('main');
 if(!nav||!main||typeof window.switchMainView!=='function')return;
-const css="\n#overloadPanel[hidden],#overloadPanel [hidden]{display:none!important}\nbody.overload-view .main>:not(#overloadPanel):not(.topbar):not(#settingsPopover){display:none!important}\nbody.overload-view .main>.topbar{display:none!important}\nbody.overload-view #overloadPanel{display:block!important}\n#overloadPanel{box-sizing:border-box;max-width:1450px;width:100%;margin:14px auto 35px;padding:0 12px;color:#273b51}\n#overloadPanel *{box-sizing:border-box}\n#overloadPanel button,#overloadPanel select,#overloadPanel input{font:inherit}\n#overloadPanel button{cursor:pointer}\n#overloadPanel [hidden]{display:none!important}\n#overloadPanel .ol-head h2{font-size:26px;font-weight:1000;margin:0}\n#overloadPanel .ol-lead,#overloadPanel .ol-muted{font-size:12px;color:#70829a;line-height:1.6;margin:7px 0 12px}\n#overloadPanel .ol-layout{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,1fr);gap:13px;align-items:start}\n#overloadPanel .ol-card{background:#fff;border:1px solid #d6e2ed;border-radius:12px;padding:16px;margin-bottom:13px;min-width:0;box-shadow:0 3px 12px rgba(20,50,80,.05)}\n#overloadPanel .ol-card h3{font-size:17px;font-weight:1000;color:#24658e;margin:0 0 9px}\n#overloadPanel .ol-current-grid{display:block}\n#overloadPanel .ol-piece{border:1px solid #dce7f1;border-radius:9px;background:#f6faff;padding:10px;min-width:0}\n#overloadPanel .ol-piece.is-excluded{opacity:.5}\n#overloadPanel .ol-piece-head{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px}\n#overloadPanel .ol-piece-head label{display:flex;gap:5px;align-items:center;font-size:13px;color:#24658e;font-weight:950}\n#overloadPanel .ol-clear{background:transparent;border:none;color:#647f95;font-size:10px;text-decoration:underline;padding:3px}\n#overloadPanel .ol-input-line{display:grid;grid-template-columns:30px minmax(0,1fr) 48px;align-items:center;gap:4px;margin-bottom:5px}\n#overloadPanel .ol-input-line:last-child{margin-bottom:0}\n#overloadPanel .ol-line-no{font-size:11px;font-weight:900}\n#overloadPanel select{width:100%;min-width:0;border:1px solid #c6d9e9;border-radius:7px;padding:7px 5px;font-size:11px;background:#fff;color:#273e52}\n#overloadPanel .ol-lock-label{display:flex;align-items:center;justify-content:end;gap:2px;font-size:10px;white-space:nowrap}\n#overloadPanel .ol-controls{display:flex;gap:10px;flex-wrap:wrap;margin:11px 0;font-size:12px;font-weight:850}\n#overloadPanel .ol-controls label{display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}\n#overloadPanel .ol-targets label{display:block;font-size:12px;font-weight:900;margin-bottom:6px}\n#overloadPanel .ol-alt{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0}\n#overloadPanel .ol-alt label{padding:7px;background:#f7fbff;border:1px solid #d6e2ec;border-radius:7px;font-size:11px;display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-actions{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}\n#overloadPanel .ol-btn{border:1px solid #bfdae9;background:#f2f9fd;color:#24759d;border-radius:8px;padding:9px 10px;font-size:11px;font-weight:900}\n#overloadPanel .ol-btn.primary{background:#178fc6;border-color:#117ead;color:#fff}\n#overloadPanel .ol-btn.big{width:100%;font-size:14px;padding:12px}\n#overloadPanel .ol-result-area{width:100%;max-width:100%;min-width:0;margin:0 0 13px;overflow-wrap:anywhere}\n#overloadPanel .ol-output{width:100%;max-width:100%;min-width:0;padding:13px;background:#eef9ff;border:1px solid #b9d9ee;border-radius:9px;overflow-wrap:anywhere}\n#overloadPanel .ol-output h3{font-size:23px;font-weight:950;color:#116f9a;margin:0}\n#overloadPanel .ol-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:11px 0}\n#overloadPanel .ol-metric{padding:9px;border:1px solid #d6e6f0;background:#fff;border-radius:8px}\n#overloadPanel .ol-metric small{display:block;color:#72899b;font-size:10px}\n#overloadPanel .ol-metric b{font-size:18px;display:block;margin-top:4px}\n#overloadPanel .ol-table-scroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}\n#overloadPanel .ol-results{width:100%;min-width:350px;table-layout:fixed;border-collapse:collapse;font-size:12px;margin:10px 0}\n#overloadPanel .ol-results th,#overloadPanel .ol-results td{padding:8px 4px;border-bottom:1px solid #cadce9;text-align:right}\n#overloadPanel .ol-results th:first-child,#overloadPanel .ol-results td:first-child{text-align:left}\n#overloadPanel .ol-results tfoot{font-weight:900}\n#overloadPanel .ol-alert{padding:11px;border:1px solid #e7d6a5;background:#fff8e7;color:#795a20;border-radius:9px;font-size:12px;line-height:1.65;margin:10px 0}\n#overloadPanel details>summary{font-size:15px;font-weight:950;color:#24658e;cursor:pointer}\n#overloadPanel .ol-tier-inputs{display:flex;gap:11px;flex-wrap:wrap;margin:12px 0}\n#overloadPanel .ol-tier-inputs label{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1;font-size:11px;font-weight:850}\n#overloadPanel .ol-sources a{color:#147cab;text-decoration:underline}\nhtml.dark-theme #overloadPanel{color:#e7f1ff}\nhtml.dark-theme #overloadPanel .ol-card{background:#16263b;border-color:#3a526c}\nhtml.dark-theme #overloadPanel .ol-card h3,html.dark-theme #overloadPanel details>summary,html.dark-theme #overloadPanel .ol-piece-head label{color:#9cdaff}\nhtml.dark-theme #overloadPanel .ol-lead,html.dark-theme #overloadPanel .ol-muted{color:#abc1d9}\nhtml.dark-theme #overloadPanel .ol-piece,html.dark-theme #overloadPanel .ol-alt label,html.dark-theme #overloadPanel .ol-metric{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel select{background:#22364e;border-color:#475f78;color:#eaf3ff}\nhtml.dark-theme #overloadPanel .ol-output{background:#173b54;border-color:#427eab;color:#dbf2ff}\nhtml.dark-theme #overloadPanel .ol-output h3{color:#a7e2ff}\nhtml.dark-theme #overloadPanel .ol-btn{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel .ol-btn.primary{background:#116e9b;color:#fff}\nhtml.dark-theme #overloadPanel .ol-alert{background:#332c1d;color:#ffe0a3;border-color:#806e44}\n@media(max-width:1050px){#overloadPanel .ol-layout{grid-template-columns:1fr}}\n@media(max-width:600px){#overloadPanel{padding:0 5px}#overloadPanel .ol-head h2{font-size:21px}#overloadPanel .ol-card{padding:10px}#overloadPanel .ol-current-grid{display:block}#overloadPanel .ol-targets{grid-template-columns:1fr}#overloadPanel .ol-grid{grid-template-columns:1fr}}\n";
+const css="\n#overloadPanel[hidden],#overloadPanel [hidden]{display:none!important}\nbody.overload-view .main>:not(#overloadPanel):not(.topbar):not(#settingsPopover){display:none!important}\nbody.overload-view .main>.topbar{display:none!important}\nbody.overload-view #overloadPanel{display:block!important}\n#overloadPanel{box-sizing:border-box;max-width:1450px;width:100%;margin:14px auto 35px;padding:0 12px;color:#273b51}\n#overloadPanel *{box-sizing:border-box}\n#overloadPanel button,#overloadPanel select,#overloadPanel input{font:inherit}\n#overloadPanel button{cursor:pointer}\n#overloadPanel [hidden]{display:none!important}\n#overloadPanel .ol-head h2{font-size:26px;font-weight:1000;margin:0}\n#overloadPanel .ol-lead,#overloadPanel .ol-muted{font-size:12px;color:#70829a;line-height:1.6;margin:7px 0 12px}\n#overloadPanel .ol-layout{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,1fr);gap:13px;align-items:start}\n#overloadPanel .ol-card{background:#fff;border:1px solid #d6e2ed;border-radius:12px;padding:16px;margin-bottom:13px;min-width:0;box-shadow:0 3px 12px rgba(20,50,80,.05)}\n#overloadPanel .ol-card h3{font-size:17px;font-weight:1000;color:#24658e;margin:0 0 9px}\n#overloadPanel .ol-current-grid{display:block}\n#overloadPanel .ol-piece{border:1px solid #dce7f1;border-radius:9px;background:#f6faff;padding:10px;min-width:0}\n#overloadPanel .ol-piece.is-excluded{opacity:.5}\n#overloadPanel .ol-piece-head{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px}\n#overloadPanel .ol-piece-head label{display:flex;gap:5px;align-items:center;font-size:13px;color:#24658e;font-weight:950}\n#overloadPanel .ol-clear{background:transparent;border:none;color:#647f95;font-size:10px;text-decoration:underline;padding:3px}\n#overloadPanel .ol-input-line{display:grid;grid-template-columns:30px minmax(0,1fr) 48px;align-items:center;gap:4px;margin-bottom:5px}\n#overloadPanel .ol-input-line:last-child{margin-bottom:0}\n#overloadPanel .ol-line-no{font-size:11px;font-weight:900}\n#overloadPanel select{width:100%;min-width:0;border:1px solid #c6d9e9;border-radius:7px;padding:7px 5px;font-size:11px;background:#fff;color:#273e52}\n#overloadPanel .ol-lock-label{display:flex;align-items:center;justify-content:end;gap:2px;font-size:10px;white-space:nowrap}\n#overloadPanel .ol-controls{display:flex;gap:10px;flex-wrap:wrap;margin:11px 0;font-size:12px;font-weight:850}\n#overloadPanel .ol-controls label{display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}\n#overloadPanel .ol-targets label{display:block;font-size:12px;font-weight:900;margin-bottom:6px}\n#overloadPanel .ol-alt{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0}\n#overloadPanel .ol-alt label{padding:7px;background:#f7fbff;border:1px solid #d6e2ec;border-radius:7px;font-size:11px;display:inline-flex;align-items:center;gap:4px}\n#overloadPanel .ol-actions{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}\n#overloadPanel .ol-btn{border:1px solid #bfdae9;background:#f2f9fd;color:#24759d;border-radius:8px;padding:9px 10px;font-size:11px;font-weight:900}\n#overloadPanel .ol-btn.primary{background:#178fc6;border-color:#117ead;color:#fff}\n#overloadPanel .ol-btn.big{width:100%;font-size:14px;padding:12px}\n#overloadPanel .ol-result-area{width:100%;max-width:100%;min-width:0;margin:0 0 13px;overflow-wrap:anywhere}\n#overloadPanel .ol-output{width:100%;max-width:100%;min-width:0;padding:13px;background:#eef9ff;border:1px solid #b9d9ee;border-radius:9px;overflow-wrap:anywhere}\n#overloadPanel .ol-output h3{font-size:23px;font-weight:950;color:#116f9a;margin:0}\n#overloadPanel .ol-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:11px 0}\n#overloadPanel .ol-metric{padding:9px;border:1px solid #d6e6f0;background:#fff;border-radius:8px}\n#overloadPanel .ol-metric small{display:block;color:#72899b;font-size:10px}\n#overloadPanel .ol-metric b{font-size:18px;display:block;margin-top:4px}\n#overloadPanel .ol-table-scroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}\n#overloadPanel .ol-results{width:100%;min-width:350px;table-layout:fixed;border-collapse:collapse;font-size:12px;margin:10px 0}\n#overloadPanel .ol-results th,#overloadPanel .ol-results td{padding:8px 4px;border-bottom:1px solid #cadce9;text-align:right}\n#overloadPanel .ol-results th:first-child,#overloadPanel .ol-results td:first-child{text-align:left}\n#overloadPanel .ol-results tfoot{font-weight:900}\n#overloadPanel .ol-alert{padding:11px;border:1px solid #e7d6a5;background:#fff8e7;color:#795a20;border-radius:9px;font-size:12px;line-height:1.65;margin:10px 0}\n#overloadPanel details>summary{font-size:15px;font-weight:950;color:#24658e;cursor:pointer}\n#overloadPanel .ol-tier-inputs{display:flex;gap:11px;flex-wrap:wrap;margin:12px 0}\n#overloadPanel .ol-tier-inputs label{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1;font-size:11px;font-weight:850}\n#overloadPanel .ol-sources a{color:#147cab;text-decoration:underline}\nhtml.dark-theme #overloadPanel{color:#e7f1ff}\nhtml.dark-theme #overloadPanel .ol-card{background:#16263b;border-color:#3a526c}\nhtml.dark-theme #overloadPanel .ol-card h3,html.dark-theme #overloadPanel details>summary,html.dark-theme #overloadPanel .ol-piece-head label{color:#9cdaff}\nhtml.dark-theme #overloadPanel .ol-lead,html.dark-theme #overloadPanel .ol-muted{color:#abc1d9}\nhtml.dark-theme #overloadPanel .ol-piece,html.dark-theme #overloadPanel .ol-alt label,html.dark-theme #overloadPanel .ol-metric{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel select{background:#22364e;border-color:#475f78;color:#eaf3ff}\nhtml.dark-theme #overloadPanel .ol-output{background:#173b54;border-color:#427eab;color:#dbf2ff}\nhtml.dark-theme #overloadPanel .ol-output h3{color:#a7e2ff}\nhtml.dark-theme #overloadPanel .ol-btn{background:#20334b;border-color:#435a73;color:#e1edff}\nhtml.dark-theme #overloadPanel .ol-btn.primary{background:#116e9b;color:#fff}\nhtml.dark-theme #overloadPanel .ol-alert{background:#332c1d;color:#ffe0a3;border-color:#806e44}\n#overloadPanel .ol-strategy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:0 0 12px}
+#overloadPanel .ol-strategy-title{display:block;font-size:13px;margin-bottom:9px;color:#24658e}
+html.dark-theme #overloadPanel .ol-strategy-title{color:#a7e2ff}
+@media(max-width:700px){#overloadPanel .ol-strategy-grid{grid-template-columns:1fr}}
+@media(max-width:1050px){#overloadPanel .ol-layout{grid-template-columns:1fr}}\n@media(max-width:600px){#overloadPanel{padding:0 5px}#overloadPanel .ol-head h2{font-size:21px}#overloadPanel .ol-card{padding:10px}#overloadPanel .ol-current-grid{display:block}#overloadPanel .ol-targets{grid-template-columns:1fr}#overloadPanel .ol-grid{grid-template-columns:1fr}}\n";
 const style=document.createElement('style');style.id='ol-test-style';style.textContent=css+'\n#overloadPanel .ol-alt label.ol-alt-required{border-color:#79b9e0;background:#e2f4ff;color:#245b7b;font-weight:950;cursor:default}\n#overloadPanel .ol-alt label.ol-alt-required input{opacity:1;accent-color:#1689bd}\nhtml.dark-theme #overloadPanel .ol-alt label.ol-alt-required{border-color:#66afd6;background:#264d65;color:#dff2ff}\n#overloadPanel .ol-route-details>summary{cursor:pointer;font-size:15px;font-weight:900;color:#116f9a;line-height:1.5}\n#overloadPanel .ol-route-details[open]>summary{margin-bottom:10px}\nhtml.dark-theme #overloadPanel .ol-route-details>summary{color:#a7e2ff}';document.head.appendChild(style);
 const button=document.createElement('button');
 button.type='button';button.className='main-view-nav';button.dataset.view='overload';button.textContent='모듈 기대값 간단체크';
@@ -49,7 +53,7 @@ panel.innerHTML=[
   '<p class="ol-muted" data-ol-goal-label="c">추가 조건: 아래 효과 중 하나라도 있으면 성공 (선택 사항)</p><div class="ol-alt" data-ol-alts></div><p class="ol-muted">필수 옵션은 아래에서도 자동으로 체크되며, 추가 조건에 중복 계산되지 않습니다.</p>',
   '<div class="ol-actions"><button type="button" class="ol-btn" data-ol-preset="triple">우코 + 공증 + (장탄/크확/크뎀)</button><button type="button" class="ol-btn" data-ol-preset="double">우코 + 공증</button><button type="button" class="ol-btn" data-ol-preset="clear">목표 초기화</button></div>',
   '<button type="button" class="ol-btn primary big" data-ol-calculate>모듈 기대값 계산</button>',
-  '<p class="ol-muted">선택한 장비 한 부위에만 목표를 적용합니다. 목표 효과가 발견되면 잠그는 전략과 기존 잠금만 유지하는 전략을 비교합니다.</p></section></div>',
+  '<p class="ol-muted">선택한 장비 한 부위의 결과를 ① 직접 잠금 유지(해제 금지·추가 잠금 가능) ② 전체 최적화(잠금 해제 가능)로 구분해서 비교합니다.</p></section></div>',
   '<section class="ol-result-area" data-ol-calculation aria-live="polite"></section>',
   '<details class="ol-card"><summary>수치 재설정(T단계) 기대값</summary><p class="ol-muted">원하는 효과를 이미 갖고 있는 상태에서 수치만 높이는 경우의 기대값입니다.</p>',
   '<div class="ol-tier-inputs"><label>현재 수치 단계<select data-ol-current-tier></select></label><label>목표 최소 단계<select data-ol-target-tier></select></label><label>다른 줄 잠금 수<select data-ol-tier-locks><option value="0">0줄 (1모듈/회)</option><option value="1">1줄 (2모듈/회)</option><option value="2">2줄 (3모듈/회)</option></select></label></div>',
@@ -58,8 +62,8 @@ panel.innerHTML=[
   '<p class="ol-muted"><b>줄 등장:</b> 1줄 100% · 2줄 50% · 3줄 30%, 줄별 독립 등장.</p>',
   '<p class="ol-muted"><b>효과 확률:</b> 우코·공증·크뎀·방어 각 10%, 장탄·명중·차뎀·차속·크확 각 12%. 같은 장비에는 중복 효과가 나오지 않습니다.</p>',
   '<p class="ol-muted"><b>모듈 비용:</b> 잠금 0/1/2줄의 변경비 1/2/3개. 잠금 재료는 2026년 9월 개편 이후 실제 효과 변경 시 소모합니다. 첫 잠금 2개·둘째 잠금 3개가 변경비와 별도입니다. 미개조 부위는 최초 개조비 1개 포함.</p>',
-  '<p class="ol-muted"><b>최적 잠금 기대값:</b> 줄별 등장 확률과 목표 효과 가중치를 고려합니다. 나오는 대로 무조건 잠그지 않고, 잠금 없이 다시 돌리는 경우와 비교하여 기대 모듈을 최소화합니다. 옵션 수치 단계는 제외합니다.</p>',
-  '<p class="ol-muted"><b>잠금 유지 기대값:</b> 신규 잠금 없이 현재 잠금만 유지하며 반복 변경하는 이론 기대값입니다.</p>',
+  '<p class="ol-muted"><b>전체 최적화(잠금 해제 가능):</b> 줄별 등장 확률과 목표 효과 가중치를 고려합니다. 나오는 대로 무조건 잠그지 않고, 잠금 없이 다시 돌리는 경우와 비교하여 기대 모듈을 최소화합니다. 옵션 수치 단계는 제외합니다.</p>',
+  '<p class="ol-muted"><b>직접 잠금 유지 기대값:</b> 체크한 잠금은 끝까지 해제하지 않으며, 필요하면 추가 잠금을 합니다. 불가능한 목표는 달성 불가로 표시합니다. <b>추가 잠금 없이 반복:</b> 신규 잠금 없이 현재 잠금만 유지하는 별도 비교치입니다.</p>',
   '<p class="ol-muted ol-sources">참고: <a href="https://www.prydwen.gg/nikke/guides/overload-gear-reroll" target="_blank" rel="noopener noreferrer">Prydwen</a> · <a href="https://nikke.beomtachi.com/guides/overload-gear/" target="_blank" rel="noopener noreferrer">2026 개편</a></p></details>'
 ].join('');
 main.appendChild(panel);
@@ -365,8 +369,86 @@ function optimalLockPlan(goal,m,start){
   }
   return {expected:best,baseline:unlockedBase,chosen,done:false,tips};
 }
+// Preserved-lock strategy: user-checked locks are permanent; beneficial new locks are allowed.
+function preservedLockPlan(goal,m,start){
+  const initial=start.map((r,i)=>r.lock&&r.k?{i,k:r.k}:null).filter(Boolean);
+  const key=xs=>xs.map(x=>x.i+':'+x.k).join('|');
+  const lockCost=n=>n===0?0:n===1?2:5;
+  const targets=new Set((m==='fixed'?goal.slots:goal.groups).flat());
+  const memo=new Map(),possibility=new Map();
+  const materialize=xs=>{
+    const rows=[blank(),blank(),blank()];
+    xs.forEach(({i,k})=>{rows[i]={k,t:11,lock:true}});
+    return rows;
+  };
+  function possible(xs){
+    const id=key(xs);
+    if(!possibility.has(id))possibility.set(id,exactProbability(goal,m,materialize(xs))>1e-14);
+    return possibility.get(id);
+  }
+  function additions(rows,xs){
+    if(xs.length>=2)return [];
+    const candidates=[];
+    for(let i=0;i<3;i++)if(!xs.some(x=>x.i===i)&&rows[i].k&&targets.has(rows[i].k))candidates.push(i);
+    const result=[];
+    for(let mask=1;mask<(1<<candidates.length);mask++){
+      const selected=candidates.filter((_,j)=>(mask&(1<<j))!==0);
+      if(xs.length+selected.length>2)continue;
+      const next=xs.concat(selected.map(i=>({i,k:rows[i].k}))).sort((a,b)=>a.i-b.i);
+      if(possible(next))result.push(next);
+    }
+    return result;
+  }
+  function solve(xs){
+    const id=key(xs);
+    if(memo.has(id))return memo.get(id);
+    if(!possible(xs)){memo.set(id,Infinity);return Infinity}
+    let success=0;
+    const transitions=[];
+    enumerateRolls(materialize(xs),(rows,p)=>{
+      if(valid(rows,goal,m)){success+=p;return}
+      let best=Infinity;
+      for(const next of additions(rows,xs)){
+        best=Math.min(best,lockCost(next.length)-lockCost(xs.length)+solve(next));
+      }
+      if(Number.isFinite(best))transitions.push({p,best});
+    });
+    const perRoll=1+xs.length;
+    let estimate=Infinity;
+    for(let n=0;n<60;n++){
+      let top=perRoll,bottom=success;
+      for(const item of transitions)if(item.best<estimate-1e-9){top+=item.p*item.best;bottom+=item.p}
+      const updated=bottom>1e-14?top/bottom:Infinity;
+      if(Math.abs(updated-estimate)<1e-10){estimate=updated;break}
+      estimate=updated;
+    }
+    memo.set(id,estimate);
+    return estimate;
+  }
+  if(valid(start,goal,m))return {expected:0,chosen:initial,done:true};
+  if(!possible(initial))return {expected:Infinity,chosen:initial,done:false};
+  let best=Infinity,chosen=initial;
+  for(const xs of [initial,...additions(start,initial)]){
+    const value=lockCost(xs.length)-lockCost(initial.length)+solve(xs);
+    if(value<best-1e-8){best=value;chosen=xs}
+  }
+  return {expected:best,chosen,done:false};
+}
+function formatPreservedRoute(start,plan){
+  const shorts={ele:'우코',atk:'공증',ammo:'장탄',crit:'크확',critd:'크뎀'};
+  const short=k=>shorts[k]||(byKey.get(k)?byKey.get(k).n:k);
+  const initial=new Set(start.map((r,i)=>r.lock&&r.k?i+':'+r.k:null).filter(Boolean));
+  const added=plan.chosen.filter(x=>!initial.has(x.i+':'+x.k));
+  const prefix='<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>직접 잠금 유지 경로 안내 (잠금 해제 없음)</summary>';
+  if(plan.done)return prefix+'<p class="ol-muted">현재 잠금을 유지한 채 이미 목표에 도달했습니다. 추가 변경이 필요하지 않습니다.</p></details>';
+  if(!Number.isFinite(plan.expected))return prefix+'<p class="ol-muted">현재 체크한 잠금을 전부 유지하면 목표를 달성할 수 없습니다. 목표를 변경하거나 잠금 해제를 허용하는 전체 최적화를 확인하세요.</p></details>';
+  const action=added.length?added.map(x=>(x.i+1)+'줄 '+short(x.k)+' 추가 잠금').join(' → '):'체크한 잠금 그대로 유지';
+  return prefix+'<p><b>지금 할 일:</b> '+esc(action)+' → 효과 변경</p>'+
+    '<p class="ol-muted">체크한 잠금은 끝까지 해제하지 않습니다. 향후 새로 나온 목표 효과는 기대값상 이득일 때만 추가 잠금합니다. 효과 변경 뒤 현재 상태를 다시 입력해 다음 행동을 확인하세요.</p></details>';
+}
+
 function formatOptimalRoute(goal,m,start,plan){
-  if(plan.done)return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>최적 잠금 경로 안내</summary><p class="ol-muted">이미 목표 조건을 달성했으므로 추가 변경이나 잠금이 필요하지 않습니다.</p></details>';
+  if(plan.done)return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>전체 최적화 경로 안내 (잠금 해제 가능)</summary><p class="ol-muted">이미 목표 조건을 달성했으므로 추가 변경이나 잠금이 필요하지 않습니다.</p></details>';
   const names={ele:'우코',atk:'공증',ammo:'장탄',crit:'크확',critd:'크뎀'};
   const short=k=>names[k]||(byKey.get(k)?byKey.get(k).n:k);
   const current=start.map((r,i)=>r.lock&&r.k?{i,k:r.k}:null).filter(Boolean);
@@ -390,7 +472,7 @@ function formatOptimalRoute(goal,m,start,plan){
     example='<p><b>대표적인 잠금 경로:</b> 3줄 '+esc(a)+' 등장 → 3줄 잠금 → 2줄 '+esc(b)+' 등장 → 2줄 잠금 → 1줄에서 '+esc(c)+'를 노립니다. 순서를 바꿔서 3줄 '+esc(b)+', 2줄 '+esc(a)+'도 가능합니다.</p>'+
       '<p class="ol-muted">단, 중간에 다른 목표 옵션이 동시에 나오면 이 순서가 항상 최선은 아닙니다. 매번 결과를 재입력해 남은 기대 모듈을 비교하세요.</p>';
   }
-  return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>최적 잠금 경로 안내</summary>'+
+  return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>전체 최적화 경로 안내 (잠금 해제 가능)</summary>'+
     '<p><b>지금 할 일:</b> '+esc(actions.join(' → '))+' → 효과 변경</p>'+
     '<p class="ol-muted">무잠금에서 목표 옵션 <b>한 개만</b> 나왔을 때 기준 (잠금 비용까지 포함, 둘 이상 동시에 나오면 조합별로 달라집니다):</p>'+
     '<p style="line-height:1.8">'+tip+'</p>'+example+
@@ -409,13 +491,17 @@ function calculate(){
     const keep=done?0:p?(1+locks)/p:Infinity;
     const greedy=done?0:expectedAutoLocks(goal,m,start,new Map());
     const plan=optimalLockPlan(goal,m,start);
+    const preserved=preservedLockPlan(goal,m,start);
     const count=n=>Number.isFinite(n)?fmt(n)+'개':'달성 불가';
-    output.innerHTML=formatOptimalRoute(goal,m,start,plan)+
-      '<div class="ol-output"><h3>'+count(plan.expected)+'</h3>'+
-      '<p class="ol-muted">'+esc(name)+' 장비 한 부위의 <b>최적 잠금 전략</b> 기준 기대 모듈 수입니다.'+(done?' 현재 목표를 이미 달성했습니다.':'')+'</p>'+
-      '<div class="ol-grid">'+metric('최적 잠금 전략',count(plan.expected))+
+    output.innerHTML=formatPreservedRoute(start,preserved)+formatOptimalRoute(goal,m,start,plan)+
+      '<div class="ol-strategy-grid">'+
+      '<div class="ol-output"><strong class="ol-strategy-title">① 직접 잠금 유지 · 해제 금지</strong><h3>'+count(preserved.expected)+'</h3>'+
+      '<p class="ol-muted">'+esc(name)+' 장비에 직접 체크한 잠금은 해제하지 않습니다. 유리하면 다른 줄을 추가 잠금하는 것까지 계산합니다.</p></div>'+
+      '<div class="ol-output"><strong class="ol-strategy-title">② 전체 최적화 · 잠금 해제 가능</strong><h3>'+count(plan.expected)+'</h3>'+
+      '<p class="ol-muted">현재 잠금도 해제할 수 있다고 가정하여 최소 기대 모듈을 구합니다.'+(done?' 이미 목표를 달성했습니다.':'')+'</p></div></div>'+
+      '<div class="ol-output"><b>다른 방식과 비교</b><div class="ol-grid">'+
+      metric('기존 잠금만 유지 · 추가 잠금 없음',count(keep))+
       metric('발견 즉시 잠금 (비최적)',count(greedy))+
-      metric('추가 잠금 없이 반복',count(keep))+
       metric('무잠금 출발 기준',count(plan.baseline))+'</div>'+
       '<p class="ol-muted">옵션 종류 기준이며 목표 수치 단계는 별도 계산합니다. 2026년 9월 개편 기준 잠금 재료는 효과 변경 시 소모합니다. 첫 잠금에 모듈 2개, 둘째 잠금에 3개가 별도로 필요하며, 변경 1회당 잠금 0/1/2줄 = 모듈 1/2/3개를 추가 적용합니다. 동일 효과·수치 재추첨에 따른 미세한 확률 변화는 제외합니다.</p></div>';
   }catch(e){output.innerHTML='<div class="ol-alert">'+esc(e.message||'계산 실패')+'</div>'}
