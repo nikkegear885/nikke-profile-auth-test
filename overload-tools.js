@@ -46,7 +46,7 @@ panel.innerHTML=[
   '<section class="ol-card"><h3>2. 원하는 효과 목표</h3>',
   '<div class="ol-controls"><label><input type="radio" name="ol-target-mode" value="any" checked> 순서 무관</label><label><input type="radio" name="ol-target-mode" value="fixed"> 줄 위치 지정</label></div>',
   '<div class="ol-targets"><div><label data-ol-goal-label="a">필수 옵션 1</label><select data-ol-goal="a"></select></div><div><label data-ol-goal-label="b">필수 옵션 2</label><select data-ol-goal="b"></select></div></div>',
-  '<p class="ol-muted" data-ol-goal-label="c">추가 조건: 아래 효과 중 하나라도 있으면 성공 (선택 사항)</p><div class="ol-alt" data-ol-alts></div>',
+  '<p class="ol-muted" data-ol-goal-label="c">추가 조건: 아래 효과 중 하나라도 있으면 성공 (선택 사항)</p><div class="ol-alt" data-ol-alts></div><p class="ol-muted">필수 옵션은 아래에서도 자동으로 체크되며, 추가 조건에 중복 계산되지 않습니다.</p>',
   '<div class="ol-actions"><button type="button" class="ol-btn" data-ol-preset="triple">우코 + 공증 + (장탄/크확/크뎀)</button><button type="button" class="ol-btn" data-ol-preset="double">우코 + 공증</button><button type="button" class="ol-btn" data-ol-preset="clear">목표 초기화</button></div>',
   '<button type="button" class="ol-btn primary big" data-ol-calculate>모듈 기대값 계산</button>',
   '<p class="ol-muted">선택한 장비 한 부위에만 목표를 적용합니다. 목표 효과가 발견되면 잠그는 전략과 기존 잠금만 유지하는 전략을 비교합니다.</p></section></div>',
@@ -72,6 +72,8 @@ one('[data-ol-current-tier]').value='5';one('[data-ol-target-tier]').value='11';
 one('[data-ol-goal="a"]').value='ele';one('[data-ol-goal="b"]').value='atk';
 one('[data-ol-alts]').innerHTML=effects.map(e=>
   '<label><input type="checkbox" data-ol-alt="'+e.k+'"'+(['ammo','crit','critd'].includes(e.k)?' checked':'')+'> '+e.n+'</label>').join('');
+// Manual alternatives are separate from required goals' automatic visual checks.
+const manuallySelectedAlts=new Set(all('[data-ol-alt]:checked').map(ch=>ch.dataset.olAlt));
 function currentRows(name){
   const node=one('[data-ol-piece="'+name+'"]');
   const rows=[0,1,2].map(i=>({
@@ -103,6 +105,23 @@ function refreshGoalLabels(){
   one('[data-ol-goal-label="b"]').textContent=fixed?'2줄 필수 효과':'필수 옵션 2';
   one('[data-ol-goal-label="c"]').textContent=fixed?'3줄: 아래 효과 중 하나':'추가 조건: 아래 효과 중 하나라도 있으면 성공 (선택 사항)';
 }
+function syncRequiredGoalChecks(changedGoal){
+  const first=one('[data-ol-goal="a"]'),second=one('[data-ol-goal="b"]');
+  // Duplicate required effects cannot occupy two different lines.
+  if(first.value && first.value===second.value){
+    if(changedGoal==='a')second.value='';
+    else first.value='';
+  }
+  const required=new Set([first.value,second.value].filter(Boolean));
+  all('[data-ol-alt]').forEach(ch=>{
+    const isRequired=required.has(ch.dataset.olAlt);
+    if(isRequired)manuallySelectedAlts.delete(ch.dataset.olAlt);
+    ch.checked=isRequired||manuallySelectedAlts.has(ch.dataset.olAlt);
+    ch.disabled=isRequired;
+    ch.parentElement.classList.toggle('ol-alt-required',isRequired);
+    ch.parentElement.title=isRequired?'필수 옵션으로 선택되어 자동 체크됨':'';
+  });
+}
 function saveSettings(){
   const pieces=Object.fromEntries(partNames.map(name=>{
     const node=one('[data-ol-piece="'+name+'"]');
@@ -111,7 +130,7 @@ function saveSettings(){
         lock:node.querySelector('[data-ol-lock="'+i+'"]').checked}))}];
   }));
   const goal={a:one('[data-ol-goal="a"]').value,b:one('[data-ol-goal="b"]').value,
-    alts:all('[data-ol-alt]:checked').map(ch=>ch.dataset.olAlt),
+    alts:Array.from(manuallySelectedAlts),
     mode:one('[name="ol-target-mode"]:checked').value};
   try{localStorage.setItem(storageKey,JSON.stringify({pieces,goal,selectedPart:one('[data-ol-part-select]').value}))}catch(_){}
 }
@@ -135,14 +154,18 @@ function restoreSettings(){
     const goal=saved.goal||{};
     if(goal.a===''||byKey.has(goal.a))one('[data-ol-goal="a"]').value=goal.a;
     if(goal.b===''||byKey.has(goal.b))one('[data-ol-goal="b"]').value=goal.b;
-    if(Array.isArray(goal.alts))all('[data-ol-alt]').forEach(ch=>ch.checked=goal.alts.includes(ch.dataset.olAlt));
+    if(Array.isArray(goal.alts)){
+      manuallySelectedAlts.clear();
+      goal.alts.filter(k=>byKey.has(k)).forEach(k=>manuallySelectedAlts.add(k));
+    }
     if(goal.mode==='fixed')one('[name="ol-target-mode"][value="fixed"]').checked=true;
   }catch(_){}
 }
-restoreSettings();refreshInputs();refreshGoalLabels();
+restoreSettings();syncRequiredGoalChecks();refreshInputs();refreshGoalLabels();
 function targets(){
   const a=one('[data-ol-goal="a"]').value,b=one('[data-ol-goal="b"]').value;
-  const c=all('[data-ol-alt]:checked').map(node=>node.dataset.olAlt);
+  // Automatically checked required effects must not count as optional OR goals.
+  const c=all('[data-ol-alt]:checked:not(:disabled)').map(node=>node.dataset.olAlt);
   const slots=[[a],[b],c].map(g=>g.filter(Boolean));
   const groups=slots.filter(g=>g.length);
   const used=new Set();
@@ -291,7 +314,9 @@ function calculateTier(){
 function preset(key){
   one('[data-ol-goal="a"]').value=key==='clear'?'':'ele';
   one('[data-ol-goal="b"]').value=key==='clear'?'':'atk';
-  all('[data-ol-alt]').forEach(ch=>ch.checked=key==='triple'&&['ammo','crit','critd'].includes(ch.dataset.olAlt));
+  manuallySelectedAlts.clear();
+  if(key==='triple')['ammo','crit','critd'].forEach(k=>manuallySelectedAlts.add(k));
+  syncRequiredGoalChecks();
   one('[data-ol-calculation]').innerHTML='';saveSettings();
 }
 panel.addEventListener('click',ev=>{
@@ -316,6 +341,11 @@ panel.addEventListener('change',ev=>{
       refreshInputs();saveSettings();return;
     }
   }
+  if(el.hasAttribute('data-ol-alt')){
+    if(el.checked)manuallySelectedAlts.add(el.dataset.olAlt);
+    else manuallySelectedAlts.delete(el.dataset.olAlt);
+  }
+  syncRequiredGoalChecks(el.getAttribute('data-ol-goal'));
   refreshInputs();refreshGoalLabels();saveSettings();
   one('[data-ol-calculation]').innerHTML='';
 });
