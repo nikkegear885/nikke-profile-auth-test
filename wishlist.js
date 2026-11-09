@@ -390,10 +390,10 @@
     return wallStatus === 'O' && WISHLIST_TREASURE_NAMECARD_NAMES.has(norm(name))
       ? WISHLIST_TREASURE_NAMECARD_HINT : '';
   }
-  // Tell users when an O-mode recommendation moved up specifically because a key unit is missing.
-  // The automatic recommendation order is unchanged by these purely visual hints.
+  // Show special purple recommendation hints in both 160-wall O and X modes
+  // when a key unit is missing. These hints do not change auto-build ordering.
   function getWishlistSpecialPriorityHint(name){
-    if(wallStatus !== 'O' || !name) return '';
+    if(!name) return '';
     const key = norm(name);
     if(key === norm('루주') && shouldKeepUnownedRougeInGeneralTier()){
       return '아니스 : 스타를 미보유 중이므로 우선적으로 추천되었습니다';
