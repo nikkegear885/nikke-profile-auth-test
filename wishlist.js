@@ -269,7 +269,7 @@
   }
   function getWishlistPerformancePosition(name){
     const key = norm(name);
-    if(isLaplaceAfterJulia(name,getBreakthrough(name))) return {rank:8,tierOrder:6,index:1.5};
+    if(isLaplaceNamecardInO(name)) return {rank:8,tierOrder:6,index:1.5};
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)){
       return {rank:8,tierOrder:6,index:-1}; // first in the ordinary namecard tier
     }
@@ -393,10 +393,10 @@
   const WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES = new Set(['센티'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES = new Set(['라플라스'].map(norm));
   const NORMAL_LAPLACE_NAME = '라플라스';
-  // O + PVP exclude only; preserve the normal PvP tiers and 2★ exception.
-  function isLaplaceAfterJulia(name,breakthrough){
-    return wallStatus === 'O' && pvpPriority === 'exclude' &&
-      norm(name) === norm(NORMAL_LAPLACE_NAME) && breakthrough < 2;
+  // Normal Laplace leaves the PVP tier whenever the 160 wall is cleared (O).
+  // X mode retains the existing PvP preference and under-2★ rule.
+  function isLaplaceNamecardInO(name){
+    return wallStatus === 'O' && norm(name) === norm(NORMAL_LAPLACE_NAME);
   }
   const WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES = new Set(['츠바이','율리아'].map(norm));
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
@@ -417,7 +417,7 @@
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
-    if(isLaplaceAfterJulia(name,getBreakthrough(name))) return 8;
+    if(isLaplaceNamecardInO(name)) return getBreakthrough(name) < 2 ? 8 : DEFAULT_PERFORMANCE_PRIORITY;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return 8;
     if(key === norm(KILLER_WIFE_NAME)) return getKillerWifePriority(isMarkedUnowned(name));
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 1;
@@ -459,7 +459,7 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
-    if(isLaplaceAfterJulia(name,breakthrough)) return 7.95;
+    if(isLaplaceNamecardInO(name)) return breakthrough < 2 ? 7.95 : 18;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
@@ -502,7 +502,7 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
-    if(isLaplaceAfterJulia(name,breakthrough)) return 7.95;
+    if(isLaplaceNamecardInO(name)) return breakthrough < 2 ? 7.95 : 18;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
@@ -756,8 +756,8 @@
       ['드레이크','범용캐 최우선. 160벽 X에서 드레이크가 3돌 미만이고 제외 설정이 아니면 보유 여부와 관계없이 티아를 대신하며 티아를 추천 후보에서 제외'],
       ['센티','2돌 미만일 때 애장품 솔레 순위로 상승. 이후 PVP 선호도 적용'],
       ['라플라스',wallStatus === 'O'
-        ? 'PVP 우선·솔레 우선 시 기존 순서 유지. PVP 제외 시 2돌 미만 일반 라플라스는 율리아 바로 뒤, 2돌 이상 기존 후순위'
-        : 'PVP 내 최후순위. 2돌 미만 동안 PVP 우선 그룹 유지'],
+        ? 'PVP 우선 대상에서 제외. 모든 PVP 설정에서 2돌 미만은 율리아 바로 뒤의 명함 추천, 2돌 이상은 후순위'
+        : '160벽 X에서는 기존 PVP 선호도 적용. 2돌 미만 동안 PVP 우선 그룹 유지'],
       ['아인','범용캐 3순위']
     ] : [
       ['목단','애장품 필수. 160벽 X 미보유 시 우선 포함'],
@@ -771,9 +771,11 @@
       const isDeltaNamecard = company === '엘리시온' && wallStatus === 'O';
       const tierNames = isDeltaNamecard && tier.label === '솔레'
         ? tier.names.filter(name => norm(name) !== norm(DELTA_NINJA_THIEF_NAME))
-        : isDeltaNamecard && tier.label === '명함 추천'
-          ? [DELTA_NINJA_THIEF_NAME,...tier.names]
-          : tier.names;
+        : wallStatus === 'O' && tier.label === 'PVP 우선'
+          ? tier.names.filter(name => norm(name) !== norm(NORMAL_LAPLACE_NAME))
+          : isDeltaNamecard && tier.label === '명함 추천'
+            ? [DELTA_NINJA_THIEF_NAME,...tier.names.flatMap(name => norm(name) === norm('율리아') ? [name,NORMAL_LAPLACE_NAME] : [name])]
+            : tier.names;
       const names = tierNames.filter(name => eligibleKeys.has(norm(name)));
       return names.length ? [String(tier.rank) + ' · ' + tier.label,names.join(' → ')] : null;
     }).filter(Boolean);
