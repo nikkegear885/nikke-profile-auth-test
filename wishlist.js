@@ -371,6 +371,20 @@
       .flatMap(tier => tier.names.map(norm))
   );
   const WISHLIST_TRACKED_NAMES = new Set(WISHLIST_PERFORMANCE_TIERS.flatMap(tier => tier.names.map(norm)));
+  // Tell users when an O-mode recommendation moved up specifically because a key unit is missing.
+  // The automatic recommendation order is unchanged by these purely visual hints.
+  function getWishlistSpecialPriorityHint(name){
+    if(wallStatus !== 'O' || !name) return '';
+    const key = norm(name);
+    if(key === norm('루주') && shouldKeepUnownedRougeInGeneralTier()){
+      return '아니스 : 스타를 미보유 중이므로 우선적으로 추천되었습니다';
+    }
+    if(key === norm(KILLER_WIFE_NAME) &&
+       isMarkedUnowned(KILLER_WIFE_NAME) && isMarkedUnowned('라피 : 레드 후드')){
+      return '라피 : 레드 후드를 미보유 중이므로 우선적으로 추천되었습니다';
+    }
+    return '';
+  }
   // Colored markers are intentionally restricted to standard-company equipment slots in O mode.
   function getWishlistRecommendationHint(name, company){
     if(wallStatus !== 'O' || !name || company === PILGRIM_COMPANY) return '';
@@ -378,10 +392,10 @@
     if(WISHLIST_TREASURE_UPSIDE_NAMES.has(key) ||
        WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) ||
        WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) ||
-       WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return '애장품 가능한 캐릭터입니다';
+       WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return '애장품 보유캐릭터';
     if(key === norm(DELTA_NINJA_THIEF_NAME) || WISHLIST_NAMECARD_NAMES.has(key) ||
        (key === norm(KILLER_WIFE_NAME) && getKillerWifePriority(isMarkedUnowned(name)) === 8)){
-      return '명함 추천';
+      return '우선도가 높지는 않지만 명함 정도는 추천';
     }
     if(WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key)) return '도감작 추천';
     return '';
@@ -1603,17 +1617,21 @@
       '#wishlistPanel .wl-slot.is-namecard-recommend .wl-tile.wl-photo-only{border-color:#16ad51}',
       '#wishlistPanel .wl-slot.is-collection-recommend .wl-tile.wl-photo-only{border-color:#df3e48}',
       '#wishlistPanel .wl-slot.is-treasure-recommend .wl-tile.wl-photo-only{border-color:#f39428}',
+      '#wishlistPanel .wl-slot.is-special-recommend .wl-tile.wl-photo-only{border-color:#a65be9}',
       '#wishlistPanel .wl-slot.is-bonus-recruit .wl-tile{border:3px solid #00b84a;box-shadow:0 0 0 2px #e6ffed,0 0 0 5px rgba(0,184,74,.48),0 4px 11px rgba(0,120,45,.42),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(0,100,35,.14)}',
       '#wishlistPanel .wl-slot.is-road-to-villain .wl-tile{border:3px solid #e53935;box-shadow:0 0 0 2px #fff0f0,0 0 0 5px rgba(229,57,53,.5),0 4px 11px rgba(150,0,0,.38),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(130,0,0,.14)}',
       '#wishlistPanel .wl-slot.is-namecard-recommend .wl-tile{border:3px solid #16ad51;box-shadow:0 0 0 2px #e9fff0,0 0 0 4px rgba(20,177,87,.58),0 4px 11px rgba(9,125,62,.27)}',
       '#wishlistPanel .wl-slot.is-collection-recommend .wl-tile{border:3px solid #df3e48;box-shadow:0 0 0 2px #fff0f1,0 0 0 4px rgba(222,53,64,.55),0 4px 11px rgba(150,24,35,.28)}',
       '#wishlistPanel .wl-slot.is-treasure-recommend .wl-tile{border:3px solid #f39428;box-shadow:0 0 0 2px #fff5e6,0 0 0 4px rgba(255,151,36,.62),0 4px 11px rgba(180,97,14,.33)}',
+      '#wishlistPanel .wl-slot.is-special-recommend .wl-tile{border:3px solid #a65be9;box-shadow:0 0 0 2px #f8ecff,0 0 0 4px rgba(164,82,230,.66),0 4px 11px rgba(111,40,170,.34)}',
       'html.dark-theme #wishlistPanel .wl-slot.is-namecard-recommend .wl-tile{box-shadow:0 0 0 2px #122d25,0 0 0 4px rgba(48,223,119,.7),0 4px 11px rgba(0,0,0,.35)}',
       'html.dark-theme #wishlistPanel .wl-slot.is-collection-recommend .wl-tile{box-shadow:0 0 0 2px #331f29,0 0 0 4px rgba(255,91,101,.7),0 4px 11px rgba(0,0,0,.35)}',
       'html.dark-theme #wishlistPanel .wl-slot.is-treasure-recommend .wl-tile{box-shadow:0 0 0 2px #382719,0 0 0 4px rgba(255,173,65,.78),0 4px 11px rgba(0,0,0,.35)}',
+      'html.dark-theme #wishlistPanel .wl-slot.is-special-recommend .wl-tile{box-shadow:0 0 0 2px #33223f,0 0 0 4px rgba(195,118,255,.82),0 4px 11px rgba(0,0,0,.35)}',
       '#wishlistHoverCard.is-namecard-recommend{border-color:#34c47b}',
       '#wishlistHoverCard.is-collection-recommend{border-color:#f06c74}',
       '#wishlistHoverCard.is-treasure-recommend{border-color:#f4ab49}',
+      '#wishlistHoverCard.is-special-recommend{border-color:#b978f5}',
       '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
       '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
       '#wishlistPanel .wl-character-name-label{display:none;box-sizing:border-box;width:100%;margin-top:3px;padding:0 1px;color:#4a5565;font-size:9px;font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere;word-break:keep-all}',
@@ -2140,10 +2158,12 @@
     const name = picks[company][slot] || '';
     const isBonusRecruit = !!name && wallStatus === 'X' && WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(name));
     const isRoadToVillain = !!name && wallStatus === 'X' && norm(name) === norm('드레이크');
-    const recommendationHint = getWishlistRecommendationHint(name,company);
-    const isNamecardRecommend = recommendationHint === '명함 추천';
-    const isCollectionRecommend = recommendationHint === '도감작 추천';
-    const isTreasureRecommend = recommendationHint === '애장품 가능한 캐릭터입니다';
+    const specialPriorityHint = company === PILGRIM_COMPANY ? '' : getWishlistSpecialPriorityHint(name);
+    const recommendationHint = specialPriorityHint || getWishlistRecommendationHint(name,company);
+    const isNamecardRecommend = !specialPriorityHint && recommendationHint === '우선도가 높지는 않지만 명함 정도는 추천';
+    const isCollectionRecommend = !specialPriorityHint && recommendationHint === '도감작 추천';
+    const isTreasureRecommend = !specialPriorityHint && recommendationHint === '애장품 보유캐릭터';
+    const isSpecialRecommend = !!specialPriorityHint;
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
     let tile;
@@ -2165,8 +2185,9 @@
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
     const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') + (recommendationHint ? ' · ' + recommendationHint : '') : '빈 슬롯';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (isRoadToVillain ? ' is-road-to-villain' : '') + (isNamecardRecommend ? ' is-namecard-recommend' : '') + (isCollectionRecommend ? ' is-collection-recommend' : '') + (isTreasureRecommend ? ' is-treasure-recommend' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (isRoadToVillain ? ' is-road-to-villain' : '') + (isNamecardRecommend ? ' is-namecard-recommend' : '') + (isCollectionRecommend ? ' is-collection-recommend' : '') + (isTreasureRecommend ? ' is-treasure-recommend' : '') + (isSpecialRecommend ? ' is-special-recommend' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
       (name ? ' data-wl-hover-text="' + esc(name) + '"' : '') +
+      (specialPriorityHint ? ' data-wl-special-hint="' + esc(specialPriorityHint) + '"' : '') +
       (recommendationHint ? ' tabindex="0"' : '') +
       ' aria-label="' + esc(accessibleName) + '">' +
       tile +
@@ -2235,10 +2256,12 @@
     const isNamecardRecommend = !!slot && slot.classList.contains('is-namecard-recommend');
     const isCollectionRecommend = !!slot && slot.classList.contains('is-collection-recommend');
     const isTreasureRecommend = !!slot && slot.classList.contains('is-treasure-recommend');
+    const isSpecialRecommend = !!slot && slot.classList.contains('is-special-recommend');
     card.classList.toggle('is-guidance', isGuidance);
     card.classList.toggle('is-namecard-recommend', isNamecardRecommend);
     card.classList.toggle('is-collection-recommend', isCollectionRecommend);
     card.classList.toggle('is-treasure-recommend', isTreasureRecommend);
+    card.classList.toggle('is-special-recommend', isSpecialRecommend);
     imageBox.replaceChildren();
     meta.replaceChildren();
     imageBox.style.display = 'none';
@@ -2252,12 +2275,14 @@
         nameLabel.textContent = '보너스 리크루트에 포함된 니케입니다.\n본인의 포인트 상황에 따라 제외 추천';
       }else if(isRoadToVillain){
         nameLabel.textContent = '로드 투 빌런 상시 이벤트로 2돌파 까지 획득 가능한 니케입니다.\n1회라도 직접 획득했다면 제외 추천';
+      }else if(isSpecialRecommend){
+        nameLabel.textContent = String(slot.getAttribute('data-wl-special-hint') || '');
       }else if(isNamecardRecommend){
-        nameLabel.textContent = '명함 추천';
+        nameLabel.textContent = '우선도가 높지는 않지만 명함 정도는 추천';
       }else if(isCollectionRecommend){
         nameLabel.textContent = '도감작 추천';
       }else if(isTreasureRecommend){
-        nameLabel.textContent = '애장품 가능한 캐릭터입니다';
+        nameLabel.textContent = '애장품 보유캐릭터';
       }else{
         nameLabel.textContent = name;
       }
@@ -2278,7 +2303,7 @@
 
   function hideWishlistHoverCard(){
     if(!hoverCard) return;
-    hoverCard.classList.remove('is-visible','is-compact','is-guidance','is-namecard-recommend','is-collection-recommend','is-treasure-recommend');
+    hoverCard.classList.remove('is-visible','is-compact','is-guidance','is-namecard-recommend','is-collection-recommend','is-treasure-recommend','is-special-recommend');
     hoverCard.setAttribute('aria-hidden','true');
     hoverCardAnchor = null;
   }
