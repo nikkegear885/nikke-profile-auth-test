@@ -269,6 +269,7 @@
   }
   function getWishlistPerformancePosition(name){
     const key = norm(name);
+    if(isLaplaceAfterJulia(name,getBreakthrough(name))) return {rank:8,tierOrder:6,index:1.5};
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)){
       return {rank:8,tierOrder:6,index:-1}; // first in the ordinary namecard tier
     }
@@ -374,6 +375,10 @@
   function getWishlistRecommendationHint(name, company){
     if(wallStatus !== 'O' || !name || company === PILGRIM_COMPANY) return '';
     const key = norm(name);
+    if(WISHLIST_TREASURE_UPSIDE_NAMES.has(key) ||
+       WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) ||
+       WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) ||
+       WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return '애장품 가능한 캐릭터입니다';
     if(key === norm(DELTA_NINJA_THIEF_NAME) || WISHLIST_NAMECARD_NAMES.has(key) ||
        (key === norm(KILLER_WIFE_NAME) && getKillerWifePriority(isMarkedUnowned(name)) === 8)){
       return '명함 추천';
@@ -387,6 +392,12 @@
   // 센티는 2돌 미만일 때만 PVP 대신 애장품 솔레캐 우선순위를 적용합니다.
   const WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES = new Set(['센티'].map(norm));
   const WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES = new Set(['라플라스'].map(norm));
+  const NORMAL_LAPLACE_NAME = '라플라스';
+  // O + PVP exclude only; preserve the normal PvP tiers and 2★ exception.
+  function isLaplaceAfterJulia(name,breakthrough){
+    return wallStatus === 'O' && pvpPriority === 'exclude' &&
+      norm(name) === norm(NORMAL_LAPLACE_NAME) && breakthrough < 2;
+  }
   const WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES = new Set(['츠바이','율리아'].map(norm));
   const WISHLIST_AUTO_EXCLUDE_AT_TWO_NAMES = new Set(['미란다'].map(norm));
   // 베스티 : 택티컬 업은 미보유 상태에서만 범용캐로 취급하고, 명함 보유 시 기존 PVP 우선도를 따른다.
@@ -406,6 +417,7 @@
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
+    if(isLaplaceAfterJulia(name,getBreakthrough(name))) return 8;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return 8;
     if(key === norm(KILLER_WIFE_NAME)) return getKillerWifePriority(isMarkedUnowned(name));
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 1;
@@ -447,6 +459,7 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
+    if(isLaplaceAfterJulia(name,breakthrough)) return 7.95;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
@@ -489,6 +502,7 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
+    if(isLaplaceAfterJulia(name,breakthrough)) return 7.95;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
@@ -741,7 +755,9 @@
       ['플로라 · 토브','애장품 필수. 160벽 X에서 미보유이면 우선 포함'],
       ['드레이크','범용캐 최우선. 160벽 X에서 드레이크가 3돌 미만이고 제외 설정이 아니면 보유 여부와 관계없이 티아를 대신하며 티아를 추천 후보에서 제외'],
       ['센티','2돌 미만일 때 애장품 솔레 순위로 상승. 이후 PVP 선호도 적용'],
-      ['라플라스','PVP 내 최후순위. 2돌 미만 동안 PVP 우선 그룹 유지'],
+      ['라플라스',wallStatus === 'O'
+        ? 'PVP 우선·솔레 우선 시 기존 순서 유지. PVP 제외 시 2돌 미만 일반 라플라스는 율리아 바로 뒤, 2돌 이상 기존 후순위'
+        : 'PVP 내 최후순위. 2돌 미만 동안 PVP 우선 그룹 유지'],
       ['아인','범용캐 3순위']
     ] : [
       ['목단','애장품 필수. 160벽 X 미보유 시 우선 포함'],
@@ -1582,14 +1598,20 @@
       '#wishlistPanel .wl-select{position:absolute;inset:0;z-index:8;width:100%;height:100%;opacity:0;cursor:pointer}',
       '#wishlistPanel .wl-select-trigger{position:absolute;inset:0;z-index:8;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}',
       '#wishlistPanel .wl-tile.wl-photo-only{padding:0;border-color:#8a8a8a;background:#fff}',
+      '#wishlistPanel .wl-slot.is-namecard-recommend .wl-tile.wl-photo-only{border-color:#16ad51}',
+      '#wishlistPanel .wl-slot.is-collection-recommend .wl-tile.wl-photo-only{border-color:#df3e48}',
+      '#wishlistPanel .wl-slot.is-treasure-recommend .wl-tile.wl-photo-only{border-color:#f39428}',
       '#wishlistPanel .wl-slot.is-bonus-recruit .wl-tile{border:3px solid #00b84a;box-shadow:0 0 0 2px #e6ffed,0 0 0 5px rgba(0,184,74,.48),0 4px 11px rgba(0,120,45,.42),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(0,100,35,.14)}',
       '#wishlistPanel .wl-slot.is-road-to-villain .wl-tile{border:3px solid #e53935;box-shadow:0 0 0 2px #fff0f0,0 0 0 5px rgba(229,57,53,.5),0 4px 11px rgba(150,0,0,.38),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(130,0,0,.14)}',
       '#wishlistPanel .wl-slot.is-namecard-recommend .wl-tile{border:3px solid #16ad51;box-shadow:0 0 0 2px #e9fff0,0 0 0 4px rgba(20,177,87,.58),0 4px 11px rgba(9,125,62,.27)}',
       '#wishlistPanel .wl-slot.is-collection-recommend .wl-tile{border:3px solid #df3e48;box-shadow:0 0 0 2px #fff0f1,0 0 0 4px rgba(222,53,64,.55),0 4px 11px rgba(150,24,35,.28)}',
+      '#wishlistPanel .wl-slot.is-treasure-recommend .wl-tile{border:3px solid #f39428;box-shadow:0 0 0 2px #fff5e6,0 0 0 4px rgba(255,151,36,.62),0 4px 11px rgba(180,97,14,.33)}',
       'html.dark-theme #wishlistPanel .wl-slot.is-namecard-recommend .wl-tile{box-shadow:0 0 0 2px #122d25,0 0 0 4px rgba(48,223,119,.7),0 4px 11px rgba(0,0,0,.35)}',
       'html.dark-theme #wishlistPanel .wl-slot.is-collection-recommend .wl-tile{box-shadow:0 0 0 2px #331f29,0 0 0 4px rgba(255,91,101,.7),0 4px 11px rgba(0,0,0,.35)}',
+      'html.dark-theme #wishlistPanel .wl-slot.is-treasure-recommend .wl-tile{box-shadow:0 0 0 2px #382719,0 0 0 4px rgba(255,173,65,.78),0 4px 11px rgba(0,0,0,.35)}',
       '#wishlistHoverCard.is-namecard-recommend{border-color:#34c47b}',
       '#wishlistHoverCard.is-collection-recommend{border-color:#f06c74}',
+      '#wishlistHoverCard.is-treasure-recommend{border-color:#f4ab49}',
       '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
       '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
       '#wishlistPanel .wl-character-name-label{display:none;box-sizing:border-box;width:100%;margin-top:3px;padding:0 1px;color:#4a5565;font-size:9px;font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere;word-break:keep-all}',
@@ -2119,6 +2141,7 @@
     const recommendationHint = getWishlistRecommendationHint(name,company);
     const isNamecardRecommend = recommendationHint === '명함 추천';
     const isCollectionRecommend = recommendationHint === '도감작 추천';
+    const isTreasureRecommend = recommendationHint === '애장품 가능한 캐릭터입니다';
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
     let tile;
@@ -2140,7 +2163,7 @@
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
     const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') + (recommendationHint ? ' · ' + recommendationHint : '') : '빈 슬롯';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (isRoadToVillain ? ' is-road-to-villain' : '') + (isNamecardRecommend ? ' is-namecard-recommend' : '') + (isCollectionRecommend ? ' is-collection-recommend' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (isRoadToVillain ? ' is-road-to-villain' : '') + (isNamecardRecommend ? ' is-namecard-recommend' : '') + (isCollectionRecommend ? ' is-collection-recommend' : '') + (isTreasureRecommend ? ' is-treasure-recommend' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
       (name ? ' data-wl-hover-text="' + esc(name) + '"' : '') +
       (recommendationHint ? ' tabindex="0"' : '') +
       ' aria-label="' + esc(accessibleName) + '">' +
@@ -2209,9 +2232,11 @@
     const isGuidance = !!slot && (slot.classList.contains('is-bonus-recruit') || slot.classList.contains('is-road-to-villain'));
     const isNamecardRecommend = !!slot && slot.classList.contains('is-namecard-recommend');
     const isCollectionRecommend = !!slot && slot.classList.contains('is-collection-recommend');
+    const isTreasureRecommend = !!slot && slot.classList.contains('is-treasure-recommend');
     card.classList.toggle('is-guidance', isGuidance);
     card.classList.toggle('is-namecard-recommend', isNamecardRecommend);
     card.classList.toggle('is-collection-recommend', isCollectionRecommend);
+    card.classList.toggle('is-treasure-recommend', isTreasureRecommend);
     imageBox.replaceChildren();
     meta.replaceChildren();
     imageBox.style.display = 'none';
@@ -2229,6 +2254,8 @@
         nameLabel.textContent = '명함 추천';
       }else if(isCollectionRecommend){
         nameLabel.textContent = '도감작 추천';
+      }else if(isTreasureRecommend){
+        nameLabel.textContent = '애장품 가능한 캐릭터입니다';
       }else{
         nameLabel.textContent = name;
       }
@@ -2249,7 +2276,7 @@
 
   function hideWishlistHoverCard(){
     if(!hoverCard) return;
-    hoverCard.classList.remove('is-visible','is-compact','is-guidance','is-namecard-recommend','is-collection-recommend');
+    hoverCard.classList.remove('is-visible','is-compact','is-guidance','is-namecard-recommend','is-collection-recommend','is-treasure-recommend');
     hoverCard.setAttribute('aria-hidden','true');
     hoverCardAnchor = null;
   }
