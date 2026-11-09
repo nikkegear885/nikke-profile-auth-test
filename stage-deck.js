@@ -1010,6 +1010,23 @@
         };
       });
     }
+    // The three recently added Pilgrims are already in the main roster but are
+    // not yet present in nikke-skills.json. Use existing verified roster metadata
+    // for stage-deck categories and gacha eligibility; do not invent skill data.
+    const newPilgrims = new Set(['마리안 : 퀸','라푼젤 : 생츄어리','홍련 : 신살']);
+    const rosterMeta = new Map(getRawRows().filter(row => row && row['이름']).map(row => [String(row['이름']).trim(), row]));
+    for (const entry of pedia) {
+      if (!newPilgrims.has(entry.name) || metaByName[entry.name]) continue;
+      const row = rosterMeta.get(entry.name);
+      if (!row || row['기업'] !== '필그림') continue;
+      metaByName[entry.name] = {
+        burst: String(row['버스트'] || '').replace(/[^123]/g,'').slice(0,1),
+        company: '필그림',
+        className: String(row['클래스'] || ''),
+        element: String(row['속성'] || ''),
+        rarity: 'SSR'
+      };
+    }
   }
 
   async function showStageDeck() {
