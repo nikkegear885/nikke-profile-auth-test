@@ -369,10 +369,18 @@ function formatOptimalRoute(goal,m,start,plan){
   const tip=plan.tips.map(x=>x.keys.length
     ? x.line+'줄: '+x.keys.map(short).join(' / ')+'가 단독으로 나오면 잠금 유리'
     : x.line+'줄: 단독 등장만으로는 잠금 비추천').join('<br>');
+  let example='';
+  // Example follows the 3rd-line -> 2nd-line -> guaranteed 1st-line pattern.
+  if(m==='any'&&goal.groups.length===3&&goal.groups[0].length===1&&goal.groups[1].length===1){
+    const a=short(goal.groups[0][0]),b=short(goal.groups[1][0]);
+    const c=goal.groups[2].map(short).join(' / ');
+    example='<p><b>대표적인 잠금 경로:</b> 3줄 '+esc(a)+' 등장 → 3줄 잠금 → 2줄 '+esc(b)+' 등장 → 2줄 잠금 → 1줄에서 '+esc(c)+'를 노립니다. 순서를 바꿔서 3줄 '+esc(b)+', 2줄 '+esc(a)+'도 가능합니다.</p>'+
+      '<p class="ol-muted">단, 중간에 다른 목표 옵션이 동시에 나오면 이 순서가 항상 최선은 아닙니다. 매번 결과를 재입력해 남은 기대 모듈을 비교하세요.</p>';
+  }
   return '<div class="ol-output" style="margin-top:10px"><h3 style="font-size:16px">최적 잠금 경로 안내</h3>'+
     '<p><b>지금 할 일:</b> '+esc(actions.join(' → '))+' 후 효과 변경</p>'+
     '<p class="ol-muted">무잠금에서 목표 옵션 <b>한 개만</b> 나왔을 때 기준 (둘 이상이 동시에 나오면 조합별로 달라집니다):</p>'+
-    '<p style="line-height:1.8">'+tip+'</p>'+
+    '<p style="line-height:1.8">'+tip+'</p>'+example+
     '<p class="ol-muted">효과 변경 결과가 나오면 왼쪽 현재 옵션과 잠금 상태를 갱신한 뒤 다시 계산하세요. 가장 유리한 다음 줄 잠금을 다시 추천합니다. 잠금 선택에는 별도 모듈을 더하지 않고, 잠금 0/1/2줄의 매회 변경 비용 1/2/3개만 적용했습니다.</p></div>';
 }
 
