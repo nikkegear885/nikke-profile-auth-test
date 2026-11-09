@@ -378,7 +378,7 @@ function formatOptimalRoute(goal,m,start,plan){
   if(add.length)actions.push(add.map(x=>(x.i+1)+'줄 '+short(x.k)).join(', ')+' 잠금');
   if(!actions.length)actions.push(plan.chosen.length?'현재 잠금 유지':'현재는 잠금 없이 효과 변경');
   const tip=goal.groups.length===1
-    ? '원하는 옵션이 어느 줄에서든 나타나면 즉시 목표 달성입니다. 잠글 필요가 없습니다.'
+    ? (m==='fixed'?'지정한 줄에 원하는 옵션이 나타나면 즉시 목표 달성입니다. 잠글 필요가 없습니다.':'원하는 옵션이 어느 줄에서든 나타나면 즉시 목표 달성입니다. 잠글 필요가 없습니다.')
     : plan.tips.map(x=>x.keys.length
       ? x.line+'줄: '+x.keys.map(short).join(' / ')+'가 단독으로 나오면 잠금 유리'
       : x.line+'줄: 단독 등장만으로는 잠금 비추천').join('<br>');
