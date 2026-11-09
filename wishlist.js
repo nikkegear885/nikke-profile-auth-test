@@ -260,12 +260,18 @@
   // No Red Hood Rapi: unowned D is general, owned D is solo.
   // With Rapi: unowned D is solo, owned D is namecard.
   const KILLER_WIFE_NAME = 'D : 킬러 와이프';
+  // Only after passing the 160 wall (O), Delta: Ninja Thief leads the namecard tier.
+  // In X mode its original Solo Raid classification and priority remain untouched.
+  const DELTA_NINJA_THIEF_NAME = '델타 : 닌자 시프';
   function getKillerWifePriority(unowned){
     if(isMarkedUnowned('라피 : 레드 후드')) return unowned ? 3 : 6;
     return unowned ? 6 : 8;
   }
   function getWishlistPerformancePosition(name){
     const key = norm(name);
+    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)){
+      return {rank:8,tierOrder:6,index:-1}; // first in the ordinary namecard tier
+    }
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(isMarkedUnowned(name));
       if(rank === 3) return {rank:3,tierOrder:2,index:998}; // end of general tier
@@ -364,6 +370,17 @@
       .flatMap(tier => tier.names.map(norm))
   );
   const WISHLIST_TRACKED_NAMES = new Set(WISHLIST_PERFORMANCE_TIERS.flatMap(tier => tier.names.map(norm)));
+  // Colored markers are intentionally restricted to standard-company equipment slots in O mode.
+  function getWishlistRecommendationHint(name, company){
+    if(wallStatus !== 'O' || !name || company === PILGRIM_COMPANY) return '';
+    const key = norm(name);
+    if(key === norm(DELTA_NINJA_THIEF_NAME) || WISHLIST_NAMECARD_NAMES.has(key) ||
+       (key === norm(KILLER_WIFE_NAME) && getKillerWifePriority(isMarkedUnowned(name)) === 8)){
+      return '명함 추천';
+    }
+    if(WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key)) return '도감작 추천';
+    return '';
+  }
   // Special breakthrough-based priority overrides requested for the wishlist.
   // 프리바티: 2돌 미만이면 애장품 필수, 2돌 이상이면 기본 애장품 솔레캐 우선순위 유지.
   const WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES = new Set(['프리바티'].map(norm));
@@ -389,6 +406,7 @@
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
+    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return 8;
     if(key === norm(KILLER_WIFE_NAME)) return getKillerWifePriority(isMarkedUnowned(name));
     if(WISHLIST_UNOWNED_REQUIRED_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 1;
     if(WISHLIST_UNOWNED_GENERAL_OVERRIDE_NAMES.has(key) && isMarkedUnowned(name)) return 3;
@@ -429,6 +447,7 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
+    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 8 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
       return rank === 3 ? (unowned ? 3 : 13) : (rank === 6 ? 6 : 18);
@@ -468,6 +487,7 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
+    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 8 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
       return rank === 3 ? (unowned ? 3 : 13) : (rank === 6 ? 6 : 18);
@@ -706,8 +726,9 @@
     const eligible = getCharactersForCompany(company);
     const eligibleKeys = new Set(eligible.map(row => norm(row['이름'])));
     const activeSpecial = company === '엘리시온' ? [
-      ['D : 킬러 와이프','라피 : 레드 후드 미보유 + D 미보유 → 3 범용 / 라피 미보유 + D 보유 → 6 솔레(델타 바로 앞) / 라피 보유 + D 미보유 → 6 솔레(델타 바로 앞) / 둘 다 보유 → 8 명함(츠바이 뒤)'],
-      ['아르카나','솔레에서 아르카나 : 포츈 메이트 뒤, D : 킬러 와이프와 델타 : 닌자 시프 앞'],
+      ['D : 킬러 와이프','라피 : 레드 후드 미보유 + D 미보유 → 3 범용 / 라피 미보유 + D 보유 → 6 솔레 / 라피 보유 + D 미보유 → 6 솔레 / 둘 다 보유 → 8 명함(츠바이 뒤)'],
+      ['델타 : 닌자 시프',wallStatus === 'O' ? '160벽 O → 명함 추천 그룹 맨 앞' : '160벽 X → 기존 솔레 추천 순서 유지'],
+      ['아르카나',wallStatus === 'O' ? '솔레에서 아르카나 : 포츈 메이트 뒤, D : 킬러 와이프 앞' : '솔레에서 아르카나 : 포츈 메이트 뒤, D : 킬러 와이프와 델타 : 닌자 시프 앞'],
       ['프리바티','2돌 미만이면 애장품 필수로 상승. 2돌 이상이면 애장품 솔레 기본 규칙'],
       ['베스티 : 택티컬 업','미보유이면 범용캐로 상승. 보유 시 PVP 선호도 적용'],
       ['미란다','160벽 O에서 2돌 이상 자동 제외. 160벽 X에서는 3돌부터 제외'],
@@ -727,7 +748,13 @@
       ['슈가·로산나','애장품 솔레 그룹. 2돌 미만일 때 돌파 우대']
     ];
     const tiers = WISHLIST_PERFORMANCE_TIERS.map(tier => {
-      const names = tier.names.filter(name => eligibleKeys.has(norm(name)));
+      const isDeltaNamecard = company === '엘리시온' && wallStatus === 'O';
+      const tierNames = isDeltaNamecard && tier.label === '솔레'
+        ? tier.names.filter(name => norm(name) !== norm(DELTA_NINJA_THIEF_NAME))
+        : isDeltaNamecard && tier.label === '명함 추천'
+          ? [DELTA_NINJA_THIEF_NAME,...tier.names]
+          : tier.names;
+      const names = tierNames.filter(name => eligibleKeys.has(norm(name)));
       return names.length ? [String(tier.rank) + ' · ' + tier.label,names.join(' → ')] : null;
     }).filter(Boolean);
     if(!eligible.length){
@@ -1553,6 +1580,12 @@
       '#wishlistPanel .wl-tile.wl-photo-only{padding:0;border-color:#8a8a8a;background:#fff}',
       '#wishlistPanel .wl-slot.is-bonus-recruit .wl-tile{border:3px solid #00b84a;box-shadow:0 0 0 2px #e6ffed,0 0 0 5px rgba(0,184,74,.48),0 4px 11px rgba(0,120,45,.42),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(0,100,35,.14)}',
       '#wishlistPanel .wl-slot.is-road-to-villain .wl-tile{border:3px solid #e53935;box-shadow:0 0 0 2px #fff0f0,0 0 0 5px rgba(229,57,53,.5),0 4px 11px rgba(150,0,0,.38),inset 0 1px 2px rgba(255,255,255,.96),inset 0 -2px 3px rgba(130,0,0,.14)}',
+      '#wishlistPanel .wl-slot.is-namecard-recommend .wl-tile{border:3px solid #16ad51;box-shadow:0 0 0 2px #e9fff0,0 0 0 4px rgba(20,177,87,.58),0 4px 11px rgba(9,125,62,.27)}',
+      '#wishlistPanel .wl-slot.is-collection-recommend .wl-tile{border:3px solid #df3e48;box-shadow:0 0 0 2px #fff0f1,0 0 0 4px rgba(222,53,64,.55),0 4px 11px rgba(150,24,35,.28)}',
+      'html.dark-theme #wishlistPanel .wl-slot.is-namecard-recommend .wl-tile{box-shadow:0 0 0 2px #122d25,0 0 0 4px rgba(48,223,119,.7),0 4px 11px rgba(0,0,0,.35)}',
+      'html.dark-theme #wishlistPanel .wl-slot.is-collection-recommend .wl-tile{box-shadow:0 0 0 2px #331f29,0 0 0 4px rgba(255,91,101,.7),0 4px 11px rgba(0,0,0,.35)}',
+      '#wishlistHoverCard.is-namecard-recommend{border-color:#34c47b}',
+      '#wishlistHoverCard.is-collection-recommend{border-color:#f06c74}',
       '#wishlistPanel .wl-tile.wl-photo-only:before,#wishlistPanel .wl-tile.wl-photo-only:after{display:none!important;content:none!important}',
       '#wishlistPanel .wl-picked-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:7px}',
       '#wishlistPanel .wl-character-name-label{display:none;box-sizing:border-box;width:100%;margin-top:3px;padding:0 1px;color:#4a5565;font-size:9px;font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere;word-break:keep-all}',
@@ -2079,6 +2112,9 @@
     const name = picks[company][slot] || '';
     const isBonusRecruit = !!name && wallStatus === 'X' && WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(name));
     const isRoadToVillain = !!name && wallStatus === 'X' && norm(name) === norm('드레이크');
+    const recommendationHint = getWishlistRecommendationHint(name,company);
+    const isNamecardRecommend = recommendationHint === '명함 추천';
+    const isCollectionRecommend = recommendationHint === '도감작 추천';
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
     let tile;
@@ -2099,9 +2135,10 @@
       tile = '<div class="wl-tile wl-empty-tile">' +
         '<div class="wl-empty-mark"><span class="wl-plus">＋</span></div></div>';
     }
-    const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') : '빈 슬롯';
-    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (isRoadToVillain ? ' is-road-to-villain' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
+    const accessibleName = name ? name + (unowned ? ' · 미보유' : ' · ' + stage + '돌') + (recommendationHint ? ' · ' + recommendationHint : '') : '빈 슬롯';
+    return '<article class="wl-slot' + (!name ? ' wl-slot-empty' : '') + (name ? ' has-character-name' : '') + (isBonusRecruit ? ' is-bonus-recruit' : '') + (isRoadToVillain ? ' is-road-to-villain' : '') + (isNamecardRecommend ? ' is-namecard-recommend' : '') + (isCollectionRecommend ? ' is-collection-recommend' : '') + (unowned ? ' is-unowned' : '') + '" data-wl-slot="true" data-company="' + esc(company) + '"' +
       (name ? ' data-wl-hover-text="' + esc(name) + '"' : '') +
+      (recommendationHint ? ' tabindex="0"' : '') +
       ' aria-label="' + esc(accessibleName) + '">' +
       tile +
       (unowned ? '<span class="wl-photo-status">미보유</span>' : '') +
@@ -2166,7 +2203,11 @@
     // Keep slot hover hints minimal; the two guidance types get a smaller, UI-matched tooltip.
     card.classList.add('is-compact');
     const isGuidance = !!slot && (slot.classList.contains('is-bonus-recruit') || slot.classList.contains('is-road-to-villain'));
+    const isNamecardRecommend = !!slot && slot.classList.contains('is-namecard-recommend');
+    const isCollectionRecommend = !!slot && slot.classList.contains('is-collection-recommend');
     card.classList.toggle('is-guidance', isGuidance);
+    card.classList.toggle('is-namecard-recommend', isNamecardRecommend);
+    card.classList.toggle('is-collection-recommend', isCollectionRecommend);
     imageBox.replaceChildren();
     meta.replaceChildren();
     imageBox.style.display = 'none';
@@ -2180,6 +2221,10 @@
         nameLabel.textContent = '보너스 리크루트에 포함된 니케입니다.\n본인의 포인트 상황에 따라 제외 추천';
       }else if(isRoadToVillain){
         nameLabel.textContent = '로드 투 빌런 상시 이벤트로 2돌파 까지 획득 가능한 니케입니다.\n1회라도 직접 획득했다면 제외 추천';
+      }else if(isNamecardRecommend){
+        nameLabel.textContent = '명함 추천';
+      }else if(isCollectionRecommend){
+        nameLabel.textContent = '도감작 추천';
       }else{
         nameLabel.textContent = name;
       }
@@ -2200,7 +2245,7 @@
 
   function hideWishlistHoverCard(){
     if(!hoverCard) return;
-    hoverCard.classList.remove('is-visible','is-compact','is-guidance');
+    hoverCard.classList.remove('is-visible','is-compact','is-guidance','is-namecard-recommend','is-collection-recommend');
     hoverCard.setAttribute('aria-hidden','true');
     hoverCardAnchor = null;
   }
