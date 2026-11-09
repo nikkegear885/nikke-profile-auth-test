@@ -269,6 +269,11 @@
   }
   function getWishlistPerformancePosition(name){
     const key = norm(name);
+    if(isOCollectionFrontName(name)) return {rank:10,tierOrder:7,index:WISHLIST_O_COLLECTION_FRONT_INDEX.get(key)};
+    if(wallStatus === 'O' && WISHLIST_COLLECTION_NAMES.has(key)){
+      const pos = WISHLIST_PERFORMANCE_POSITION.get(key);
+      return pos ? {rank:10,tierOrder:7,index:WISHLIST_O_COLLECTION_FRONT_NAMES.length+pos.index} : pos;
+    }
     if(isLaplaceNamecardInO(name)) return {rank:8,tierOrder:6,index:1.5};
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)){
       return {rank:8,tierOrder:6,index:-1}; // first in the ordinary namecard tier
@@ -371,6 +376,20 @@
       .flatMap(tier => tier.names.map(norm))
   );
   const WISHLIST_TRACKED_NAMES = new Set(WISHLIST_PERFORMANCE_TIERS.flatMap(tier => tier.names.map(norm)));
+  // O mode only: former namecard-only characters move to the front of collection.
+  // Keep the shared tier table unchanged for X mode.
+  const WISHLIST_O_COLLECTION_FRONT_NAMES = ['에이드','크러스트','앨리스 : 원더랜드 바니','레오나','네로'];
+  const WISHLIST_O_COLLECTION_FRONT_INDEX = new Map(WISHLIST_O_COLLECTION_FRONT_NAMES.map((name,index)=>[norm(name),index]));
+  function isOCollectionFrontName(name){
+    return wallStatus === 'O' && WISHLIST_O_COLLECTION_FRONT_INDEX.has(norm(name));
+  }
+  // Special orange explanation is separate from the existing orange treasure category.
+  const WISHLIST_TREASURE_NAMECARD_HINT = '애장품+명함추천\n우선도가 높지 않지만 애장품을 목표한다면 2돌추천';
+  const WISHLIST_TREASURE_NAMECARD_NAMES = new Set(['츠바이','율리아','라플라스'].map(norm));
+  function getTreasureNamecardHint(name){
+    return wallStatus === 'O' && WISHLIST_TREASURE_NAMECARD_NAMES.has(norm(name))
+      ? WISHLIST_TREASURE_NAMECARD_HINT : '';
+  }
   // Tell users when an O-mode recommendation moved up specifically because a key unit is missing.
   // The automatic recommendation order is unchanged by these purely visual hints.
   function getWishlistSpecialPriorityHint(name){
@@ -395,9 +414,10 @@
        WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return '애장품 보유캐릭터';
     if(key === norm(DELTA_NINJA_THIEF_NAME) || WISHLIST_NAMECARD_NAMES.has(key) ||
        (key === norm(KILLER_WIFE_NAME) && getKillerWifePriority(isMarkedUnowned(name)) === 8)){
-      return '우선도가 높지는 않지만 명함 정도는 추천';
+      return '명함 추천 캐릭터\n우선도가 높지 않지만\n명함정도는 챙겨놓는걸 추천합니다';
     }
-    if(WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key)) return '도감작 추천';
+    if(isOCollectionFrontName(name) || WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key))
+      return '도감용\n현재는 활용도가 없는 캐릭터';
     return '';
   }
   // Special breakthrough-based priority overrides requested for the wishlist.
@@ -431,6 +451,7 @@
   }
   function getWishlistPerformancePriority(name){
     const key = norm(name);
+    if(isOCollectionFrontName(name)) return 10;
     if(isLaplaceNamecardInO(name)) return getBreakthrough(name) < 2 ? 8 : DEFAULT_PERFORMANCE_PRIORITY;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return 8;
     if(key === norm(KILLER_WIFE_NAME)) return getKillerWifePriority(isMarkedUnowned(name));
@@ -473,6 +494,7 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
+    if(isOCollectionFrontName(name)) return copyPriority === 2 ? (unowned ? 9.9 : 20) : Number.POSITIVE_INFINITY;
     if(isLaplaceNamecardInO(name)) return breakthrough < 2 ? 7.95 : 18;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
@@ -516,6 +538,7 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
+    if(isOCollectionFrontName(name)) return stage === 2 ? (unowned ? 9.9 : 20) : Number.POSITIVE_INFINITY;
     if(isLaplaceNamecardInO(name)) return breakthrough < 2 ? 7.95 : 18;
     if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
@@ -535,9 +558,9 @@
     const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
     const isPvp = PVP_WISHLIST_NAMES.has(key) || PVP_LOWEST_WISHLIST_NAMES.has(key);
     const isSoloRaid = SOLO_RAID_WISHLIST_NAMES.has(key);
-    const isNamecard = WISHLIST_NAMECARD_NAMES.has(key);
+    const isNamecard = WISHLIST_NAMECARD_NAMES.has(key) && !isOCollectionFrontName(name);
     const isGeneral = WISHLIST_GENERAL_NAMES.has(key);
-    const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
+    const isCollection = isOCollectionFrontName(name) || WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
 
     // Zwei and Julia are first-copy-tier targets until they have two breakthroughs.
     // Zwei is first, then Julia; only after both reach 2★ do ordinary namecard targets advance.
@@ -788,8 +811,10 @@
         : wallStatus === 'O' && tier.label === 'PVP 우선'
           ? tier.names.filter(name => norm(name) !== norm(NORMAL_LAPLACE_NAME))
           : isDeltaNamecard && tier.label === '명함 추천'
-            ? [DELTA_NINJA_THIEF_NAME,...tier.names.flatMap(name => norm(name) === norm('율리아') ? [name,NORMAL_LAPLACE_NAME] : [name])]
-            : tier.names;
+            ? [DELTA_NINJA_THIEF_NAME,...tier.names.flatMap(name => norm(name) === norm('율리아') ? [name,NORMAL_LAPLACE_NAME] : [name])].filter(name => !isOCollectionFrontName(name))
+            : wallStatus === 'O' && tier.label === '도감작'
+              ? [...WISHLIST_O_COLLECTION_FRONT_NAMES,...tier.names]
+              : tier.names;
       const names = tierNames.filter(name => eligibleKeys.has(norm(name)));
       return names.length ? [String(tier.rank) + ' · ' + tier.label,names.join(' → ')] : null;
     }).filter(Boolean);
@@ -1590,13 +1615,13 @@
       '#wishlistHoverCard .wl-hover-card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px}',
       '#wishlistHoverCard .wl-hover-card-chip{display:inline-flex;align-items:center;padding:3px 6px;border:1px solid rgba(158,180,210,.22);border-radius:999px;background:rgba(255,255,255,.07);color:#dbe6f5;font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap}',
       '#wishlistHoverCard .wl-hover-card-chip.is-unowned{border-color:rgba(255,174,105,.4);background:rgba(168,85,24,.2);color:#ffd5aa}',
-      '#wishlistHoverCard.is-compact{width:auto;max-width:min(260px,calc(100vw - 20px));padding:9px 12px;border-radius:11px}',
+      '#wishlistHoverCard.is-compact{width:max-content;max-width:none;padding:9px 12px;border-radius:11px}',
       '#wishlistHoverCard.is-compact .wl-hover-card-image,#wishlistHoverCard.is-compact .wl-hover-card-company,#wishlistHoverCard.is-compact .wl-hover-card-meta{display:none}',
       '#wishlistHoverCard.is-compact .wl-hover-card-content{gap:0}',
-      '#wishlistHoverCard.is-compact .wl-hover-card-name{font-size:11px;line-height:1.45;max-width:230px}',
-      '#wishlistHoverCard.is-guidance{box-sizing:border-box;width:430px;max-width:min(430px,calc(100vw - 20px));min-height:84px;justify-content:center;padding:9px 12px;border:1px solid #cbd9e5;border-left:3px solid #59a3bb;border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(237,244,249,.99));color:#34465a;box-shadow:0 8px 24px rgba(37,56,79,.20),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(10px)}',
+      '#wishlistHoverCard.is-compact .wl-hover-card-name{font-size:var(--wl-hover-font-size,11px);line-height:1.45;max-width:none;white-space:pre;overflow-wrap:normal;word-break:keep-all}',
+      '#wishlistHoverCard.is-guidance{box-sizing:border-box;width:max-content;max-width:none;min-height:0;justify-content:center;padding:9px 12px;border:1px solid #cbd9e5;border-left:3px solid #59a3bb;border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(237,244,249,.99));color:#34465a;box-shadow:0 8px 24px rgba(37,56,79,.20),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(10px)}',
       '#wishlistHoverCard.is-guidance .wl-hover-card-content{width:100%;min-width:0}',
-      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:100%;color:#34465a!important;font-size:7px!important;font-weight:750;line-height:1.5;letter-spacing:0;white-space:pre-line;overflow-wrap:anywhere;text-shadow:none}',
+      '#wishlistHoverCard.is-guidance .wl-hover-card-name{max-width:none;color:#34465a!important;font-size:var(--wl-hover-font-size,11px)!important;font-weight:750;line-height:1.5;letter-spacing:0;white-space:pre;overflow-wrap:normal;word-break:keep-all;text-shadow:none}',
       'html.dark-theme #wishlistHoverCard.is-guidance{border-color:#3c526b;border-left-color:#58b8c5;background:linear-gradient(145deg,rgba(28,42,62,.99),rgba(15,24,39,.99));color:#e5eff9;box-shadow:0 10px 26px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.05)}',
       'html.dark-theme #wishlistHoverCard.is-guidance .wl-hover-card-name{color:#e5eff9!important}',
       '@media(prefers-reduced-motion:reduce){#wishlistHoverCard{transition:none}}',
@@ -2159,10 +2184,11 @@
     const isBonusRecruit = !!name && wallStatus === 'X' && WISHLIST_160_WALL_X_PRIORITY_NAMES.has(norm(name));
     const isRoadToVillain = !!name && wallStatus === 'X' && norm(name) === norm('드레이크');
     const specialPriorityHint = company === PILGRIM_COMPANY ? '' : getWishlistSpecialPriorityHint(name);
-    const recommendationHint = specialPriorityHint || getWishlistRecommendationHint(name,company);
-    const isNamecardRecommend = !specialPriorityHint && recommendationHint === '우선도가 높지는 않지만 명함 정도는 추천';
-    const isCollectionRecommend = !specialPriorityHint && recommendationHint === '도감작 추천';
-    const isTreasureRecommend = !specialPriorityHint && recommendationHint === '애장품 보유캐릭터';
+    const treasureNamecardHint = company === PILGRIM_COMPANY ? '' : getTreasureNamecardHint(name);
+    const recommendationHint = specialPriorityHint || treasureNamecardHint || getWishlistRecommendationHint(name,company);
+    const isNamecardRecommend = !specialPriorityHint && !treasureNamecardHint && recommendationHint.startsWith('명함 추천 캐릭터');
+    const isCollectionRecommend = !specialPriorityHint && !treasureNamecardHint && recommendationHint.startsWith('도감용');
+    const isTreasureRecommend = !specialPriorityHint && (treasureNamecardHint || recommendationHint === '애장품 보유캐릭터');
     const isSpecialRecommend = !!specialPriorityHint;
     const unowned = !!name && isMarkedUnowned(name);
     const stage = getBreakthrough(name);
@@ -2252,6 +2278,7 @@
 
     // Keep slot hover hints minimal; the two guidance types get a smaller, UI-matched tooltip.
     card.classList.add('is-compact');
+    card.style.setProperty('--wl-hover-font-size','11px');
     const isGuidance = !!slot && (slot.classList.contains('is-bonus-recruit') || slot.classList.contains('is-road-to-villain'));
     const isNamecardRecommend = !!slot && slot.classList.contains('is-namecard-recommend');
     const isCollectionRecommend = !!slot && slot.classList.contains('is-collection-recommend');
@@ -2278,15 +2305,15 @@
       }else if(isSpecialRecommend){
         nameLabel.textContent = String(slot.getAttribute('data-wl-special-hint') || '');
       }else if(isNamecardRecommend){
-        nameLabel.textContent = '우선도가 높지는 않지만 명함 정도는 추천';
+        nameLabel.textContent = '명함 추천 캐릭터\n우선도가 높지 않지만\n명함정도는 챙겨놓는걸 추천합니다';
       }else if(isCollectionRecommend){
-        nameLabel.textContent = '도감작 추천';
+        nameLabel.textContent = '도감용\n현재는 활용도가 없는 캐릭터';
       }else if(isTreasureRecommend){
-        nameLabel.textContent = '애장품 보유캐릭터';
+        nameLabel.textContent = getTreasureNamecardHint(name) || '애장품 보유캐릭터';
       }else{
         nameLabel.textContent = name;
       }
-      nameLabel.style.whiteSpace = (isBonusRecruit || isRoadToVillain) ? 'pre-line' : '';
+      nameLabel.style.whiteSpace = 'pre';
       companyLabel.textContent = '';
     }else{
       const text = String(target.getAttribute('data-wl-hover-text') || '').trim();
@@ -2298,6 +2325,12 @@
     hoverCardAnchor = target;
     card.setAttribute('aria-hidden','false');
     card.classList.add('is-visible');
+    // Keep authored lines only. Scale text slightly on narrow screens to fit the box.
+    const space = Math.max(90,window.innerWidth-20);
+    const naturalWidth = card.getBoundingClientRect().width;
+    if(naturalWidth > space){
+      card.style.setProperty('--wl-hover-font-size',(Math.max(5,11*(space-24)/Math.max(1,naturalWidth-24))).toFixed(2)+'px');
+    }
     positionWishlistHoverCard(target,card);
   }
 
@@ -2836,7 +2869,7 @@
           const name = String(row['이름'] || '').trim();
           const key = norm(name);
           const isTreasureRequired = WISHLIST_TREASURE_REQUIRED_NAMES.has(key);
-          const isCollection = WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
+          const isCollection = isOCollectionFrontName(name) || WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key);
           const favorite = isFavoriteCharacter(name);
           const unowned = isMarkedUnowned(name);
           const breakthrough = getBreakthrough(name);
