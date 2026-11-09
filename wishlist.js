@@ -396,11 +396,11 @@
     if(!name) return '';
     const key = norm(name);
     if(key === norm('루주') && shouldKeepUnownedRougeInGeneralTier()){
-      return '아니스 : 스타를 미보유 중이므로 우선적으로 추천되었습니다';
+      return '아니스 : 스타를 보유하고 있지 않아 우선 추천되었습니다.';
     }
     if(key === norm(KILLER_WIFE_NAME) &&
        isMarkedUnowned(KILLER_WIFE_NAME) && isMarkedUnowned('라피 : 레드 후드')){
-      return '라피 : 레드 후드를 미보유 중이므로 우선적으로 추천되었습니다';
+      return '라피 : 레드 후드를 보유하고 있지 않아 우선 추천되었습니다.';
     }
     return '';
   }
