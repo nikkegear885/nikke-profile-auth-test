@@ -376,7 +376,7 @@ function formatOptimalRoute(goal,m,start,plan){
   const actions=[];
   if(unlock.length)actions.push(unlock.map(x=>(x.i+1)+'줄 '+short(x.k)).join(', ')+' 잠금 해제');
   if(add.length)actions.push(add.map(x=>(x.i+1)+'줄 '+short(x.k)).join(', ')+' 잠금');
-  if(!actions.length)actions.push(plan.chosen.length?'현재 잠금 유지':'현재는 잠금 없이 효과 변경');
+  if(!actions.length)actions.push(plan.chosen.length?'현재 잠금 유지':'잠금 없음');
   const tip=goal.groups.length===1
     ? (m==='fixed'?'지정한 줄에 원하는 옵션이 나타나면 즉시 목표 달성입니다. 잠글 필요가 없습니다.':'원하는 옵션이 어느 줄에서든 나타나면 즉시 목표 달성입니다. 잠글 필요가 없습니다.')
     : plan.tips.map(x=>x.keys.length
@@ -391,7 +391,7 @@ function formatOptimalRoute(goal,m,start,plan){
       '<p class="ol-muted">단, 중간에 다른 목표 옵션이 동시에 나오면 이 순서가 항상 최선은 아닙니다. 매번 결과를 재입력해 남은 기대 모듈을 비교하세요.</p>';
   }
   return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>최적 잠금 경로 안내</summary>'+
-    '<p><b>지금 할 일:</b> '+esc(actions.join(' → '))+' 후 효과 변경</p>'+
+    '<p><b>지금 할 일:</b> '+esc(actions.join(' → '))+' → 효과 변경</p>'+
     '<p class="ol-muted">무잠금에서 목표 옵션 <b>한 개만</b> 나왔을 때 기준 (잠금 비용까지 포함, 둘 이상 동시에 나오면 조합별로 달라집니다):</p>'+
     '<p style="line-height:1.8">'+tip+'</p>'+example+
     '<p class="ol-muted">효과 변경 결과가 나오면 왼쪽 현재 옵션과 잠금 상태를 갱신한 뒤 다시 계산하세요. 가장 유리한 다음 줄 잠금을 다시 추천합니다. 잠금 설정 자체는 무료이지만 이후 효과 변경 시 최초 잠금 2개·둘째 잠금 3개를 한 번씩 추가 소모합니다. 이후 잠금 0/1/2줄의 매회 변경 비용은 1/2/3개입니다.</p></details>';
