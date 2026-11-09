@@ -447,7 +447,7 @@
 
   function getCopyPrioritySortGroup(name, performancePriority, breakthrough, unowned){
     const key = norm(name);
-    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 8 : 18;
+    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
       return rank === 3 ? (unowned ? 3 : 13) : (rank === 6 ? 6 : 18);
@@ -471,7 +471,9 @@
     }
     if(SOLO_RAID_WISHLIST_NAMES.has(key)) return unowned ? 6 : 16;
     if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
-      if(breakthrough < 2) return key === norm('츠바이') ? 7 : 7.5;
+      if(breakthrough < 2) return wallStatus === 'O'
+          ? (key === norm('츠바이') ? 7.8 : 7.9)
+          : (key === norm('츠바이') ? 7 : 7.5);
       return 18;
     }
     if(WISHLIST_NAMECARD_NAMES.has(key)){
@@ -487,7 +489,7 @@
   // owned base-copy general/PVP units are sent near the end.
   function getWishlistAutoBuildPriority(name, stage, breakthrough, unowned){
     const key = norm(name);
-    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 8 : 18;
+    if(wallStatus === 'O' && key === norm(DELTA_NINJA_THIEF_NAME)) return unowned ? 7.7 : 18;
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(unowned);
       return rank === 3 ? (unowned ? 3 : 13) : (rank === 6 ? 6 : 18);
@@ -512,7 +514,9 @@
     // Zwei and Julia are first-copy-tier targets until they have two breakthroughs.
     // Zwei is first, then Julia; only after both reach 2★ do ordinary namecard targets advance.
     if(WISHLIST_TWO_BREAKTHROUGH_NAMECARD_NAMES.has(key)){
-      if(breakthrough < 2) return key === norm('츠바이') ? 7 : 7.5;
+      if(breakthrough < 2) return wallStatus === 'O'
+          ? (key === norm('츠바이') ? 7.8 : 7.9)
+          : (key === norm('츠바이') ? 7 : 7.5);
       return 18;
     }
 
