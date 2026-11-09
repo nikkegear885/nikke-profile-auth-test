@@ -412,8 +412,8 @@
        WISHLIST_TREASURE_REQUIRED_UNDER_TWO_NAMES.has(key) ||
        WISHLIST_TREASURE_SOLO_UNDER_TWO_NAMES.has(key) ||
        WISHLIST_TWO_BREAKTHROUGH_PVP_NAMES.has(key)) return '애장품 보유캐릭터';
-    if(key === norm(DELTA_NINJA_THIEF_NAME) || WISHLIST_NAMECARD_NAMES.has(key) ||
-       (key === norm(KILLER_WIFE_NAME) && getKillerWifePriority(isMarkedUnowned(name)) === 8)){
+    if(!isOCollectionFrontName(name) && (key === norm(DELTA_NINJA_THIEF_NAME) || WISHLIST_NAMECARD_NAMES.has(key) ||
+       (key === norm(KILLER_WIFE_NAME) && getKillerWifePriority(isMarkedUnowned(name)) === 8))){
       return '명함 추천 캐릭터\n우선도가 높지 않지만\n명함정도는 챙겨놓는걸 추천합니다';
     }
     if(isOCollectionFrontName(name) || WISHLIST_COLLECTION_NAMES.has(key) || !WISHLIST_TRACKED_NAMES.has(key))
