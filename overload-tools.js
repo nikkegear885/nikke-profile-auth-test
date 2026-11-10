@@ -49,7 +49,7 @@ panel.innerHTML=[
   '<p class="ol-muted" data-ol-goal-label="c">추가 조건: 아래 효과 중 하나라도 있으면 성공 (선택 사항)</p><div class="ol-alt" data-ol-alts></div><p class="ol-muted">필수 옵션은 아래에서도 자동으로 체크되며, 추가 조건에 중복 계산되지 않습니다.</p>',
   '<div class="ol-actions"><button type="button" class="ol-btn" data-ol-preset="triple">우코 + 공증 + (장탄/크확/크뎀)</button><button type="button" class="ol-btn" data-ol-preset="double">우코 + 공증</button><button type="button" class="ol-btn" data-ol-preset="clear">목표 초기화</button></div>',
   '<button type="button" class="ol-btn primary big" data-ol-calculate>모듈 기대값 계산</button>',
-  '<p class="ol-muted">선택한 장비 한 부위의 결과를 ① 직접 잠금 유지(해제 금지·추가 잠금 가능) ② 전체 최적화(잠금 해제 가능)로 구분해서 비교합니다.</p></section></div>',
+  '<p class="ol-muted">선택한 장비 한 부위의 결과를 ① 직접 잠금 유지(해제 금지·추가 잠금 가능) ② 전체 최적화(입력한 잠금 여부 무시)로 구분해서 비교합니다.</p></section></div>',
   '<section class="ol-result-area" data-ol-calculation aria-live="polite"></section>',
   '<details class="ol-card"><summary>수치 재설정(T단계) 기대값</summary><p class="ol-muted">원하는 효과를 이미 갖고 있는 상태에서 수치만 높이는 경우의 기대값입니다.</p>',
   '<div class="ol-tier-inputs"><label>현재 수치 단계<select data-ol-current-tier></select></label><label>목표 최소 단계<select data-ol-target-tier></select></label><label>다른 줄 잠금 수<select data-ol-tier-locks><option value="0">0줄 (1모듈/회)</option><option value="1">1줄 (2모듈/회)</option><option value="2">2줄 (3모듈/회)</option></select></label></div>',
@@ -58,7 +58,7 @@ panel.innerHTML=[
   '<p class="ol-muted"><b>줄 등장:</b> 1줄 100% · 2줄 50% · 3줄 30%, 줄별 독립 등장.</p>',
   '<p class="ol-muted"><b>효과 확률:</b> 우코·공증·크뎀·방어 각 10%, 장탄·명중·차뎀·차속·크확 각 12%. 같은 장비에는 중복 효과가 나오지 않습니다.</p>',
   '<p class="ol-muted"><b>모듈 비용:</b> 잠금 0/1/2줄의 변경비 1/2/3개. 잠금 재료는 2026년 9월 개편 이후 실제 효과 변경 시 소모합니다. 첫 잠금 2개·둘째 잠금 3개가 변경비와 별도입니다. 미개조 부위는 최초 개조비 1개 포함.</p>',
-  '<p class="ol-muted"><b>전체 최적화(잠금 해제 가능):</b> 줄별 등장 확률과 목표 효과 가중치를 고려합니다. 나오는 대로 무조건 잠그지 않고, 잠금 없이 다시 돌리는 경우와 비교하여 기대 모듈을 최소화합니다. 옵션 수치 단계는 제외합니다.</p>',
+  '<p class="ol-muted"><b>전체 최적화(잠금 여부 무시):</b> 체크한 잠금 상태와 무관하게 입력된 효과만 반영하고 모든 줄을 무잠금으로 취급합니다. 줄별 등장 확률과 목표 효과 가중치를 고려합니다. 나오는 대로 무조건 잠그지 않고, 잠금 없이 다시 돌리는 경우와 비교하여 기대 모듈을 최소화합니다. 옵션 수치 단계는 제외합니다.</p>',
   '<p class="ol-muted"><b>직접 잠금 유지 기대값:</b> 체크한 잠금은 끝까지 해제하지 않으며, 필요하면 추가 잠금을 합니다. 불가능한 목표는 달성 불가로 표시합니다. <b>추가 잠금 없이 반복:</b> 신규 잠금 없이 현재 잠금만 유지하는 별도 비교치입니다.</p>',
   '<p class="ol-muted ol-sources">참고: <a href="https://www.prydwen.gg/nikke/guides/overload-gear-reroll" target="_blank" rel="noopener noreferrer">Prydwen</a> · <a href="https://nikke.beomtachi.com/guides/overload-gear/" target="_blank" rel="noopener noreferrer">2026 개편</a></p></details>'
 ].join('');
@@ -444,7 +444,7 @@ function formatPreservedRoute(start,plan){
 }
 
 function formatOptimalRoute(goal,m,start,plan){
-  if(plan.done)return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>전체 최적화 경로 안내 (잠금 해제 가능)</summary><p class="ol-muted">이미 목표 조건을 달성했으므로 추가 변경이나 잠금이 필요하지 않습니다.</p></details>';
+  if(plan.done)return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>전체 최적화 경로 안내 (현재 잠금 무시)</summary><p class="ol-muted">이미 목표 조건을 달성했으므로 추가 변경이나 잠금이 필요하지 않습니다.</p></details>';
   const names={ele:'우코',atk:'공증',ammo:'장탄',crit:'크확',critd:'크뎀'};
   const short=k=>names[k]||(byKey.get(k)?byKey.get(k).n:k);
   const current=start.map((r,i)=>r.lock&&r.k?{i,k:r.k}:null).filter(Boolean);
@@ -468,7 +468,7 @@ function formatOptimalRoute(goal,m,start,plan){
     example='<p><b>대표적인 잠금 경로:</b> 3줄 '+esc(a)+' 등장 → 3줄 잠금 → 2줄 '+esc(b)+' 등장 → 2줄 잠금 → 1줄에서 '+esc(c)+'를 노립니다. 순서를 바꿔서 3줄 '+esc(b)+', 2줄 '+esc(a)+'도 가능합니다.</p>'+
       '<p class="ol-muted">단, 중간에 다른 목표 옵션이 동시에 나오면 이 순서가 항상 최선은 아닙니다. 매번 결과를 재입력해 남은 기대 모듈을 비교하세요.</p>';
   }
-  return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>전체 최적화 경로 안내 (잠금 해제 가능)</summary>'+
+  return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>전체 최적화 경로 안내 (현재 잠금 무시)</summary>'+
     '<p><b>지금 할 일:</b> '+esc(actions.join(' → '))+' → 효과 변경</p>'+
     '<p class="ol-muted">무잠금에서 목표 옵션 <b>한 개만</b> 나왔을 때 기준 (잠금 비용까지 포함, 둘 이상 동시에 나오면 조합별로 달라집니다):</p>'+
     '<p style="line-height:1.8">'+tip+'</p>'+example+
@@ -486,15 +486,18 @@ function calculate(){
     const locks=start.filter(r=>r.lock).length;
     const keep=done?0:p?(1+locks)/p:Infinity;
     const greedy=done?0:expectedAutoLocks(goal,m,start,new Map());
-    const plan=optimalLockPlan(goal,m,start);
+    // Full optimization intentionally ignores UI locks while preserving the entered effects.
+    // Only the direct-lock strategy uses the user's checked lock state.
+    const unlockedStart=start.map(row=>({...row,lock:false}));
+    const plan=optimalLockPlan(goal,m,unlockedStart);
     const preserved=preservedLockPlan(goal,m,start);
     const count=n=>Number.isFinite(n)?fmt(n)+'개':'달성 불가';
-    output.innerHTML=formatPreservedRoute(start,preserved)+formatOptimalRoute(goal,m,start,plan)+
+    output.innerHTML=formatPreservedRoute(start,preserved)+formatOptimalRoute(goal,m,unlockedStart,plan)+
       '<div class="ol-strategy-grid">'+
       '<div class="ol-output"><strong class="ol-strategy-title">① 직접 잠금 유지 · 해제 금지</strong><h3>'+count(preserved.expected)+'</h3>'+
       '<p class="ol-muted">'+esc(name)+' 장비에 직접 체크한 잠금은 해제하지 않습니다. 유리하면 다른 줄을 추가 잠금하는 것까지 계산합니다.</p></div>'+
-      '<div class="ol-output"><strong class="ol-strategy-title">② 전체 최적화 · 잠금 해제 가능</strong><h3>'+count(plan.expected)+'</h3>'+
-      '<p class="ol-muted">현재 잠금도 해제할 수 있다고 가정하여 최소 기대 모듈을 구합니다.'+(done?' 이미 목표를 달성했습니다.':'')+'</p></div></div>'+
+      '<div class="ol-output"><strong class="ol-strategy-title">② 전체 최적화 · 잠금 여부 무시</strong><h3>'+count(plan.expected)+'</h3>'+
+      '<p class="ol-muted">왼쪽의 잠금 체크 여부를 완전히 무시하고 모든 줄을 무잠금으로 취급하여 최소 기대 모듈을 구합니다.'+(done?' 이미 목표를 달성했습니다.':'')+'</p></div></div>'+
       '<div class="ol-output"><b>다른 방식과 비교</b><div class="ol-grid">'+
       metric('기존 잠금만 유지 · 추가 잠금 없음',count(keep))+
       metric('발견 즉시 잠금 (비최적)',count(greedy))+
