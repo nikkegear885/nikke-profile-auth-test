@@ -430,19 +430,6 @@ function preservedLockPlan(goal,m,start){
   }
   return {expected:best,chosen,done:false};
 }
-function formatPreservedRoute(start,plan){
-  const shorts={ele:'우코',atk:'공증',ammo:'장탄',crit:'크확',critd:'크뎀'};
-  const short=k=>shorts[k]||(byKey.get(k)?byKey.get(k).n:k);
-  const initial=new Set(start.map((r,i)=>r.lock&&r.k?i+':'+r.k:null).filter(Boolean));
-  const added=plan.chosen.filter(x=>!initial.has(x.i+':'+x.k));
-  const prefix='<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>직접 잠금 유지 경로 안내 (잠금 해제 없음)</summary>';
-  if(plan.done)return prefix+'<p class="ol-muted">현재 잠금을 유지한 채 이미 목표에 도달했습니다. 추가 변경이 필요하지 않습니다.</p></details>';
-  if(!Number.isFinite(plan.expected))return prefix+'<p class="ol-muted">현재 체크한 잠금을 전부 유지하면 목표를 달성할 수 없습니다. 목표를 변경하거나 잠금 해제를 허용하는 전체 최적화를 확인하세요.</p></details>';
-  const action=added.length?added.map(x=>(x.i+1)+'줄 '+short(x.k)+' 추가 잠금').join(' → '):'체크한 잠금 그대로 유지';
-  return prefix+'<p><b>지금 할 일:</b> '+esc(action)+' → 효과 변경</p>'+
-    '<p class="ol-muted">체크한 잠금은 끝까지 해제하지 않습니다. 향후 새로 나온 목표 효과는 기대값상 이득일 때만 추가 잠금합니다. 효과 변경 뒤 현재 상태를 다시 입력해 다음 행동을 확인하세요.</p></details>';
-}
-
 function formatOptimalRoute(goal,m,start,plan){
   if(plan.done)return '<details class="ol-output ol-route-details" style="margin-bottom:10px"><summary>전체 최적화 경로 안내 (현재 잠금 무시)</summary><p class="ol-muted">이미 목표 조건을 달성했으므로 추가 변경이나 잠금이 필요하지 않습니다.</p></details>';
   const names={ele:'우코',atk:'공증',ammo:'장탄',crit:'크확',critd:'크뎀'};
@@ -492,7 +479,7 @@ function calculate(){
     const plan=optimalLockPlan(goal,m,unlockedStart);
     const preserved=preservedLockPlan(goal,m,start);
     const count=n=>Number.isFinite(n)?fmt(n)+'개':'달성 불가';
-    output.innerHTML=formatPreservedRoute(start,preserved)+formatOptimalRoute(goal,m,unlockedStart,plan)+
+    output.innerHTML=formatOptimalRoute(goal,m,unlockedStart,plan)+
       '<div class="ol-strategy-grid">'+
       '<div class="ol-output"><strong class="ol-strategy-title">① 직접 잠금 유지 · 해제 금지</strong><h3>'+count(preserved.expected)+'</h3>'+
       '<p class="ol-muted">'+esc(name)+' 장비에 직접 체크한 잠금은 해제하지 않습니다. 유리하면 다른 줄을 추가 잠금하는 것까지 계산합니다.</p></div>'+
