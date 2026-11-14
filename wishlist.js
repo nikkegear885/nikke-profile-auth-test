@@ -581,7 +581,10 @@
 
     // Treasure-required characters are pinned with required characters in step 1.
     // In steps 2 and 3, 2★+ copies are retained but pushed back like other already-owned characters.
-    if(isTreasureRequired) return stage === 0 ? 1 : (breakthrough < 2 ? 2 : 12);
+    // Helm is top-priority in the leftmost breakthrough setting only below 2 breakthroughs.
+    // Keep the 160-wall X forced-include rule separate and unchanged.
+    if(isTreasureRequired) return stage === 0 && (key !== norm('헬름') || breakthrough < 2)
+      ? 1 : (breakthrough < 2 ? 2 : 12);
     if(isTreasureSolo) return breakthrough < 2 ? 5 : 15;
 
     // Rank 3: general-purpose characters.
