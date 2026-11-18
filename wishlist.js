@@ -280,7 +280,7 @@
     }
     if(key === norm(KILLER_WIFE_NAME)){
       const rank = getKillerWifePriority(isMarkedUnowned(name));
-      if(rank === 3) return {rank:3,tierOrder:2,index:998}; // end of general tier
+      if(rank === 3) return {rank:3,tierOrder:2,index:wallStatus === 'X' ? 996 : 998}; // 160-wall X: before unowned Tactical Up Vesti (index 997)
       if(rank === 8) return {rank:8,tierOrder:6,index:2.5}; // immediately after Zwei
       return WISHLIST_PERFORMANCE_POSITION.get(key); // just before Delta in solo tier
     }
@@ -784,7 +784,7 @@
     const eligible = getCharactersForCompany(company);
     const eligibleKeys = new Set(eligible.map(row => norm(row['이름'])));
     const activeSpecial = company === '엘리시온' ? [
-      ['D : 킬러 와이프','라피 : 레드 후드 미보유 + D 미보유 → 3 범용 / 라피 미보유 + D 보유 → 6 솔레 / 라피 보유 + D 미보유 → 6 솔레 / 둘 다 보유 → 8 명함(츠바이 뒤)'],
+      ['D : 킬러 와이프','라피 : 레드 후드 미보유 + D 미보유 → 3 범용 (160벽 X에서는 베스티 : 택티컬 업보다 우선) / 라피 미보유 + D 보유 → 6 솔레 / 라피 보유 + D 미보유 → 6 솔레 / 둘 다 보유 → 8 명함(츠바이 뒤)'],
       ['델타 : 닌자 시프',wallStatus === 'O' ? '160벽 O → 명함 추천 그룹 맨 앞' : '160벽 X → 기존 솔레 추천 순서 유지'],
       ['아르카나',wallStatus === 'O' ? '솔레에서 아르카나 : 포츈 메이트 뒤, D : 킬러 와이프 앞' : '솔레에서 아르카나 : 포츈 메이트 뒤, D : 킬러 와이프와 델타 : 닌자 시프 앞'],
       ['프리바티','2돌 미만이면 애장품 필수로 상승. 2돌 이상이면 애장품 솔레 기본 규칙'],
