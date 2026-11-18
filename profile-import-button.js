@@ -209,9 +209,10 @@
             '<button type="button" class="bl-direct-account" data-slot="1"><b id="blDirectA2">계정2</b><span>이 계정에 동기화</span></button>' +
           '</div>' +
           '<div style="margin-top:6px;font-size:10px;color:#71828f;text-align:center">계정명은 우측 톱니 아이콘을 눌러 변경가능합니다</div>' +
+          '<div class="bl-direct-external-area"><label for="blExternalArea">동기화할 서버</label><select id="blExternalArea"><option value="">자동 조회 (보유 서버 확인)</option><option value="81">일본 (JP)</option><option value="82">북미 (NA)</option><option value="83">한국 (KR)</option><option value="84">글로벌</option><option value="85">동남아</option></select></div>' +
+          '<p class="bl-direct-personal-note">서버 자동 확인에 실패하면 여기서 실제 플레이하는 서버를 직접 선택한 뒤 다시 시도하세요. 외부 API 조회 계정 자체가 차단된 경우에는 직접 선택해도 실패할 수 있습니다.</p>' +
           '<button type="button" class="bl-direct-preview">외부 API 조회 테스트 (저장하지 않음)</button>' +
           '<button type="button" class="bl-direct-installfree">설치 없이 장비·스킬 동기화 (외부 API)</button>' +
-          '<div class="bl-direct-external-area"><label for="blExternalArea">서버</label><select id="blExternalArea"><option value="">자동 조회 (보유 서버 확인)</option><option value="81">일본 (JP)</option><option value="82">북미 (NA)</option><option value="83">한국 (KR)</option><option value="84">글로벌</option><option value="85">동남아</option></select></div>' +
           '<p class="bl-direct-personal-note">별도 설치 없이 이용합니다. 비공식 외부 API(nikke-api.pages.dev)에 공개 프로필의 openid만 전달해 보유 니케·돌파·장비·스킬을 조회합니다. 외부 서비스도 자체 로그인 인증을 사용하므로, 세션 만료나 공개 설정 제한 시 실패할 수 있습니다. 개인정보·토큰은 입력하지 마세요.</p>' +
           '<button type="button" class="bl-direct-personal">고급 대체 방식: 내 로그인으로 동기화 (스크립트 설치 필요)</button>' +
           '<p class="bl-direct-personal-note">내 브라우저의 BlaBlaLink 로그인 세션으로 공식 API를 조회합니다. 최초 1회 동기화 스크립트 설치가 필요하며, 서버의 공용 서비스 세션은 사용하지 않습니다. 계정 비밀번호나 토큰을 이 사이트에 입력하지 않습니다.</p>' +
