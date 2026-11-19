@@ -5135,7 +5135,7 @@ let blSyncAccount='';
 let blSyncAccountStartedAt='';
 function normalizeSyncCorp(v){
   if(v&&typeof v==='object'){
-    for(const k of ['corporation_type','corporationType','company','manufacturer','corp','code','id','value','name']){
+    for(const k of ['corporation','corporation_type','corporationType','company','manufacturer','corp','code','id','value','name']){
       if(v[k]!==undefined&&v[k]!==null&&v[k]!==''){
         const nested=normalizeSyncCorp(v[k]); if(nested)return nested;
       }
@@ -5232,34 +5232,64 @@ function applyBlablalinkSyncPayload(p,targetAccount){
   const preservedUnownedNames=new Set(
     syncAccount===activeAccount ? [...unownedCharacters] : [...loadAccountUnowned(syncAccount)]
   );
-  const targetData=syncAccount===activeAccount?data:readAccountData(syncAccount);
+
+  // Stage changes in a clone so validation failures never touch live account data.
+  const sourceData=syncAccount===activeAccount?data:readAccountData(syncAccount);
+  if(!Array.isArray(sourceData))throw new Error('저장된 계정 데이터를 읽지 못했습니다.');
+  const targetData=structuredClone(sourceData);
   const preservedSelectedNames=new Set(
     (syncAccount===activeAccount ? selectedCharacters : loadAccountSelection(syncAccount))
       ? [...(syncAccount===activeAccount ? selectedCharacters : loadAccountSelection(syncAccount))]
-          .map(i=>characterName(i,(syncAccount===activeAccount?data:targetData)[i]))
-          .filter(Boolean)
+          .map(i=>characterName(i,sourceData[i])).filter(Boolean)
       : []
   );
-  const normalizeRosterName=name=>String(name??'').normalize('NFKC').toLowerCase().replace(/[\s:：·•._'’“”"\-–—()\[\]{}]/g,'');
+  const normalizeRosterName=name=>String(name??'').normalize('NFKC').toLowerCase().replace(/[\\s:：·•._'’“”"\\-–—()\\[\\]{}]/g,'');
   const byName=new Map(targetData.map((r,i)=>[normalizeRosterName(r?.['이름']),i]));
-  // Unidentified characters in the provider's catalog must not overwrite
-  // saved ownership, skills or gear from the same local account.
-  const partialExternal=p.sync_type==='scriptless_external' && p.partial_identification===true;
-  if(p.sync_type==='scriptless_external'){
-    // Check every external ID against a unique local roster entry BEFORE clearing any stored values.
-    const keys=(Array.isArray(p.updates)?p.updates:[]).map(u=>normalizeRosterName(canonicalSyncCharacterName(u?.name,u?.name_code??u?.nameCode)));
-    if(!keys.length || keys.some(k=>!byName.has(k)) || new Set(keys).size!==keys.length ||
-       !Array.isArray(p.ownedNames) || keys.length!==p.ownedNames.length){
-      throw new Error('외부 API의 캐릭터 정보를 사이트 데이터와 일치시킬 수 없어 저장하지 않았습니다.');
+  const isExternal=p.sync_type==='scriptless_external';
+  let partialExternal=isExternal&&(p.partial_identification===true||
+    Number(p.skipped_character_count)>0||Number(p.unresolved_character_count)>0||
+    (Number(p.external_character_count)>0&&Number(p.external_character_count)>Number(p.character_count)));
+  let verifiedUpdates=Array.isArray(p.updates)?p.updates:[];
+  const applyRejected=[];
+  if(isExternal){
+    const allUpdates=verifiedUpdates;
+    const counts=new Map();
+    for(const u of allUpdates){
+      const key=normalizeRosterName(canonicalSyncCharacterName(u?.name,u?.name_code??u?.nameCode));
+      if(key)counts.set(key,(counts.get(key)||0)+1);
     }
-    for(const u of p.updates){
-      if(!u.parts||typeof u.parts!=='object'||!gearParts.every(part=>u.parts[part]&&Array.isArray(u.parts[part].options)))
-        throw new Error('외부 API의 장비 상세 항목이 누락되어 기존 데이터를 유지했습니다.');
-      if([u.skill1,u.skill2,u.burstSkill].some(v=>v===null||v===undefined||!Number.isFinite(Number(v))))
-        throw new Error('외부 API의 스킬 정보가 불완전해 기존 데이터를 유지했습니다.');
-      if(gearParts.some(part=>u.parts[part].options.some(opt=>!opt||!['우코','공증','장탄','크확','크댐','명중','차댐','차속','방어'].includes(opt.name)||!Number.isFinite(Number(opt.value)))))
-        throw new Error('외부 API의 오버로드 옵션 정보가 올바르지 않아 저장하지 않았습니다.');
+    verifiedUpdates=[];
+    for(const u of allUpdates){
+      const name=canonicalSyncCharacterName(u?.name,u?.name_code??u?.nameCode);
+      const code=String(u?.name_code??u?.nameCode??'').trim();
+      const key=normalizeRosterName(name);
+      let reason='';
+      if(!key||!byName.has(key))reason='도감 이름 불일치';
+      else if(counts.get(key)>1)reason='중복된 캐릭터 식별 정보';
+      else if(!u?.parts||typeof u.parts!=='object'||!gearParts.every(part=>{
+        const gear=u.parts[part];
+        return gear&&typeof gear==='object'&&Array.isArray(gear.options)&&
+          gear.tier!==null&&gear.tier!==undefined&&Number.isFinite(Number(gear.tier))&&
+          gear.level!==null&&gear.level!==undefined&&Number.isFinite(Number(gear.level));
+      }))reason='장비 상세 정보 불완전';
+      else if([u.skill1,u.skill2,u.burstSkill].some(v=>v===null||v===undefined||v===''||!Number.isFinite(Number(v))))
+        reason='스킬 상세 정보 불완전';
+      else if(gearParts.some(part=>u.parts[part].options.some(opt=>!opt||
+        !['우코','공증','장탄','크확','크댐','명중','차댐','차속','방어'].includes(opt.name)||
+        opt.value===null||opt.value===undefined||!Number.isFinite(Number(opt.value)))))
+        reason='오버로드 옵션 정보 불완전';
+      if(reason){applyRejected.push((name||'이름 없음')+' (코드 '+(code||'없음')+') · '+reason);continue;}
+      verifiedUpdates.push(u);
     }
+    if(!verifiedUpdates.length)
+      throw new Error('검증을 통과한 니케가 없어 동기화하지 않았습니다. '+applyRejected.slice(0,5).join(' / '));
+    if(!Array.isArray(p.ownedNames)||p.ownedNames.length!==allUpdates.length)
+      applyRejected.push('외부 API 보유 이름 목록 수 불일치');
+    if(applyRejected.length)partialExternal=true;
+    p.partial_identification=partialExternal;
+    p.unresolved_character_count=(Number(p.unresolved_character_count)||0)+applyRejected.length;
+    p.unresolved_character_codes=[...(Array.isArray(p.unresolved_character_codes)?p.unresolved_character_codes:[]),...applyRejected].slice(0,30);
+    p.character_count=verifiedUpdates.length;
   }
   let matched=0,changed=0,skillDataCount=0,gearDataCount=0;
   const syncedIndices=new Set();
@@ -5272,7 +5302,7 @@ function applyBlablalinkSyncPayload(p,targetAccount){
       }
     }
   }
-  for(const u of Array.isArray(p.updates)?p.updates:[]){
+  for(const u of verifiedUpdates){
     const idx=byName.get(normalizeRosterName(canonicalSyncCharacterName(u?.name,u?.name_code??u?.nameCode)));
     if(idx==null)continue;
     matched++;
@@ -5369,9 +5399,12 @@ function applyBlablalinkSyncPayload(p,targetAccount){
     if(hasSkillData)skillDataCount++;
   }
   // The full roster is authoritative; details-only rows are not a substitute when ownedNames exists.
-  const rosterNames = Array.isArray(p.ownedNames)
-    ? p.ownedNames
-    : (Array.isArray(p.updates) ? p.updates.map(u=>u?.name) : []);
+
+  const rosterNames = isExternal
+    ? verifiedUpdates.map(u=>canonicalSyncCharacterName(u.name,u.name_code??u.nameCode))
+    : (Array.isArray(p.ownedNames)
+       ? p.ownedNames
+       : (Array.isArray(p.updates) ? p.updates.map(u=>u?.name) : []));
   const syncedNames=new Set(
     rosterNames.map(name=>canonicalSyncCharacterName(name)).filter(Boolean)
   );
@@ -5390,7 +5423,8 @@ function applyBlablalinkSyncPayload(p,targetAccount){
     });
   }
   const ownedCodes=new Set(
-    (Array.isArray(p.ownedCodes)?p.ownedCodes:[]).map(code=>String(code??'').trim()).filter(Boolean)
+    (isExternal ? verifiedUpdates.map(u=>u.name_code??u.nameCode) :
+      (Array.isArray(p.ownedCodes)?p.ownedCodes:[])).map(code=>String(code??'').trim()).filter(Boolean)
   );
   if(ownedCodes.size){
     if(ownedCodes.has('1012'))syncedNames.add('사쿠라');
@@ -5484,12 +5518,23 @@ function applyBlablalinkSyncPayload(p,targetAccount){
     // 큐브 및 기타 장비/강화 정보도 보유하지 않은 상태로 초기화
     if(row['큐브']!==null && row['큐브']!==''){row['큐브']=null;changed++}
   }
+
+  // Fail loudly on storage errors, restoring the previous snapshot where possible.
+  const writes=[
+    [accountStorageKey(ACCOUNT_STORAGE_PREFIX,syncAccount),JSON.stringify(targetData)],
+    [accountStorageKey(ACCOUNT_UNUSED_PREFIX,syncAccount),JSON.stringify([...nextUnused])],
+    [accountStorageKey(ACCOUNT_UNOWNED_PREFIX,syncAccount),JSON.stringify([...nextUnowned])],
+    [accountStorageKey(ACCOUNT_SYNCED_OWNED_PREFIX,syncAccount),JSON.stringify([...syncedNames])]
+  ];
+  const originals=writes.map(([key])=>[key,localStorage.getItem(key)]);
   try{
-    localStorage.setItem(accountStorageKey(ACCOUNT_STORAGE_PREFIX,syncAccount),JSON.stringify(targetData));
-    localStorage.setItem(accountStorageKey(ACCOUNT_UNUSED_PREFIX,syncAccount),JSON.stringify([...nextUnused]));
-    localStorage.setItem(accountStorageKey(ACCOUNT_UNOWNED_PREFIX,syncAccount),JSON.stringify([...nextUnowned]));
-    localStorage.setItem(accountStorageKey(ACCOUNT_SYNCED_OWNED_PREFIX,syncAccount),JSON.stringify([...syncedNames]));
-  }catch(e){console.warn('계정별 동기화 저장 실패',e)}
+    for(const [key,value] of writes)localStorage.setItem(key,value);
+  }catch(error){
+    for(const [key,previous] of originals){
+      try{if(previous===null)localStorage.removeItem(key);else localStorage.setItem(key,previous)}catch(_){}
+    }
+    throw new Error('브라우저 저장 공간 문제로 동기화를 완료하지 못했습니다. 기존 기록 복구를 시도했습니다. '+String(error?.message||error));
+  }
   if(syncAccount===activeAccount){
     data=targetData;
     selectedCharacters=new Set(
