@@ -101,7 +101,7 @@
   }
   function convert(items){
     if(!Array.isArray(items)||items.length===0)throw new Error('외부 API에서 보유 니케 목록을 받지 못했습니다. 프로필 공개 설정을 확인해 주세요.');
-    var updates=[],ownedNames=[],ownedCodes=[],seen=new Set(),details=0,unresolved=0,skipped=[];
+    var updates=[],ownedNames=[],ownedCodes=[],seen=new Set(),details=0,unresolved=[],skipped=[];
     // Unknown external characters should not block known characters.
     var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');};
     if(!Array.isArray(window.__NIKKE_RAW)||!window.__NIKKE_RAW.length)
@@ -109,11 +109,16 @@
     var roster=new Set(window.__NIKKE_RAW.map(r=>normalize(r&&r['이름'])));
     var slots={head:'머리',body:'몸통',arm:'장갑',leg:'다리'};
     for(var n of items){
-      if(!n||typeof n!=='object')continue;
+      if(!n||typeof n!=='object'){
+        unresolved.push('이름·코드 없음');
+        continue;
+      }
       var code=codeOf(n),name=nameOf(n);
-      if(!name){unresolved++;continue;}
+      // A valid nameCode can lack localized names when a character is not
+      // in the independent provider's static catalog. Never guess identity.
+      if(!name){unresolved.push(code?'코드 '+code:'이름·코드 없음');continue;}
       if(!roster.has(normalize(name))){skipped.push(name);continue;}
-      if(!code){unresolved++;continue;}
+      if(!code){unresolved.push(name+' (코드 없음)');continue;}
       if(seen.has(code))throw new Error('중복된 니케 정보를 받아 동기화를 중단했습니다.');
       seen.add(code);
       ownedNames.push(name);
@@ -134,9 +139,11 @@
     if(!updates.length)throw new Error('사이트 도감에서 일치하는 니케가 없어 동기화할 데이터가 없습니다. 기존 기록은 유지됩니다.');
     if(details!==updates.length)
       throw new Error('일부 니케의 스킬 상세가 누락되어 기존 데이터 보호를 위해 동기화를 취소했습니다.');
-    // Invalid known-character identities still fail; unsupported new characters are skipped.
-    if(unresolved>0)throw new Error('일부 니케의 식별 정보가 누락되어 동기화를 중단했습니다.');
-    return {ok:true,sync_type:'scriptless_external',worker_version:'외부 API (nikke-api.pages.dev)',character_count:updates.length,external_character_count:items.length,skipped_character_count:skipped.length,skipped_character_names:skipped,detail_count:details,detailCount:details,ownedNames:ownedNames,ownedCodes:ownedCodes,updates:updates};
+    // Apply known rows only and explicitly mark the roster as partial.
+    // The apply layer must preserve existing data for unidentified rows.
+    return {ok:true,sync_type:'scriptless_external',worker_version:'외부 API (nikke-api.pages.dev)',character_count:updates.length,external_character_count:items.length,skipped_character_count:skipped.length,skipped_character_names:skipped,
+      partial_identification:unresolved.length>0,unresolved_character_count:unresolved.length,unresolved_character_codes:unresolved.slice(0,12),
+      detail_count:details,detailCount:details,ownedNames:ownedNames,ownedCodes:ownedCodes,updates:updates};
   }
 
   async function requestJson(url){
