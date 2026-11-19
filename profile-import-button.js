@@ -291,7 +291,7 @@
         var slots=0;
         for(var item of result.updates)for(var part of Object.values(item.parts))if(part&&part.tier>0)slots++;
         status.className='bl-direct-status '+(result.partial_identification?'warning':'success');
-        status.textContent=(result.partial_identification?'조회 테스트 부분 통과':'조회 테스트 통과')+' · '+regionLabel(result.area_id)+' 서버 ('+(result.area_selection_mode==='manual'?'직접 선택':result.area_selection_mode==='remembered'?'이전 선택 적용':'자동 확인')+') · 사이트 등록 니케 '+result.character_count+'명 / 스킬 상세 '+result.detail_count+'명 / 착용 장비 '+slots+'부위'+(result.skipped_character_count?' / 도감 미등록 '+result.skipped_character_count+'명 제외 ('+result.skipped_character_names.slice(0,20).join(', ')+')':'')+(result.partial_identification?' / 식별 불가 '+result.unresolved_character_count+'명은 적용 시 기존 정보 유지 (미갱신: '+(result.unresolved_character_codes||[]).join(', ')+')':'')+' / 데이터 저장 없음. 실제 적용은 아래 동기화 버튼을 누르세요.';
+        status.textContent=(result.partial_identification?'조회 테스트 부분 통과':'조회 테스트 통과')+' · '+regionLabel(result.area_id)+' 서버 ('+(result.area_selection_mode==='manual'?'직접 선택':result.area_selection_mode==='remembered'?'이전 선택 적용':'자동 확인')+') · 사이트 등록 니케 '+result.character_count+'명 / 스킬 상세 '+result.detail_count+'명 / 착용 장비 '+slots+'부위'+(result.skipped_character_count?' / 도감 미등록 '+result.skipped_character_count+'명 제외 ('+result.skipped_character_names.slice(0,20).join(', ')+')':'')+(Number(result.unresolved_character_count)>0?' / 식별 불가 '+result.unresolved_character_count+'명은 적용 시 기존 정보 유지 (미갱신: '+(result.unresolved_character_codes||[]).join(', ')+')':'')+' / 데이터 저장 없음. 실제 적용은 아래 동기화 버튼을 누르세요.';
       }catch(error){
         offerAreaCandidates(error);
         status.className='bl-direct-status error';
@@ -338,7 +338,7 @@
         if(areaId!=='')rememberPreferredArea(account,url,payload.area_id);
         try{localStorage.setItem('nikke_bl_profile_url_'+encodeURIComponent(account),url)}catch(_){}
         status.className='bl-direct-status '+(payload.partial_identification?'warning':'success');
-        status.textContent=(payload.partial_identification?'확인된 니케만 부분 동기화 완료':'외부 API 동기화 완료')+' · '+regionLabel(payload.area_id)+' 서버 ('+(payload.area_selection_mode==='manual'?'직접 선택':payload.area_selection_mode==='remembered'?'이전 선택 적용':'자동 확인')+') · '+String(payload.character_count)+'명 반영'+(payload.skipped_character_count?' · 도감 미등록 '+payload.skipped_character_count+'명 제외 ('+payload.skipped_character_names.slice(0,20).join(', ')+')':'')+(payload.partial_identification?' · 식별 불가 '+payload.unresolved_character_count+'명은 기존 데이터 유지 (미갱신: '+(payload.unresolved_character_codes||[]).join(', ')+')':'')+' · 장비·돌파·스킬 적용. 싱크로·전초기지는 기존 경로와 별도로 관리됩니다.';
+        status.textContent=(payload.partial_identification?'확인된 니케만 부분 동기화 완료':'외부 API 동기화 완료')+' · '+regionLabel(payload.area_id)+' 서버 ('+(payload.area_selection_mode==='manual'?'직접 선택':payload.area_selection_mode==='remembered'?'이전 선택 적용':'자동 확인')+') · '+String(payload.character_count)+'명 반영'+(payload.skipped_character_count?' · 도감 미등록 '+payload.skipped_character_count+'명 제외 ('+payload.skipped_character_names.slice(0,20).join(', ')+')':'')+(Number(payload.unresolved_character_count)>0?' · 식별 불가 '+payload.unresolved_character_count+'명은 기존 데이터 유지 (미갱신: '+(payload.unresolved_character_codes||[]).join(', ')+')':'')+' · 장비·돌파·스킬 적용. 싱크로·전초기지는 기존 경로와 별도로 관리됩니다.';
       }catch(err){
         offerAreaCandidates(err);
         status.className='bl-direct-status error';
