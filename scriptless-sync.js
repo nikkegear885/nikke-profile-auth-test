@@ -25,7 +25,7 @@
     return '';
   }
   function codeOf(n){
-    var raw=n&&n.character&&n.character.nameCode;
+    var raw=n&&((n.character&&(n.character.nameCode??n.character.name_code))??n.name_code??n.nameCode);
     var code=String(raw==null?'':raw).trim();
     return /^\d+$/.test(code)?code:'';
   }
@@ -102,6 +102,17 @@
   function convert(items){
     if(!Array.isArray(items)||items.length===0)throw new Error('외부 API에서 보유 니케 목록을 받지 못했습니다. 프로필 공개 설정을 확인해 주세요.');
     var updates=[],ownedNames=[],ownedCodes=[],seen=new Set(),details=0,unresolved=[],skipped=[];
+    var codeCounts=new Map(),nameCounts=new Map();
+    var keyFor=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');};
+    for(var record of items){
+      if(!record||typeof record!=='object')continue;
+      var codeKey=codeOf(record),nameKey=keyFor(nameOf(record));
+      if(codeKey)codeCounts.set(codeKey,(codeCounts.get(codeKey)||0)+1);
+      if(nameKey)nameCounts.set(nameKey,(nameCounts.get(nameKey)||0)+1);
+    }
+    var describe=function(name,code,reason){
+      return (name||'이름 없음')+' (코드 '+(code||'없음')+') · '+reason;
+    };
     // Unknown external characters should not block known characters.
     var normalize=function(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');};
     if(!Array.isArray(window.__NIKKE_RAW)||!window.__NIKKE_RAW.length)
@@ -110,43 +121,49 @@
     var slots={head:'머리',body:'몸통',arm:'장갑',leg:'다리'};
     for(var n of items){
       if(!n||typeof n!=='object'){
-        unresolved.push('이름·코드 없음');
+        unresolved.push('이름 없음 (코드 없음) · 데이터 형식 오류');
         continue;
       }
       var code=codeOf(n),name=nameOf(n);
       // A valid nameCode can lack localized names when a character is not
       // in the independent provider's static catalog. Never guess identity.
-      if(!name){unresolved.push(code?'코드 '+code:'이름·코드 없음');continue;}
-      if(!roster.has(normalize(name))){skipped.push(name);continue;}
-      if(!code){unresolved.push(name+' (코드 없음)');continue;}
-      if(seen.has(code))throw new Error('중복된 니케 정보를 받아 동기화를 중단했습니다.');
-      seen.add(code);
-      ownedNames.push(name);
-      ownedCodes.push(code);
+      if(!name){unresolved.push(describe('',code,'이름 식별 실패'));continue;}
+      if(!roster.has(normalize(name))){skipped.push(describe(name,code,'사이트 도감 미등록'));continue;}
+      if(!code){unresolved.push(describe(name,code,'캐릭터 코드 없음'));continue;}
+      if(seen.has(code)||codeCounts.get(code)>1||nameCounts.get(keyFor(name))>1){
+        unresolved.push(describe(name,code,'중복 식별 정보'));continue;
+      }
+      try{
       if(!n.equipment||typeof n.equipment!=='object')throw new Error('장비 상세 정보가 누락되어 동기화를 중단했습니다.');
       var parts={};
       for(var [slot,part] of Object.entries(slots)){
         if(!Object.prototype.hasOwnProperty.call(n.equipment,slot))throw new Error('장비 부위 정보가 누락되어 동기화를 중단했습니다.');
         var gear=n.equipment[slot];
+        if(gear && (num(gear.tier)===null || num(gear.level)===null))
+          throw new Error(part+' 장비 티어/레벨 누락');
         parts[part]={corporation_type:gear&&gear.corporation||null,tier:gear?num(gear.tier):0,level:gear?num(gear.level):0,options:gearOptions(gear)};
       }
       var skills=n.skills&&typeof n.skills==='object'?n.skills:{};
       var skill1=safeSkill(skills.skill1),skill2=safeSkill(skills.skill2),burst=safeSkill(skills.burst);
-      if(skill1!==null&&skill2!==null&&burst!==null)details++;
+      if(skill1===null||skill2===null||burst===null)
+        throw new Error('스킬 상세 정보 누락');
       updates.push({name:name,name_code:code,grade:num(n.grade),core:num(n.core),
         skill1:skill1,skill2:skill2,burstSkill:burst,parts:parts});
+      seen.add(code);ownedNames.push(name);ownedCodes.push(code);details++;
+      }catch(err){
+        unresolved.push(describe(name,code,String(err&&err.message||err)));
+      }
     }
-    if(!updates.length)throw new Error('사이트 도감에서 일치하는 니케가 없어 동기화할 데이터가 없습니다. 기존 기록은 유지됩니다.');
-    if(details!==updates.length)
-      throw new Error('일부 니케의 스킬 상세가 누락되어 기존 데이터 보호를 위해 동기화를 취소했습니다.');
+    if(!updates.length)throw new Error('동기화 가능한 니케가 없습니다. '+unresolved.concat(skipped).slice(0,5).join(' / ')+' · 기존 기록은 유지됩니다.');
+    // Rows with incomplete details were excluded before reaching this point.
     // Apply known rows only and explicitly mark the roster as partial.
     // The apply layer must preserve existing data for unidentified rows.
     return {ok:true,sync_type:'scriptless_external',worker_version:'외부 API (nikke-api.pages.dev)',character_count:updates.length,external_character_count:items.length,skipped_character_count:skipped.length,skipped_character_names:skipped,
-      partial_identification:unresolved.length>0,unresolved_character_count:unresolved.length,unresolved_character_codes:unresolved.slice(0,12),
+      partial_identification:unresolved.length>0||skipped.length>0,unresolved_character_count:unresolved.length,unresolved_character_codes:unresolved.slice(0,20),
       detail_count:details,detailCount:details,ownedNames:ownedNames,ownedCodes:ownedCodes,updates:updates};
   }
 
-  async function requestJson(url){
+  async function requestJsonOnce(url){
     var controller=new AbortController();
     var timer=setTimeout(function(){controller.abort()},45000);
     try{
@@ -162,6 +179,19 @@
       if(!body||typeof body!=='object')throw new Error('외부 API 응답 형식이 올바르지 않습니다.');
       return body;
     }finally{clearTimeout(timer)}
+  }
+
+  async function requestJson(url){
+    for(var attempt=0;attempt<3;attempt++){
+      try{return await requestJsonOnce(url)}
+      catch(err){
+        var message=String(err&&err.message||err);
+        var transient=/조회 제한|조회 계정 인증 또는 연결에 문제가|HTTP (?:429|502|503|504)|failed to fetch|aborted|aborterror|networkerror/i.test(message);
+        if(!transient||/banned|token is invalid|invalid token|not bind|unauthorized/i.test(message))throw err;
+        if(attempt===2)throw new Error(message+' (총 3회 시도 실패)');
+        await new Promise(resolve=>setTimeout(resolve,450*(attempt+1)));
+      }
+    }
   }
 
   // Resolve the actual owned roster once, and pin every builds page to that region.
