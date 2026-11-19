@@ -333,6 +333,7 @@
         var apply=window.__NIKKE_GM_APPLY_SYNC__;
         if(typeof apply!=='function')throw new Error('사이트 계정 동기화 모듈을 찾지 못했습니다.');
         // Never write anything until every API page was validated.
+        payload.profile_url=url;
         apply(payload,account);
         // Only persist an explicit server choice after validated data was applied.
         if(areaId!=='')rememberPreferredArea(account,url,payload.area_id);
