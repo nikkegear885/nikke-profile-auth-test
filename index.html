@@ -5285,6 +5285,24 @@ function applyBlablalinkSyncPayload(p,targetAccount){
       throw new Error('검증을 통과한 니케가 없어 동기화하지 않았습니다. '+applyRejected.slice(0,5).join(' / '));
     if(!Array.isArray(p.ownedNames)||p.ownedNames.length!==allUpdates.length)
       applyRejected.push('외부 API 보유 이름 목록 수 불일치');
+    // A full response with an incorrect upstream count must not erase formerly owned
+    // characters when the same public profile and server are synchronized again.
+    try{
+      const priorUrl=localStorage.getItem('nikke_bl_profile_url_'+encodeURIComponent(syncAccount));
+      const priorMeta=JSON.parse(localStorage.getItem('nikkeBlSyncMeta_'+encodeURIComponent(syncAccount))||'null');
+      if(p.profile_url&&priorUrl===p.profile_url&&priorMeta&&
+         Number(priorMeta.areaId)===Number(p.area_id)){
+        const priorOwned=JSON.parse(localStorage.getItem(accountStorageKey(ACCOUNT_SYNCED_OWNED_PREFIX,syncAccount))||'[]');
+        if(Array.isArray(priorOwned)&&priorOwned.length){
+          const incomingNames=new Set(verifiedUpdates.map(u=>
+            normalizeRosterName(canonicalSyncCharacterName(u.name,u.name_code??u.nameCode))));
+          const missing=priorOwned.filter(name=>!incomingNames.has(normalizeRosterName(name)));
+          if(missing.length)
+            applyRejected.push('이전 동기화 대비 보유 니케 '+missing.length+
+              '명 미수신 (기존 정보 유지: '+missing.slice(0,8).join(', ')+')');
+        }
+      }
+    }catch(error){console.warn('[NIKKE GM] sync roster consistency guard unavailable',error);}
     if(applyRejected.length)partialExternal=true;
     p.partial_identification=partialExternal;
     p.unresolved_character_count=(Number(p.unresolved_character_count)||0)+applyRejected.length;
