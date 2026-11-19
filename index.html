@@ -5297,9 +5297,8 @@ function applyBlablalinkSyncPayload(p,targetAccount){
           const incomingNames=new Set(verifiedUpdates.map(u=>
             normalizeRosterName(canonicalSyncCharacterName(u.name,u.name_code??u.nameCode))));
           const missing=priorOwned.filter(name=>!incomingNames.has(normalizeRosterName(name)));
-          if(missing.length)
-            applyRejected.push('이전 동기화 대비 보유 니케 '+missing.length+
-              '명 미수신 (기존 정보 유지: '+missing.slice(0,8).join(', ')+')');
+          for(const name of missing)
+            applyRejected.push(String(name)+' · 동일 계정의 이전 보유 기록과 불일치하여 기존 정보 유지');
         }
       }
     }catch(error){console.warn('[NIKKE GM] sync roster consistency guard unavailable',error);}
